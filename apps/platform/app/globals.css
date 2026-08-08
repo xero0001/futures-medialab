@@ -488,3 +488,237 @@ a {
     transition: none;
   }
 }
+
+.campaign-app-layout {
+  display: grid;
+  min-height: calc(100vh - 72px);
+  grid-template-columns: 248px minmax(0, 1fr);
+}
+
+.campaign-sidebar {
+  position: sticky;
+  top: 72px;
+  height: calc(100vh - 72px);
+  border-right: 1px solid #e2e8f0;
+  background: white;
+  padding: 22px 14px;
+}
+
+.campaign-sidebar-item {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  gap: 12px;
+  border-radius: 12px;
+  padding-inline: 13px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.campaign-sidebar-item:hover {
+  background: #f8fafc;
+  color: #4338ca;
+}
+
+.campaign-sidebar-item-active {
+  background: linear-gradient(110deg, #4338ca, #4f46e5);
+  color: white;
+  box-shadow: 0 10px 24px rgb(67 56 202 / 18%);
+}
+
+.campaign-sidebar-item-active:hover {
+  background: linear-gradient(110deg, #3730a3, #4338ca);
+  color: white;
+}
+
+.campaign-market-card {
+  display: flex;
+  min-width: 0;
+  min-height: 450px;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: white;
+  box-shadow: 0 8px 28px rgb(15 23 42 / 4%);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.campaign-market-card:hover {
+  border-color: #c7d2fe;
+  box-shadow: 0 20px 50px rgb(67 56 202 / 12%);
+  transform: translateY(-4px);
+}
+
+.campaign-art {
+  position: relative;
+  display: flex;
+  height: 184px;
+  flex: none;
+  overflow: hidden;
+  flex-direction: column;
+  padding: 22px;
+  isolation: isolate;
+}
+
+.campaign-art::before,
+.campaign-art::after {
+  position: absolute;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 999px;
+  content: "";
+}
+
+.campaign-art::before {
+  right: -35px;
+  bottom: -72px;
+  width: 210px;
+  height: 210px;
+}
+
+.campaign-art::after {
+  right: 33px;
+  bottom: -38px;
+  width: 120px;
+  height: 120px;
+}
+
+.campaign-art-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 8%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 8%) 1px, transparent 1px);
+  background-size: 30px 30px;
+  mask-image: linear-gradient(to right, black, transparent);
+}
+
+.campaign-art-icon {
+  position: absolute;
+  right: 26px;
+  top: 58px;
+  display: flex;
+  width: 72px;
+  height: 72px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 23px;
+  background: rgb(255 255 255 / 13%);
+  color: white;
+  box-shadow: 0 18px 40px rgb(15 23 42 / 20%);
+  backdrop-filter: blur(12px);
+  transform: rotate(6deg);
+  transition: transform 200ms ease;
+}
+
+.campaign-market-card:hover .campaign-art-icon {
+  transform: rotate(0deg) scale(1.04);
+}
+
+.campaign-priority {
+  position: absolute;
+  z-index: 3;
+  top: 17px;
+  right: -32px;
+  width: 122px;
+  padding-block: 6px;
+  background: #f8fafc;
+  color: #4338ca;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-transform: uppercase;
+  box-shadow: 0 5px 20px rgb(15 23 42 / 12%);
+  transform: rotate(45deg);
+}
+
+.campaign-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  background: #eef2ff;
+  padding: 4px 7px;
+  color: #4f46e5;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.campaign-art-aurora {
+  background:
+    radial-gradient(circle at 15% 20%, rgb(255 255 255 / 32%), transparent 22%),
+    linear-gradient(135deg, #312e81, #6d28d9 55%, #2563eb);
+}
+
+.campaign-art-neon {
+  background:
+    radial-gradient(circle at 80% 20%, rgb(236 72 153 / 55%), transparent 28%),
+    linear-gradient(135deg, #111827, #4338ca 58%, #db2777);
+}
+
+.campaign-art-sky {
+  background:
+    radial-gradient(circle at 20% 85%, rgb(255 255 255 / 30%), transparent 24%),
+    linear-gradient(135deg, #0369a1, #2563eb 50%, #818cf8);
+}
+
+.campaign-art-travel {
+  background:
+    radial-gradient(circle at 75% 15%, rgb(255 255 255 / 35%), transparent 22%),
+    linear-gradient(135deg, #1d4ed8, #2563eb 48%, #06b6d4);
+}
+
+.campaign-art-tech {
+  background:
+    radial-gradient(circle at 10% 15%, rgb(132 204 22 / 48%), transparent 28%),
+    linear-gradient(135deg, #172554, #0f766e 55%, #22c55e);
+}
+
+.campaign-art-studio {
+  background:
+    radial-gradient(circle at 72% 32%, rgb(255 255 255 / 45%), transparent 24%),
+    linear-gradient(135deg, #292524, #78716c 52%, #d6d3d1);
+}
+
+.campaign-art-blocks {
+  background:
+    radial-gradient(circle at 20% 30%, rgb(254 215 170 / 32%), transparent 23%),
+    linear-gradient(135deg, #7c2d12, #ea580c 52%, #fb923c);
+}
+
+.campaign-art-duet {
+  background:
+    radial-gradient(circle at 78% 25%, rgb(255 255 255 / 25%), transparent 25%),
+    linear-gradient(135deg, #4c1d95, #7c3aed 52%, #a855f7);
+}
+
+@media (width <= 1023px) {
+  .campaign-app-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .campaign-sidebar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .campaign-market-card,
+  .campaign-art-icon,
+  .campaign-sidebar-item {
+    transition: none;
+  }
+}

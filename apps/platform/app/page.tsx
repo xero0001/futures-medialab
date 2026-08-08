@@ -265,7 +265,7 @@ export default function HomePage() {
               <div className="mt-10 flex flex-wrap gap-3">
                 <a
                   className="button button-primary button-large"
-                  href="#solutions"
+                  href="/campaigns"
                 >
                   Explore the platform
                   <ArrowRight className="size-5" aria-hidden="true" />
