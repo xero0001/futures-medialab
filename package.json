@@ -1,0 +1,26 @@
+{
+  "name": "futures-medialab",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.22.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "check-types": "turbo check-types",
+    "format": "prettier --write \"**/*.{css,json,md,ts,tsx}\"",
+    "db:generate": "turbo db:generate",
+    "db:migrate:dev": "turbo db:migrate:dev",
+    "db:migrate:deploy": "turbo db:migrate:deploy",
+    "db:push": "turbo db:push",
+    "db:studio": "pnpm --filter @futures-medialab/database db:studio"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "turbo": "2.5.8",
+    "typescript": "^5.9.3"
+  }
+}

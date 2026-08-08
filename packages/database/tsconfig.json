@@ -1,0 +1,7 @@
+{
+  "extends": "@futures-medialab/typescript-config/base.json",
+  "compilerOptions": {
+    "baseUrl": "."
+  },
+  "include": ["src/**/*.ts"]
+}
