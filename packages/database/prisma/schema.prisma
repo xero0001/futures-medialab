@@ -4,13 +4,289 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+}
+
+enum Locale {
+  EN
+  KO
+  ZH
+}
+
+enum OrganizationType {
+  PLATFORM
+  BRAND
+  AGENCY
+}
+
+enum OrganizationStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum CampaignType {
+  OPEN_BIDDING
+  MANAGED
+}
+
+enum CampaignStatus {
+  DRAFT
+  REVIEW
+  RECRUITING
+  IN_PROGRESS
+  VERIFYING
+  SETTLING
+  COMPLETED
+  CANCELED
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  SHORTLISTED
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum SubmissionStatus {
+  DRAFT
+  SUBMITTED
+  REVISION_REQUESTED
+  APPROVED
+  PUBLISHED
+  VERIFIED
+}
+
+enum SettlementStatus {
+  PENDING
+  REQUESTED
+  APPROVED
+  PROCESSING
+  PAID
+  REJECTED
+}
+
+enum Currency {
+  KRW
+  USD
+  CNY
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                    String                @id @default(cuid())
+  email                 String                @unique
+  name                  String?
+  locale                Locale                @default(EN)
+  memberships           OrganizationMember[]
+  createdCampaigns      Campaign[]            @relation("CampaignCreator")
+  submittedApplications CampaignApplication[] @relation("ApplicationSubmitter")
+  askedQuestions        CampaignQuestion[]    @relation("QuestionAuthor")
+  auditLogs             AuditLog[]
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+}
+
+model Organization {
+  id             String                @id @default(cuid())
+  type           OrganizationType
+  status         OrganizationStatus    @default(PENDING)
+  name           String
+  slug           String                @unique
+  countryCode    String?               @db.VarChar(2)
+  businessNumber String?
+  websiteUrl     String?
+  metadata       Json                  @default("{}")
+  members        OrganizationMember[]
+  campaigns      Campaign[]            @relation("BrandCampaigns")
+  applications   CampaignApplication[] @relation("AgencyApplications")
+  creators       CreatorProfile[]
+  questions      CampaignQuestion[]
+  settlements    Settlement[]
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@index([type, status])
+}
+
+model OrganizationMember {
+  userId         String
+  organizationId String
+  role           MembershipRole @default(MEMBER)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@id([userId, organizationId])
+  @@index([organizationId, role])
+}
+
+model Campaign {
+  id                  String                @id @default(cuid())
+  brandOrganizationId String
+  createdById         String
+  type                CampaignType          @default(OPEN_BIDDING)
+  status              CampaignStatus        @default(DRAFT)
+  title               String
+  privateTitle        String?
+  summary             String                @default("") @db.Text
+  briefUrl            String?
+  coverImageUrl       String?
+  platforms           String[]              @default([])
+  regions             String[]              @default([])
+  categories          String[]              @default([])
+  followerMin         Int?
+  followerMax         Int?
+  budgetAmount        Decimal?              @db.Decimal(18, 2)
+  currency            Currency              @default(USD)
+  requirements        Json                  @default("{}")
+  settlementPolicy    Json                  @default("{}")
+  managedRequest      Json                  @default("{}")
+  applicationDeadline DateTime?
+  contentDeadline     DateTime?
+  publishedAt         DateTime?
+  brandOrganization   Organization          @relation("BrandCampaigns", fields: [brandOrganizationId], references: [id], onDelete: Restrict)
+  createdBy           User                  @relation("CampaignCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  applications        CampaignApplication[]
+  questions           CampaignQuestion[]
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  @@index([status, applicationDeadline])
+  @@index([brandOrganizationId, status])
+  @@index([type, status])
+}
+
+model CreatorProfile {
+  id                   String               @id @default(cuid())
+  agencyOrganizationId String
+  displayName          String
+  countryCode          String?              @db.VarChar(2)
+  primaryLanguage      Locale               @default(KO)
+  channels             Json                 @default("[]")
+  categories           String[]             @default([])
+  internalNotes        String               @default("") @db.Text
+  isActive             Boolean              @default(true)
+  agencyOrganization   Organization         @relation(fields: [agencyOrganizationId], references: [id], onDelete: Cascade)
+  applications         ApplicationCreator[]
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  @@index([agencyOrganizationId, isActive])
+}
+
+model CampaignApplication {
+  id                   String               @id @default(cuid())
+  campaignId           String
+  agencyOrganizationId String
+  submittedById        String
+  status               ApplicationStatus    @default(SUBMITTED)
+  proposal             String               @default("") @db.Text
+  proposedAmount       Decimal?             @db.Decimal(18, 2)
+  currency             Currency             @default(USD)
+  rosterSnapshot       Json                 @default("[]")
+  campaign             Campaign             @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  agencyOrganization   Organization         @relation("AgencyApplications", fields: [agencyOrganizationId], references: [id], onDelete: Restrict)
+  submittedBy          User                 @relation("ApplicationSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
+  creators             ApplicationCreator[]
+  submissions          ContentSubmission[]
+  settlement           Settlement?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  @@unique([campaignId, agencyOrganizationId])
+  @@index([agencyOrganizationId, status])
+}
+
+model ApplicationCreator {
+  applicationId String
+  creatorId     String
+  deliverables  Json                @default("[]")
+  application   CampaignApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  creator       CreatorProfile      @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+
+  @@id([applicationId, creatorId])
+  @@index([creatorId])
+}
+
+model CampaignQuestion {
+  id                   String       @id @default(cuid())
+  campaignId           String
+  agencyOrganizationId String
+  askedById            String
+  question             String       @db.Text
+  answer               String?      @db.Text
+  answeredAt           DateTime?
+  campaign             Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  agencyOrganization   Organization @relation(fields: [agencyOrganizationId], references: [id], onDelete: Cascade)
+  askedBy              User         @relation("QuestionAuthor", fields: [askedById], references: [id], onDelete: Restrict)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  @@index([campaignId, createdAt])
+  @@index([agencyOrganizationId, createdAt])
+}
+
+model ContentSubmission {
+  id            String              @id @default(cuid())
+  applicationId String
+  version       Int                 @default(1)
+  status        SubmissionStatus    @default(DRAFT)
+  draftUrl      String?
+  publishedUrl  String?
+  reviewNotes   String              @default("") @db.Text
+  metrics       Json                @default("{}")
+  submittedAt   DateTime?
+  reviewedAt    DateTime?
+  verifiedAt    DateTime?
+  application   CampaignApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@unique([applicationId, version])
+  @@index([status, submittedAt])
+}
+
+model Settlement {
+  id                   String              @id @default(cuid())
+  applicationId        String              @unique
+  agencyOrganizationId String
+  status               SettlementStatus    @default(PENDING)
+  currency             Currency            @default(USD)
+  grossAmount          Decimal             @db.Decimal(18, 2)
+  platformFeeAmount    Decimal             @default(0) @db.Decimal(18, 2)
+  withholdingAmount    Decimal             @default(0) @db.Decimal(18, 2)
+  netAmount            Decimal             @db.Decimal(18, 2)
+  exchangeRate         Decimal?            @db.Decimal(18, 8)
+  transferReference    String?
+  requestedAt          DateTime?
+  approvedAt           DateTime?
+  paidAt               DateTime?
+  application          CampaignApplication @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  agencyOrganization   Organization        @relation(fields: [agencyOrganizationId], references: [id], onDelete: Restrict)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  @@index([agencyOrganizationId, status])
+  @@index([status, requestedAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  payload    Json     @default("{}")
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
 }

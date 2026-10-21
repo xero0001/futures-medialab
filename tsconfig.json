@@ -1,0 +1,3 @@
+{
+  "extends": "@futures-medialab/typescript-config/base.json"
+}

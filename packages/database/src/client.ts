@@ -1,4 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
+import { createDatabaseClient } from "./client-factory.mjs";
+
+export { Prisma } from "@prisma/client";
 
 const globalForDatabase = globalThis as unknown as {
   futuresMedialabDatabase?: PrismaClient;
@@ -6,7 +9,7 @@ const globalForDatabase = globalThis as unknown as {
 
 export function getDatabase() {
   if (!globalForDatabase.futuresMedialabDatabase) {
-    globalForDatabase.futuresMedialabDatabase = new PrismaClient();
+    globalForDatabase.futuresMedialabDatabase = createDatabaseClient();
   }
 
   return globalForDatabase.futuresMedialabDatabase;

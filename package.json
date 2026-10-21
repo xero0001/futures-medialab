@@ -13,9 +13,9 @@
     "check-types": "turbo check-types",
     "format": "prettier --write \"**/*.{css,json,md,ts,tsx}\"",
     "db:generate": "turbo db:generate",
-    "db:migrate:dev": "turbo db:migrate:dev",
-    "db:migrate:deploy": "turbo db:migrate:deploy",
-    "db:push": "turbo db:push",
+    "db:migrate:dev": "turbo db:migrate:dev --filter=@futures-medialab/database",
+    "db:migrate:deploy": "turbo db:migrate:deploy --filter=@futures-medialab/database",
+    "db:push": "turbo db:push --filter=@futures-medialab/database",
     "db:studio": "pnpm --filter @futures-medialab/database db:studio"
   },
   "devDependencies": {
