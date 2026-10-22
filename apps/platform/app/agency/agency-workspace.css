@@ -345,3 +345,39 @@
   .cwa-drawer-content h2 { font-size: 25px; }
   .cwa-brief-details > div { gap: 12px; }
 }
+.cwa-demo-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 24px;
+  padding: 18px 20px;
+  border: 1px solid #dcd9fc;
+  border-radius: 14px;
+  color: #47416a;
+  background: #f4f2ff;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.cwa-demo-notice > svg { flex-shrink: 0; margin-top: 3px; }
+.cwa-demo-notice strong { display: block; margin-bottom: 4px; font-size: 15px; }
+.cwa-demo-notice p { margin: 0; }
+.cwa-demo-badge {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  padding: 5px 10px;
+  border: 1px solid #ffffff70;
+  border-radius: 7px;
+  background: #ffffffed;
+  color: #4939ad;
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: .06em;
+}
+.cwa-demo-label {
+  display: inline-block;
+  margin-left: 10px;
+  color: #64539b;
+  font-size: 14px;
+  font-weight: 600;
+}

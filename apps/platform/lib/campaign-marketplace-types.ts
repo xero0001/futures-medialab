@@ -9,6 +9,7 @@ export type AgencyApplication = {
   updatedAt: string;
   campaignTitle: string;
   campaignStatus: string;
+  isDemo: boolean;
 };
 
 export type AgencyCampaign = {
@@ -25,6 +26,7 @@ export type AgencyCampaign = {
   applicationDeadline: string | null;
   publishedAt: string | null;
   status: string;
+  isDemo: boolean;
   application: AgencyApplication | null;
 };
 
@@ -36,7 +38,7 @@ export type AgencyCampaignBootstrap = {
 
 export type BrandCampaignApplication = Omit<
   AgencyApplication,
-  "campaignTitle" | "campaignStatus"
+  "campaignTitle" | "campaignStatus" | "isDemo"
 > & {
   agencyLabel: string;
 };

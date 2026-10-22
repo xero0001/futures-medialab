@@ -4,6 +4,11 @@ import { getAuth } from "./auth";
 import { hasSubmittedAgencyProfile } from "./agency-profile";
 import { hasApprovedTestWorkspaceAccess } from "./test-workspace-access";
 import {
+  canAccessCampaign,
+  DEMO_CAMPAIGN_BRAND_ID,
+  isDemoCampaign,
+} from "./campaign-demo";
+import {
   agencyApplicationSchema,
   brandApplicationSchema,
   campaignIdSchema,
@@ -92,7 +97,14 @@ const applicationSelect = {
   currency: true,
   createdAt: true,
   updatedAt: true,
-  campaign: { select: { title: true, status: true } },
+  campaign: {
+    select: {
+      title: true,
+      status: true,
+      requirements: true,
+      brandOrganizationId: true,
+    },
+  },
 } satisfies Prisma.CampaignApplicationSelect;
 type ApplicationRow = Prisma.CampaignApplicationGetPayload<{
   select: typeof applicationSelect;
@@ -109,6 +121,7 @@ function applicationDto(row: ApplicationRow): AgencyApplication {
     updatedAt: row.updatedAt.toISOString(),
     campaignTitle: row.campaign.title,
     campaignStatus: row.campaign.status,
+    isDemo: isDemoCampaign(row.campaign),
   };
 }
 
@@ -120,9 +133,14 @@ export async function agencyCampaigns(request: Request) {
       async (tx): Promise<AgencyCampaignBootstrap> => {
         await liveSession(tx, session);
         const member = await agencyMember(tx, session.user.id);
+        const testAccess = hasApprovedTestWorkspaceAccess(member.organization);
+        const demoScope = testAccess
+          ? {}
+          : { brandOrganizationId: { not: DEMO_CAMPAIGN_BRAND_ID } };
         const [campaigns, applications] = await Promise.all([
           tx.campaign.findMany({
             where: {
+              ...demoScope,
               status: "RECRUITING",
               publishedAt: { not: null },
               applicationDeadline: { gt: new Date() },
@@ -130,7 +148,8 @@ export async function agencyCampaigns(request: Request) {
             },
             orderBy: [{ publishedAt: "desc" }, { id: "asc" }],
             take: 500,
-            // Deliberately exclude brand identity, private titles, contacts and operations notes.
+            // Internal demo gates need the owner/requirements, but the response
+            // below strips them along with all private brand information.
             select: {
               id: true,
               title: true,
@@ -145,30 +164,42 @@ export async function agencyCampaigns(request: Request) {
               applicationDeadline: true,
               publishedAt: true,
               status: true,
+              requirements: true,
+              brandOrganizationId: true,
             },
           }),
           tx.campaignApplication.findMany({
-            where: { agencyOrganizationId: member.organizationId },
+            where: {
+              agencyOrganizationId: member.organizationId,
+              campaign: demoScope,
+            },
             orderBy: { createdAt: "desc" },
             take: 1000,
             select: applicationSelect,
           }),
         ]);
-        const own = applications.map(applicationDto);
+        const own = applications
+          .filter((application) =>
+            canAccessCampaign(application.campaign, testAccess),
+          )
+          .map(applicationDto);
         return {
           account: { role: member.role, status: "ACTIVE" },
           applications: own,
-          campaigns: campaigns.map((campaign) => ({
-            ...campaign,
-            budgetAmount: campaign.budgetAmount?.toFixed(2) ?? null,
-            applicationDeadline:
-              campaign.applicationDeadline?.toISOString() ?? null,
-            publishedAt: campaign.publishedAt?.toISOString() ?? null,
-            application:
-              own.find(
-                (application) => application.campaignId === campaign.id,
-              ) ?? null,
-          })),
+          campaigns: campaigns
+            .filter((campaign) => canAccessCampaign(campaign, testAccess))
+            .map(({ requirements, brandOrganizationId, ...campaign }) => ({
+              ...campaign,
+              isDemo: isDemoCampaign({ requirements, brandOrganizationId }),
+              budgetAmount: campaign.budgetAmount?.toFixed(2) ?? null,
+              applicationDeadline:
+                campaign.applicationDeadline?.toISOString() ?? null,
+              publishedAt: campaign.publishedAt?.toISOString() ?? null,
+              application:
+                own.find(
+                  (application) => application.campaignId === campaign.id,
+                ) ?? null,
+            })),
         };
       },
       {
@@ -191,7 +222,24 @@ export async function agencyApplications(request: Request) {
       async (tx) => {
         await liveSession(tx, session);
         const member = await agencyMember(tx, session.user.id, true);
+        const testAccess = hasApprovedTestWorkspaceAccess(member.organization);
         if (input.action === "withdraw") {
+          const application = await tx.campaignApplication.findFirst({
+            where: {
+              id: input.applicationId,
+              agencyOrganizationId: member.organizationId,
+            },
+            select: {
+              campaign: {
+                select: { requirements: true, brandOrganizationId: true },
+              },
+            },
+          });
+          if (
+            !application ||
+            !canAccessCampaign(application.campaign, testAccess)
+          )
+            fail(409, "INVALID_STATE", "This application cannot be withdrawn.");
           const result = await tx.campaignApplication.updateMany({
             where: {
               id: input.applicationId,
@@ -220,9 +268,14 @@ export async function agencyApplications(request: Request) {
             applicationDeadline: { gt: new Date() },
             brandOrganization: { type: "BRAND", status: "ACTIVE" },
           },
-          select: { id: true, currency: true },
+          select: {
+            id: true,
+            currency: true,
+            requirements: true,
+            brandOrganizationId: true,
+          },
         });
-        if (!campaign)
+        if (!campaign || !canAccessCampaign(campaign, testAccess))
           fail(
             409,
             "CAMPAIGN_CLOSED",

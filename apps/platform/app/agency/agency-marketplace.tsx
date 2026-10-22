@@ -412,9 +412,9 @@ export function AgencyMarketplace({
                 "查看组织申请记录，包括已结束招募的活动。",
               )
             : t(
-                "Only campaigns approved and published by the operations team appear here.",
-                "운영팀이 승인·공개한 실제 캠페인만 표시됩니다.",
-                "此处仅显示运营团队审核发布的真实活动。",
+                "Browse published campaigns and review the brief before applying.",
+                "공개된 캠페인을 살펴보고 가이드를 확인한 후 신청하세요.",
+                "浏览已发布活动，阅读详情后提交申请。",
               )}
         </p>
         <button
@@ -427,6 +427,32 @@ export function AgencyMarketplace({
           {t("Refresh", "새로고침", "刷新")}
         </button>
       </div>
+      {data &&
+        (data.campaigns.some((campaign) => campaign.isDemo) ||
+          data.applications.some((application) => application.isDemo)) && (
+          <aside
+            className="cwa-demo-notice"
+            aria-label={t("Demo data", "데모 데이터", "演示数据")}
+          >
+            <Gamepad2 size={21} aria-hidden="true" />
+            <div>
+              <strong>
+                {t(
+                  "A workspace you can try",
+                  "미리 체험하는 에이전시 워크스페이스",
+                  "体验代理工作区",
+                )}
+              </strong>
+              <p>
+                {t(
+                  "Items marked [Demo] are fictional examples for test accounts. Budgets and selection statuses are illustrative only; no advertising, contract or payment is created.",
+                  "[Demo] 캠페인과 신청 내역은 테스트 계정 전용 가상 데이터입니다. 예산과 선정 상태는 예시이며, 실제 광고·계약·정산은 발생하지 않습니다.",
+                  "标记 [Demo] 的活动和申请仅为测试账户的虚构示例。预算及录用状态仅供演示，不会产生真实广告、合同或付款。",
+                )}
+              </p>
+            </div>
+          </aside>
+        )}
       {notice && (
         <p className="cwa-success" role="status">
           <CheckCircle2 size={18} aria-hidden="true" />
@@ -670,6 +696,9 @@ export function AgencyMarketplace({
                           .map((value) => platformLabels[value] ?? value)
                           .join(" + ")}
                       </span>
+                      {campaign.isDemo && (
+                        <span className="cwa-demo-badge">DEMO</span>
+                      )}
                     </button>
                     <div className="cwa-offer-body">
                       <div className="cwa-offer-meta">
@@ -836,6 +865,11 @@ function ApplicationCard({
           <span className="cwa-application-status">
             {applicationLabel(application.status, locale)}
           </span>
+          {application.isDemo && (
+            <span className="cwa-demo-label">
+              {t("Demo application", "데모 신청", "演示申请")}
+            </span>
+          )}
           <h2>{application.campaignTitle}</h2>
         </div>
         <span>{date(application.createdAt, locale)}</span>
@@ -843,7 +877,11 @@ function ApplicationCard({
       <p className="cwa-pre-line">{application.proposal}</p>
       <dl>
         <div>
-          <dt>{t("Proposed amount", "제안 금액", "提案金额")}</dt>
+          <dt>
+            {application.isDemo
+              ? t("Example proposal amount", "예시 제안 금액", "示例提案金额")
+              : t("Proposed amount", "제안 금액", "提案金额")}
+          </dt>
           <dd>
             {amount(application.proposedAmount, application.currency, locale)}
           </dd>
@@ -1024,6 +1062,15 @@ function CampaignDrawer({
           </div>
           <div className="cwa-drawer-content">
             <h2 id="agency-offer-title">{campaign.title}</h2>
+            {campaign.isDemo && (
+              <p className="cwa-demo-notice">
+                {t(
+                  "Fictional demo campaign. You can try submitting a proposal, but no real advertiser will receive it and no payment is involved.",
+                  "가상의 데모 캠페인입니다. 제안서 제출을 체험할 수 있지만 실제 광고주에게 전달되거나 결제·정산되지 않습니다.",
+                  "这是虚构的演示活动。您可以体验提交提案，但不会发送给真实广告主，也不涉及付款。",
+                )}
+              </p>
+            )}
             <p className="cwa-drawer-notice">
               {t(
                 "Campaign communication is coordinated through the platform. Applying is not a contract or payment.",
@@ -1193,11 +1240,17 @@ function ProposalForm({
         />
       </label>
       <p>
-        {t(
-          "Your proposal will be stored and shared with the campaign's brand and operations team.",
-          "제안서는 저장되며 해당 캠페인의 브랜드와 운영팀에 전달됩니다.",
-          "提案将保存并提供给本活动品牌与运营团队。",
-        )}
+        {campaign.isDemo
+          ? t(
+              "This demo proposal is saved only for testing. No real advertiser is contacted.",
+              "데모 제안서는 테스트용으로만 저장되며 실제 광고주에게 전달되지 않습니다.",
+              "演示提案仅保存用于测试，不会联系真实广告主。",
+            )
+          : t(
+              "Your proposal will be stored and shared with the campaign's brand and operations team.",
+              "제안서는 저장되며 해당 캠페인의 브랜드와 운영팀에 전달됩니다.",
+              "提案将保存并提供给本活动品牌与运营团队。",
+            )}
       </p>
       {error && (
         <p className="cwa-date-error" role="alert">
@@ -1211,7 +1264,9 @@ function ProposalForm({
       >
         {busy
           ? t("Submitting…", "처리 중…", "正在提交…")
-          : t("Submit application", "신청 제출", "提交申请")}
+          : campaign.isDemo
+            ? t("Try submitting a demo", "데모 신청 체험", "体验演示申请")
+            : t("Submit application", "신청 제출", "提交申请")}
       </button>
     </form>
   );

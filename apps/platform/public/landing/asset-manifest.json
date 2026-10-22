@@ -1,0 +1,17 @@
+{
+  "generator": "OpenAI imagegen",
+  "mode": "generate",
+  "assets": [
+    {
+      "file": "creator-world.webp",
+      "purpose": "Landing hero — original creator and game illustration",
+      "prompt": "Use case: stylized-concept\nAsset type: original hero illustration for a premium creator-marketing web platform, wide landscape composition.\nPrimary request: A charming polished 3D still life showing global game campaigns coming to life through creators. Center a glossy periwinkle-blue game controller with deep violet buttons, a floating lavender rounded video-play tile, and a small cobalt-blue megaphone. Connect them with one graceful translucent lilac ribbon curling through the scene. A few small four-point stars, pearl spheres and rounded cubes, kept sparse.\nStyle/medium: high-end soft 3D product illustration, smooth ceramic and translucent acrylic, playful refined editorial art direction, NOT cartoon characters. Tangible rounded edges and lovely soft ambient shadows.\nScene/backdrop: perfectly clean very pale lavender seamless studio background (#f1efff), objects floating above a low lavender circular podium. No rooms, no user interface, no screens with lettering.\nComposition: generous breathing room around the sculptural cluster, close-up hero cluster slightly right of center. Landscape 3:2, artwork occupies 70% of frame, all objects fully visible. Cohesive readable silhouette, no busy scatter.\nLighting/mood: bright airy studio, diffused daylight from top left, restrained subtle iridescence, delightful but trustworthy.\nColor palette: cornflower blue, indigo, violet, pale lavender, pearly white. Only a tiny soft pink accent if needed. No orange or red.\nText: none. No words, no logo, no watermark, no digits.\nConstraints: original artwork, no real gaming product designs or brand trademarks. Clean production-ready bitmap asset."
+    },
+    {
+      "file": "campaign-worlds.webp",
+      "purpose": "Three fictional campaign concept artworks, cropped in CSS",
+      "prompt": "Create one wide panoramic game-concept artwork in a 3:1 aspect ratio, with three equal-width distinct scene areas flowing softly into each other. Left third: a dreamy indigo and lavender floating fantasy island with a tiny glowing castle, a crescent moon and soft clouds. Middle third: a futuristic cobalt-blue and violet circular esports arena with luminous curved structures, an electric violet sky and no people. Right third: a cozy miniature pastel lavender planet with rounded blue trees, a tiny white cottage and a winding violet path. Beautiful premium soft 3D clay-and-acrylic illustration, cheerful elevated editorial design, entirely original, no logos, no words, no letters, no numbers, no watermarks, no real brands. Three distinct self-contained focal scenes centered at 1/6, 1/2 and 5/6 of the image width so each third can serve as its own game campaign card crop. Generous blue-purple airy backgrounds, soft studio-like light, polished rounded forms, charming but refined, no black outlines. Landscape very wide composition, no borders or panel separators."
+    }
+  ],
+  "notes": "Original artwork. No real brand partnerships or campaign availability implied. WebP compression only; originals retained by the image generation tool."
+}
