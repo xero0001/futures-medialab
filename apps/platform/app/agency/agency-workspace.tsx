@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import type { Locale } from "../_components/landing-copy";
 import { LanguageSwitcher } from "../_components/language-switcher";
+import { Wordmark } from "../_components/brand-logo";
 import { authClient } from "../../lib/auth-client";
 import { AgencyMarketplace } from "./agency-marketplace";
 import {
@@ -182,12 +183,7 @@ export function AgencyWorkspace({
         >
           <Menu size={22} />
         </button>
-        <Link href={`/?lang=${locale}`} className="cwa-logo">
-          <span aria-hidden="true">F</span>
-          <span>
-            Futures <strong>Medialab</strong>
-          </span>
-        </Link>
+        <Wordmark href={`/?lang=${locale}`} />
         <span className="cwa-topbar-divider" />
         <span className="cwa-topbar-label">{copy.workspace}</span>
         <div className="cwa-top-actions">

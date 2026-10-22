@@ -16,9 +16,6 @@
 .cwa-workspace :is(a, button, input, textarea, summary):focus-visible { outline: 3px solid #a5b4fc; outline-offset: 3px; }
 .cwa-workspace button:disabled { cursor: not-allowed; opacity: .55; }
 .cwa-topbar { position: sticky; top: 0; z-index: 50; display: flex; height: 76px; align-items: center; gap: 22px; border-bottom: 1px solid var(--cwa-line); background: #fff; padding: 0 28px; }
-.cwa-logo { display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0; color: #202944; font-size: 20px; font-weight: 650; letter-spacing: -.045em; }
-.cwa-logo > span:first-child { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 10px; background: var(--cwa-indigo); color: #fff; font-size: 24px; font-weight: 800; }
-.cwa-logo strong { font-weight: 750; }
 .cwa-topbar-divider { height: 23px; border-left: 1px solid var(--cwa-line); }
 .cwa-topbar-label { color: #8390a5; font-size: 14px; }
 .cwa-top-actions { display: flex; align-items: center; gap: 13px; margin-left: auto; }
@@ -303,8 +300,6 @@
 }
 @media (max-width: 560px) {
   .cwa-topbar { gap: 8px; padding-inline: 12px; }
-  .cwa-logo { gap: 7px; font-size: 16px; }
-  .cwa-logo > span:first-child { width: 29px; height: 29px; border-radius: 7px; font-size: 20px; }
   .cwa-top-actions { gap: 2px; }
   .cwa-top-actions > .cwa-icon-button, .cwa-top-actions > .cwa-avatar { display: none; }
   .cwa-top-actions .fm-language-trigger { min-width: 0; padding-inline: 7px; }

@@ -63,38 +63,6 @@
   padding-inline: 28px;
 }
 
-.cw-logo {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 6px;
-  color: #20243c;
-  font-size: 19px;
-  font-weight: 750;
-  letter-spacing: -0.045em;
-  line-height: 1.2;
-}
-
-.cw-logo > span:first-child,
-.cw-logo-mark {
-  display: inline-grid;
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  place-items: center;
-  border-radius: 10px;
-  background: var(--cw-accent);
-  color: #fff;
-  font-size: 23px;
-  font-weight: 800;
-  letter-spacing: -0.05em;
-  margin-right: 5px;
-}
-
-.cw-logo strong {
-  font-weight: inherit;
-}
-
 .cw-top-actions {
   display: flex;
   min-width: 0;
@@ -1463,19 +1431,6 @@ button.cw-person {
   .cw-topbar {
     gap: 10px;
     padding-inline: 14px;
-  }
-
-  .cw-logo {
-    gap: 8px;
-    font-size: 16px;
-  }
-
-  .cw-logo > span:first-child,
-  .cw-logo-mark {
-    width: 31px;
-    height: 31px;
-    border-radius: 8px;
-    font-size: 20px;
   }
 
   .cw-top-actions {

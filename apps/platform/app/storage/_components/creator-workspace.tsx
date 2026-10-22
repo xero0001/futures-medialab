@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import type { Locale } from "../../_components/landing-copy";
 import { LanguageSwitcher } from "../../_components/language-switcher";
+import { Wordmark } from "../../_components/brand-logo";
 import { ProfileSelect } from "../../onboarding/brand/profile-select";
 import { authClient } from "../../../lib/auth-client";
 import {
@@ -413,9 +414,7 @@ export function CreatorWorkspace({
         >
           <Menu size={22} />
         </button>
-        <Link href={`/?lang=${locale}`} className="cw-logo">
-          <span>F</span>Futures <strong>Medialab</strong>
-        </Link>
+        <Wordmark href={`/?lang=${locale}`} />
         <div className="cw-top-actions">
           <span className="cw-status">
             {status === "PENDING"
