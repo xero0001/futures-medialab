@@ -241,7 +241,8 @@ public HTTPS addresses and are never fetched by the server.
 - `POST /api/workspace/search`: validated filters and persisted query history.
 - `POST /api/workspace/collections`, `/links`, `/campaigns`, `/tools`, `/account`:
   explicit action/body contracts; the client never supplies an organization ID.
-- All routes recheck the database session, membership, completed profile and
+- All routes recheck the database session, membership, completed profile (or an
+  explicitly approved test-organization exemption) and
   suspension status. Mutations require exact trusted Origin, valid JSON,
   bounded bodies (16KiB) and strict schemas. Serializable writes protect state.
 - OWNER/ADMIN can manage links and campaigns; only OWNER can update company
@@ -266,6 +267,21 @@ They use synthetic fixtures and remove only those exact records. Before public
 launch, separate development from production DB, add email verification/recovery,
 configure real data/AI providers and operations workflows, and review privacy,
 redirect abuse handling and retention policies.
+
+### Approved test organizations
+
+An operator may explicitly grant an organization `metadata.testWorkspaceAccess: true`
+alongside `status: ACTIVE` for user-requested workspace testing. Both are required;
+the flag never bypasses authentication, organization membership, roles, or suspension.
+It skips company onboarding without fabricating company information, uploaded proof,
+submission timestamps, or email verification. Public registration and profile/account
+APIs cannot set this server-managed flag. Removing the flag restores normal onboarding.
+This is approved workspace access, not an isolated sandbox: existing workspace actions
+remain subject to their normal permissions. Do not enable this on ordinary signups.
+
+```bash
+node --experimental-strip-types --test apps/platform/scripts/test-workspace-access.test.mjs
+```
 
 ## Commands
 

@@ -5,6 +5,7 @@ import { getDatabase, Prisma } from "@futures-medialab/database";
 import { z } from "zod";
 import { getAuth } from "./auth";
 import { hasCompletedBrandProfile } from "./brand-profile";
+import { hasApprovedTestWorkspaceAccess } from "./test-workspace-access";
 import {
   DEMO_BRANDS,
   filterCreators,
@@ -228,7 +229,7 @@ async function membership(database: Database, userId: string) {
   });
   if (!member || member.organization.status === "SUSPENDED")
     fail(403, "FORBIDDEN", "This workspace is not available for your account.");
-  if (!hasCompletedBrandProfile(member.organization.metadata))
+  if (!hasCompletedBrandProfile(member.organization.metadata) && !hasApprovedTestWorkspaceAccess(member.organization))
     fail(403, "PROFILE_REQUIRED", "Complete your company profile first.");
   return member;
 }

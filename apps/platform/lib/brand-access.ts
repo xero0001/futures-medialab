@@ -8,6 +8,7 @@ import { getAuth } from "./auth";
 import { hasCompletedBrandProfile } from "./brand-profile";
 import { getAuthenticatedAgencyMembership } from "./agency-access";
 import { hasSubmittedAgencyProfile } from "./agency-profile";
+import { hasApprovedTestWorkspaceAccess } from "./test-workspace-access";
 
 // Membership and organization state are read for every request. A session or
 // client-selected role alone never grants access to a brand workspace.
@@ -35,7 +36,7 @@ type BrandMembership = Awaited<
 function brandDestination(membership: BrandMembership) {
   if (!membership || membership.organization.status === "SUSPENDED")
     return "/account";
-  if (!hasCompletedBrandProfile(membership.organization.metadata))
+  if (!hasCompletedBrandProfile(membership.organization.metadata) && !hasApprovedTestWorkspaceAccess(membership.organization))
     return membership.role === "OWNER" ? "/onboarding/brand" : "/account";
   return "/storage/search";
 }
@@ -45,6 +46,7 @@ export async function getPostAuthDestination(locale: Locale, options: { register
   if (membership) return `${brandDestination(membership)}?lang=${locale}`;
   const agency = await getAuthenticatedAgencyMembership(locale);
   if (!agency || agency.organization.status === "SUSPENDED") return `/account?lang=${locale}`;
+  if (hasApprovedTestWorkspaceAccess(agency.organization)) return `/agency?lang=${locale}`;
   if (hasSubmittedAgencyProfile(agency.organization.metadata))
     return `${agency.organization.status === "ACTIVE" || agency.role !== "OWNER" ? "/agency" : "/onboarding/agency"}?lang=${locale}`;
   return agency.role === "OWNER"

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { Locale } from "../app/_components/landing-copy";
 import { getAuth } from "./auth";
 import { hasSubmittedAgencyProfile, metadataRecord } from "./agency-profile";
+import { hasApprovedTestWorkspaceAccess } from "./test-workspace-access";
 
 export async function getAuthenticatedAgencyMembership(locale: Locale) {
   const session = await getAuth().api.getSession({ headers: await headers() });
@@ -25,7 +26,7 @@ export async function requireAgencyWorkspace(locale: Locale): Promise<{
   const membership = await getAuthenticatedAgencyMembership(locale);
   if (!membership || membership.organization.status === "SUSPENDED") redirect(`/account?lang=${locale}`);
   const { organization } = membership;
-  if (!hasSubmittedAgencyProfile(organization.metadata)) {
+  if (!hasSubmittedAgencyProfile(organization.metadata) && !hasApprovedTestWorkspaceAccess(organization)) {
     redirect(`/${membership.role === "OWNER" ? "onboarding/agency" : "account"}?lang=${locale}`);
   }
   const metadata = metadataRecord(organization.metadata);

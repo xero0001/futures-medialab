@@ -5,6 +5,7 @@ import { getAuthenticatedAgencyMembership } from "../../../lib/agency-access";
 import { getAgencyProfileValues, hasSubmittedAgencyProfile } from "../../../lib/agency-profile";
 import { uploadConfigured } from "../../../lib/agency-documents";
 import { resolveLocale } from "../../../lib/locale";
+import { hasApprovedTestWorkspaceAccess } from "../../../lib/test-workspace-access";
 import { AgencyOnboarding } from "./agency-onboarding";
 
 export const preferredRegion = "sin1";
@@ -20,6 +21,7 @@ export default async function AgencyOnboardingPage({ searchParams }: {
   const membership = await getAuthenticatedAgencyMembership(locale);
   if (!membership || membership.role !== "OWNER" || membership.organization.status === "SUSPENDED") redirect(`/account?lang=${locale}`);
   const { organization } = membership;
+  if (hasApprovedTestWorkspaceAccess(organization)) redirect(`/agency?lang=${locale}`);
   const submitted = hasSubmittedAgencyProfile(organization.metadata);
   return <AgencyOnboarding
     initialLocale={locale}

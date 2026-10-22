@@ -3,6 +3,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAuthenticatedBrandMembership } from "../../../lib/brand-access";
 import { resolveLocale } from "../../../lib/locale";
+import { hasApprovedTestWorkspaceAccess } from "../../../lib/test-workspace-access";
 import {
   BRAND_COMPANY_SIZES,
   hasCompletedBrandProfile,
@@ -34,7 +35,7 @@ export default async function BrandOnboardingPage({
   const membership = await getAuthenticatedBrandMembership(locale);
   if (!membership || membership.organization.status === "SUSPENDED")
     redirect(`/account?lang=${locale}`);
-  if (hasCompletedBrandProfile(membership.organization.metadata))
+  if (hasCompletedBrandProfile(membership.organization.metadata) || hasApprovedTestWorkspaceAccess(membership.organization))
     redirect(`/storage/search?lang=${locale}`);
   if (membership.role !== "OWNER") redirect(`/account?lang=${locale}`);
   const metadata = membership.organization.metadata;

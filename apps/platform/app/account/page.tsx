@@ -5,6 +5,7 @@ import { getDatabase } from "@futures-medialab/database";
 import { getAuth } from "../../lib/auth";
 import { hasCompletedBrandProfile } from "../../lib/brand-profile";
 import { hasSubmittedAgencyProfile } from "../../lib/agency-profile";
+import { hasApprovedTestWorkspaceAccess } from "../../lib/test-workspace-access";
 import { resolveLocale } from "../../lib/locale";
 import { AccountPanel } from "./account-panel";
 
@@ -59,6 +60,9 @@ export default async function AccountPage({
   const brand = user.memberships.find(
     (membership) => membership.organization.type === "BRAND",
   );
+  if (brand && hasApprovedTestWorkspaceAccess(brand.organization)) {
+    redirect(`/storage/search?lang=${locale}`);
+  }
   if (
     brand?.role === "OWNER" &&
     brand.organization.status !== "SUSPENDED" &&
@@ -68,6 +72,9 @@ export default async function AccountPage({
   }
 
   const agency = !brand && user.memberships.find(({ organization }) => organization.type === "AGENCY");
+  if (agency && hasApprovedTestWorkspaceAccess(agency.organization)) {
+    redirect(`/agency?lang=${locale}`);
+  }
   if (agency && agency.role === "OWNER" && agency.organization.status !== "SUSPENDED") {
     redirect(`${hasSubmittedAgencyProfile(agency.organization.metadata) && agency.organization.status === "ACTIVE" ? "/agency" : "/onboarding/agency"}?lang=${locale}`);
   }
