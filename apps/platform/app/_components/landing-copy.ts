@@ -2,6 +2,7 @@ export type Locale = "en" | "ko" | "zh";
 
 const en = {
   nav: {
+    login: "Log in",
     solutions: "Our solutions",
     process: "How it works",
     partners: "For partners",
@@ -64,7 +65,7 @@ const en = {
       "Choose the approach that fits your brief, with the same care from planning to delivery.",
     managed: "Managed campaigns",
     marketplace: "Partner marketplace",
-    managedTitle: "Share your goals. Build the campaign together.",
+    managedTitle: "Campaigns, built for Korea.",
     managedDescription:
       "Start with your budget, audience, and timeline. We shape the brief, propose a partner lineup, and coordinate execution.",
     managedPoints: [
@@ -72,7 +73,7 @@ const en = {
       "Korean creative direction and localization",
       "Coordination from briefing to settlement",
     ],
-    marketplaceTitle: "The right opportunity for your network.",
+    marketplaceTitle: "Global games. Your creators.",
     marketplaceDescription:
       "Approved MCNs and agencies can review campaign requirements, propose their creators, and manage selected projects.",
     marketplacePoints: [
@@ -134,7 +135,7 @@ const en = {
   },
   process: {
     eyebrow: "FROM BRIEF TO DELIVERY",
-    title: "A clear next step. At every stage.",
+    title: "From brief to settlement.",
     description:
       "Keep the scope, decisions, and progress of your campaign in one connected flow.",
     steps: [
@@ -265,6 +266,7 @@ export type LandingCopy = typeof en;
 
 const ko: LandingCopy = {
   nav: {
+    login: "로그인",
     solutions: "서비스 소개",
     process: "진행 과정",
     partners: "파트너 안내",
@@ -327,7 +329,7 @@ const ko: LandingCopy = {
       "브리프에 맞는 방식을 선택하세요. 기획부터 실행까지 함께합니다.",
     managed: "직접 의뢰",
     marketplace: "파트너 마켓플레이스",
-    managedTitle: "목표를 알려주세요. 캠페인을 함께 설계합니다.",
+    managedTitle: "한국에서 통하는 게임 캠페인.",
     managedDescription:
       "예산, 타깃, 일정으로 시작하세요. 브리프를 구체화하고 파트너 라인업을 제안해 실행까지 조율합니다.",
     managedPoints: [
@@ -335,7 +337,7 @@ const ko: LandingCopy = {
       "한국형 콘텐츠 방향 설계와 로컬라이징",
       "브리프부터 정산까지 운영 조율",
     ],
-    marketplaceTitle: "우리 네트워크에 맞는 캠페인을 만나세요.",
+    marketplaceTitle: "글로벌 게임과 만나는 크리에이터.",
     marketplaceDescription:
       "승인된 MCN과 에이전시는 캠페인 조건을 확인하고, 적합한 크리에이터를 제안하며 선정된 프로젝트를 관리할 수 있습니다.",
     marketplacePoints: [
@@ -395,7 +397,7 @@ const ko: LandingCopy = {
   },
   process: {
     eyebrow: "브리프부터 캠페인 완료까지",
-    title: "모든 단계에서, 다음 할 일이 명확하게.",
+    title: "기획부터 정산까지.",
     description:
       "캠페인의 범위, 결정 사항과 진행 상황을 하나의 흐름으로 관리합니다.",
     steps: [
@@ -520,6 +522,7 @@ const ko: LandingCopy = {
 
 const zh: LandingCopy = {
   nav: {
+    login: "登录",
     solutions: "解决方案",
     process: "合作流程",
     partners: "合作伙伴",
@@ -573,7 +576,7 @@ const zh: LandingCopy = {
     description: "根据需求选择合作方式，从策划到交付获得全程协调。",
     managed: "委托执行",
     marketplace: "合作伙伴平台",
-    managedTitle: "告诉我们目标，一起规划营销活动。",
+    managedTitle: "为韩国市场打造的游戏营销。",
     managedDescription:
       "从预算、受众与时间安排出发。我们协助完善需求、推荐合作阵容并协调执行。",
     managedPoints: [
@@ -581,7 +584,7 @@ const zh: LandingCopy = {
       "韩国创意指导与本地化",
       "从需求沟通到结算的全程协调",
     ],
-    marketplaceTitle: "为您的创作者网络寻找合适的机会。",
+    marketplaceTitle: "全球游戏，本土创作者。",
     marketplaceDescription:
       "经审核的 MCN 和代理机构可查看活动要求、推荐合适的创作者，并管理已入选项目。",
     marketplacePoints: [
@@ -640,7 +643,7 @@ const zh: LandingCopy = {
   },
   process: {
     eyebrow: "从需求到交付",
-    title: "每个阶段，下一步都清晰可见。",
+    title: "从需求到结算。",
     description: "将活动范围、决策和执行进度串联在同一流程中。",
     steps: [
       { title: "需求", description: "明确游戏、受众、目标与营销活动要求。" },

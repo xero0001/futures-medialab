@@ -1,13 +1,4 @@
-import {
-  ArrowUpRight,
-  Check,
-  FileText,
-  Gamepad2,
-  LockKeyhole,
-  Play,
-  Radio,
-  ShieldCheck,
-} from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import type { LandingCopy } from "./landing-copy";
 
 export function BrandSymbol({ className = "" }: { className?: string }) {
@@ -145,109 +136,79 @@ export function ConnectionVisual({ copy }: { copy: LandingCopy["hero"] }) {
         <span>{copy.routeTo}</span>
         <ArrowUpRight size={15} />
       </div>
-      <div className="fm-connection-caption">
-        <span />
-        {copy.routeMiddle}
-        <span />
-      </div>
     </div>
   );
 }
 
-export function CampaignPreview({
-  copy,
-  active,
-}: {
-  copy: LandingCopy["paths"];
-  active: number;
-}) {
+export function CampaignArtwork() {
   return (
-    <div className={`fm-product-preview fm-product-preview-${active}`}>
-      <span className="fm-preview-caption">
-        <span />
-        {copy.preview}
-      </span>
-      <div className="fm-preview-window">
-        <div className="fm-preview-top">
-          <BrandSymbol />
-          <span>
-            futures / {active === 0 ? copy.managed : copy.marketplace}
-          </span>
-          <span className="fm-window-dots">•••</span>
-        </div>
-        {active === 0 ? (
-          <div className="fm-brief-preview">
-            <div className="fm-preview-heading">
-              <span className="fm-preview-icon">
-                <FileText size={23} />
-              </span>
-              <div>
-                <small>01</small>
-                <h3>{copy.briefLabel}</h3>
-              </div>
-            </div>
-            <dl>
-              {[
-                [copy.gameLabel, copy.gameValue],
-                [copy.marketLabel, copy.marketValue],
-                [copy.platformLabel, copy.platformValue],
-                [copy.goalLabel, copy.goalValue],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <dt>{label}</dt>
-                  <dd>{value}</dd>
-                </div>
-              ))}
-            </dl>
-            <div className="fm-private-note">
-              <LockKeyhole size={14} />
-              {copy.privateLabel}
-              <Check size={14} />
-            </div>
-          </div>
-        ) : (
-          <div className="fm-offers-preview">
-            <div className="fm-approval-note">
-              <ShieldCheck size={15} />
-              {copy.partnerLabel}
-            </div>
-            {[
-              {
-                title: copy.offerOne,
-                subtitle: copy.offerOneFormat,
-                Icon: Gamepad2,
-              },
-              {
-                title: copy.offerTwo,
-                subtitle: copy.offerTwoFormat,
-                Icon: Play,
-              },
-              {
-                title: copy.offerThree,
-                subtitle: copy.offerThreeFormat,
-                Icon: Radio,
-              },
-            ].map(({ title, subtitle, Icon }, index) => (
-              <div className="fm-mini-offer" key={title}>
-                <span className={`fm-offer-art fm-offer-art-${index}`}>
-                  <Icon size={22} />
-                </span>
-                <div>
-                  <h3>{title}</h3>
-                  <p>{subtitle}</p>
-                </div>
-                <ArrowUpRight size={17} />
-              </div>
-            ))}
-            <p className="fm-preview-bottom">
-              <Check size={14} />
-              {copy.termsLabel}
-            </p>
-          </div>
-        )}
-      </div>
-      <div className="fm-preview-paper fm-preview-paper-one" />
-      <div className="fm-preview-paper fm-preview-paper-two" />
-    </div>
+    <svg
+      className="fm-campaign-illustration"
+      viewBox="0 0 560 460"
+      fill="none"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient
+          id="campaign-surface"
+          x1="110"
+          y1="95"
+          x2="460"
+          y2="370"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#7185FF" />
+          <stop offset="1" stopColor="#3446CF" />
+        </linearGradient>
+      </defs>
+      <circle cx="280" cy="230" r="204" fill="#E9EDFF" />
+      <rect
+        x="92"
+        y="126"
+        width="368"
+        height="246"
+        rx="24"
+        transform="rotate(-9 92 126)"
+        fill="#CCD5FF"
+      />
+      <rect
+        x="92"
+        y="100"
+        width="376"
+        height="250"
+        rx="24"
+        fill="url(#campaign-surface)"
+      />
+      <circle
+        cx="280"
+        cy="225"
+        r="62"
+        stroke="white"
+        strokeOpacity=".4"
+        strokeWidth="2"
+      />
+      <path d="m264 193 48 32-48 32v-64Z" fill="white" />
+      <path
+        d="M127 320h145"
+        stroke="white"
+        strokeOpacity=".65"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M127 320h65"
+        stroke="white"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+      <circle cx="435" cy="104" r="44" fill="#192444" />
+      <path
+        d="m417 105 12 12 24-26"
+        stroke="white"
+        strokeWidth="5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

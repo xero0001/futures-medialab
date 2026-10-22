@@ -40,8 +40,19 @@ customer logos, and unconfirmed pricing are not published.
   then English. Manual language changes update both the URL and cookie.
 - The brief builder creates a downloadable text file in the browser. It does
   not submit campaign requests or store the form in a database.
-- Marketplace illustrations are examples. Partner authentication, application
-  intake, live campaigns, and settlement operations are separate backend work.
+- Five broad sections keep the page focused on the introduction, brand
+  campaigns, MCN partners, workflow, and brief creation. All retained text is
+  at least 14px; body text is 16–18px.
+- `/login` provides a localized split-layout sign-in preview with email
+  validation and a password visibility toggle. Authentication, Google OAuth,
+  and password recovery are not connected. Credentials are not sent or stored.
+- Locale resolution is shared by the landing and login pages in
+  `apps/platform/lib/locale.ts`.
+- Partner authentication, application intake, live campaigns, and settlement
+  operations remain separate backend work.
+- `/test` preserves the August 8, 2026 landing design from commit `d6bfb3e`
+  for comparison. It is marked as an archived mockup and excluded from indexing;
+  its illustrative numbers, original typography, and sample campaign UI remain.
 
 ## Requirements
 
