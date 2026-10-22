@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { ArrowLeft, ArrowUpRight, Eye, EyeOff, Globe2 } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Eye, EyeOff } from "lucide-react";
 import type { Locale } from "../_components/landing-copy";
+import { LanguageSwitcher } from "../_components/language-switcher";
 
 const copy = {
   en: {
@@ -231,18 +232,12 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
       </aside>
 
       <section className="fml-form-panel" aria-labelledby="login-title">
-        <label className="fml-language">
-          <Globe2 size={18} />
-          <select
-            aria-label={t.language}
-            value={locale}
-            onChange={(event) => changeLocale(event.target.value as Locale)}
-          >
-            <option value="en">English</option>
-            <option value="ko">한국어</option>
-            <option value="zh">中文</option>
-          </select>
-        </label>
+        <LanguageSwitcher
+          className="fml-language"
+          locale={locale}
+          label={t.language}
+          onChange={changeLocale}
+        />
 
         <div className="fml-form-wrap">
           <h1 id="login-title">{t.title}</h1>

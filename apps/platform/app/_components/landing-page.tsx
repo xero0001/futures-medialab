@@ -7,7 +7,6 @@ import {
   Check,
   ChevronDown,
   Gamepad2,
-  Globe2,
   Menu,
   ShieldCheck,
   UsersRound,
@@ -21,6 +20,7 @@ import {
   Wordmark,
 } from "./landing-visuals";
 import { BriefDialog } from "./brief-dialog";
+import { LanguageSwitcher } from "./language-switcher";
 
 export function LandingPage({ initialLocale }: { initialLocale: Locale }) {
   const [locale, setLocale] = useState<Locale>(initialLocale);
@@ -67,19 +67,11 @@ export function LandingPage({ initialLocale }: { initialLocale: Locale }) {
             ))}
           </nav>
           <div className="fm-nav-actions">
-            <label className="fm-language">
-              <Globe2 size={18} />
-              <select
-                aria-label={t.nav.language}
-                value={locale}
-                onChange={(event) => changeLocale(event.target.value as Locale)}
-              >
-                <option value="en">EN</option>
-                <option value="ko">한국어</option>
-                <option value="zh">中文</option>
-              </select>
-              <ChevronDown size={16} />
-            </label>
+            <LanguageSwitcher
+              locale={locale}
+              label={t.nav.language}
+              onChange={changeLocale}
+            />
             <a className="fm-login-link" href={loginHref}>
               {t.nav.login}
             </a>

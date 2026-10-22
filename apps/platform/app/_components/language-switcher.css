@@ -1,0 +1,106 @@
+.fm-language-switcher {
+  position: relative;
+  flex-shrink: 0;
+  color: #46516a;
+}
+
+.fm-language-switcher .fm-language-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.fm-language-switcher .fm-language-trigger:hover,
+.fm-language-switcher .fm-language-trigger[aria-expanded="true"] {
+  background: #f1f3ff;
+  color: #4355db;
+}
+
+.fm-language-trigger[aria-expanded="true"] .fm-language-chevron {
+  transform: rotate(180deg);
+}
+
+.fm-language-switcher .fm-language-menu {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 176px;
+  max-width: calc(100vw - 32px);
+  padding: 6px;
+  border: 1px solid #e0e5ef;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow:
+    0 12px 32px #17203914,
+    0 2px 8px #17203908;
+}
+
+.fm-language-switcher .fm-language-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #46516a;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fm-language-switcher .fm-language-option[aria-checked="true"] {
+  background: #eef0ff;
+  color: #3547c4;
+  font-weight: 600;
+}
+
+.fm-language-switcher .fm-language-option:hover {
+  background: #f4f5fa;
+}
+
+.fm-language-switcher .fm-language-option[aria-checked="true"]:hover {
+  background: #e5e9ff;
+}
+
+.fm-language-switcher
+  :is(.fm-language-trigger, .fm-language-option):focus-visible {
+  outline: 2px solid #8292f5;
+  outline-offset: 2px;
+}
+
+.fm-language-switcher .fm-language-option:focus-visible {
+  outline-offset: -2px;
+}
+
+@media (max-width: 767px) {
+  .fm-language-trigger .fm-language-globe {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fm-language-chevron {
+    transition: transform 150ms ease;
+  }
+}

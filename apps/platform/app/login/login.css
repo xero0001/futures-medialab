@@ -123,22 +123,10 @@
   justify-content: center;
   padding: 112px 56px 48px;
 }
-.fml-language {
+.fm-language-switcher.fml-language {
   position: absolute;
   top: 34px;
   right: 48px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #56617a;
-}
-.fml-language select {
-  padding: 10px 4px;
-  border: 0;
-  background: transparent;
-  color: var(--fml-ink);
-  cursor: pointer;
-  font-size: 14px;
 }
 .fml-form-wrap {
   width: 100%;
@@ -321,7 +309,7 @@
   .fml-form-panel {
     padding-inline: 36px;
   }
-  .fml-language {
+  .fm-language-switcher.fml-language {
     right: 32px;
   }
   .fml-brand-content h2 {
@@ -360,17 +348,9 @@
     position: static;
     padding: 40px 24px 48px;
   }
-  .fml-language {
+  .fm-language-switcher.fml-language {
     top: 26px;
     right: 24px;
-    gap: 4px;
-  }
-  .fml-language > svg {
-    display: none;
-  }
-  .fml-language select {
-    font-size: 14px;
-    max-width: 100px;
   }
   .fml-form-wrap h1 {
     font-size: 32px;
