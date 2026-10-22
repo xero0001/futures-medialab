@@ -18,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import type { Locale } from "../_components/landing-copy";
-import { BrandSymbol } from "../_components/landing-visuals";
+import { BrandSymbol } from "../_components/brand-logo";
 import { LanguageSwitcher } from "../_components/language-switcher";
 import { landingCopy } from "./copy";
 
@@ -431,7 +431,7 @@ export function LandingExperience({
           <p>{copy.footer.tagline}</p>
         </div>
         <nav aria-label={copy.footer.home}>
-          <Link href={`/?lang=${locale}`}>{copy.footer.home}</Link>
+          <Link href={`/test?lang=${locale}`}>{copy.footer.home}</Link>
           <Link href={loginUrl}>{copy.footer.login}</Link>
           <Link href={accountUrl()}>{copy.footer.register}</Link>
         </nav>

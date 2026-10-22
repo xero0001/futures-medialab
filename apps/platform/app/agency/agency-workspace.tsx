@@ -228,6 +228,9 @@ export function AgencyWorkspace({
         id="agency-navigation"
         className={`cwa-sidebar${navOpen ? " is-open" : ""}`}
       >
+        <p className="cwa-sidebar-eyebrow">
+          {t("Your workspace", "우리 팀의 작업 공간", "团队工作区")}
+        </p>
         <nav aria-label={copy.workspace}>
           {navLink("offers", LayoutGrid)}
           <div className="cwa-nav-group">
@@ -287,6 +290,7 @@ export function AgencyWorkspace({
       <main className="cwa-main">
         <div className="cwa-heading">
           <div>
+            <p>{copy.eyebrow}</p>
             <h1 ref={mainHeading} tabIndex={-1}>
               {section === "offers" ? copy.offersTitle : copy[section]}
             </h1>
@@ -294,29 +298,36 @@ export function AgencyWorkspace({
               <p className="cwa-subtitle">{copy.organizationSubtitle}</p>
             )}
           </div>
+          {!pending && (
+            <button
+              className="cwa-partner-status"
+              type="button"
+              onClick={() => navigate("organization")}
+              aria-label={`${copy.status}: ${copy.active}`}
+            >
+              <ShieldCheck size={17} aria-hidden="true" />
+              {t("Verified partner", "승인된 파트너", "已认证合作伙伴")}
+            </button>
+          )}
         </div>
-        <section
-          className={`cwa-approval-banner${pending ? " is-pending" : ""}`}
-          aria-label={copy.status}
-        >
-          <ShieldCheck size={25} aria-hidden="true" />
-          <div>
-            <strong>{pending ? copy.pendingTitle : copy.activeTitle}</strong>
-            <p>
-              {pending
-                ? t(
-                    "Approved organizations can view and apply to published campaigns.",
-                    "조직 심사 승인 후 공개된 캠페인을 확인하고 신청할 수 있습니다.",
-                    "组织审核通过后可浏览及申请已发布的活动。",
-                  )
-                : t(
-                    "View approved campaigns and submit your organization's proposal. Applications do not create contracts or initiate payments.",
-                    "승인된 캠페인을 확인하고 조직의 제안서를 제출하세요. 신청만으로 계약이나 결제가 발생하지 않습니다.",
-                    "查看已审核活动并提交组织提案。申请不会自动创建合同或付款。",
-                  )}
-            </p>
-          </div>
-        </section>
+        {pending && (
+          <section
+            className="cwa-approval-banner is-pending"
+            aria-label={copy.status}
+          >
+            <ShieldCheck size={25} aria-hidden="true" />
+            <div>
+              <strong>{copy.pendingTitle}</strong>
+              <p>
+                {t(
+                  "Approved organizations can view and apply to published campaigns.",
+                  "조직 심사 승인 후 공개된 캠페인을 확인하고 신청할 수 있습니다.",
+                  "组织审核通过后可浏览及申请已发布的活动。",
+                )}
+              </p>
+            </div>
+          </section>
+        )}
 
         {section === "offers" || section === "projects" ? (
           <AgencyMarketplace
@@ -325,6 +336,7 @@ export function AgencyWorkspace({
             status={status}
             role={role}
             onExplore={() => navigate("offers")}
+            onProjects={() => navigate("projects")}
           />
         ) : section === "organization" ? (
           <section className="cwa-organization">

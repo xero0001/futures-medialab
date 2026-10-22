@@ -216,11 +216,11 @@ const en: LandingCopy = {
   },
   footer: {
     tagline: "Global games. Local connections.",
-    home: "Main website",
+    home: "Previous design",
     login: "Log in",
     register: "Get started",
     prototype:
-      "A new look for Futures Medialab. Campaign visuals and concepts are illustrative.",
+      "Campaign visuals and concepts are illustrative, not live offers or confirmed brand collaborations.",
   },
 };
 
@@ -365,7 +365,7 @@ const ko: LandingCopy = {
     login: "로그인",
     register: "시작하기",
     prototype:
-      "퓨처스 미디어랩의 새로운 디자인. 캠페인 이미지와 내용은 이해를 돕기 위한 예시입니다.",
+      "캠페인 이미지와 내용은 이해를 돕기 위한 예시이며, 실제 모집 공고나 확정된 브랜드 협업이 아닙니다.",
   },
 };
 
@@ -508,7 +508,7 @@ const zh: LandingCopy = {
     home: "原版首页",
     login: "登录",
     register: "开始合作",
-    prototype: "Futures Medialab 的全新设计。活动图片与内容仅为示意。",
+    prototype: "活动图片与内容仅为示意，不代表真实招募或已确认的品牌合作。",
   },
 };
 

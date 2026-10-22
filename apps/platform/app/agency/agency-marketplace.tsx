@@ -10,9 +10,10 @@ import {
   type FormEvent,
 } from "react";
 import {
-  ArrowRight,
+  ArrowUpRight,
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   FileText,
   FolderOpen,
   Gamepad2,
@@ -21,6 +22,7 @@ import {
   List,
   RefreshCw,
   Search,
+  SlidersHorizontal,
   Users,
   X,
 } from "lucide-react";
@@ -31,6 +33,7 @@ import type {
 import type { Locale } from "../_components/landing-copy";
 import { ProfileSelect } from "../onboarding/brand/profile-select";
 import { agencyCopy, agencyText } from "./agency-workspace-copy";
+import "./agency-marketplace-design.css";
 
 type MarketplaceData = {
   campaigns: AgencyCampaign[];
@@ -43,6 +46,7 @@ type MarketplaceProps = {
   status: "ACTIVE" | "PENDING";
   role: "OWNER" | "ADMIN" | "MEMBER";
   onExplore: () => void;
+  onProjects: () => void;
 };
 type Mutation =
   | {
@@ -173,6 +177,7 @@ export function AgencyMarketplace({
   status,
   role,
   onExplore,
+  onProjects,
 }: MarketplaceProps) {
   const copy = agencyCopy[locale];
   const t = (en: string, ko: string, zh: string) =>
@@ -184,6 +189,7 @@ export function AgencyMarketplace({
   const [notice, setNotice] = useState<"applied" | "withdrawn" | "">("");
   const [view, setView] = useState<"board" | "list">("board");
   const [filters, setFilters] = useState(defaultFilters);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const request = useRef<AbortController | null>(null);
   const mutationInFlight = useRef(false);
@@ -333,6 +339,21 @@ export function AgencyMarketplace({
   const categories = [
     ...new Set(campaigns.flatMap((campaign) => campaign.categories)),
   ].sort();
+  const advancedFilterCount = [
+    filters.country,
+    filters.category,
+    filters.followers,
+    filters.currency,
+    filters.budget,
+    filters.start,
+    filters.end,
+  ].filter(Boolean).length;
+  const hasFilters = Boolean(
+    filters.query ||
+    filters.platform ||
+    advancedFilterCount ||
+    filters.sort !== "newest",
+  );
 
   function updateFilter(key: keyof typeof defaultFilters, value: string) {
     setFilters((current) => ({
@@ -403,31 +424,27 @@ export function AgencyMarketplace({
     );
 
   return (
-    <>
-      <div className="cwa-live-toolbar">
-        <p>
-          {section === "projects"
-            ? t(
-                "Your organization's applications are saved here, including closed campaigns.",
-                "모집이 종료된 캠페인을 포함해 우리 조직의 신청 내역을 확인합니다.",
-                "查看组织申请记录，包括已结束招募的活动。",
-              )
-            : t(
-                "Browse published campaigns and review the brief before applying.",
-                "공개된 캠페인을 살펴보고 가이드를 확인한 후 신청하세요.",
-                "浏览已发布活动，阅读详情后提交申请。",
-              )}
-        </p>
-        <button
-          className="cwa-button"
-          type="button"
-          disabled={loading || busy}
-          onClick={() => void refresh()}
-        >
-          <RefreshCw size={16} aria-hidden="true" />
-          {t("Refresh", "새로고침", "刷新")}
-        </button>
-      </div>
+    <div className={`cwa-marketplace cwa-marketplace-${section}`}>
+      {section === "projects" && (
+        <div className="cwa-live-toolbar cwa-project-intro">
+          <p>
+            {t(
+              "Your organization's applications are saved here, including closed campaigns.",
+              "모집이 종료된 캠페인을 포함해 우리 조직의 신청 내역을 확인합니다.",
+              "查看组织申请记录，包括已结束招募的活动。",
+            )}
+          </p>
+          <button
+            className="cwa-button"
+            type="button"
+            disabled={loading || busy}
+            onClick={() => void refresh()}
+          >
+            <RefreshCw size={16} aria-hidden="true" />
+            {t("Refresh", "새로고침", "刷新")}
+          </button>
+        </div>
+      )}
       {data &&
         (data.campaigns.some((campaign) => campaign.isDemo) ||
           data.applications.some((application) => application.isDemo)) && (
@@ -435,25 +452,58 @@ export function AgencyMarketplace({
             className="cwa-demo-notice"
             aria-label={t("Demo data", "데모 데이터", "演示数据")}
           >
-            <Gamepad2 size={21} aria-hidden="true" />
-            <div>
+            <Gamepad2 size={19} aria-hidden="true" />
+            <p>
               <strong>
-                {t(
-                  "A workspace you can try",
-                  "미리 체험하는 에이전시 워크스페이스",
-                  "体验代理工作区",
-                )}
+                {t("Demo workspace", "체험용 워크스페이스", "演示工作区")}
               </strong>
-              <p>
+              <span>
                 {t(
-                  "Items marked [Demo] are fictional examples for test accounts. Budgets and selection statuses are illustrative only; no advertising, contract or payment is created.",
-                  "[Demo] 캠페인과 신청 내역은 테스트 계정 전용 가상 데이터입니다. 예산과 선정 상태는 예시이며, 실제 광고·계약·정산은 발생하지 않습니다.",
-                  "标记 [Demo] 的活动和申请仅为测试账户的虚构示例。预算及录用状态仅供演示，不会产生真实广告、合同或付款。",
+                  "[Demo] items, budgets and statuses are fictional. No real advertising, contracts or payments are created.",
+                  "[Demo] 캠페인·예산·선정 상태는 가상 예시이며 실제 광고·계약·정산은 발생하지 않습니다.",
+                  "[Demo] 活动、预算及状态均为虚构示例，不会产生真实广告、合同或付款。",
                 )}
-              </p>
-            </div>
+              </span>
+            </p>
           </aside>
         )}
+      {section === "offers" && (
+        <section
+          className="cwa-discover-hero"
+          aria-labelledby="agency-discover-title"
+        >
+          <div className="cwa-discover-copy">
+            <h2 id="agency-discover-title">
+              {t(
+                "Your next collaboration",
+                "다음 협업의 시작,",
+                "下一次合作，",
+              )}
+              <span>{t("starts here.", "여기서.", "从这里开始。")}</span>
+            </h2>
+            <p>
+              {t(
+                "Discover a game your creators will love. Explore the brief, then share your proposal.",
+                "우리 크리에이터와 잘 맞는 게임을 발견하고, 새로운 이야기를 함께 만들어보세요.",
+                "发现适合创作者的游戏，携手创造全新故事。",
+              )}
+            </p>
+            <button type="button" onClick={onProjects}>
+              {t("View my applications", "나의 신청 내역", "查看我的申请")}
+              <ArrowUpRight size={18} aria-hidden="true" />
+            </button>
+          </div>
+          <div className="cwa-discover-art" aria-hidden="true">
+            <Image
+              src="/campaign-art/subculture.webp"
+              alt=""
+              fill
+              loading="eager"
+              sizes="(max-width: 700px) 100vw, 40vw"
+            />
+          </div>
+        </section>
+      )}
       {notice && (
         <p className="cwa-success" role="status">
           <CheckCircle2 size={18} aria-hidden="true" />
@@ -517,21 +567,60 @@ export function AgencyMarketplace({
                 />
               </label>
               <button
-                className="cwa-button"
+                className={`cwa-button cwa-filter-toggle${advancedOpen ? " is-open" : ""}`}
                 type="button"
-                onClick={() => setFilters(defaultFilters)}
+                aria-expanded={advancedOpen}
+                aria-controls="agency-advanced-filters"
+                onClick={() => setAdvancedOpen((current) => !current)}
               >
-                {copy.reset}
+                <SlidersHorizontal size={18} aria-hidden="true" />
+                {t("Filters", "상세 필터", "筛选")}
+                {advancedFilterCount > 0 && (
+                  <span className="cwa-filter-count">
+                    {advancedFilterCount}
+                  </span>
+                )}
+                <ChevronDown size={16} aria-hidden="true" />
               </button>
+              {hasFilters && (
+                <button
+                  className="cwa-filter-reset"
+                  type="button"
+                  onClick={() => setFilters(defaultFilters)}
+                >
+                  {copy.reset}
+                </button>
+              )}
             </div>
-            <div className="cwa-filter-grid cwa-live-filters">
-              {select("platform", copy.platform, [
-                { value: "", label: copy.allPlatforms },
-                ...Object.entries(platformLabels).map(([value, label]) => ({
-                  value,
-                  label,
-                })),
-              ])}
+            <div
+              className="cwa-platform-pills"
+              role="group"
+              aria-label={copy.platform}
+            >
+              <button
+                type="button"
+                aria-pressed={!filters.platform}
+                onClick={() => updateFilter("platform", "")}
+              >
+                <LayoutGrid size={17} aria-hidden="true" />
+                {t("All platforms", "전체 플랫폼", "所有平台")}
+              </button>
+              {Object.entries(platformLabels).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={filters.platform === value}
+                  onClick={() => updateFilter("platform", value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div
+              id="agency-advanced-filters"
+              className="cwa-filter-grid cwa-live-filters"
+              hidden={!advancedOpen}
+            >
               {select("country", copy.country, [
                 { value: "", label: copy.allCountries },
                 ...countries.map((value) => ({
@@ -617,11 +706,37 @@ export function AgencyMarketplace({
             )}
           </section>
           <div className="cwa-results-toolbar">
-            <p>
-              <strong>{offers.length}</strong>{" "}
-              {t("campaigns", "개 캠페인", "个活动")}
-            </p>
-            <div>
+            <div className="cwa-results-title">
+              <h2>
+                {t(
+                  "Find your next campaign",
+                  "지금 만나는 캠페인",
+                  "发现下一场活动",
+                )}
+              </h2>
+              <span aria-live="polite" aria-atomic="true">
+                {t(
+                  `${offers.length} campaigns`,
+                  `${offers.length}개 캠페인`,
+                  `${offers.length} 个活动`,
+                )}
+              </span>
+            </div>
+            <div className="cwa-results-actions">
+              <button
+                className="cwa-refresh"
+                type="button"
+                disabled={loading || busy}
+                onClick={() => void refresh()}
+                aria-label={t(
+                  "Refresh campaigns",
+                  "캠페인 새로고침",
+                  "刷新活动",
+                )}
+                title={t("Refresh campaigns", "캠페인 새로고침", "刷新活动")}
+              >
+                <RefreshCw size={18} aria-hidden="true" />
+              </button>
               {select("sort", copy.sort, [
                 { value: "newest", label: copy.newest },
                 { value: "closing", label: copy.closing },
@@ -711,11 +826,13 @@ export function AgencyMarketplace({
                             ? t("Closed", "마감", "已截止")
                             : t("Recruiting", "모집 중", "招募中")}
                       </span>
-                      <span className="cwa-art-brand">
-                        {campaign.platforms
-                          .map((value) => platformLabels[value] ?? value)
-                          .join(" + ")}
-                      </span>
+                      {!campaign.artworkUrl && (
+                        <span className="cwa-art-brand">
+                          {campaign.platforms
+                            .map((value) => platformLabels[value] ?? value)
+                            .join(" + ")}
+                        </span>
+                      )}
                       {campaign.isDemo && (
                         <span className="cwa-demo-badge">DEMO</span>
                       )}
@@ -731,15 +848,19 @@ export function AgencyMarketplace({
                           {date(campaign.applicationDeadline, locale)}
                         </span>
                       </div>
-                      <h2>
+                      <h3>
                         <button
                           type="button"
                           onClick={() => setSelectedId(campaign.id)}
                         >
                           {campaign.title}
                         </button>
-                      </h2>
-                      <p className="cwa-offer-summary">{campaign.summary}</p>
+                      </h3>
+                      <p className="cwa-offer-platforms">
+                        {campaign.platforms
+                          .map((value) => platformLabels[value] ?? value)
+                          .join(" · ")}
+                      </p>
                       <div className="cwa-offer-tags">
                         <span>
                           <Users size={14} aria-hidden="true" />
@@ -771,7 +892,7 @@ export function AgencyMarketplace({
                           aria-label={`${copy.viewBrief}: ${campaign.title}`}
                           onClick={() => setSelectedId(campaign.id)}
                         >
-                          <ArrowRight size={20} aria-hidden="true" />
+                          <ArrowUpRight size={22} aria-hidden="true" />
                         </button>
                       </div>
                     </div>
@@ -859,7 +980,7 @@ export function AgencyMarketplace({
         onClose={() => setSelectedId(null)}
         onMutate={mutate}
       />
-    </>
+    </div>
   );
 }
 
@@ -882,7 +1003,10 @@ function ApplicationCard({
     <article className="cwa-application-card">
       <div className="cwa-live-toolbar">
         <div>
-          <span className="cwa-application-status">
+          <span
+            className="cwa-application-status"
+            data-status={application.status}
+          >
             {applicationLabel(application.status, locale)}
           </span>
           {application.isDemo && (

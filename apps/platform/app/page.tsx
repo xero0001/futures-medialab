@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
-import { LandingPage } from "./_components/landing-page";
+import { LandingExperience } from "./landing/landing-experience";
 import { resolveLocale } from "../lib/locale";
-import "./landing.css";
+import "./landing/landing.css";
 
 export const metadata: Metadata = {
-  title: "Futures Medialab — Global games. Local influence.",
+  title: "New worlds. New connections. | Futures Medialab",
   description:
-    "Connect your game to Korean audiences through local MCN partners, culturally relevant content, and coordinated campaign delivery.",
+    "A new connection for global games and Korean creators. Bring your next campaign to life with Futures Medialab.",
 };
 
 export default async function HomePage({
@@ -25,5 +25,5 @@ export default async function HomePage({
     cookieStore.get("fm-locale")?.value,
     requestHeaders.get("accept-language"),
   );
-  return <LandingPage initialLocale={locale} />;
+  return <LandingExperience initialLocale={locale} />;
 }
