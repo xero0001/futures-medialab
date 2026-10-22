@@ -37,7 +37,7 @@ type LandingTheme = "chzzk" | "chzzk-light" | "orange";
 const themeArtwork: Record<LandingTheme, string> = {
   chzzk: "/landing/creator-world-chzzk.webp",
   "chzzk-light": "/landing/creator-world-chzzk-neutral.webp",
-  orange: "/landing/creator-world-orange-white.webp",
+  orange: "/landing/creator-world-orange-monochrome.webp",
 };
 const themeRoutes: Record<LandingTheme, string> = {
   chzzk: "/landing-chzzk",

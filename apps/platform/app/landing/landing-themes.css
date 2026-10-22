@@ -28,36 +28,30 @@
 
 .fl-site[data-theme="orange"] {
   color-scheme: light;
-  --fl-ink: #202735;
-  --fl-muted: #606b7c;
-  --fl-blue: #c23c13;
-  --fl-line: #e3e7ed;
+  --fl-ink: #09090b;
+  --fl-muted: #525252;
+  --fl-blue: #171717;
+  --fl-line: #e6e6e6;
   --ft-canvas: #ffffff;
-  --ft-surface: #ffffff;
-  --ft-soft: #f2f4f7;
-  --ft-soft-alt: #f7f9fb;
-  --ft-hover: #e9edf3;
+  --ft-surface: #f5f5f5;
+  --ft-soft: #f5f5f5;
+  --ft-soft-alt: #fafafa;
+  --ft-hover: #ebebeb;
   --ft-hero: #ffffff;
-  --ft-accent-fill: #d13d14;
-  --ft-accent-hover: #b82e0b;
-  --ft-button-ink: #ffffff;
+  --ft-accent-fill: #ff4432;
+  --ft-accent-hover: #ff6657;
+  --ft-button-ink: #171717;
   --ft-header: #fffffff5;
-  --ft-tag: #ffffffed;
-  --ft-shadow: #20273514;
-  --ft-workflow: #f7f9fb;
-  --ft-final: #d13d14;
+  --ft-tag: #fffffff2;
+  --ft-shadow: #00000014;
+  --ft-workflow: #fafafa;
+  --ft-final: #171717;
   --ft-final-ink: #ffffff;
-  --ft-final-muted: #ffffff;
-  --ft-final-button: #ffffff;
-  --ft-final-button-ink: #b82e0b;
-  --ft-final-button-hover: #f2f4f7;
-  --ft-focus: #c23c13;
-  --ft-secondary-blue: #315bbb;
-  --ft-secondary-blue-soft: #edf3ff;
-  --ft-secondary-blue-hover: #e2edff;
-  --ft-secondary-mint: #00764f;
-  --ft-secondary-mint-soft: #e8faf2;
-  --ft-secondary-mint-hover: #dff7ea;
+  --ft-final-muted: #c7c7c7;
+  --ft-final-button: #ff4432;
+  --ft-final-button-ink: #171717;
+  --ft-final-button-hover: #ff6657;
+  --ft-focus: #171717;
 }
 
 .fl-site[data-theme="chzzk-light"] {
@@ -241,7 +235,7 @@
   background: #030b08b3;
 }
 .fl-site[data-theme="orange"] .fl-concept-dialog::backdrop {
-  background: #20273566;
+  background: #17171780;
 }
 .fl-site[data-theme="chzzk-light"] .fl-concept-dialog::backdrop {
   background: #14151780;
@@ -271,52 +265,43 @@
   outline-color: var(--ft-focus);
 }
 
-/* Orange is an action accent, balanced with white, blue and mint surfaces. */
-.fl-site[data-theme="orange"] .fl-announcement {
-  background: var(--ft-secondary-blue-soft);
-  color: var(--ft-secondary-blue) !important;
+/* Orange accents sit on a white-and-charcoal interface, never pastel panels. */
+.fl-site[data-theme="orange"] .fl-logo {
+  color: var(--ft-accent-fill) !important;
 }
 .fl-site[data-theme="orange"] .fl-status-dot {
-  background: #00c887;
-  box-shadow: 0 0 0 5px var(--ft-secondary-mint-soft);
+  background: var(--ft-accent-fill);
 }
-.fl-site[data-theme="orange"] .fl-art-tag,
-.fl-site[data-theme="orange"] .fl-card-category {
-  color: var(--ft-secondary-blue);
+.fl-site[data-theme="orange"] .fl-hero,
+.fl-site[data-theme="orange"] .fl-quick-link,
+.fl-site[data-theme="orange"] .fl-partner-card,
+.fl-site[data-theme="orange"] .fl-card-image-button,
+.fl-site[data-theme="orange"] .fl-concept-dialog,
+.fl-site[data-theme="orange"] .fl-final {
+  border-radius: 16px;
 }
-.fl-site[data-theme="orange"] .fl-quick-link:first-child,
-.fl-site[data-theme="orange"] .fl-partner-brand {
-  background: var(--ft-secondary-blue-soft);
+.fl-site[data-theme="orange"] .fl-button,
+.fl-site[data-theme="orange"] .fl-announcement,
+.fl-site[data-theme="orange"] .fl-wide-link {
+  border-radius: 10px;
 }
-.fl-site[data-theme="orange"] .fl-quick-link:nth-child(2),
-.fl-site[data-theme="orange"] .fl-partner-agency {
-  background: var(--ft-secondary-mint-soft);
+.fl-site[data-theme="orange"] .fl-filter,
+.fl-site[data-theme="orange"] .fl-desktop-nav a,
+.fl-site[data-theme="orange"] .fl-art-tag {
+  border-radius: 8px;
 }
-.fl-site[data-theme="orange"] .fl-quick-link:first-child:hover {
-  background: var(--ft-secondary-blue-hover);
-}
-.fl-site[data-theme="orange"] .fl-quick-link:nth-child(2):hover {
-  background: var(--ft-secondary-mint-hover);
+.fl-site[data-theme="orange"] .fl-art-tag {
+  transform: none;
 }
 .fl-site[data-theme="orange"] .fl-quick-icon,
-.fl-site[data-theme="orange"] .fl-partner-brand .fl-partner-icon,
-.fl-site[data-theme="orange"] .fl-steps li:first-child .fl-step-icon {
-  background: #dde8ff;
-  color: var(--ft-secondary-blue);
-}
 .fl-site[data-theme="orange"] .fl-quick-link:nth-child(2) .fl-quick-icon,
-.fl-site[data-theme="orange"] .fl-partner-agency .fl-partner-icon,
-.fl-site[data-theme="orange"] .fl-steps li:nth-child(2) .fl-step-icon {
-  background: #d3f3e3;
-  color: var(--ft-secondary-mint);
-}
-.fl-site[data-theme="orange"] .fl-partner-brand .fl-partner-label,
-.fl-site[data-theme="orange"] .fl-partner-brand .fl-text-link {
-  color: var(--ft-secondary-blue);
-}
-.fl-site[data-theme="orange"] .fl-partner-agency .fl-partner-label,
-.fl-site[data-theme="orange"] .fl-partner-agency .fl-text-link {
-  color: var(--ft-secondary-mint);
+.fl-site[data-theme="orange"] .fl-step-icon,
+.fl-site[data-theme="orange"] .fl-partner-icon,
+.fl-site[data-theme="orange"] .fl-partner-agency .fl-partner-icon {
+  border-radius: 12px;
+  background: #e7e7e7;
+  color: var(--fl-blue);
+  transform: none;
 }
 
 .fl-site[data-theme] .fl-theme-preview {
@@ -361,7 +346,8 @@
 .fl-site[data-theme] .fl-theme-swatch-original { background: #5149dc; }
 .fl-site[data-theme] .fl-theme-swatch-chzzk { background: #00d58a; }
 .fl-site[data-theme] .fl-theme-swatch-chzzk-light { background: #00ffa3; }
-.fl-site[data-theme] .fl-theme-swatch-orange { background: #e65c18; }
+.fl-site[data-theme] .fl-theme-swatch-orange { background: #ff4432; }
+.fl-site[data-theme="orange"] .fl-theme-preview a { border-radius: 8px; }
 
 /* CHZZK light keeps large surfaces neutral and reserves mint for actions. */
 .fl-site[data-theme="chzzk-light"] .fl-hero,

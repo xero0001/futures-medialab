@@ -6,9 +6,9 @@ import "../landing/landing.css";
 import "../landing/landing-themes.css";
 
 export const metadata: Metadata = {
-  title: "White & orange preview | Futures Medialab",
+  title: "Orange & monochrome preview | Futures Medialab",
   description:
-    "Explore the Futures Medialab landing page in clean white and orange, with blue and mint accents.",
+    "Explore the Futures Medialab landing page in modern white, neutral gray, charcoal, and orange.",
   robots: { index: false, follow: false },
 };
 
