@@ -23,9 +23,14 @@ import { LanguageSwitcher } from "../_components/language-switcher";
 import { landingCopy } from "./copy";
 
 const campaignPlatforms = [
-  "YouTube · TikTok",
   "YouTube · Twitch",
-  "Instagram · TikTok",
+  "YouTube · TikTok",
+  "YouTube · Instagram",
+];
+const campaignArtwork = [
+  "/campaign-art/mmorpg.webp",
+  "/campaign-art/subculture.webp",
+  "/campaign-art/survival.webp",
 ];
 const stepIcons = [FileText, Users, Check];
 
@@ -282,12 +287,12 @@ export function LandingExperience({
                     onClick={() => openConcept(index)}
                     aria-label={`${copy.discovery.cardAction}: ${campaign.title}`}
                   >
-                    <div className={`fl-card-art fl-card-art-${index}`}>
+                    <div className="fl-card-art">
                       <Image
-                        src="/landing/campaign-worlds.webp"
+                        src={campaignArtwork[index]}
                         alt=""
                         fill
-                        sizes="(max-width: 700px) 300vw, 1200px"
+                        sizes="(max-width: 700px) 100vw, (max-width: 1280px) 33vw, 384px"
                       />
                     </div>
                     <span className="fl-card-badge">

@@ -449,15 +449,7 @@
 }
 .fl-card-art img {
   object-fit: cover;
-  width: 300% !important;
-  max-width: none !important;
-  left: 0 !important;
-}
-.fl-card-art-1 img {
-  left: -100% !important;
-}
-.fl-card-art-2 img {
-  left: -200% !important;
+  object-position: center;
 }
 .fl-card-image-button:hover .fl-card-art {
   transform: scale(1.04);

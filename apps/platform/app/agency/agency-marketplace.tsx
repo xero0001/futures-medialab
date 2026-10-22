@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   useCallback,
   useEffect,
@@ -671,16 +672,35 @@ export function AgencyMarketplace({
                   <article className="cwa-offer" key={campaign.id}>
                     <button
                       type="button"
-                      className={`cwa-offer-art cwa-theme-${themes[index % themes.length]}`}
+                      className={`cwa-offer-art cwa-theme-${themes[index % themes.length]}${campaign.artworkUrl ? " has-artwork" : ""}`}
                       onClick={() => setSelectedId(campaign.id)}
                       aria-label={`${copy.viewBrief}: ${campaign.title}`}
                     >
-                      <span className="cwa-art-orbit" />
-                      <Gamepad2
-                        className="cwa-art-icon"
-                        size={104}
-                        aria-hidden="true"
-                      />
+                      {campaign.artworkUrl ? (
+                        <>
+                          <Image
+                            className="cwa-art-image"
+                            src={campaign.artworkUrl}
+                            alt=""
+                            fill
+                            sizes={
+                              view === "list"
+                                ? "(max-width: 620px) 100vw, 220px"
+                                : "(max-width: 700px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            }
+                          />
+                          <span className="cwa-art-shade" aria-hidden="true" />
+                        </>
+                      ) : (
+                        <>
+                          <span className="cwa-art-orbit" />
+                          <Gamepad2
+                            className="cwa-art-icon"
+                            size={104}
+                            aria-hidden="true"
+                          />
+                        </>
+                      )}
                       <span className="cwa-card-badge">
                         {campaign.application
                           ? applicationLabel(
@@ -1061,6 +1081,16 @@ function CampaignDrawer({
             </button>
           </div>
           <div className="cwa-drawer-content">
+            {campaign.artworkUrl && (
+              <div className="cwa-detail-art">
+                <Image
+                  src={campaign.artworkUrl}
+                  alt=""
+                  fill
+                  sizes="(max-width: 620px) 100vw, 600px"
+                />
+              </div>
+            )}
             <h2 id="agency-offer-title">{campaign.title}</h2>
             {campaign.isDemo && (
               <p className="cwa-demo-notice">

@@ -6,6 +6,7 @@ import { hasApprovedTestWorkspaceAccess } from "./test-workspace-access";
 import {
   canAccessCampaign,
   DEMO_CAMPAIGN_BRAND_ID,
+  getDemoCampaignArtwork,
   isDemoCampaign,
 } from "./campaign-demo";
 import {
@@ -191,6 +192,11 @@ export async function agencyCampaigns(request: Request) {
             .map(({ requirements, brandOrganizationId, ...campaign }) => ({
               ...campaign,
               isDemo: isDemoCampaign({ requirements, brandOrganizationId }),
+              artworkUrl: getDemoCampaignArtwork({
+                id: campaign.id,
+                requirements,
+                brandOrganizationId,
+              }),
               budgetAmount: campaign.budgetAmount?.toFixed(2) ?? null,
               applicationDeadline:
                 campaign.applicationDeadline?.toISOString() ?? null,

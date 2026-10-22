@@ -135,24 +135,24 @@ const en: LandingCopy = {
   sampleCampaigns: [
     {
       id: "moonlit-odyssey",
-      title: "Moonlit Odyssey",
-      category: "Fantasy RPG",
+      title: "Crown of Ashes",
+      category: "MMORPG",
       description:
-        "A first look at a world made for adventure. Imagine a story-led creator launch.",
+        "Rally a guild and claim the battlefield. Bring epic sieges and rivalries to life through creator-led play.",
     },
     {
       id: "aurora-arena",
-      title: "Aurora Arena",
-      category: "Competitive gaming",
+      title: "Asteria Protocol",
+      category: "Anime RPG",
       description:
-        "Bring a little friendly rivalry to the feed with team play and live reactions.",
+        "Meet your next favorite character. Share first impressions, story reactions, and team-building ideas.",
     },
     {
       id: "pocket-planet",
-      title: "Pocket Planet",
-      category: "Cozy gaming",
+      title: "Frost Frontier",
+      category: "Survival strategy",
       description:
-        "Small discoveries, lovely little moments. A cozy game that invites a personal touch.",
+        "Build a haven in a frozen world. Turn survival decisions and base-building challenges into stories worth watching.",
     },
   ],
   workflow: {
@@ -280,24 +280,24 @@ const ko: LandingCopy = {
   sampleCampaigns: [
     {
       id: "moonlit-odyssey",
-      title: "문릿 오디세이",
-      category: "판타지 RPG",
+      title: "잿빛 왕관",
+      category: "MMORPG",
       description:
-        "모험으로 가득한 세계와의 첫 만남. 이야기를 담은 크리에이터 캠페인을 상상해보세요.",
+        "길드와 함께 전장을 누비는 순간. 크리에이터의 플레이로 공성전과 라이벌의 이야기를 전해요.",
     },
     {
       id: "aurora-arena",
-      title: "오로라 아레나",
-      category: "경쟁형 게임",
+      title: "아스테리아 프로토콜",
+      category: "서브컬처 RPG",
       description:
-        "함께 뛰고, 함께 환호하는 순간. 팀 플레이와 실시간 반응으로 게임의 재미를 전해요.",
+        "새로운 최애와의 첫 만남. 캐릭터 소개부터 스토리 리액션, 나만의 팀 조합까지 함께 나눠요.",
     },
     {
       id: "pocket-planet",
-      title: "포켓 플래닛",
-      category: "힐링 게임",
+      title: "프로스트 프런티어",
+      category: "생존 전략",
       description:
-        "작은 발견이 쌓이는 나만의 세상. 크리에이터의 취향으로 채우는 포근한 게임 이야기.",
+        "얼어붙은 세계에 세우는 우리만의 기지. 생존을 위한 선택과 건설 과정을 흥미로운 콘텐츠로 담아요.",
     },
   ],
   workflow: {
@@ -424,23 +424,24 @@ const zh: LandingCopy = {
   sampleCampaigns: [
     {
       id: "moonlit-odyssey",
-      title: "月夜奇旅",
-      category: "奇幻角色扮演",
+      title: "灰烬王冠",
+      category: "MMORPG",
       description:
-        "初见一个充满冒险的世界。用创作者的故事，为游戏开启精彩序章。",
+        "集结公会，驰骋战场。通过创作者的实战体验，分享攻城对决与宿敌交锋的精彩时刻。",
     },
     {
       id: "aurora-arena",
-      title: "极光竞技场",
-      category: "竞技游戏",
-      description: "从组队挑战到实时反应，让玩家在欢呼与较量中感受游戏乐趣。",
+      title: "星辉协议",
+      category: "二次元 RPG",
+      description:
+        "遇见下一个心动角色。从角色初印象、剧情反应到阵容搭配，用创作者的视角分享游戏魅力。",
     },
     {
       id: "pocket-planet",
-      title: "口袋星球",
-      category: "治愈系游戏",
+      title: "冰霜边境",
+      category: "生存策略",
       description:
-        "小小的发现，暖暖的日常。用创作者的独特视角，分享一颗属于自己的星球。",
+        "在冰封世界建起一座避风港。把生存抉择与基地建设的挑战，变成值得追看的故事。",
     },
   ],
   workflow: {

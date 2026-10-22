@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   canAccessCampaign,
   DEMO_CAMPAIGN_BRAND_ID,
+  getDemoCampaignArtwork,
   isDemoCampaign,
 } from "../lib/campaign-demo.ts";
 import { hasApprovedTestWorkspaceAccess } from "../lib/test-workspace-access.ts";
@@ -84,5 +85,50 @@ test("seed content is fictional, varied, dated in the future and contains no set
     assert.equal("password" in campaign, false);
     if (campaign.application)
       assert.match(campaign.application.proposal, /^\[Demo proposal\]/);
+  }
+});
+
+test("genre artwork comes only from an allowlist for known demo fixtures", () => {
+  const expected = {
+    "starlight-odyssey": "subculture",
+    "frost-haven": "survival",
+    "neon-rally": "subculture",
+    "cloud-garden": "subculture",
+    "pixel-quest": "subculture",
+    "arcane-tactics": "mmorpg",
+    "moonlight-cafe": "subculture",
+    "aether-arena": "mmorpg",
+  };
+  for (const [key, genre] of Object.entries(expected)) {
+    const campaign = {
+      id: `fm-demo-campaign-${key}`,
+      requirements: { demo: true },
+    };
+    assert.equal(
+      getDemoCampaignArtwork(campaign),
+      `/campaign-art/${genre}.webp`,
+    );
+    assert.equal(
+      getDemoCampaignArtwork({ ...campaign, requirements: {} }),
+      null,
+    );
+  }
+  for (const id of [
+    "__proto__",
+    "constructor",
+    "unknown",
+    "https://example.com/image.webp",
+    "/campaign-art/../../secret",
+  ]) {
+    assert.equal(
+      getDemoCampaignArtwork({
+        id,
+        requirements: {
+          demo: true,
+          coverImageUrl: "https://example.com/image.webp",
+        },
+      }),
+      null,
+    );
   }
 });

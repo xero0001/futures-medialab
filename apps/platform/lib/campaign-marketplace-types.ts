@@ -27,6 +27,7 @@ export type AgencyCampaign = {
   publishedAt: string | null;
   status: string;
   isDemo: boolean;
+  artworkUrl: string | null;
   application: AgencyApplication | null;
 };
 
