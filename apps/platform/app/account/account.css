@@ -1,0 +1,106 @@
+.fma-page .fma-wrap {
+  width: 100%;
+  max-width: 480px;
+  min-width: 0;
+}
+
+.fma-page h1 {
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+}
+
+.fma-page .fma-subtitle {
+  margin-top: 14px;
+  color: var(--fml-muted);
+}
+
+.fma-page .fma-details {
+  display: grid;
+  gap: 20px;
+  margin: 28px 0;
+}
+
+.fma-page .fma-details > div {
+  display: grid;
+  gap: 6px;
+}
+
+.fma-page .fma-details dt,
+.fma-page .fma-label {
+  color: var(--fml-muted);
+  font-size: 14px;
+}
+
+.fma-page .fma-details dd {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.fma-page .fma-organization {
+  padding-block: 28px;
+  border-top: 1px solid #e4e7ef;
+}
+
+.fma-page .fma-organization h2 {
+  margin-top: 8px;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.fma-page .fma-badge {
+  display: inline-flex;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #f1f3ff;
+  color: #3547c4;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.fma-page .fma-badge[data-status="ACTIVE"] {
+  background: #eaf6f0;
+  color: #236347;
+}
+
+.fma-page .fma-badge[data-status="SUSPENDED"] {
+  background: #fff0f2;
+  color: #a12d3e;
+}
+
+.fma-page .fma-notice {
+  color: var(--fml-muted);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.fma-page .fma-logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  margin-top: 20px;
+  padding: 12px 20px;
+  border: 1px solid #d9dfea;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--fml-blue);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.fma-page .fma-logout:hover {
+  background: #f1f3ff;
+}
+
+@media (max-width: 767px) {
+  .fma-page h1 {
+    font-size: 32px;
+  }
+}

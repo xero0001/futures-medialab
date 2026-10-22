@@ -291,6 +291,23 @@
   display: none;
 }
 
+.fml-login-form {
+  margin-top: 32px;
+}
+
+.fml-page .fml-error-status {
+  color: #b32d40;
+}
+
+.fml-page button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.fml-page input:disabled {
+  opacity: 0.65;
+}
+
 @media (min-width: 1500px) {
   .fml-brand-panel {
     padding: 48px 72px;

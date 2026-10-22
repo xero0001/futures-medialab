@@ -41,6 +41,15 @@ export function getDatabasePoolOptions(databaseUrl = process.env.DATABASE_URL) {
     );
   const schema = url.searchParams.get("schema") || "public";
 
+  // Keep certificate verification explicit for Marketplace Neon URLs, including
+  // when pg changes the meaning of sslmode=require in a future release.
+  if (
+    url.hostname.endsWith(".neon.tech") &&
+    url.searchParams.get("sslmode") === "require"
+  ) {
+    url.searchParams.set("sslmode", "verify-full");
+  }
+
   for (const key of [
     "connection_limit",
     "pool_timeout",

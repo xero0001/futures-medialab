@@ -43,13 +43,28 @@ customer logos, and unconfirmed pricing are not published.
 - Five broad sections keep the page focused on the introduction, brand
   campaigns, MCN partners, workflow, and brief creation. All retained text is
   at least 14px; body text is 16–18px.
-- `/login` provides a localized split-layout sign-in preview with email
-  validation and a password visibility toggle. Authentication, Google OAuth,
-  and password recovery are not connected. Credentials are not sent or stored.
-- Locale resolution is shared by the landing and login pages in
+- `/login` authenticates email/password accounts through Better Auth and the
+  project's Neon PostgreSQL database. Passwords are hashed, not stored as text.
+- `/register` offers only Agency / Studio and Brand registration paths.
+  `/register/agency` collects organization type; `/register/brand` collects
+  company size. Both provide localized form validation, password confirmation,
+  and a review before submission. Creator registration routes return 404;
+  the API also rejects creator registrations. User, credential account,
+  pending organization and owner membership are created in one transaction.
+- `/account` validates the database session on the server and displays the
+  user's organization and approval status. Logout revokes the database session.
+  Registration is not organization approval or permission to access campaigns.
+- Brands complete `/onboarding/brand` after signup: company information,
+  industry, country/region, company size, contact person, optional phone, and
+  first-visit marketing interests. The form uses custom selection controls.
+  Completion is saved to the owned organization but does not approve it;
+  both the organization and email remain pending/unverified respectively.
+- Locale resolution is shared by the landing, login, and registration pages in
   `apps/platform/lib/locale.ts`.
-- Partner authentication, application intake, live campaigns, and settlement
-  operations remain separate backend work.
+- Campaign intake, live campaigns, approval operations and settlement remain
+  separate backend work. Google OAuth, email verification and password recovery
+  are not enabled. Confirmed legal/privacy policies, verification emails and
+  account recovery must be prepared before a broad public launch.
 - `/test` preserves the August 8, 2026 landing design from commit `d6bfb3e`
   for comparison. It is marked as an archived mockup and excluded from indexing;
   its illustrative numbers, original typography, and sample campaign UI remain.
@@ -62,8 +77,9 @@ customer logos, and unconfirmed pricing are not published.
 ## Getting started
 
 ```bash
-cp .env.example .env.local
 pnpm install
+vercel project inspect --scope flamingcc --non-interactive
+vercel env pull apps/platform/.env.local --environment=development --scope flamingcc
 pnpm db:generate
 pnpm dev
 ```
@@ -71,6 +87,70 @@ pnpm dev
 For Vercel, connect a Marketplace Postgres resource to the project. Runtime
 queries use `DATABASE_URL`; Prisma migrations prefer `DIRECT_URL` or
 `DATABASE_URL_UNPOOLED` when the provider exposes one.
+
+The linked project is `flamingcc/futures-medialab` (`apps/platform` as root).
+Neon resource: `futures-medialab-db` (free plan, Singapore). Production uses
+`BETTER_AUTH_URL=https://futures-medialab.vercel.app` and a separate auth secret
+from development. Secrets and pulled environment files must never be committed.
+Preview has no production database credentials; connect an isolated database
+before testing authenticated preview deployments.
+
+For a different local database, copy `.env.example` to
+`apps/platform/.env.local`, replace the example PostgreSQL URLs and generate a
+random `BETTER_AUTH_SECRET` (32+ characters). Use the same origin for the dev
+server and `BETTER_AUTH_URL`; for port 3002, override it in the shell:
+
+```bash
+BETTER_AUTH_URL=http://localhost:3002 pnpm --filter @futures-medialab/platform exec next dev --port 3002
+```
+
+### Database migrations
+
+Run additive migrations explicitly before deploying auth changes. Prisma CLI
+does not automatically load the app's `.env.local`:
+
+```bash
+DOTENV_CONFIG_PATH=../../apps/platform/.env.local pnpm --filter @futures-medialab/database db:migrate:deploy
+```
+
+Check which database the environment targets before any migration. Do not use
+`prisma migrate reset` or `db push --accept-data-loss` against a shared database.
+The initial Marketplace connection shares the resource between Production and
+Development; use a separate Neon branch for ongoing development. Test scripts
+must delete only the exact disposable records they created.
+
+### Authentication boundary
+
+- `/api/auth/sign-up/organization`: server validation, same-origin protection,
+  a transaction, and database-backed rate limiting.
+- Built-in email-only signup is disabled, so organization registration cannot
+  be bypassed. Clients cannot choose organization approval or membership roles.
+- Better Auth handles password hashing, session cookies and session revocation.
+  Sensitive auth cookies are HttpOnly, SameSite and Secure on production HTTPS.
+- `PENDING` organizations can sign in and view account status, but are not
+  approved partners. Future campaign APIs must enforce active membership and
+  organization approval server-side, not just hide UI.
+- Email ownership is not verified yet (`emailVerified=false`); do not use an
+  unverified email domain to grant privileges or organization ownership.
+- `/api/account/brand-profile` requires a same-origin request and a real
+  authenticated brand-owner membership. Organization IDs, approval status and
+  membership privileges are never accepted from the profile form.
+
+### Authentication smoke test
+
+With the dev server running on port 3002 against the same database:
+
+```bash
+BETTER_AUTH_URL=http://localhost:3002 pnpm --filter @futures-medialab/platform test:auth --base-url http://localhost:3002
+```
+
+The suite checks all partner roles, password hashing, duplicate and invalid
+registrations, CSRF, sessions, logout/revocation, and database-backed rate
+limits. It creates uniquely named `Auth QA` fixtures and deletes only their
+exact IDs in `finally`. It waits for real rate-limit cooldowns instead of
+bypassing them; do not run concurrent auth tests from the same client. Remote
+tests require explicit `--allow-remote`, a matching `BETTER_AUTH_URL`, and the
+same database environment as that deployment.
 
 The platform runs on `http://localhost:3000` and the admin app runs on
 `http://localhost:3001`.
