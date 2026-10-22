@@ -7,6 +7,10 @@ import { getAuth } from "./auth";
 import { hasCompletedBrandProfile } from "./brand-profile";
 import { hasApprovedTestWorkspaceAccess } from "./test-workspace-access";
 import {
+  campaignMutationSchema,
+  canSubmitCampaign,
+} from "./campaign-validation";
+import {
   DEMO_BRANDS,
   filterCreators,
   findSimilarCreators,
@@ -104,10 +108,10 @@ export class WorkspaceError extends Error {
     super(message);
   }
 }
-function fail(status: number, code: string, message: string): never {
+export function fail(status: number, code: string, message: string): never {
   throw new WorkspaceError(status, code, message);
 }
-function json(value: unknown, status = 200) {
+export function json(value: unknown, status = 200) {
   return Response.json(value, { status, headers: workspaceHeaders });
 }
 export async function workspaceBoundary(work: () => Promise<Response>) {
@@ -155,7 +159,7 @@ function applicationOrigin() {
     throw new Error("An explicit application origin is required.");
   return new URL(base).origin;
 }
-function verifyOrigin(request: Request) {
+export function verifyOrigin(request: Request) {
   const site = request.headers.get("sec-fetch-site");
   if (
     request.headers.get("origin") !== applicationOrigin() ||
@@ -165,7 +169,10 @@ function verifyOrigin(request: Request) {
   }
 }
 
-async function readBody<T>(request: Request, schema: z.ZodType<T>): Promise<T> {
+export async function readBody<T>(
+  request: Request,
+  schema: z.ZodType<T>,
+): Promise<T> {
   if (
     request.headers.get("content-type")?.split(";", 1)[0]?.trim() !==
     "application/json"
@@ -208,7 +215,7 @@ async function sessionUser(request: Request) {
   return session.user.id;
 }
 
-async function membership(database: Database, userId: string) {
+export async function membership(database: Database, userId: string) {
   const member = await database.organizationMember.findFirst({
     where: { userId, organization: { type: "BRAND" } },
     orderBy: [{ createdAt: "asc" }, { organizationId: "asc" }],
@@ -229,12 +236,15 @@ async function membership(database: Database, userId: string) {
   });
   if (!member || member.organization.status === "SUSPENDED")
     fail(403, "FORBIDDEN", "This workspace is not available for your account.");
-  if (!hasCompletedBrandProfile(member.organization.metadata) && !hasApprovedTestWorkspaceAccess(member.organization))
+  if (
+    !hasCompletedBrandProfile(member.organization.metadata) &&
+    !hasApprovedTestWorkspaceAccess(member.organization)
+  )
     fail(403, "PROFILE_REQUIRED", "Complete your company profile first.");
   return member;
 }
 type Member = Awaited<ReturnType<typeof membership>>;
-function requireManager(member: Member, ownerOnly = false) {
+export function requireManager(member: Member, ownerOnly = false) {
   if (ownerOnly ? member.role !== "OWNER" : member.role === "MEMBER") {
     fail(
       403,
@@ -270,7 +280,7 @@ function accountDto(member: Member): WorkspaceAccount {
 }
 
 // A single atomic, database-backed counter works across serverless instances.
-async function rateLimit(userId: string, bucket: string, limit: number) {
+export async function rateLimit(userId: string, bucket: string, limit: number) {
   const key = `workspace:${bucket}:${userId}`,
     now = BigInt(Date.now()),
     cutoff = now - 60_000n;
@@ -372,6 +382,13 @@ export async function bootstrapWorkspace(request: Request) {
                 budgetAmount: true,
                 status: true,
                 createdAt: true,
+                applicationDeadline: true,
+                regions: true,
+                categories: true,
+                followerMin: true,
+                followerMax: true,
+                requirements: true,
+                _count: { select: { applications: true } },
               },
             }),
             tx.workspaceToolRequest.findMany({
@@ -410,10 +427,17 @@ export async function bootstrapWorkspace(request: Request) {
             ...link,
             createdAt: link.createdAt.toISOString(),
           })),
-          campaigns: campaigns.map((campaign) => ({
+          campaigns: campaigns.map(({ requirements, _count, ...campaign }) => ({
             ...campaign,
             budgetAmount: campaign.budgetAmount?.toFixed(2) ?? null,
             createdAt: campaign.createdAt.toISOString(),
+            applicationDeadline:
+              campaign.applicationDeadline?.toISOString() ?? null,
+            reviewNote:
+              textField(
+                metadataRecord(metadataRecord(requirements).adminReview).reason,
+              ) || null,
+            applicationCount: _count.applications,
           })),
           requests: requests.map(({ inputJson, ...entry }) => ({
             ...entry,
@@ -450,13 +474,26 @@ async function mutate<T>(
 ) {
   return workspaceBoundary(async () => {
     verifyOrigin(request);
-    const userId = await sessionUser(request);
+    const session = await getAuth().api.getSession({
+      headers: request.headers,
+    });
+    if (!session) fail(401, "UNAUTHORIZED", "Log in to continue.");
+    const userId = session.user.id;
     await membership(getDatabase(), userId);
     await rateLimit(userId, "write", 60);
     if (search) await rateLimit(userId, "search", 30);
     const input = await readBody(request, schema);
     const result = await getDatabase().$transaction(
       async (tx) => {
+        const liveSession = await tx.session.findFirst({
+          where: {
+            id: session.session.id,
+            userId,
+            expiresAt: { gt: new Date() },
+          },
+          select: { id: true },
+        });
+        if (!liveSession) fail(401, "UNAUTHORIZED", "Log in to continue.");
         const member = await membership(tx, userId);
         return action(tx, member, userId, input);
       },
@@ -704,77 +741,124 @@ export async function linksWorkspace(request: Request) {
   });
 }
 
-const campaignsSchema = z.discriminatedUnion("action", [
-  z.strictObject({
-    action: z.literal("create"),
-    title: z.string().trim().min(1).max(160),
-    summary: z.string().trim().max(8000),
-    platforms: z
-      .array(platformSchema)
-      .min(1)
-      .max(6)
-      .refine((values) => new Set(values).size === values.length),
-    currency: z.enum(["USD", "KRW", "CNY"]),
-    budgetAmount: z.string().regex(/^(?:0|[1-9]\d{0,15})(?:\.\d{1,2})?$/),
-    deadline: z.iso.datetime({ offset: true }).optional(),
-  }),
-  z.strictObject({ action: z.enum(["submit", "cancel"]), id: idSchema }),
-]);
 export async function campaignsWorkspace(request: Request) {
-  return mutate(request, campaignsSchema, async (tx, member, userId, input) => {
-    requireManager(member);
-    const organizationId = member.organizationId;
-    if (input.action === "create") {
-      if (
-        (await tx.campaign.count({
-          where: { brandOrganizationId: organizationId },
-        })) >= 100
-      )
-        fail(
-          409,
-          "LIMIT_REACHED",
-          "This workspace can contain up to 100 campaigns.",
-        );
-      await tx.campaign.create({
-        data: {
-          brandOrganizationId: organizationId,
-          createdById: userId,
+  return mutate(
+    request,
+    campaignMutationSchema,
+    async (tx, member, userId, input) => {
+      requireManager(member);
+      const organizationId = member.organizationId;
+      if (input.action === "create" || input.action === "update") {
+        const values = {
           title: input.title,
           summary: input.summary,
           platforms: input.platforms,
+          regions: input.regions,
+          categories: input.categories,
+          followerMin: input.followerMin ?? null,
+          followerMax: input.followerMax ?? null,
           currency: input.currency,
           budgetAmount: input.budgetAmount,
           applicationDeadline: input.deadline ? new Date(input.deadline) : null,
-          status: "DRAFT",
+        };
+        if (input.action === "update") {
+          const result = await tx.campaign.updateMany({
+            where: {
+              id: input.id,
+              brandOrganizationId: organizationId,
+              status: "DRAFT",
+            },
+            data: values,
+          });
+          if (!result.count)
+            fail(409, "INVALID_STATE", "Only your own drafts can be edited.");
+          await tx.auditLog.create({
+            data: {
+              actorId: userId,
+              action: "campaign.updated",
+              entityType: "Campaign",
+              entityId: input.id,
+            },
+          });
+          return { success: true, id: input.id };
+        }
+        if (
+          (await tx.campaign.count({
+            where: { brandOrganizationId: organizationId },
+          })) >= 100
+        )
+          fail(
+            409,
+            "LIMIT_REACHED",
+            "This workspace can contain up to 100 campaigns.",
+          );
+        const campaign = await tx.campaign.create({
+          data: {
+            brandOrganizationId: organizationId,
+            createdById: userId,
+            ...values,
+            status: "DRAFT",
+          },
+        });
+        await tx.auditLog.create({
+          data: {
+            actorId: userId,
+            action: "campaign.created",
+            entityType: "Campaign",
+            entityId: campaign.id,
+          },
+        });
+        return { success: true, id: campaign.id };
+      }
+      if (input.action === "submit" && member.organization.status !== "ACTIVE")
+        fail(
+          403,
+          "APPROVAL_REQUIRED",
+          "Your organization must be approved before submitting campaigns.",
+        );
+      if (input.action === "submit") {
+        const campaign = await tx.campaign.findFirst({
+          where: {
+            id: input.id,
+            brandOrganizationId: organizationId,
+            status: "DRAFT",
+          },
+        });
+        if (!campaign || !canSubmitCampaign(campaign))
+          fail(
+            400,
+            "INVALID_CAMPAIGN",
+            "Add a brief, positive budget and a future application deadline before submitting.",
+          );
+      }
+      const result = await tx.campaign.updateMany({
+        where: {
+          id: input.id,
+          brandOrganizationId: organizationId,
+          status:
+            input.action === "submit" ? "DRAFT" : { in: ["DRAFT", "REVIEW"] },
+          ...(input.action === "submit"
+            ? { brandOrganization: { status: "ACTIVE" } }
+            : {}),
+        },
+        data: { status: input.action === "submit" ? "REVIEW" : "CANCELED" },
+      });
+      if (!result.count)
+        fail(
+          409,
+          "INVALID_STATE",
+          "This campaign is unavailable or cannot be changed in its current state.",
+        );
+      await tx.auditLog.create({
+        data: {
+          actorId: userId,
+          action: `campaign.${input.action}`,
+          entityType: "Campaign",
+          entityId: input.id,
         },
       });
-      return;
-    }
-    if (input.action === "submit" && member.organization.status !== "ACTIVE")
-      fail(
-        403,
-        "APPROVAL_REQUIRED",
-        "Your organization must be approved before submitting campaigns.",
-      );
-    const result = await tx.campaign.updateMany({
-      where: {
-        id: input.id,
-        brandOrganizationId: organizationId,
-        status:
-          input.action === "submit" ? "DRAFT" : { in: ["DRAFT", "REVIEW"] },
-        ...(input.action === "submit"
-          ? { brandOrganization: { status: "ACTIVE" } }
-          : {}),
-      },
-      data: { status: input.action === "submit" ? "REVIEW" : "CANCELED" },
-    });
-    if (!result.count)
-      fail(
-        409,
-        "INVALID_STATE",
-        "This campaign is unavailable or cannot be changed in its current state.",
-      );
-  });
+    },
+  );
 }
 
 const toolsSchema = z.strictObject({

@@ -6,6 +6,7 @@ import { getAgencyProfileValues, hasSubmittedAgencyProfile } from "../../../lib/
 import { uploadConfigured } from "../../../lib/agency-documents";
 import { resolveLocale } from "../../../lib/locale";
 import { hasApprovedTestWorkspaceAccess } from "../../../lib/test-workspace-access";
+import { organizationReviewReason } from "../../../lib/organization-review";
 import { AgencyOnboarding } from "./agency-onboarding";
 
 export const preferredRegion = "sin1";
@@ -30,5 +31,6 @@ export default async function AgencyOnboardingPage({ searchParams }: {
     organizationStatus={organization.status === "ACTIVE" ? "ACTIVE" : "PENDING"}
     showWelcome={!submitted && query.welcome === "1"}
     uploadEnabled={uploadConfigured()}
+    reviewReason={organizationReviewReason(organization.metadata)}
   />;
 }

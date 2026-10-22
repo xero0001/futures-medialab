@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getAuthenticatedBrandMembership } from "../../../lib/brand-access";
 import { resolveLocale } from "../../../lib/locale";
 import { hasApprovedTestWorkspaceAccess } from "../../../lib/test-workspace-access";
+import { organizationReviewReason } from "../../../lib/organization-review";
 import {
   BRAND_COMPANY_SIZES,
   hasCompletedBrandProfile,
@@ -53,6 +54,7 @@ export default async function BrandOnboardingPage({
       initialLocale={locale}
       initialCompanyName={membership.organization.name}
       initialCompanySize={companySize}
+      reviewReason={organizationReviewReason(metadata)}
     />
   );
 }

@@ -23,6 +23,13 @@ export type WorkspaceCampaign = {
   budgetAmount: string | null;
   status: string;
   createdAt: string;
+  applicationDeadline: string | null;
+  regions: string[];
+  categories: string[];
+  followerMin: number | null;
+  followerMax: number | null;
+  reviewNote: string | null;
+  applicationCount: number;
 };
 export type WorkspaceRequest = {
   id: string;

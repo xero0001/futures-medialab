@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import {
   ArrowUpRight,
   BarChart3,
@@ -15,8 +15,12 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type { Locale } from "../../_components/landing-copy";
-import type { WorkspaceBootstrap } from "../../../lib/workspace-types";
+import type {
+  WorkspaceBootstrap,
+  WorkspaceCampaign,
+} from "../../../lib/workspace-types";
 import { ProfileSelect } from "../../onboarding/brand/profile-select";
+import { CampaignApplications } from "./campaign-applications";
 import "./workspace-tools.css";
 
 type ToolMode = "collect" | "links" | "campaigns" | "agent" | "account";
@@ -580,6 +584,15 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
   const [currency, setCurrency] = useState("USD");
   const [budget, setBudget] = useState("");
   const [platforms, setPlatforms] = useState<string[]>(["youtube"]);
+  const [deadline, setDeadline] = useState("");
+  const [regions, setRegions] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [followerMin, setFollowerMin] = useState("");
+  const [followerMax, setFollowerMax] = useState("");
+  const [editingId, setEditingId] = useState("");
+  const [formError, setFormError] = useState("");
+  const [applicationsId, setApplicationsId] = useState("");
+  const titleInput = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState("all");
   const [cancelId, setCancelId] = useState("");
   const canEdit =
@@ -598,21 +611,159 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
     (campaign) => status === "all" || campaign.status === status,
   );
 
+  const regionOptions: [string, string][] = [
+    ["KR", t("South Korea", "대한민국", "韩国")],
+    ["CN", t("China", "중국", "中国")],
+    ["JP", t("Japan", "일본", "日本")],
+    ["US", t("United States", "미국", "美国")],
+    ["GB", t("United Kingdom", "영국", "英国")],
+    ["DE", t("Germany", "독일", "德国")],
+    ["FR", t("France", "프랑스", "法国")],
+    ["CA", t("Canada", "캐나다", "加拿大")],
+    ["AU", t("Australia", "호주", "澳大利亚")],
+    ["SG", t("Singapore", "싱가포르", "新加坡")],
+  ];
+  const categoryOptions: [string, string][] = [
+    ["gaming", t("Gaming", "게임", "游戏")],
+    ["entertainment", t("Entertainment", "엔터테인먼트", "娱乐")],
+    ["lifestyle", t("Lifestyle", "라이프스타일", "生活方式")],
+    ["technology", t("Technology", "테크", "科技")],
+    ["beauty", t("Beauty", "뷰티", "美妆")],
+    ["travel", t("Travel", "여행", "旅行")],
+  ];
+
+  function resetForm() {
+    setEditingId("");
+    setTitle("");
+    setSummary("");
+    setBudget("");
+    setCurrency("USD");
+    setPlatforms(["youtube"]);
+    setDeadline("");
+    setRegions([]);
+    setCategories([]);
+    setFollowerMin("");
+    setFollowerMax("");
+    setFormError("");
+  }
+
+  function editCampaign(campaign: WorkspaceCampaign) {
+    setEditingId(campaign.id);
+    setTitle(campaign.title);
+    setSummary(campaign.summary);
+    setCurrency(campaign.currency);
+    setBudget(campaign.budgetAmount ?? "");
+    setPlatforms(campaign.platforms);
+    setRegions(campaign.regions);
+    setCategories(campaign.categories);
+    setFollowerMin(campaign.followerMin?.toString() ?? "");
+    setFollowerMax(campaign.followerMax?.toString() ?? "");
+    if (campaign.applicationDeadline) {
+      const date = new Date(campaign.applicationDeadline);
+      setDeadline(
+        new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
+          .toISOString()
+          .slice(0, 16),
+      );
+    } else setDeadline("");
+    setFormError("");
+    titleInput.current?.focus();
+    titleInput.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setFormError("");
+    const date = deadline ? new Date(deadline) : null;
+    if (
+      date &&
+      (!Number.isFinite(date.getTime()) || date.getTime() <= Date.now())
+    ) {
+      setFormError(
+        t(
+          "Choose a future application deadline.",
+          "신청 마감일을 현재보다 늦은 시간으로 설정해 주세요.",
+          "请选择未来的报名截止时间。",
+        ),
+      );
+      return;
+    }
+    if (
+      followerMin &&
+      followerMax &&
+      Number(followerMin) > Number(followerMax)
+    ) {
+      setFormError(
+        t(
+          "Minimum followers cannot exceed the maximum.",
+          "최소 팔로워 수는 최대 팔로워 수보다 클 수 없습니다.",
+          "最低粉丝数不得大于最高粉丝数。",
+        ),
+      );
+      return;
+    }
+    if (Number(budget) <= 0) {
+      setFormError(
+        t(
+          "Enter a budget greater than zero.",
+          "0보다 큰 예산을 입력해 주세요.",
+          "请输入大于零的预算。",
+        ),
+      );
+      return;
+    }
     if (
       await onMutate("/api/workspace/campaigns", {
-        action: "create",
+        action: editingId ? "update" : "create",
+        ...(editingId ? { id: editingId } : {}),
         title: title.trim(),
         summary: summary.trim(),
         platforms,
         currency,
         budgetAmount: budget,
+        ...(date ? { deadline: date.toISOString() } : {}),
+        regions,
+        categories,
+        ...(followerMin !== "" ? { followerMin: Number(followerMin) } : {}),
+        ...(followerMax !== "" ? { followerMax: Number(followerMax) } : {}),
+      })
+    )
+      resetForm();
+  }
+
+  async function submitCampaign(campaign: WorkspaceCampaign, now: number) {
+    if (editingId === campaign.id) {
+      setFormError(
+        t(
+          "Save your edits before submitting this campaign for review.",
+          "수정 내용을 저장한 뒤 검토를 요청해 주세요.",
+          "请先保存修改，再提交审核。",
+        ),
+      );
+      titleInput.current?.focus();
+      return;
+    }
+    if (
+      !campaign.applicationDeadline ||
+      new Date(campaign.applicationDeadline).getTime() <= now
+    ) {
+      editCampaign(campaign);
+      setFormError(
+        t(
+          "Set and save a future application deadline before requesting review.",
+          "초안을 수정해 미래의 신청 마감 일시를 저장한 뒤 검토를 요청해 주세요.",
+          "请先编辑草稿并保存未来的报名截止时间，再提交审核。",
+        ),
+      );
+      return;
+    }
+    if (
+      await onMutate("/api/workspace/campaigns", {
+        action: "submit",
+        id: campaign.id,
       })
     ) {
-      setTitle("");
-      setSummary("");
-      setBudget("");
+      if (editingId === campaign.id) resetForm();
     }
   }
 
@@ -622,17 +773,19 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
         <div className="cw-tools-heading">
           <div>
             <h2>
-              {t(
-                "Plan your next creator campaign",
-                "다음 크리에이터 캠페인을 준비하세요",
-                "规划下一场达人推广",
-              )}
+              {editingId
+                ? t("Edit campaign draft", "캠페인 초안 수정", "编辑活动草稿")
+                : t(
+                    "Plan your next creator campaign",
+                    "다음 크리에이터 캠페인을 준비하세요",
+                    "规划下一场达人推广",
+                  )}
             </h2>
             <p>
               {t(
-                "Save a campaign brief, then submit it for an operations review. Submission does not publish a campaign or charge your account.",
-                "캠페인 요약을 저장하고 운영 검토를 요청하세요. 제출만으로 캠페인이 공개되거나 결제되지 않습니다.",
-                "保存推广需求后提交运营审核。提交不会自动发布活动或向账户收费。",
+                "Save your brief and submit it for review. Once approved, partner agencies can view the campaign and apply. No payment is charged here.",
+                "캠페인 초안을 저장하고 검토를 요청하세요. 관리자 승인 후 에이전시가 조회하고 신청할 수 있습니다. 이 단계에서 결제는 발생하지 않습니다.",
+                "保存草稿并提交审核。管理员批准后，代理机构即可查看并报名。此步骤不会收取费用。",
               )}
             </p>
             <p className="cw-tools-notice">
@@ -652,109 +805,235 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
           <BarChart3 size={28} aria-hidden="true" />
         </div>
         <form className="cw-tools-campaign-form" onSubmit={create}>
-          <label className="cw-field cw-tools-span">
-            <span>{t("Campaign title", "캠페인 이름", "活动名称")}</span>
-            <input
-              required
-              disabled={!canEdit}
-              maxLength={160}
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder={t(
-                "e.g. New game launch in Korea",
-                "예: 한국 신작 게임 출시",
-                "例如：韩国新游戏上线",
-              )}
-            />
-          </label>
-          <label className="cw-field cw-tools-span">
-            <span>{t("Campaign brief", "캠페인 요약", "推广需求")}</span>
-            <textarea
-              required
-              disabled={!canEdit}
-              maxLength={5000}
-              rows={4}
-              value={summary}
-              onChange={(event) => setSummary(event.target.value)}
-              placeholder={t(
-                "Goals, audience, deliverables and timing",
-                "목표, 타깃, 제작물, 일정 등을 적어주세요",
-                "填写目标、受众、交付内容及时间安排",
-              )}
-            />
-          </label>
-          <fieldset className="cw-tools-span cw-tools-platforms">
-            <legend>{t("Platforms", "플랫폼", "平台")}</legend>
-            {campaignPlatforms.map((platform) => (
-              <label key={platform}>
-                <input
-                  type="checkbox"
-                  disabled={!canEdit}
-                  checked={platforms.includes(platform)}
-                  onChange={(event) =>
-                    setPlatforms((current) =>
-                      event.target.checked
-                        ? [...current, platform]
-                        : current.filter((value) => value !== platform),
-                    )
-                  }
-                />
-                <span>
-                  {platform === "youtube"
-                    ? "YouTube"
-                    : platform === "tiktok"
-                      ? "TikTok"
-                      : platform === "x"
-                        ? "X"
-                        : platform.charAt(0).toUpperCase() + platform.slice(1)}
-                </span>
-              </label>
-            ))}
-          </fieldset>
-          <ProfileSelect
-            id="campaign-currency"
-            label={t("Currency", "통화", "币种")}
-            placeholder=""
-            value={currency}
-            onChange={setCurrency}
-            options={[
-              { value: "USD", label: "USD" },
-              { value: "KRW", label: "KRW" },
-              { value: "CNY", label: "CNY" },
-            ]}
-          />
-          <label className="cw-field">
-            <span>{t("Planned budget", "예상 예산", "计划预算")}</span>
-            <input
-              disabled={!canEdit}
-              required
-              inputMode="decimal"
-              pattern="(?:0|[1-9][0-9]{0,15})(\.[0-9]{1,2})?"
-              maxLength={19}
-              value={budget}
-              onChange={(event) => setBudget(event.target.value)}
-              placeholder="0.00"
-            />
-          </label>
-          <div className="cw-tools-span">
-            <button
-              className="cw-button cw-button-primary"
-              disabled={busy || !canEdit || platforms.length === 0}
-              type="submit"
-            >
-              <Plus size={18} aria-hidden="true" />
-              {t("Save draft", "초안 저장", "保存草稿")}
-            </button>
-            {!canEdit && (
-              <p className="cw-tools-muted">
-                {t(
-                  "Only owners and admins can manage campaigns.",
-                  "소유자와 관리자만 캠페인을 관리할 수 있습니다.",
-                  "仅所有者和管理员可管理活动。",
+          <fieldset
+            className="cw-tools-form-fields"
+            disabled={busy || !canEdit}
+          >
+            <legend className="sr-only">
+              {t("Campaign details", "캠페인 상세 정보", "活动详情")}
+            </legend>
+            <label className="cw-field cw-tools-span">
+              <span>{t("Campaign title", "캠페인 이름", "活动名称")}</span>
+              <input
+                ref={titleInput}
+                required
+                disabled={!canEdit}
+                maxLength={160}
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder={t(
+                  "e.g. New game launch in Korea",
+                  "예: 한국 신작 게임 출시",
+                  "例如：韩国新游戏上线",
                 )}
+              />
+            </label>
+            <label className="cw-field cw-tools-span">
+              <span>{t("Campaign brief", "캠페인 요약", "推广需求")}</span>
+              <textarea
+                required
+                disabled={!canEdit}
+                maxLength={5000}
+                rows={4}
+                value={summary}
+                onChange={(event) => setSummary(event.target.value)}
+                placeholder={t(
+                  "Goals, audience, deliverables and timing",
+                  "목표, 타깃, 제작물, 일정 등을 적어주세요",
+                  "填写目标、受众、交付内容及时间安排",
+                )}
+              />
+            </label>
+            <fieldset className="cw-tools-span cw-tools-platforms">
+              <legend>{t("Platforms", "플랫폼", "平台")}</legend>
+              {campaignPlatforms.map((platform) => (
+                <label key={platform}>
+                  <input
+                    type="checkbox"
+                    disabled={!canEdit}
+                    checked={platforms.includes(platform)}
+                    onChange={(event) =>
+                      setPlatforms((current) =>
+                        event.target.checked
+                          ? [...current, platform]
+                          : current.filter((value) => value !== platform),
+                      )
+                    }
+                  />
+                  <span>
+                    {platform === "youtube"
+                      ? "YouTube"
+                      : platform === "tiktok"
+                        ? "TikTok"
+                        : platform === "x"
+                          ? "X"
+                          : platform.charAt(0).toUpperCase() +
+                            platform.slice(1)}
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+            <ProfileSelect
+              id="campaign-currency"
+              label={t("Currency", "통화", "币种")}
+              placeholder=""
+              value={currency}
+              onChange={setCurrency}
+              options={[
+                { value: "USD", label: "USD" },
+                { value: "KRW", label: "KRW" },
+                { value: "CNY", label: "CNY" },
+              ]}
+            />
+            <label className="cw-field">
+              <span>{t("Planned budget", "예상 예산", "计划预算")}</span>
+              <input
+                disabled={!canEdit}
+                required
+                inputMode="decimal"
+                pattern="(?:0|[1-9][0-9]{0,15})(\.[0-9]{1,2})?"
+                maxLength={19}
+                value={budget}
+                onChange={(event) => setBudget(event.target.value)}
+                placeholder="0.00"
+              />
+            </label>
+            <label className="cw-field cw-tools-span">
+              <span>
+                {t("Application deadline", "신청 마감 일시", "报名截止时间")}
+              </span>
+              <input
+                type="datetime-local"
+                value={deadline}
+                onChange={(event) => setDeadline(event.target.value)}
+                aria-describedby="campaign-deadline-help"
+              />
+              <span className="cw-tools-field-help" id="campaign-deadline-help">
+                {t(
+                  "Your local time. A future deadline is required before submitting for review.",
+                  "브라우저 현지 시간 기준입니다. 검토 요청 전에는 미래의 마감 일시를 반드시 입력해야 합니다.",
+                  "使用浏览器当地时间，提交审核前必须填写未来的截止时间。",
+                )}
+              </span>
+            </label>
+            <fieldset className="cw-tools-span cw-tools-platforms">
+              <legend>
+                {t(
+                  "Target regions · leave empty for all",
+                  "대상 국가 · 미선택 시 전체",
+                  "目标地区 · 不选则不限",
+                )}
+              </legend>
+              {regionOptions.map(([value, label]) => (
+                <label key={value}>
+                  <input
+                    type="checkbox"
+                    checked={regions.includes(value)}
+                    onChange={(event) =>
+                      setRegions((current) =>
+                        event.target.checked
+                          ? [...current, value]
+                          : current.filter((item) => item !== value),
+                      )
+                    }
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </fieldset>
+            <fieldset className="cw-tools-span cw-tools-platforms">
+              <legend>
+                {t(
+                  "Content categories · leave empty for all",
+                  "콘텐츠 분야 · 미선택 시 전체",
+                  "内容分类 · 不选则不限",
+                )}
+              </legend>
+              {categoryOptions.map(([value, label]) => (
+                <label key={value}>
+                  <input
+                    type="checkbox"
+                    checked={categories.includes(value)}
+                    onChange={(event) =>
+                      setCategories((current) =>
+                        event.target.checked
+                          ? [...current, value]
+                          : current.filter((item) => item !== value),
+                      )
+                    }
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </fieldset>
+            <label className="cw-field">
+              <span>
+                {t(
+                  "Minimum followers (optional)",
+                  "최소 팔로워 수 (선택)",
+                  "最低粉丝数（选填）",
+                )}
+              </span>
+              <input
+                type="number"
+                min="0"
+                max="2147483647"
+                step="1"
+                value={followerMin}
+                onChange={(event) => setFollowerMin(event.target.value)}
+                placeholder={t("No minimum", "하한 없음", "不限")}
+              />
+            </label>
+            <label className="cw-field">
+              <span>
+                {t(
+                  "Maximum followers (optional)",
+                  "최대 팔로워 수 (선택)",
+                  "最高粉丝数（选填）",
+                )}
+              </span>
+              <input
+                type="number"
+                min="0"
+                max="2147483647"
+                step="1"
+                value={followerMax}
+                onChange={(event) => setFollowerMax(event.target.value)}
+                placeholder={t("No maximum", "상한 없음", "不限")}
+              />
+            </label>
+            {formError && (
+              <p className="cw-tools-form-error cw-tools-span" role="alert">
+                {formError}
               </p>
             )}
-          </div>
+            <div className="cw-tools-span cw-tools-actions">
+              <button
+                className="cw-button cw-button-primary"
+                disabled={busy || !canEdit || platforms.length === 0}
+                type="submit"
+              >
+                <Plus size={18} aria-hidden="true" />
+                {editingId
+                  ? t("Save changes", "수정 저장", "保存修改")
+                  : t("Save draft", "초안 저장", "保存草稿")}
+              </button>
+              {editingId && (
+                <button className="cw-button" type="button" onClick={resetForm}>
+                  {t("Cancel editing", "수정 취소", "取消编辑")}
+                </button>
+              )}
+              {!canEdit && (
+                <p className="cw-tools-muted">
+                  {t(
+                    "Only owners and admins can manage campaigns.",
+                    "소유자와 관리자만 캠페인을 관리할 수 있습니다.",
+                    "仅所有者和管理员可管理活动。",
+                  )}
+                </p>
+              )}
+            </div>
+          </fieldset>
         </form>
       </section>
       <section className="cw-panel">
@@ -815,6 +1094,69 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
                   </strong>
                 </div>
                 <p className="cw-tools-pre-line">{campaign.summary}</p>
+                {campaign.reviewNote && (
+                  <p className="cw-tools-review-note">
+                    <strong>
+                      {t("Review feedback", "검토 의견", "审核反馈")}
+                    </strong>
+                    {campaign.reviewNote}
+                  </p>
+                )}
+                <dl className="cw-tools-campaign-facts">
+                  <div>
+                    <dt>
+                      {t("Application deadline", "신청 마감", "报名截止")}
+                    </dt>
+                    <dd>
+                      {campaign.applicationDeadline
+                        ? new Intl.DateTimeFormat(
+                            locale === "ko"
+                              ? "ko-KR"
+                              : locale === "zh"
+                                ? "zh-CN"
+                                : "en-US",
+                            { dateStyle: "medium", timeStyle: "short" },
+                          ).format(new Date(campaign.applicationDeadline))
+                        : t(
+                            "Required before review",
+                            "검토 요청 전 입력 필요",
+                            "提交审核前必填",
+                          )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t("Regions", "대상 국가", "地区")}</dt>
+                    <dd>
+                      {campaign.regions.length
+                        ? campaign.regions.join(" · ")
+                        : t("All regions", "전체", "不限")}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t("Categories", "분야", "分类")}</dt>
+                    <dd>
+                      {campaign.categories.length
+                        ? campaign.categories
+                            .map(
+                              (category) =>
+                                categoryOptions.find(
+                                  ([value]) => value === category,
+                                )?.[1] ?? category,
+                            )
+                            .join(" · ")
+                        : t("All categories", "전체", "不限")}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t("Followers", "팔로워", "粉丝数")}</dt>
+                    <dd>
+                      {(campaign.followerMin ?? 0).toLocaleString()} –{" "}
+                      {campaign.followerMax === null
+                        ? t("No maximum", "상한 없음", "不限")
+                        : campaign.followerMax.toLocaleString()}
+                    </dd>
+                  </div>
+                </dl>
                 <div className="cw-toolbar">
                   <span className="cw-tools-muted">
                     {campaign.platforms.join(" · ")} ·{" "}
@@ -824,15 +1166,22 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
                     {campaign.status === "DRAFT" && (
                       <button
                         type="button"
+                        className="cw-button"
+                        disabled={busy || !canEdit}
+                        onClick={() => editCampaign(campaign)}
+                      >
+                        {t("Edit draft", "초안 수정", "编辑草稿")}
+                      </button>
+                    )}
+                    {campaign.status === "DRAFT" && (
+                      <button
+                        type="button"
                         className="cw-button cw-button-primary"
                         disabled={
                           busy || !canEdit || data.account.status !== "ACTIVE"
                         }
                         onClick={() =>
-                          void onMutate("/api/workspace/campaigns", {
-                            action: "submit",
-                            id: campaign.id,
-                          })
+                          void submitCampaign(campaign, Date.now())
                         }
                       >
                         {t("Submit for review", "검토 요청", "提交审核")}
@@ -851,8 +1200,10 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
                                   action: "cancel",
                                   id: campaign.id,
                                 })
-                              )
+                              ) {
                                 setCancelId("");
+                                if (editingId === campaign.id) resetForm();
+                              }
                             }}
                           >
                             {t("Confirm cancellation", "취소 확정", "确认取消")}
@@ -877,6 +1228,38 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
                       ))}
                   </div>
                 </div>
+                <div className="cw-tools-applications-trigger">
+                  <button
+                    type="button"
+                    className="cw-button"
+                    aria-expanded={applicationsId === campaign.id}
+                    aria-controls={`applications-${campaign.id}`}
+                    onClick={() =>
+                      setApplicationsId((current) =>
+                        current === campaign.id ? "" : campaign.id,
+                      )
+                    }
+                  >
+                    <MessageSquareText size={18} aria-hidden="true" />
+                    {t(
+                      "Agency applications",
+                      "에이전시 신청",
+                      "代理机构报名",
+                    )}{" "}
+                    · {campaign.applicationCount}
+                  </button>
+                </div>
+                {applicationsId === campaign.id && (
+                  <CampaignApplications
+                    key={campaign.id}
+                    campaignId={campaign.id}
+                    campaignStatus={campaign.status}
+                    locale={locale}
+                    onMutate={onMutate}
+                    canEdit={canEdit && data.account.status === "ACTIVE"}
+                    busy={busy}
+                  />
+                )}
               </article>
             ))}
           </div>

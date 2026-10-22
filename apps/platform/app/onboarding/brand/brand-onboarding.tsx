@@ -55,10 +55,12 @@ export function BrandOnboarding({
   initialLocale,
   initialCompanyName,
   initialCompanySize,
+  reviewReason,
 }: {
   initialLocale: Locale;
   initialCompanyName: string;
   initialCompanySize: string;
+  reviewReason?: string;
 }) {
   const [locale, setLocale] = useState(initialLocale);
   const [organizationName, setOrganizationName] = useState(initialCompanyName);
@@ -243,6 +245,7 @@ export function BrandOnboarding({
       <div className="fmb-wrap">
         <header className="fmb-header">
           <h1 id="brand-title">{t.title}</h1>
+          {reviewReason && <p role="status" className="fmb-hint">{locale === "ko" ? "운영팀 보완 요청: " : locale === "zh" ? "运营补充要求：" : "Changes requested: "}{reviewReason}</p>}
           <p>{t.subtitle}</p>
         </header>
         <form

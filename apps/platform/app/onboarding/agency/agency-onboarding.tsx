@@ -98,6 +98,7 @@ export function AgencyOnboarding({
   organizationStatus,
   showWelcome = false,
   uploadEnabled = false,
+  reviewReason,
 }: {
   initialLocale: Locale;
   initialValues: AgencyProfileValues;
@@ -105,6 +106,7 @@ export function AgencyOnboarding({
   organizationStatus: "PENDING" | "ACTIVE";
   showWelcome?: boolean;
   uploadEnabled?: boolean;
+  reviewReason?: string;
 }) {
   const [locale, setLocale] = useState(initialLocale);
   const [values, setValues] = useState(initialValues);
@@ -799,6 +801,7 @@ export function AgencyOnboarding({
                 {t.title}
               </h1>
               <p>{t.subtitle}</p>
+              {reviewReason && <p role="status" className="fmb-hint">{locale === "ko" ? "운영팀 보완 요청: " : locale === "zh" ? "运营补充要求：" : "Changes requested: "}{reviewReason}</p>}
             </header>
             <form
               className="fmb-form fma-form"

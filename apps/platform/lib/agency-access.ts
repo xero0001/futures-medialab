@@ -22,6 +22,7 @@ export async function getAuthenticatedAgencyMembership(locale: Locale) {
 export async function requireAgencyWorkspace(locale: Locale): Promise<{
   organizationName: string; status: "PENDING" | "ACTIVE"; userName: string;
   agencyType: "agency" | "studio"; submittedAt: string | null;
+  role: "OWNER" | "ADMIN" | "MEMBER";
 }> {
   const membership = await getAuthenticatedAgencyMembership(locale);
   if (!membership || membership.organization.status === "SUSPENDED") redirect(`/account?lang=${locale}`);
@@ -32,6 +33,7 @@ export async function requireAgencyWorkspace(locale: Locale): Promise<{
   const metadata = metadataRecord(organization.metadata);
   return {
     organizationName: organization.name, status: organization.status === "ACTIVE" ? "ACTIVE" : "PENDING",
+    role: membership.role,
     userName: membership.user.name?.trim() || organization.name,
     agencyType: metadata.agencyType === "studio" ? "studio" : "agency",
     submittedAt: typeof metadata.agencyProfileSubmittedAt === "string" ? metadata.agencyProfileSubmittedAt : null,

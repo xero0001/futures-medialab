@@ -11,9 +11,9 @@
   -webkit-font-smoothing: antialiased;
 }
 .cwa-workspace *, .cwa-workspace *::before, .cwa-workspace *::after { box-sizing: border-box; }
-.cwa-workspace :is(button, input) { font: inherit; }
+.cwa-workspace :is(button, input, textarea) { font: inherit; }
 .cwa-workspace button:not(:disabled), .cwa-workspace summary { cursor: pointer; }
-.cwa-workspace :is(a, button, input, summary):focus-visible { outline: 3px solid #a5b4fc; outline-offset: 3px; }
+.cwa-workspace :is(a, button, input, textarea, summary):focus-visible { outline: 3px solid #a5b4fc; outline-offset: 3px; }
 .cwa-workspace button:disabled { cursor: not-allowed; opacity: .55; }
 .cwa-topbar { position: sticky; top: 0; z-index: 50; display: flex; height: 76px; align-items: center; gap: 22px; border-bottom: 1px solid var(--cwa-line); background: #fff; padding: 0 28px; }
 .cwa-logo { display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0; color: #202944; font-size: 20px; font-weight: 650; letter-spacing: -.045em; }
@@ -30,6 +30,7 @@
 .cwa-sidebar { position: fixed; z-index: 30; top: 76px; bottom: 0; left: 0; display: flex; width: 248px; flex-direction: column; overflow-y: auto; border-right: 1px solid var(--cwa-line); background: #fff; padding: 26px 15px 20px; }
 .cwa-nav-item { display: flex; width: 100%; min-height: 44px; align-items: center; gap: 10px; margin: 3px 0; border-radius: 8px; padding: 10px 12px; color: #68748b; font-size: 14px; line-height: 1.5; }
 .cwa-nav-item > svg { flex-shrink: 0; stroke-width: 1.7; }
+.cwa-logout { border: 0; background: transparent; text-align: left; }
 .cwa-nav-item:hover { background: #f6f7fb; color: #37435c; }
 .cwa-nav-item.is-active { background: #eef0ff; color: #4b43c9; font-weight: 650; }
 .cwa-nav-item.is-nested { min-height: 39px; gap: 9px; padding-left: 28px; }
@@ -198,6 +199,58 @@
 .cwa-approval-banner p { color: #526b8c; }
 .cwa-approval-banner.is-pending p { color: #796647; }
 .cwa-approval-banner.is-pending > a { color: #795a2c; }
+
+/* Live marketplace: database records, proposals, and application history. */
+.cwa-live-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+.cwa-live-toolbar p { max-width: 850px; margin: 0; color: #647089; font-size: 14px; line-height: 1.7; }
+.cwa-live-toolbar > span { color: #647089; font-size: 14px; }
+.cwa-loading { margin: 20px 0; color: #596881; font-size: 15px; }
+.cwa-api-error { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin: 18px 0; border: 1px solid #f2c6ce; border-radius: 12px; background: #fff7f8; padding: 18px; color: #96354b; }
+.cwa-api-error > p { margin: 0; font-size: 15px; line-height: 1.7; }
+.cwa-success { display: flex; align-items: flex-start; gap: 9px; margin: 16px 0; border: 1px solid #c6e7dc; border-radius: 10px; background: #f1fbf7; padding: 14px 17px; color: #23674f; font-size: 15px; }
+.cwa-success > svg { flex-shrink: 0; margin-top: 3px; }
+.cwa-live-field { display: flex; min-width: 0; flex-direction: column; gap: 7px; }
+.cwa-live-field > span { color: #647089; font-size: 14px; font-weight: 500; line-height: 1.5; }
+.cwa-live-field > input, .cwa-live-field > textarea { width: 100%; min-width: 0; min-height: 40px; border: 1px solid #e0e5ee; border-radius: 7px; background: #fff; padding: 8px 10px; color: #344158; font-size: 14px; line-height: 1.5; }
+.cwa-live-field > textarea { resize: vertical; min-height: 140px; }
+.cwa-live-field > input:disabled { background: #f5f6fa; color: #727d91; }
+.cwa-filter-grid.cwa-live-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cwa-live-filters .cwa-date-range { grid-column: span 2; }
+.cwa-offer-summary { display: -webkit-box; min-height: 44px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; margin: 0 0 16px; color: #647089; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.cwa-offer-footer > div { min-width: 0; }
+.cwa-offer-footer strong { font-size: 22px; overflow-wrap: anywhere; }
+.cwa-offer-meta { align-items: flex-start; }
+.cwa-offer-meta > span { overflow-wrap: anywhere; }
+.cwa-offer-tags > span { max-width: 100%; overflow-wrap: anywhere; }
+.cwa-pre-line { white-space: pre-wrap; overflow-wrap: anywhere; }
+.cwa-application-list { display: grid; gap: 18px; }
+.cwa-application-card { border: 1px solid var(--cwa-line); border-radius: 14px; background: #fff; padding: 24px; }
+.cwa-application-card h2 { margin: 10px 0 0; color: #344158; font-size: 20px; line-height: 1.5; overflow-wrap: anywhere; }
+.cwa-application-status { display: inline-block; width: fit-content; border-radius: 6px; background: #edf0ff; padding: 5px 9px; color: #4d48a3; font-size: 14px; font-weight: 600; }
+.cwa-application-card > p { margin: 0; color: #536079; font-size: 15px; line-height: 1.75; }
+.cwa-application-card dl { display: flex; flex-wrap: wrap; gap: 20px 45px; margin: 20px 0; }
+.cwa-application-card dt { margin-bottom: 5px; color: #647089; font-size: 14px; }
+.cwa-application-card dd { margin: 0; color: #344158; font-size: 15px; font-weight: 600; }
+.cwa-withdraw { margin-top: 20px; border-top: 1px solid #edf0f5; padding-top: 16px; }
+.cwa-withdraw > p { margin-bottom: 12px; font-size: 14px; line-height: 1.7; }
+.cwa-inline-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.cwa-proposal { display: flex; flex-direction: column; gap: 18px; }
+.cwa-proposal > h3 { margin: 0; }
+.cwa-drawer-content .cwa-date-error { color: #96354b; }
+.cwa-drawer-content .cwa-application-status { margin-bottom: 12px; color: #4d48a3; }
+.cwa-brief-details dd { overflow-wrap: anywhere; }
+.cwa-drawer-content h2 { overflow-wrap: anywhere; }
+
+@media (max-width: 1080px) { .cwa-filter-grid.cwa-live-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) {
+  .cwa-live-toolbar, .cwa-api-error { align-items: flex-start; flex-wrap: wrap; }
+  .cwa-filter-grid.cwa-live-filters { grid-template-columns: minmax(0, 1fr); }
+  .cwa-live-filters .cwa-date-range { grid-column: auto; }
+  .cwa-application-card { padding: 19px; }
+  .cwa-application-card h2 { font-size: 18px; }
+  .cwa-application-card dl { gap: 18px; }
+  .cwa-offer-footer strong { font-size: 23px; }
+}
 
 @media (min-width: 1780px) { .cwa-offers-board { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (min-width: 1100px) {

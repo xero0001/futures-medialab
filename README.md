@@ -61,8 +61,8 @@ customer logos, and unconfirmed pricing are not published.
   both the organization and email remain pending/unverified respectively.
 - Locale resolution is shared by the landing, login, and registration pages in
   `apps/platform/lib/locale.ts`.
-- Brand campaign drafts and review requests persist in the database. Public
-  campaign operations, approval tooling and settlement remain separate work.
+- Brand campaign drafts, operations review, publication and agency applications
+  persist in the database. Contract execution and settlement remain separate work.
   Google OAuth, email verification and password recovery
   are not enabled. Confirmed legal/privacy policies, verification emails and
   account recovery must be prepared before a broad public launch.
@@ -88,14 +88,12 @@ customer logos, and unconfirmed pricing are not published.
   routes recheck organization ownership and stream attachments with no-store.
 - Submission locks the profile and displays **Waiting for Verification**.
   It does not change the organization from PENDING to ACTIVE or verify email.
-  Email delivery and approval administration remain separate work.
-- `/agency` is an explicitly labeled workspace prototype inferred from the
-  supplied references: offer grid/list and filters, campaign details, project and
-  invitation views, creator roster, payments, organization information and
-  notifications. Campaigns are fictional demo data; no applications, balances,
-  transactions or live deals are fabricated. Pending organizations cannot access
-  live campaigns or initiate payments. Real campaign operations are not wired
-  into this prototype, even for active organizations.
+  Email delivery remains separate work; operations review is available in `apps/admin`.
+- `/agency` shows real published campaigns to approved agencies, with grid/list
+  views, platform/region/category/follower/budget/deadline filters, a proposal
+  form and persisted application history. Pending organizations cannot access
+  live campaigns. Creator rosters, invitations, payments and notifications remain
+  explicitly labeled unconnected areas; no balances or live deals are fabricated.
 - `pnpm --filter @futures-medialab/platform test:agency` checks the local
   onboarding/API/private-Blob path with synthetic accounts/files and cleans up
   only those fixtures. Start the app at port 3002 with matching BETTER_AUTH_URL.
@@ -190,7 +188,8 @@ The platform runs on `http://localhost:3000` and the admin app runs on
 
 After login `/auth/continue` resolves the destination on the server. A brand
 owner with an incomplete profile goes to onboarding; a completed brand goes to
-`/storage/search`. Agency/studio accounts stay on `/account`. Suspended brands
+`/storage/search`. Agency/studio accounts continue to onboarding, verification
+status or `/agency`, according to their stored organization state. Suspended brands
 cannot enter the workspace or mutate its data.
 
 | Route                           | Implemented scope                                                                              |
@@ -201,7 +200,7 @@ cannot enter the workspace or mutate its data.
 | `/storage/collect`              | Organization collections, saved creators, CSV export                                           |
 | `/shortLinks`                   | HTTPS short links, copy/pause, raw redirect-request counts                                     |
 | `/agent`                        | Three analysis-request types, persisted intake and request history                             |
-| `/advertiser/campaign`          | Private drafts, approved-brand review submission, cancellation                                 |
+| `/advertiser/campaign`          | Drafts/editing, review submission, applications, shortlist/accept/reject                       |
 | `/advertiser/accountManagement` | Contact/company edits and read-only account/security information                               |
 
 All views use the shared indigo workspace shell, custom selection controls,
@@ -282,6 +281,53 @@ remain subject to their normal permissions. Do not enable this on ordinary signu
 ```bash
 node --experimental-strip-types --test apps/platform/scripts/test-workspace-access.test.mjs
 ```
+
+## Live campaign marketplace and operations console
+
+The existing shared Prisma models support the flow without a new migration:
+
+`Brand DRAFT → REVIEW → admin RECRUITING → agency application → brand decision`
+
+- The brand supplies a public title/brief, platforms, regions, categories,
+  follower range, currency, budget and application deadline. Publishing requires
+  an ACTIVE brand, positive budget and future deadline. Keep identifying/contact
+  information out of the public brief if the campaign should remain blind.
+- The agency API only returns published, recruiting, unexpired campaigns from
+  active brands. Brand identity/private fields are omitted. Applications are
+  unique per campaign/agency and use the campaign currency. Each agency sees only
+  its own applications; brands see only their campaigns' applications with opaque
+  partner labels. Operators can inspect full organization details separately.
+- OWNER/ADMIN may submit or withdraw an application; MEMBER is read-only.
+  Withdrawal is allowed only before acceptance/rejection. A withdrawn application
+  cannot currently be re-submitted. Shortlist, accept and reject are persisted and
+  audited. Acceptance does not execute a contract or create a settlement.
+- `GET /api/agency/campaigns`, `POST /api/agency/applications` and
+  `GET|POST /api/workspace/campaign-applications` enforce fresh DB membership,
+  sessions, approval, strict body validation, origin checks and rate limits.
+  Serializable writes and the unique key protect concurrent submissions.
+- `apps/admin` is a separate Next.js app deployed to Vercel project
+  `flamingcc/futures-medialab-admin`, root `apps/admin`. Only ACTIVE PLATFORM
+  OWNER/ADMIN members can enter. It shares DB and private documents, not session
+  cookies or authentication secrets. See [admin setup](apps/admin/README.md).
+- Operations can review organization information/documents, approve/request
+  corrections/suspend, publish/return/close campaigns and revoke normal user
+  sessions. Reasons and audit logs are mandatory for changes. No public admin
+  signup, automatic email-based privilege grants, payments or deletion UI exists.
+- Email OTP/MFA is not connected. The operator-requested temporary admin password
+  is stored only as a credential hash, not in source; replace it before broader use.
+
+Validation and opt-in integration test (start both servers against the same DB;
+run auth tests sequentially so their shared rate limit is respected):
+
+```sh
+node --experimental-strip-types --test apps/platform/scripts/campaign-validation.test.mjs apps/admin/scripts/verification.test.mjs
+RUN_DB_SMOKE=1 BASE_URL=http://localhost:3000 ADMIN_BASE_URL=http://localhost:3001 node --env-file=.env.local apps/platform/scripts/campaign-marketplace-smoke.mjs
+```
+
+The integration suite creates uniquely identified synthetic accounts, organizations
+and campaigns, checks the complete review/application path and security boundaries,
+then deletes only its exact owned fixtures. It never resets shared authentication
+counters or changes the real test accounts.
 
 ## Commands
 
