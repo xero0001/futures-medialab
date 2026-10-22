@@ -62,30 +62,30 @@
 
 .fl-site[data-theme="chzzk-light"] {
   color-scheme: light;
-  --fl-ink: #172c23;
-  --fl-muted: #566c63;
-  --fl-blue: #00754b;
-  --fl-line: #cfe4d8;
-  --ft-canvas: #fcfffd;
-  --ft-surface: #f5fcf8;
-  --ft-soft: #dff8eb;
-  --ft-soft-alt: #effaf4;
-  --ft-hover: #d0f2e0;
-  --ft-hero: #edfff6;
+  --fl-ink: #141517;
+  --fl-muted: #666666;
+  --fl-blue: #141517;
+  --fl-line: #e1e1e5;
+  --ft-canvas: #ffffff;
+  --ft-surface: #f5f5f5;
+  --ft-soft: #f0f1f2;
+  --ft-soft-alt: #f5f5f5;
+  --ft-hover: #e8e8ea;
+  --ft-hero: #ffffff;
   --ft-accent-fill: #00ffa3;
-  --ft-accent-hover: #29e99e;
-  --ft-button-ink: #073e2b;
-  --ft-header: #fcfffdf5;
-  --ft-tag: #f5fff9ed;
-  --ft-shadow: #173f2814;
-  --ft-workflow: #f1faf5;
-  --ft-final: #00e99a;
-  --ft-final-ink: #083d2a;
-  --ft-final-muted: #18543e;
-  --ft-final-button: #103f2d;
-  --ft-final-button-ink: #dcfff0;
-  --ft-final-button-hover: #1b553d;
-  --ft-focus: #00754b;
+  --ft-accent-hover: #00e693;
+  --ft-button-ink: #141517;
+  --ft-header: #fffffff5;
+  --ft-tag: #fffffff2;
+  --ft-shadow: #00000014;
+  --ft-workflow: #f5f5f5;
+  --ft-final: #141517;
+  --ft-final-ink: #ffffff;
+  --ft-final-muted: #bfc2c5;
+  --ft-final-button: #00ffa3;
+  --ft-final-button-ink: #141517;
+  --ft-final-button-hover: #00e693;
+  --ft-focus: #141517;
 }
 
 .fl-site[data-theme] {
@@ -244,7 +244,7 @@
   background: #20273566;
 }
 .fl-site[data-theme="chzzk-light"] .fl-concept-dialog::backdrop {
-  background: #0b302366;
+  background: #14151780;
 }
 
 .fl-site[data-theme] .fm-language-switcher,
@@ -360,8 +360,45 @@
 }
 .fl-site[data-theme] .fl-theme-swatch-original { background: #5149dc; }
 .fl-site[data-theme] .fl-theme-swatch-chzzk { background: #00d58a; }
-.fl-site[data-theme] .fl-theme-swatch-chzzk-light { background: #a1ffd4; }
+.fl-site[data-theme] .fl-theme-swatch-chzzk-light { background: #00ffa3; }
 .fl-site[data-theme] .fl-theme-swatch-orange { background: #e65c18; }
+
+/* CHZZK light keeps large surfaces neutral and reserves mint for actions. */
+.fl-site[data-theme="chzzk-light"] .fl-hero,
+.fl-site[data-theme="chzzk-light"] .fl-quick-link,
+.fl-site[data-theme="chzzk-light"] .fl-partner-card,
+.fl-site[data-theme="chzzk-light"] .fl-card-image-button,
+.fl-site[data-theme="chzzk-light"] .fl-concept-dialog,
+.fl-site[data-theme="chzzk-light"] .fl-final {
+  border-radius: 16px;
+}
+.fl-site[data-theme="chzzk-light"] .fl-button,
+.fl-site[data-theme="chzzk-light"] .fl-announcement,
+.fl-site[data-theme="chzzk-light"] .fl-wide-link {
+  border-radius: 10px;
+}
+.fl-site[data-theme="chzzk-light"] .fl-filter,
+.fl-site[data-theme="chzzk-light"] .fl-desktop-nav a,
+.fl-site[data-theme="chzzk-light"] .fl-art-tag,
+.fl-site[data-theme="chzzk-light"] .fl-theme-preview a {
+  border-radius: 8px;
+}
+.fl-site[data-theme="chzzk-light"] .fl-art-tag {
+  transform: none;
+}
+.fl-site[data-theme="chzzk-light"] .fl-status-dot {
+  background: var(--ft-accent-fill);
+}
+.fl-site[data-theme="chzzk-light"] .fl-quick-icon,
+.fl-site[data-theme="chzzk-light"] .fl-quick-link:nth-child(2) .fl-quick-icon,
+.fl-site[data-theme="chzzk-light"] .fl-step-icon,
+.fl-site[data-theme="chzzk-light"] .fl-partner-icon,
+.fl-site[data-theme="chzzk-light"] .fl-partner-agency .fl-partner-icon {
+  border-radius: 12px;
+  background: #24272b;
+  color: var(--ft-accent-fill);
+  transform: none;
+}
 
 @media (max-width: 700px) {
   .fl-site[data-theme] .fl-theme-preview {

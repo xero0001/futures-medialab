@@ -36,7 +36,7 @@ const stepIcons = [FileText, Users, Check];
 type LandingTheme = "chzzk" | "chzzk-light" | "orange";
 const themeArtwork: Record<LandingTheme, string> = {
   chzzk: "/landing/creator-world-chzzk.webp",
-  "chzzk-light": "/landing/creator-world-chzzk-light.webp",
+  "chzzk-light": "/landing/creator-world-chzzk-neutral.webp",
   orange: "/landing/creator-world-orange-white.webp",
 };
 const themeRoutes: Record<LandingTheme, string> = {
