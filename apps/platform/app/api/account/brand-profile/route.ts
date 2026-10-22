@@ -82,13 +82,22 @@ export async function POST(request: Request) {
         const membership = await transaction.organizationMember.findFirst({
           where: {
             userId: session.user.id,
-            role: "OWNER",
             organization: { type: "BRAND" },
           },
-          orderBy: { createdAt: "asc" },
-          select: { organization: { select: { id: true, metadata: true } } },
+          orderBy: [{ createdAt: "asc" }, { organizationId: "asc" }],
+          select: {
+            role: true,
+            organization: {
+              select: { id: true, status: true, metadata: true },
+            },
+          },
         });
-        if (!membership) return false;
+        if (
+          !membership ||
+          membership.role !== "OWNER" ||
+          membership.organization.status === "SUSPENDED"
+        )
+          return false;
 
         const currentMetadata = membership.organization.metadata;
         const metadata =

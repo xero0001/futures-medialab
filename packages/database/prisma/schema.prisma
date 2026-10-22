@@ -79,21 +79,24 @@ enum Currency {
 }
 
 model User {
-  id                    String                @id @default(cuid())
-  email                 String                @unique
-  emailVerified         Boolean               @default(false)
+  id                    String                 @id @default(cuid())
+  email                 String                 @unique
+  emailVerified         Boolean                @default(false)
   name                  String?
   image                 String?
-  locale                Locale                @default(EN)
+  locale                Locale                 @default(EN)
   sessions              Session[]
   accounts              Account[]
   memberships           OrganizationMember[]
-  createdCampaigns      Campaign[]            @relation("CampaignCreator")
-  submittedApplications CampaignApplication[] @relation("ApplicationSubmitter")
-  askedQuestions        CampaignQuestion[]    @relation("QuestionAuthor")
+  createdCampaigns      Campaign[]             @relation("CampaignCreator")
+  submittedApplications CampaignApplication[]  @relation("ApplicationSubmitter")
+  askedQuestions        CampaignQuestion[]     @relation("QuestionAuthor")
   auditLogs             AuditLog[]
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
+  directorySearches     DirectorySearch[]
+  shortLinks            ShortLink[]
+  workspaceToolRequests WorkspaceToolRequest[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
 }
 
 model Session {
@@ -153,23 +156,27 @@ model RateLimit {
 }
 
 model Organization {
-  id             String                @id @default(cuid())
-  type           OrganizationType
-  status         OrganizationStatus    @default(PENDING)
-  name           String
-  slug           String                @unique
-  countryCode    String?               @db.VarChar(2)
-  businessNumber String?
-  websiteUrl     String?
-  metadata       Json                  @default("{}")
-  members        OrganizationMember[]
-  campaigns      Campaign[]            @relation("BrandCampaigns")
-  applications   CampaignApplication[] @relation("AgencyApplications")
-  creators       CreatorProfile[]
-  questions      CampaignQuestion[]
-  settlements    Settlement[]
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
+  id                    String                 @id @default(cuid())
+  type                  OrganizationType
+  status                OrganizationStatus     @default(PENDING)
+  name                  String
+  slug                  String                 @unique
+  countryCode           String?                @db.VarChar(2)
+  businessNumber        String?
+  websiteUrl            String?
+  metadata              Json                   @default("{}")
+  members               OrganizationMember[]
+  campaigns             Campaign[]             @relation("BrandCampaigns")
+  applications          CampaignApplication[]  @relation("AgencyApplications")
+  creators              CreatorProfile[]
+  questions             CampaignQuestion[]
+  settlements           Settlement[]
+  creatorCollections    CreatorCollection[]
+  directorySearches     DirectorySearch[]
+  shortLinks            ShortLink[]
+  workspaceToolRequests WorkspaceToolRequest[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
 
   @@index([type, status])
 }
@@ -221,6 +228,92 @@ model Campaign {
   @@index([status, applicationDeadline])
   @@index([brandOrganizationId, status])
   @@index([type, status])
+}
+
+// Opt-in published directory records, separate from private agency rosters.
+model CreatorDirectoryEntry {
+  id          String                  @id @default(cuid())
+  platform    String
+  isDemo      Boolean                 @default(false)
+  isPublished Boolean                 @default(false)
+  payload     Json
+  collections CreatorCollectionItem[]
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  @@index([platform, isPublished, isDemo])
+}
+
+model CreatorCollection {
+  id             String                  @id @default(cuid())
+  organizationId String
+  name           String
+  organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  items          CreatorCollectionItem[]
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  @@unique([organizationId, name])
+}
+
+model CreatorCollectionItem {
+  collectionId String
+  entryId      String
+  collection   CreatorCollection     @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  entry        CreatorDirectoryEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  createdAt    DateTime              @default(now())
+
+  @@id([collectionId, entryId])
+  @@index([entryId])
+}
+
+model DirectorySearch {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  mode           String
+  filtersJson    Json
+  resultIdsJson  Json
+  isDemo         Boolean      @default(true)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model ShortLink {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  code           String       @unique
+  title          String
+  targetUrl      String
+  active         Boolean      @default(true)
+  clickCount     Int          @default(0)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, createdAt])
+}
+
+model WorkspaceToolRequest {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  tool           String
+  title          String
+  inputJson      Json
+  status         String       @default("REQUESTED")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, createdAt])
 }
 
 model CreatorProfile {

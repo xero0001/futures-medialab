@@ -160,7 +160,7 @@ export function RegisterForm({
         setConfirm("");
         return;
       }
-      window.location.assign(`/account?lang=${locale}`);
+      window.location.assign(`/auth/continue?lang=${locale}`);
     } catch {
       setSubmitError(created ? "signInFailed" : "failed");
       if (created) {

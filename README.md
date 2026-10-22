@@ -19,7 +19,7 @@ database, UI, lint, and TypeScript code lives in `packages/*`.
 
 - Approved agency/MCN and brand organizations
 - Open-bidding and managed campaigns sharing one campaign model
-- Internal creator roster rather than a public creator directory
+- Private MCN creator rosters, separate from the brand-facing published directory
 - Blind campaign Q&A relayed through the platform
 - Versioned content review and publication verification
 - Request/approval/bank-transfer settlement workflow
@@ -61,8 +61,9 @@ customer logos, and unconfirmed pricing are not published.
   both the organization and email remain pending/unverified respectively.
 - Locale resolution is shared by the landing, login, and registration pages in
   `apps/platform/lib/locale.ts`.
-- Campaign intake, live campaigns, approval operations and settlement remain
-  separate backend work. Google OAuth, email verification and password recovery
+- Brand campaign drafts and review requests persist in the database. Public
+  campaign operations, approval tooling and settlement remain separate work.
+  Google OAuth, email verification and password recovery
   are not enabled. Confirmed legal/privacy policies, verification emails and
   account recovery must be prepared before a broad public launch.
 - `/test` preserves the August 8, 2026 landing design from commit `d6bfb3e`
@@ -128,8 +129,8 @@ must delete only the exact disposable records they created.
 - Better Auth handles password hashing, session cookies and session revocation.
   Sensitive auth cookies are HttpOnly, SameSite and Secure on production HTTPS.
 - `PENDING` organizations can sign in and view account status, but are not
-  approved partners. Future campaign APIs must enforce active membership and
-  organization approval server-side, not just hide UI.
+  approved partners. Completed brands can use the demo directory and prepare
+  drafts. Campaign submission requires ACTIVE status and OWNER/ADMIN membership.
 - Email ownership is not verified yet (`emailVerified=false`); do not use an
   unverified email domain to grant privileges or organization ownership.
 - `/api/account/brand-profile` requires a same-origin request and a real
@@ -154,6 +155,87 @@ same database environment as that deployment.
 
 The platform runs on `http://localhost:3000` and the admin app runs on
 `http://localhost:3001`.
+
+## Brand workspace
+
+After login `/auth/continue` resolves the destination on the server. A brand
+owner with an incomplete profile goes to onboarding; a completed brand goes to
+`/storage/search`. Agency/studio accounts stay on `/account`. Suspended brands
+cannot enter the workspace or mutate its data.
+
+| Route                           | Implemented scope                                                                              |
+| ------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `/storage/search`               | Six-platform directory, content/channel/audience filters, sorting, pagination, profile preview |
+| `/storage/similar-search`       | YouTube/TikTok stored-channel similarity using shared topics                                   |
+| `/storage/similar-brands`       | Stored sample-brand recommendations with publishing-platform filters                           |
+| `/storage/collect`              | Organization collections, saved creators, CSV export                                           |
+| `/shortLinks`                   | HTTPS short links, copy/pause, raw redirect-request counts                                     |
+| `/agent`                        | Three analysis-request types, persisted intake and request history                             |
+| `/advertiser/campaign`          | Private drafts, approved-brand review submission, cancellation                                 |
+| `/advertiser/accountManagement` | Contact/company edits and read-only account/security information                               |
+
+All views use the shared indigo workspace shell, custom selection controls,
+English/Korean/Chinese labels, and 14px minimum text. Reference inspection used
+Youdao's logged-in pages at the corresponding paths. Reference collection and
+short-link creation were membership-gated; reference campaign management exposed
+only managed-service/contact information. No paid analysis/search quota was used.
+
+### Data and provider boundary
+
+`20261022120000_add_brand_workspace` adds `CreatorDirectoryEntry`,
+`CreatorCollection`, `CreatorCollectionItem`, `DirectorySearch`, `ShortLink`,
+and `WorkspaceToolRequest`. It reuses the existing `Campaign` and `Organization`
+models. Directory entries contain indexed publication/platform flags and a
+strictly validated JSON profile; they never expose private `CreatorProfile`
+notes or MCN ownership. The database is not an external creator-data provider.
+
+The initial directory contains **60 fictional, visibly labeled demo profiles**,
+not scraped creator data. The example.com profile URLs are identifiers only.
+Search and recommendation operate on published database entries; PENDING brands
+can read only demo entries. Similarity is deterministic topic overlap, not AI.
+The current UI is explicitly demo-labeled; update provenance presentation before
+publishing non-demo provider records. Query history retains the latest 100 per
+user/organization. A separate ingestion/admin workflow is still needed for real
+verified creators, metric refresh, licensing and data provenance.
+
+Analysis tools only save `REQUESTED` records; there is no background worker,
+external data collection, LLM execution, automatic report, or promised SLA.
+Campaign `REVIEW` is an intake status, not automatic approval/publication/payment.
+Short-link counts are raw GET requests (including bots/repeats), not unique
+visitors or conversions; HEAD requests do not count. Link targets are validated
+public HTTPS addresses and are never fetched by the server.
+
+### Workspace API and security
+
+- `GET /api/workspace/bootstrap`: allowlisted, organization-scoped DTOs.
+- `POST /api/workspace/search`: validated filters and persisted query history.
+- `POST /api/workspace/collections`, `/links`, `/campaigns`, `/tools`, `/account`:
+  explicit action/body contracts; the client never supplies an organization ID.
+- All routes recheck the database session, membership, completed profile and
+  suspension status. Mutations require exact trusted Origin, valid JSON,
+  bounded bodies (16KiB) and strict schemas. Serializable writes protect state.
+- OWNER/ADMIN can manage links and campaigns; only OWNER can update company
+  identity. Members can search, manage shared collections and submit tool requests.
+- Shared database-backed per-user limits: reads 120/min, writes 60/min, searches
+  30/min (also counted as writes). Bounded collections/links/campaigns/requests
+  prevent unlimited growth. Private responses are `no-store`.
+- `/s/[code]` is deliberately public, checks link/organization status, and uses
+  unguessable codes. No contact details or private creator roster is returned.
+
+Explicit demo seed (never runs on requests/builds; no existing records deleted):
+
+```bash
+node --experimental-strip-types apps/platform/scripts/seed-creator-directory.mjs
+node --experimental-strip-types apps/platform/scripts/seed-creator-directory.mjs --apply
+node --experimental-strip-types --test apps/platform/scripts/creator-directory.test.mjs
+BETTER_AUTH_URL=http://localhost:3002 node --experimental-strip-types apps/platform/scripts/workspace-smoke.mjs --base-url http://localhost:3002
+```
+
+Run auth and workspace smoke suites sequentially against the same server/DB.
+They use synthetic fixtures and remove only those exact records. Before public
+launch, separate development from production DB, add email verification/recovery,
+configure real data/AI providers and operations workflows, and review privacy,
+redirect abuse handling and retention policies.
 
 ## Commands
 

@@ -1,0 +1,1145 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import {
+  Bookmark,
+  ChevronLeft,
+  ChevronRight,
+  Compass,
+  FolderHeart,
+  Layers,
+  Link2,
+  LogOut,
+  Menu,
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  Users,
+  X,
+} from "lucide-react";
+import type { Locale } from "../../_components/landing-copy";
+import { LanguageSwitcher } from "../../_components/language-switcher";
+import { ProfileSelect } from "../../onboarding/brand/profile-select";
+import { authClient } from "../../../lib/auth-client";
+import {
+  defaultFilters,
+  validateFilters,
+  type Creator,
+  type DirectoryFilters,
+  type PlatformId,
+  type PublishingPlatform,
+  type SearchMode,
+} from "../../../lib/creator-directory";
+import type { WorkspaceBootstrap } from "../../../lib/workspace-types";
+import {
+  DirectoryFiltersPanel,
+  platformNames,
+  tagLabel,
+  translate,
+} from "./directory-filters";
+import { WorkspaceTools } from "./workspace-tools";
+import "./workspace.css";
+
+export type WorkspaceMode =
+  | "search"
+  | "similar"
+  | "brands"
+  | "collect"
+  | "links"
+  | "campaigns"
+  | "agent"
+  | "account";
+const routes: Record<WorkspaceMode, string> = {
+  search: "/storage/search",
+  similar: "/storage/similar-search",
+  brands: "/storage/similar-brands",
+  collect: "/storage/collect",
+  links: "/shortLinks",
+  campaigns: "/advertiser/campaign",
+  agent: "/agent",
+  account: "/advertiser/accountManagement",
+};
+
+export function CreatorWorkspace({
+  mode,
+  initialLocale: locale,
+  organizationName,
+  status,
+  userName,
+}: {
+  mode: WorkspaceMode;
+  initialLocale: Locale;
+  organizationName: string;
+  status: "PENDING" | "ACTIVE";
+  userName: string;
+}) {
+  const t = (en: string, ko: string, zh: string) =>
+    translate(locale, en, ko, zh);
+  const [data, setData] = useState<WorkspaceBootstrap | null>(null);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
+  const [filters, setFilters] = useState(() => defaultFilters("youtube"));
+  const [applied, setApplied] = useState<DirectoryFilters | null>(null);
+  const [results, setResults] = useState<Creator[]>([]);
+  const [seed, setSeed] = useState<Creator | null>(null);
+  const [brandId, setBrandId] = useState("");
+  const [publishingPlatform, setPublishingPlatform] =
+    useState<PublishingPlatform>("all");
+  const [relatedBrands, setRelatedBrands] = useState<string[]>([]);
+  const [expanded, setExpanded] = useState(mode === "search");
+  const [sort, setSort] = useState("relevance");
+  const [page, setPage] = useState(1);
+  const [collectionId, setCollectionId] = useState("");
+  const [detail, setDetail] = useState<Creator | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const navToggleRef = useRef<HTMLButtonElement>(null);
+  const requestId = useRef(0);
+  const discovery =
+    mode === "search" || mode === "similar" || mode === "brands";
+  const titles: Record<WorkspaceMode, string> = {
+    search: t("Discover creators", "크리에이터 검색", "达人查询"),
+    similar: t("Find similar creators", "유사 크리에이터 검색", "相似达人查询"),
+    brands: t(
+      "Explore related brands",
+      "동종 브랜드 크리에이터",
+      "同类品牌达人推荐",
+    ),
+    collect: t("Collections", "즐겨찾기", "收藏夹"),
+    links: t("Short links", "단축 링크", "短链服务"),
+    campaigns: t("Campaigns", "캠페인 관리", "推广系列管理"),
+    agent: t("Intelligence tools", "분석 도구", "智能工具集"),
+    account: t("Account settings", "계정 관리", "账户管理"),
+  };
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/workspace/bootstrap", {
+      signal: controller.signal,
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("load");
+        setData(await response.json());
+      })
+      .catch((reason) => {
+        if (reason.name !== "AbortError")
+          setError(
+            translate(
+              locale,
+              "Could not load the workspace. Please refresh or sign in again.",
+              "작업 공간을 불러오지 못했습니다. 새로고침하거나 다시 로그인해 주세요.",
+              "无法加载工作区，请刷新或重新登录。",
+            ),
+          );
+      });
+    return () => controller.abort();
+  }, [locale]);
+
+  useEffect(() => {
+    if (detail) dialogRef.current?.showModal();
+    else dialogRef.current?.close();
+  }, [detail]);
+
+  useEffect(() => {
+    if (!navOpen) return;
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setNavOpen(false);
+      navToggleRef.current?.focus();
+    }
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [navOpen]);
+
+  async function refreshData() {
+    const response = await fetch("/api/workspace/bootstrap", {
+      cache: "no-store",
+    });
+    if (!response.ok) throw new Error("refresh");
+    setData(await response.json());
+  }
+  async function onMutate(endpoint: string, body: unknown) {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) {
+        const failure = await response.json().catch(() => null);
+        setError(
+          response.status === 429
+            ? t(
+                "Too many requests. Try again in a minute.",
+                "요청이 많습니다. 잠시 후 다시 시도해 주세요.",
+                "请求过多，请稍后重试。",
+              )
+            : response.status === 403
+              ? t(
+                  "This action needs an approved account or an administrator.",
+                  "승인된 계정 또는 관리자 권한이 필요한 작업입니다.",
+                  "此操作需要已批准的账户或管理员权限。",
+                )
+              : failure?.code === "INVALID_INPUT"
+                ? t(
+                    "Check the form values and try again.",
+                    "입력값을 확인해 주세요.",
+                    "请检查输入内容。",
+                  )
+                : t(
+                    "Could not save. Check the values and retry.",
+                    "저장하지 못했습니다. 입력값을 확인하고 다시 시도해 주세요.",
+                    "保存失败，请检查输入后重试。",
+                  ),
+        );
+        return false;
+      }
+      await refreshData();
+      setNotice(
+        t(
+          "Saved to your workspace.",
+          "작업 공간에 저장했습니다.",
+          "已保存到工作区。",
+        ),
+      );
+      return true;
+    } catch {
+      setError(
+        t(
+          "The request could not be completed. Refresh to check its status before retrying.",
+          "요청을 완료하지 못했습니다. 새로고침으로 저장 여부를 확인한 뒤 다시 시도해 주세요.",
+          "请求未完成，请刷新确认状态后重试。",
+        ),
+      );
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function search(next = filters, nextBrand = brandId) {
+    setNotice("");
+    setError("");
+    if (!validateFilters(next)) {
+      setError(
+        t(
+          "Use non-negative ranges; minimum must not exceed maximum.",
+          "범위는 0 이상으로, 최솟값이 최댓값보다 작거나 같게 입력해 주세요.",
+          "范围必须为非负数，且最小值不能大于最大值。",
+        ),
+      );
+      return;
+    }
+    if (mode === "similar" && !next.query.trim()) {
+      setError(
+        t(
+          "Enter a sample creator name or channel URL.",
+          "예시 크리에이터 이름 또는 채널 URL을 입력해 주세요.",
+          "请输入示例达人名称或频道链接。",
+        ),
+      );
+      return;
+    }
+    if (mode === "brands" && !nextBrand) {
+      setError(
+        t(
+          "Select a brand first.",
+          "먼저 브랜드를 선택해 주세요.",
+          "请先选择品牌。",
+        ),
+      );
+      return;
+    }
+    const current = ++requestId.current;
+    setBusy(true);
+    try {
+      const response = await fetch("/api/workspace/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode,
+          filters: next,
+          ...(nextBrand ? { brandId: nextBrand } : {}),
+          publishingPlatform,
+        }),
+      });
+      if (!response.ok)
+        throw new Error(response.status === 429 ? "rate" : "search");
+      const found = await response.json();
+      if (current !== requestId.current) return;
+      setResults(found.creators);
+      setSeed(found.seed);
+      setRelatedBrands(
+        mode === "brands"
+          ? found.brands.map((brand: { name: string }) => brand.name)
+          : [],
+      );
+      setApplied(next);
+      setPage(1);
+      await refreshData();
+    } catch (failure) {
+      setError(
+        failure instanceof Error && failure.message === "rate"
+          ? t(
+              "Please wait a minute before searching again.",
+              "잠시 후 다시 검색해 주세요.",
+              "请稍后再次搜索。",
+            )
+          : t(
+              "Search failed. Try again.",
+              "검색에 실패했습니다. 다시 시도해 주세요.",
+              "搜索失败，请重试。",
+            ),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  function reset(platform = filters.platform) {
+    setFilters(defaultFilters(platform));
+    setApplied(null);
+    setResults([]);
+    setSeed(null);
+    setRelatedBrands([]);
+    setBrandId("");
+    setPublishingPlatform("all");
+    setError("");
+    setPage(1);
+  }
+  const baseResults = applied
+    ? results
+    : mode === "search"
+      ? (data?.creators.filter(
+          (creator) => creator.platform === filters.platform,
+        ) ?? [])
+      : [];
+  const sorted = [...baseResults].sort((a, b) =>
+    sort === "followers"
+      ? b.followers - a.followers
+      : sort === "views"
+        ? b[
+            (applied ?? filters).viewsWindow === "last10"
+              ? "views10"
+              : "views30"
+          ] -
+          a[
+            (applied ?? filters).viewsWindow === "last10"
+              ? "views10"
+              : "views30"
+          ]
+        : sort === "engagement"
+          ? b.engagement - a.engagement
+          : 0,
+  );
+  const pages = Math.max(1, Math.ceil(sorted.length / 8));
+  const activeCollection =
+    data?.collections.find((collection) => collection.id === collectionId) ??
+    data?.collections[0];
+  const number = (value: number) =>
+    new Intl.NumberFormat(locale, {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value);
+  const sample = data?.creators.find(
+    (creator) => creator.platform === filters.platform,
+  );
+  async function saveCreator(creator: Creator) {
+    if (!activeCollection) {
+      setError(
+        t(
+          "Create a collection in Collections first.",
+          "먼저 즐겨찾기 메뉴에서 폴더를 만들어 주세요.",
+          "请先在收藏夹中创建文件夹。",
+        ),
+      );
+      return;
+    }
+    await onMutate("/api/workspace/collections", {
+      action: activeCollection.creatorIds.includes(creator.id)
+        ? "remove"
+        : "add",
+      collectionId: activeCollection.id,
+      creatorId: creator.id,
+    });
+  }
+  async function signOut() {
+    setBusy(true);
+    try {
+      const result = await authClient.signOut();
+      if (result.error) throw new Error("logout");
+      window.location.assign(`/login?lang=${locale}`);
+    } catch {
+      setError(
+        t(
+          "Could not sign out. Try again.",
+          "로그아웃하지 못했습니다. 다시 시도해 주세요.",
+          "退出失败，请重试。",
+        ),
+      );
+      setBusy(false);
+    }
+  }
+  const navItems = [
+    { key: "search", icon: Search },
+    { key: "similar", icon: Users },
+    { key: "brands", icon: Layers },
+    { key: "agent", icon: Sparkles },
+    { key: "collect", icon: FolderHeart },
+    { key: "links", icon: Link2 },
+    { key: "campaigns", icon: Compass },
+    { key: "account", icon: Users },
+  ] as const;
+
+  return (
+    <div
+      className="cw-workspace"
+      data-creator-workspace="demo"
+      lang={locale === "zh" ? "zh-CN" : locale}
+    >
+      <header className="cw-topbar">
+        <button
+          ref={navToggleRef}
+          type="button"
+          className="cw-icon-button cw-mobile-menu"
+          aria-label={navOpen ? t("Close navigation", "메뉴 닫기", "关闭导航") : t("Open navigation", "메뉴 열기", "打开导航")}
+          aria-expanded={navOpen}
+          aria-controls="workspace-sidebar"
+          onClick={() => setNavOpen(!navOpen)}
+        >
+          <Menu size={22} />
+        </button>
+        <Link href={`/?lang=${locale}`} className="cw-logo">
+          <span>F</span>Futures <strong>Medialab</strong>
+        </Link>
+        <div className="cw-top-actions">
+          <span className="cw-status">
+            {status === "PENDING"
+              ? t("Approval pending", "승인 대기", "待审核")
+              : t("Brand workspace", "브랜드 작업 공간", "品牌工作区")}
+          </span>
+          <LanguageSwitcher
+            locale={locale}
+            label={t("Language", "언어", "语言")}
+            onChange={(next) => {
+              document.cookie = `fm-locale=${next};path=/;max-age=31536000;SameSite=Lax`;
+              window.location.assign(`${routes[mode]}?lang=${next}`);
+            }}
+          />
+          <Link
+            href={`/advertiser/accountManagement?lang=${locale}`}
+            className="cw-avatar"
+            aria-label={t("Account settings", "계정 관리", "账户管理")}
+          >
+            {userName.slice(0, 2).toUpperCase()}
+          </Link>
+        </div>
+      </header>
+      {navOpen && (
+        <button
+          type="button"
+          className="cw-sidebar-backdrop"
+          tabIndex={-1}
+          aria-label={t("Close navigation", "메뉴 닫기", "关闭导航")}
+          onClick={() => {
+            setNavOpen(false);
+            navToggleRef.current?.focus();
+          }}
+        />
+      )}
+      <aside id="workspace-sidebar" className={`cw-sidebar ${navOpen ? "is-open" : ""}`}>
+        <div className="cw-nav-group">
+          {t("Creator intelligence", "크리에이터 탐색", "达人资源")}
+        </div>
+        <nav
+          aria-label={t("Workspace navigation", "작업 공간 메뉴", "工作区导航")}
+        >
+          {navItems.map(({ key, icon: Icon }, index) => (
+            <Link
+              key={key}
+              href={`${routes[key]}?lang=${locale}`}
+              onClick={() => setNavOpen(false)}
+              aria-current={mode === key ? "page" : undefined}
+              className={`cw-nav-item ${mode === key ? "is-active" : ""} ${index === 3 ? "cw-nav-divider" : ""}`}
+            >
+              <Icon size={19} />
+              {titles[key]}
+            </Link>
+          ))}
+        </nav>
+        <div className="cw-sidebar-foot">
+          <strong>{organizationName}</strong>
+          <span>{t("Brand account", "브랜드 계정", "品牌账户")}</span>
+          <button className="cw-nav-item" onClick={signOut} disabled={busy}>
+            <LogOut size={18} />
+            {t("Sign out", "로그아웃", "退出登录")}
+          </button>
+        </div>
+      </aside>
+      <main className="cw-main">
+        <div className="cw-heading">
+          <div>
+            <p>
+              {t(
+                "Your next collaboration starts here",
+                "다음 협업을 발견하는 곳",
+                "发现下一次合作",
+              )}
+            </p>
+            <h1>{titles[mode]}</h1>
+          </div>
+          {discovery && (
+            <span className="cw-status">
+              {t("Database connected", "DB 연결됨", "数据库已连接")}
+            </span>
+          )}
+        </div>
+        {error && (
+          <div className="cw-error" role="alert">
+            {error}
+          </div>
+        )}
+        {notice && (
+          <div className="cw-success" role="status">
+            {notice}
+          </div>
+        )}
+        {!data ? (
+          <div className="cw-panel cw-loading" role="status">
+            {error
+              ? t(
+                  "Workspace unavailable",
+                  "작업 공간을 불러올 수 없습니다",
+                  "工作区不可用",
+                )
+              : t(
+                  "Loading your workspace…",
+                  "작업 공간을 불러오는 중…",
+                  "正在加载工作区…",
+                )}
+          </div>
+        ) : discovery ? (
+          <>
+            <div className="cw-demo-notice">
+              <Sparkles size={19} />
+              <span>
+                {t(
+                  "Demo directory · Profiles and metrics are fictional. Searches and collections are saved to your database; live platform data is not connected yet.",
+                  "데모 디렉터리 · 프로필과 지표는 가상 데이터입니다. 검색 이력·즐겨찾기는 실제 DB에 저장되며, 외부 플랫폼 데이터는 아직 연결되지 않았습니다.",
+                  "演示目录 · 达人和指标均为虚构数据。搜索记录和收藏保存至数据库，尚未接入外部平台数据。",
+                )}
+              </span>
+            </div>
+            <section className="cw-panel" aria-label={titles[mode]}>
+              <div
+                className="cw-platforms"
+                aria-label={t("Platform", "플랫폼", "平台")}
+              >
+                {(mode === "brands"
+                  ? ["youtube"]
+                  : mode === "similar"
+                    ? ["youtube", "tiktok"]
+                    : Object.keys(platformNames)
+                ).map((platform) => (
+                  <button
+                    key={platform}
+                    disabled={busy}
+                    type="button"
+                    aria-pressed={filters.platform === platform}
+                    className={filters.platform === platform ? "is-active" : ""}
+                    onClick={() => reset(platform as PlatformId)}
+                  >
+                    <span
+                      className={`cw-platform-icon cw-platform-${platform}`}
+                    >
+                      {platformNames[platform as PlatformId].slice(0, 1)}
+                    </span>
+                    {platformNames[platform as PlatformId]}
+                  </button>
+                ))}
+              </div>
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void search();
+                }}
+              >
+                {mode === "search" && (
+                  <div className="cw-search-modes">
+                    {(
+                      [
+                        [
+                          "creator",
+                          t("Creator / channel", "이름 / 채널", "达人 / 频道"),
+                        ],
+                        ["content", t("Content", "콘텐츠", "内容")],
+                        ["bio", t("Biography", "소개", "简介")],
+                        [
+                          "brand",
+                          t("Brand mentions", "브랜드 언급", "品牌名称"),
+                        ],
+                      ] as [SearchMode, string][]
+                    ).map(([key, label]) => (
+                      <button
+                        type="button"
+                        key={key}
+                        aria-pressed={filters.searchMode === key}
+                        className={
+                          filters.searchMode === key ? "is-active" : ""
+                        }
+                        onClick={() =>
+                          setFilters({ ...filters, searchMode: key })
+                        }
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {mode !== "search" && (
+                  <p className="cw-intro">
+                    {mode === "similar"
+                      ? t(
+                          "Start with a creator you like. Find channels with related topics and audiences in this directory.",
+                          "기준 크리에이터를 선택해 비슷한 주제의 채널을 찾아보세요.",
+                          "以喜欢的达人为起点，寻找目录中主题相近的频道。",
+                        )
+                      : t(
+                          "Explore creators associated with similar brands. Recommendations use shared sample tags, not AI or live campaign data.",
+                          "유사한 브랜드와 관련된 크리에이터를 살펴보세요. 예시 태그 기반 추천이며 AI·실시간 캠페인 분석은 아닙니다.",
+                          "发现同类品牌相关达人。推荐基于示例标签，并非AI或实时推广分析。",
+                        )}
+                  </p>
+                )}
+                <div className="cw-search-row">
+                  {mode === "brands" ? (
+                    <ProfileSelect
+                      id="brand-search"
+                      label={t(
+                        "Brand / product",
+                        "브랜드 / 제품",
+                        "品牌 / 产品",
+                      )}
+                      placeholder={t(
+                        "Select a sample brand",
+                        "예시 브랜드 선택",
+                        "选择示例品牌",
+                      )}
+                      value={brandId}
+                      onChange={setBrandId}
+                      options={data.brands.map((brand) => ({
+                        value: brand.id,
+                        label: brand.name,
+                      }))}
+                    />
+                  ) : (
+                    <label className="cw-search-input">
+                      <Search size={20} />
+                      <input
+                        aria-label={
+                          mode === "similar"
+                            ? t(
+                                "Creator name or channel URL",
+                                "크리에이터 이름 또는 채널 URL",
+                                "达人名称或频道链接",
+                              )
+                            : t(
+                                "Search creators",
+                                "크리에이터 검색",
+                                "搜索达人",
+                              )
+                        }
+                        value={filters.query}
+                        maxLength={500}
+                        onChange={(e) =>
+                          setFilters({ ...filters, query: e.target.value })
+                        }
+                        placeholder={
+                          mode === "similar"
+                            ? t(
+                                "Paste a sample channel URL or enter its name",
+                                "예시 채널 URL 또는 이름 입력",
+                                "输入示例频道链接或名称",
+                              )
+                            : t(
+                                "Search a name, channel or keyword…",
+                                "이름, 채널 또는 키워드 검색…",
+                                "搜索名称、频道或关键词…",
+                              )
+                        }
+                      />
+                    </label>
+                  )}
+                  <button
+                    className="cw-button cw-button-primary"
+                    disabled={busy}
+                    type="submit"
+                  >
+                    <Search size={18} />
+                    {busy
+                      ? t("Searching…", "검색 중…", "搜索中…")
+                      : mode === "brands"
+                        ? t("Recommend", "추천 보기", "查看推荐")
+                        : t("Search", "검색", "搜索")}
+                  </button>
+                  <button
+                    type="button"
+                    className="cw-button"
+                    disabled={busy}
+                    onClick={() => reset()}
+                  >
+                    {t("Reset", "초기화", "重置")}
+                  </button>
+                </div>
+                {mode === "similar" && sample && (
+                  <p className="cw-example">
+                    {t(
+                      "Try a stored example:",
+                      "저장된 예시로 시작:",
+                      "尝试已保存示例：",
+                    )}{" "}
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        const next = { ...filters, query: sample.profileUrl };
+                        setFilters(next);
+                        void search(next);
+                      }}
+                    >
+                      {sample.name}
+                    </button>
+                  </p>
+                )}
+                <div className="cw-filter-toggle">
+                  <button
+                    className="cw-button"
+                    type="button"
+                    aria-expanded={expanded}
+                    onClick={() => setExpanded(!expanded)}
+                  >
+                    <SlidersHorizontal size={17} />
+                    {t("Search filters", "검색 필터", "搜索筛选")}
+                    {expanded ? " −" : " +"}
+                  </button>
+                  <span className="cw-muted">
+                    {t(
+                      "Numeric ranges use K (1,000).",
+                      "숫자 범위 단위 K = 1,000",
+                      "数值范围单位 K = 1,000。",
+                    )}
+                  </span>
+                </div>
+                {expanded && (
+                  <>
+                    <DirectoryFiltersPanel
+                      filters={filters}
+                      setFilters={setFilters}
+                      locale={locale}
+                      compact={mode !== "search"}
+                    />
+                    {mode === "brands" && (
+                      <div className="cw-publishing">
+                        <ProfileSelect
+                          id="publishing-platform"
+                          label={t(
+                            "Publishing platform",
+                            "게임 출시 플랫폼",
+                            "发行平台",
+                          )}
+                          placeholder={t("All platforms", "전체", "全部")}
+                          value={publishingPlatform}
+                          onChange={(value) =>
+                            setPublishingPlatform(value as PublishingPlatform)
+                          }
+                          options={[
+                            {
+                              value: "all",
+                              label: t("All platforms", "전체", "全部"),
+                            },
+                            {
+                              value: "mobile",
+                              label: t("Mobile games", "모바일 게임", "手游"),
+                            },
+                            {
+                              value: "pc",
+                              label: t("PC games", "PC 게임", "端游"),
+                            },
+                            {
+                              value: "console",
+                              label: t(
+                                "Console games",
+                                "콘솔 게임",
+                                "主机游戏",
+                              ),
+                            },
+                          ]}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </form>
+            </section>
+            {seed && (
+              <div className="cw-seed">
+                <Users size={20} />
+                <span>
+                  {t("Similar to", "기준 크리에이터", "相似于")}{" "}
+                  <strong>{seed.name}</strong>
+                </span>
+              </div>
+            )}
+            {!!relatedBrands.length && (
+              <div className="cw-brand-chips">
+                {relatedBrands.map((name) => (
+                  <span className="cw-tag" key={name}>
+                    {name}
+                  </span>
+                ))}
+              </div>
+            )}
+            <section className="cw-panel cw-results">
+              <div className="cw-toolbar">
+                <h2>
+                  {t("Creators", "크리에이터", "达人列表")}{" "}
+                  <span>{sorted.length}</span>
+                </h2>
+                <div className="cw-toolbar-controls">
+                  <ProfileSelect
+                    id="collection-target"
+                    label={t("Save to collection", "저장할 폴더", "收藏至")}
+                    placeholder={t(
+                      "Create a collection first",
+                      "먼저 폴더를 만드세요",
+                      "请先创建收藏夹",
+                    )}
+                    value={activeCollection?.id ?? ""}
+                    onChange={setCollectionId}
+                    options={data.collections.map((collection) => ({
+                      value: collection.id,
+                      label: collection.name,
+                    }))}
+                  />
+                  <ProfileSelect
+                    id="creator-sort"
+                    label={t("Sort by", "정렬", "排序")}
+                    placeholder=""
+                    value={sort}
+                    onChange={(value) => {
+                      setSort(value);
+                      setPage(1);
+                    }}
+                    options={[
+                      {
+                        value: "relevance",
+                        label: t("Recommended", "추천순", "推荐排序"),
+                      },
+                      {
+                        value: "followers",
+                        label: t("Most followers", "팔로워순", "粉丝数"),
+                      },
+                      {
+                        value: "views",
+                        label: t("Most views", "조회수순", "播放量"),
+                      },
+                      {
+                        value: "engagement",
+                        label: t("Engagement", "참여율순", "互动率"),
+                      },
+                    ]}
+                  />
+                </div>
+              </div>
+              {sorted.length ? (
+                <>
+                  <div className="cw-table-wrap">
+                    <table className="cw-table">
+                      <thead>
+                        <tr>
+                          {[
+                            t("Creator", "크리에이터", "达人"),
+                            t("Followers", "팔로워", "粉丝数"),
+                            t("Average views", "평균 조회수", "平均播放量"),
+                            t("Topics", "주제", "主题"),
+                            t("Engagement", "참여율", "互动率"),
+                            t("Last posted", "최근 게시", "最近发布"),
+                            t("Save", "저장", "收藏"),
+                          ].map((heading) => (
+                            <th key={heading} scope="col">
+                              {heading}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sorted
+                          .slice((page - 1) * 8, page * 8)
+                          .map((creator) => (
+                            <tr key={creator.id}>
+                              <td>
+                                <button
+                                  className="cw-person"
+                                  onClick={() => setDetail(creator)}
+                                >
+                                  <span
+                                    className="cw-avatar-small"
+                                    style={{ background: creator.accent }}
+                                  >
+                                    {creator.name.slice(0, 1)}
+                                  </span>
+                                  <span>
+                                    <strong>{creator.name}</strong>
+                                    <span className="cw-muted">
+                                      {creator.country} ·{" "}
+                                      {creator.language.toUpperCase()} ·{" "}
+                                      {platformNames[creator.platform]}
+                                    </span>
+                                  </span>
+                                </button>
+                              </td>
+                              <td className="cw-metric">
+                                {number(creator.followers)}
+                              </td>
+                              <td>
+                                <strong>
+                                  {number(
+                                    creator[
+                                      (applied ?? filters).viewsWindow ===
+                                      "last10"
+                                        ? "views10"
+                                        : "views30"
+                                    ],
+                                  )}
+                                </strong>
+                                <span className="cw-muted">
+                                  {(applied ?? filters).viewsWindow === "last10"
+                                    ? t(
+                                        "Last 10 posts",
+                                        "최근 10개",
+                                        "最近10条",
+                                      )
+                                    : t(
+                                        "Last 30 days",
+                                        "최근 30일",
+                                        "最近30天",
+                                      )}
+                                </span>
+                              </td>
+                              <td>
+                                <div className="cw-tags">
+                                  {creator.tags.slice(0, 2).map((tag) => (
+                                    <span className="cw-tag" key={tag}>
+                                      {tagLabel(tag, locale)}
+                                    </span>
+                                  ))}
+                                </div>
+                              </td>
+                              <td>{creator.engagement.toFixed(1)}%</td>
+                              <td>
+                                {t(
+                                  `${creator.daysSincePosted} ${creator.daysSincePosted === 1 ? "day" : "days"} ago`,
+                                  `${creator.daysSincePosted}일 전`,
+                                  `${creator.daysSincePosted}天前`,
+                                )}
+                              </td>
+                              <td>
+                                <button
+                                  className="cw-icon-button"
+                                  disabled={busy}
+                                  aria-label={`${activeCollection?.creatorIds.includes(creator.id) ? t("Unsave", "저장 해제", "取消收藏") : t("Save", "저장", "收藏")} ${creator.name}`}
+                                  aria-pressed={
+                                    activeCollection?.creatorIds.includes(
+                                      creator.id,
+                                    ) ?? false
+                                  }
+                                  onClick={() => void saveCreator(creator)}
+                                >
+                                  <Bookmark
+                                    size={20}
+                                    fill={
+                                      activeCollection?.creatorIds.includes(
+                                        creator.id,
+                                      )
+                                        ? "currentColor"
+                                        : "none"
+                                    }
+                                  />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="cw-pagination">
+                    <span>
+                      {t(
+                        `${sorted.length} sample profiles`,
+                        `예시 프로필 ${sorted.length}개`,
+                        `${sorted.length}个示例达人`,
+                      )}
+                    </span>
+                    <div>
+                      <button
+                        className="cw-icon-button"
+                        disabled={page === 1}
+                        aria-label={t("Previous page", "이전 페이지", "上一页")}
+                        onClick={() => setPage(page - 1)}
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
+                      <span>
+                        {page} / {pages}
+                      </span>
+                      <button
+                        className="cw-icon-button"
+                        disabled={page === pages}
+                        aria-label={t("Next page", "다음 페이지", "下一页")}
+                        onClick={() => setPage(page + 1)}
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="cw-empty">
+                  <Search size={36} />
+                  <h3>
+                    {!applied && mode !== "search"
+                      ? t(
+                          "Start your discovery",
+                          "새로운 크리에이터를 찾아보세요",
+                          "开始探索",
+                        )
+                      : t(
+                          "No matching creators",
+                          "일치하는 크리에이터가 없습니다",
+                          "没有符合条件的达人",
+                        )}
+                  </h3>
+                  <p>
+                    {mode === "similar"
+                      ? t(
+                          "Use a stored sample channel. External URLs cannot be fetched until a data provider is connected.",
+                          "저장된 예시 채널을 사용해 주세요. 데이터 공급원 연결 전에는 외부 URL을 조회할 수 없습니다.",
+                          "请使用已保存的示例频道。接入数据服务前无法读取外部链接。",
+                        )
+                      : t(
+                          "Choose a sample brand or adjust your search filters.",
+                          "예시 브랜드를 선택하거나 검색 조건을 조정해 주세요.",
+                          "请选择示例品牌或调整筛选条件。",
+                        )}
+                  </p>
+                </div>
+              )}
+            </section>
+            {!!data.recentSearches.length && (
+              <section className="cw-history">
+                <h2>{t("Recent searches", "최근 검색", "最近搜索")}</h2>
+                <div>
+                  {data.recentSearches.slice(0, 5).map((item) => (
+                    <span key={item.id}>
+                      {item.query ||
+                        (item.mode === "brands"
+                          ? t("Related brand search", "동종 브랜드 검색", "同类品牌搜索")
+                          : t("Filtered creator search", "크리에이터 조건 검색", "达人筛选搜索"))}{" "}
+                      <time>
+                        {new Date(item.createdAt).toLocaleDateString(locale)}
+                      </time>
+                    </span>
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
+        ) : (
+          <WorkspaceTools
+            mode={mode}
+            locale={locale}
+            data={data}
+            onMutate={onMutate}
+            busy={busy}
+          />
+        )}
+      </main>
+      <dialog
+        ref={dialogRef}
+        className="cw-modal"
+        aria-labelledby="creator-profile-title"
+        onClose={() => setDetail(null)}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) setDetail(null);
+        }}
+      >
+        {detail && (
+          <>
+            <button
+              className="cw-icon-button cw-modal-close"
+              aria-label={t("Close", "닫기", "关闭")}
+              onClick={() => setDetail(null)}
+            >
+              <X />
+            </button>
+            <span className="cw-status">
+              {t("Fictional profile", "가상 프로필", "虚构达人")}
+            </span>
+            <h2 id="creator-profile-title">{detail.name}</h2>
+            <p>
+              {detail.handle} · {detail.country} ·{" "}
+              {platformNames[detail.platform]}
+            </p>
+            <div className="cw-profile-stats">
+              <div>
+                <strong>{number(detail.followers)}</strong>
+                {t("Followers", "팔로워", "粉丝数")}
+              </div>
+              <div>
+                <strong>{number(detail.views10)}</strong>
+                {t("Average views", "평균 조회수", "平均播放量")}
+              </div>
+              <div>
+                <strong>{detail.engagement}%</strong>
+                {t("Engagement", "참여율", "互动率")}
+              </div>
+            </div>
+            <p>
+              {t(
+                "Sample topics and posts below are illustrative, not live channel activity.",
+                "아래 주제와 게시물은 예시이며 실제 채널 활동이 아닙니다.",
+                "以下主题和内容仅为示例，并非实时频道数据。",
+              )}
+            </p>
+            <div className="cw-tags">
+              {detail.tags.map((tag) => (
+                <span key={tag} className="cw-tag">
+                  {tagLabel(tag, locale)}
+                </span>
+              ))}
+            </div>
+            <ul>
+              {detail.content.map((content) => (
+                <li key={content}>{content}</li>
+              ))}
+            </ul>
+            <button
+              className="cw-button cw-button-primary"
+              disabled={busy}
+              onClick={() => void saveCreator(detail)}
+            >
+              <Bookmark size={18} />
+              {activeCollection?.creatorIds.includes(detail.id)
+                ? t("Remove from collection", "폴더에서 해제", "取消收藏")
+                : t("Save to collection", "폴더에 저장", "添加收藏")}
+            </button>
+          </>
+        )}
+      </dialog>
+    </div>
+  );
+}

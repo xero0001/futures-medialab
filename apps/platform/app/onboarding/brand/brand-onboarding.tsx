@@ -224,7 +224,7 @@ export function BrandOnboarding({
         );
         return;
       }
-      window.location.assign(`/account?lang=${locale}`);
+      window.location.assign(`/storage/search?lang=${locale}`);
     } catch {
       setSubmitError("failed");
     } finally {

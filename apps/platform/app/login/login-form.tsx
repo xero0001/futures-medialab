@@ -105,7 +105,7 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
         );
         return;
       }
-      window.location.assign(`/account?lang=${locale}`);
+      window.location.assign(`/auth/continue?lang=${locale}`);
     } catch {
       setStatus("failed");
     } finally {

@@ -49,19 +49,19 @@ export default async function AccountPage({
             },
           },
         },
-        orderBy: { createdAt: "asc" },
+        orderBy: [{ createdAt: "asc" }, { organizationId: "asc" }],
       },
     },
   });
   if (!user) redirect(`/login?lang=${locale}`);
 
-  const ownedBrand = user.memberships.find(
-    (membership) =>
-      membership.role === "OWNER" && membership.organization.type === "BRAND",
+  const brand = user.memberships.find(
+    (membership) => membership.organization.type === "BRAND",
   );
   if (
-    ownedBrand &&
-    !hasCompletedBrandProfile(ownedBrand.organization.metadata)
+    brand?.role === "OWNER" &&
+    brand.organization.status !== "SUSPENDED" &&
+    !hasCompletedBrandProfile(brand.organization.metadata)
   ) {
     redirect(`/onboarding/brand?lang=${locale}`);
   }

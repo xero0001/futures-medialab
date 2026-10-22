@@ -65,6 +65,11 @@ const password = `Qa-${randomBytes(24).toString("base64url")}!`;
 const fixtureEmails = new Set();
 const fixtureNames = new Set();
 const requestWindows = new Map();
+const storagePaths = [
+  "/storage/search",
+  "/storage/similar-search",
+  "/storage/similar-brands",
+];
 let currentStep = "preflight";
 let failed = false;
 
@@ -213,6 +218,21 @@ function assertRedirect(result, pathname, message) {
   );
 }
 
+async function assertStorageAccess(cookie, destination = null) {
+  for (const path of storagePaths) {
+    const result = await request(`${path}?lang=en`, { cookie });
+    if (destination) {
+      assertRedirect(result, destination, `${path} must redirect safely`);
+    } else {
+      assert.equal(result.response.status, 200, `${path} must be accessible`);
+      assert.ok(
+        result.text.includes('data-creator-workspace="demo"'),
+        "The workspace must explicitly identify its demo-data boundary",
+      );
+    }
+  }
+}
+
 async function assertStoredBrandProfile(email, profile, organizationId) {
   const user = await readFixture(email);
   const organization = user.memberships[0].organization;
@@ -294,6 +314,21 @@ try {
       "/login",
       "Anonymous account page must redirect to login",
     );
+    const continuation = await request("/auth/continue?lang=ko");
+    assertRedirect(
+      continuation,
+      "/login",
+      "Anonymous post-auth routing must require a session",
+    );
+    assert.equal(
+      new URL(
+        continuation.response.headers.get("location"),
+        baseUrl,
+      ).searchParams.get("lang"),
+      "ko",
+      "Post-auth routing must preserve the chosen language",
+    );
+    await assertStorageAccess(undefined, "/login");
   });
 
   await check(
@@ -664,6 +699,15 @@ try {
           "Session must survive a new request",
         );
         if (input.role === "agency") {
+          const continuation = await request("/auth/continue?lang=en", {
+            cookie,
+          });
+          assertRedirect(
+            continuation,
+            "/account",
+            "Agency and studio logins must keep their account destination",
+          );
+          await assertStorageAccess(cookie, "/account");
           const deniedProfile = await request("/api/account/brand-profile", {
             body: profileFor(input),
             cookie,
@@ -685,6 +729,15 @@ try {
             "Forbidden profile updates must not modify the agency",
           );
         } else {
+          const continuation = await request("/auth/continue?lang=en", {
+            cookie,
+          });
+          assertRedirect(
+            continuation,
+            "/onboarding/brand",
+            "An incomplete brand login must enter company onboarding",
+          );
+          await assertStorageAccess(cookie, "/onboarding/brand");
           const initialAccount = await request("/account?lang=en", { cookie });
           assertRedirect(
             initialAccount,
@@ -781,6 +834,24 @@ try {
           console.log(
             "PASS brand first-visit onboarding, field validation, authorization, origin protection, and actual DB persistence",
           );
+          const completed = await request("/auth/continue?lang=en", { cookie });
+          assertRedirect(
+            completed,
+            "/storage/search",
+            "Completed brand login must enter the creator workspace",
+          );
+          const completedOnboarding = await request(
+            "/onboarding/brand?lang=en",
+            {
+              cookie,
+            },
+          );
+          assertRedirect(
+            completedOnboarding,
+            "/storage/search",
+            "Completed brands must not repeat onboarding",
+          );
+          await assertStorageAccess(cookie);
         }
         const account = await request("/account?lang=en", { cookie });
         assert.equal(
@@ -817,6 +888,7 @@ try {
           [303, 307, 308].includes(protectedPage.response.status),
           "Revoked cookie must not access the account page",
         );
+        await assertStorageAccess(cookie, "/login");
       },
     );
   }
@@ -831,6 +903,21 @@ try {
         200,
         "Completed brand must reach the account page after re-login",
       );
+      const continuation = await request("/auth/continue?lang=zh", { cookie });
+      assertRedirect(
+        continuation,
+        "/storage/search",
+        "A returning brand must be routed to creator search",
+      );
+      assert.equal(
+        new URL(
+          continuation.response.headers.get("location"),
+          baseUrl,
+        ).searchParams.get("lang"),
+        "zh",
+        "Brand workspace routing must preserve the chosen language",
+      );
+      await assertStorageAccess(cookie);
       const user = await readFixture(brand.email);
       await assertStoredBrandProfile(
         brand.email,
@@ -848,6 +935,130 @@ try {
         0,
         "Brand re-login session must be revoked",
       );
+    },
+  );
+
+  await check(
+    "brand workspace enforces approval state and non-owner onboarding boundaries",
+    async () => {
+      const cookie = await signIn(brand.email);
+      const user = await readFixture(brand.email);
+      const organization = user.memberships[0].organization;
+      assert.ok(
+        organization.name.startsWith(`${namePrefix} `),
+        "State tests may update only their own disposable organization",
+      );
+      const memberKey = {
+        userId_organizationId: {
+          userId: user.id,
+          organizationId: organization.id,
+        },
+      };
+
+      await db.organization.update({
+        where: { id: organization.id },
+        data: { status: "ACTIVE" },
+      });
+      await assertStorageAccess(cookie);
+
+      await db.$transaction([
+        db.organizationMember.update({
+          where: memberKey,
+          data: { role: "MEMBER" },
+        }),
+        db.organization.update({
+          where: { id: organization.id },
+          data: { metadata: { companySize: "15–49" } },
+        }),
+      ]);
+      await assertStorageAccess(cookie, "/account");
+      for (const path of ["/auth/continue", "/onboarding/brand"]) {
+        assertRedirect(
+          await request(`${path}?lang=en`, { cookie }),
+          "/account",
+          "A non-owner cannot be trapped in owner-only onboarding",
+        );
+      }
+      const nonOwnerProfile = await request("/api/account/brand-profile", {
+        body: profileFor(brand),
+        cookie,
+      });
+      assert.equal(
+        nonOwnerProfile.response.status,
+        403,
+        "Non-owners cannot save company profiles",
+      );
+      await db.organization.update({
+        where: { id: organization.id },
+        data: { metadata: organization.metadata },
+      });
+      await assertStorageAccess(cookie);
+
+      await db.$transaction([
+        db.organizationMember.update({
+          where: memberKey,
+          data: { role: "OWNER" },
+        }),
+        db.organization.update({
+          where: { id: organization.id },
+          data: { status: "SUSPENDED", metadata: { companySize: "15–49" } },
+        }),
+      ]);
+      await assertStorageAccess(cookie, "/account");
+      for (const path of ["/auth/continue", "/onboarding/brand"]) {
+        assertRedirect(
+          await request(`${path}?lang=en`, { cookie }),
+          "/account",
+          "Suspended brands must not enter onboarding or search",
+        );
+      }
+      const suspendedAccount = await request("/account?lang=en", { cookie });
+      assert.equal(
+        suspendedAccount.response.status,
+        200,
+        "Suspended brands must still see account status without a redirect loop",
+      );
+      assert.ok(
+        suspendedAccount.text.includes("Suspended"),
+        "The account must show its suspended status",
+      );
+      const suspendedProfile = await request("/api/account/brand-profile", {
+        body: profileFor(brand),
+        cookie,
+      });
+      assert.equal(
+        suspendedProfile.response.status,
+        403,
+        "Suspended owners cannot change company profiles",
+      );
+      const afterRejected = await readFixture(brand.email);
+      assert.equal(
+        afterRejected.memberships[0].organization.status,
+        "SUSPENDED",
+        "Rejected profile updates must not reactivate a brand",
+      );
+      assert.deepEqual(
+        afterRejected.memberships[0].organization.metadata,
+        { companySize: "15–49" },
+        "Rejected profile updates must not change metadata",
+      );
+      assert.equal(
+        afterRejected.emailVerified,
+        false,
+        "Search access must never verify email ownership",
+      );
+
+      await db.organization.update({
+        where: { id: organization.id },
+        data: { status: "PENDING", metadata: organization.metadata },
+      });
+      const logout = await request("/api/auth/sign-out", { body: {}, cookie });
+      assert.equal(
+        logout.response.status,
+        200,
+        "The state-test session must log out",
+      );
+      await assertStorageAccess(cookie, "/login");
     },
   );
 
