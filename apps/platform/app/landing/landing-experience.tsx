@@ -33,6 +33,16 @@ const campaignArtwork = [
   "/campaign-art/survival.webp",
 ];
 const stepIcons = [FileText, Users, Check];
+type LandingTheme = "chzzk" | "orange";
+const themeArtwork: Record<LandingTheme, string> = {
+  chzzk: "/landing/creator-world-chzzk.webp",
+  orange: "/landing/creator-world-orange.webp",
+};
+const themeLabels = {
+  ko: { label: "색상 비교", original: "기본", chzzk: "다크 민트", orange: "오렌지" },
+  en: { label: "Color previews", original: "Original", chzzk: "Dark mint", orange: "Orange" },
+  zh: { label: "配色预览", original: "原版", chzzk: "暗夜薄荷", orange: "暖橙" },
+};
 
 function Logo({ footer = false }: { footer?: boolean }) {
   return (
@@ -51,8 +61,10 @@ function Logo({ footer = false }: { footer?: boolean }) {
 
 export function LandingExperience({
   initialLocale,
+  theme,
 }: {
   initialLocale: Locale;
+  theme?: LandingTheme;
 }) {
   const [locale, setLocale] = useState(initialLocale);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -86,7 +98,7 @@ export function LandingExperience({
   }
 
   return (
-    <div className="fl-site" id="top">
+    <div className="fl-site" data-theme={theme} id="top">
       <header
         className="fl-header"
         onKeyDown={(event) => {
@@ -163,6 +175,27 @@ export function LandingExperience({
 
       <main>
         <div className="fl-container fl-intro">
+          {theme && (
+            <nav className="fl-theme-preview" aria-label={themeLabels[locale].label}>
+              <span>{themeLabels[locale].label}</span>
+              <div>
+                <Link href={`/?lang=${locale}`}>
+                  <span className="fl-theme-swatch fl-theme-swatch-original" aria-hidden="true" />
+                  {themeLabels[locale].original}
+                </Link>
+                {(["chzzk", "orange"] as const).map((variant) => (
+                  <Link
+                    key={variant}
+                    href={`/landing-${variant}?lang=${locale}`}
+                    aria-current={theme === variant ? "page" : undefined}
+                  >
+                    <span className={`fl-theme-swatch fl-theme-swatch-${variant}`} aria-hidden="true" />
+                    {themeLabels[locale][variant]}
+                  </Link>
+                ))}
+              </div>
+            </nav>
+          )}
           <a className="fl-announcement" href="#how-it-works">
             <span>
               <Megaphone size={19} />
@@ -198,7 +231,7 @@ export function LandingExperience({
             </div>
             <div className="fl-hero-art">
               <Image
-                src="/landing/creator-world.webp"
+                src={theme ? themeArtwork[theme] : "/landing/creator-world.webp"}
                 alt={copy.hero.visualLabel}
                 width={1536}
                 height={1024}

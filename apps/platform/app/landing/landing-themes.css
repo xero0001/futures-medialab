@@ -1,0 +1,291 @@
+/* Preview-only palettes. Never affect the original / or /landing routes. */
+.fl-site[data-theme="chzzk"] {
+  color-scheme: dark;
+  --fl-ink: #f4f7f6;
+  --fl-muted: #b0bcb8;
+  --fl-blue: #00ffa3;
+  --fl-line: #303b37;
+  --ft-canvas: #141517;
+  --ft-surface: #202624;
+  --ft-soft: #23352d;
+  --ft-soft-alt: #25302d;
+  --ft-hover: #2c4338;
+  --ft-hero: #171e1b;
+  --ft-accent-hover: #6bffcb;
+  --ft-button-ink: #063c27;
+  --ft-header: #141517f5;
+  --ft-tag: #20352be8;
+  --ft-shadow: #00000040;
+  --ft-workflow: #1a1e1c;
+  --ft-final: #00df90;
+  --ft-final-ink: #083d2a;
+  --ft-final-muted: #18543e;
+  --ft-final-button: #102e22;
+  --ft-final-button-ink: #a3ffdb;
+  --ft-final-button-hover: #1b4835;
+  --ft-focus: #69ffd0;
+}
+
+.fl-site[data-theme="orange"] {
+  color-scheme: light;
+  --fl-ink: #35271f;
+  --fl-muted: #766252;
+  --fl-blue: #c9440d;
+  --fl-line: #ecdfd3;
+  --ft-canvas: #fffdfa;
+  --ft-surface: #fff9f2;
+  --ft-soft: #ffebd9;
+  --ft-soft-alt: #fff0e5;
+  --ft-hover: #ffdec2;
+  --ft-hero: #fff0e4;
+  --ft-accent-hover: #a93608;
+  --ft-button-ink: #ffffff;
+  --ft-header: #fffdfaf5;
+  --ft-tag: #fff9f0ed;
+  --ft-shadow: #6a310d14;
+  --ft-workflow: #fff7ef;
+  --ft-final: #c9440d;
+  --ft-final-ink: #ffffff;
+  --ft-final-muted: #fff1e4;
+  --ft-final-button: #fff8ed;
+  --ft-final-button-ink: #a53608;
+  --ft-final-button-hover: #ffe3c9;
+  --ft-focus: #bd3d08;
+}
+
+.fl-site[data-theme] {
+  background: var(--ft-canvas);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+.fl-site[data-theme] ::selection {
+  background: var(--fl-blue);
+  color: var(--ft-button-ink);
+}
+.fl-site[data-theme] :focus-visible {
+  outline-color: var(--ft-focus);
+}
+.fl-site[data-theme] .fl-header {
+  background: var(--ft-header);
+  border-color: var(--fl-line);
+}
+.fl-site[data-theme] .fl-desktop-nav a:hover,
+.fl-site[data-theme] .fl-icon-button:hover,
+.fl-site[data-theme] .fl-mobile-nav a:hover {
+  background: var(--ft-hover);
+}
+.fl-site[data-theme] .fl-desktop-nav .fl-nav-selected {
+  background: var(--ft-soft);
+}
+.fl-site[data-theme] .fl-button {
+  color: var(--ft-button-ink) !important;
+}
+.fl-site[data-theme] .fl-button:hover {
+  background: var(--ft-accent-hover);
+}
+.fl-site[data-theme] .fl-announcement {
+  background: var(--ft-soft);
+  color: var(--fl-ink) !important;
+}
+.fl-site[data-theme] .fl-hero {
+  background: var(--ft-hero);
+}
+.fl-site[data-theme] .fl-status-dot {
+  background: var(--fl-blue);
+  box-shadow: 0 0 0 5px var(--ft-soft);
+}
+.fl-site[data-theme] .fl-art-tag {
+  background: var(--ft-tag);
+  border-color: var(--fl-line);
+  color: var(--fl-blue);
+  box-shadow: 0 6px 20px var(--ft-shadow);
+}
+.fl-site[data-theme] .fl-hero-down {
+  border-color: var(--fl-line);
+  color: var(--fl-muted) !important;
+}
+.fl-site[data-theme] .fl-quick-link,
+.fl-site[data-theme] .fl-partner-card {
+  background: var(--ft-surface);
+}
+.fl-site[data-theme] .fl-quick-link:nth-child(2),
+.fl-site[data-theme] .fl-partner-agency {
+  background: var(--ft-soft-alt);
+}
+.fl-site[data-theme] .fl-quick-link:hover,
+.fl-site[data-theme] .fl-quick-link:nth-child(2):hover {
+  background: var(--ft-hover);
+}
+.fl-site[data-theme] .fl-quick-icon,
+.fl-site[data-theme] .fl-quick-link:nth-child(2) .fl-quick-icon,
+.fl-site[data-theme] .fl-step-icon,
+.fl-site[data-theme] .fl-partner-icon,
+.fl-site[data-theme] .fl-partner-agency .fl-partner-icon {
+  background: var(--ft-soft);
+  color: var(--fl-blue);
+}
+.fl-site[data-theme] .fl-hero-description,
+.fl-site[data-theme] .fl-quick-arrow,
+.fl-site[data-theme] .fl-card-meta,
+.fl-site[data-theme] .fl-sample-note,
+.fl-site[data-theme] .fl-step-number,
+.fl-site[data-theme] .fl-partner-card > p:not(.fl-partner-label),
+.fl-site[data-theme] .fl-faq summary svg,
+.fl-site[data-theme] .fl-footer nav,
+.fl-site[data-theme] .fl-footer-note,
+.fl-site[data-theme] .fl-copyright {
+  color: var(--fl-muted);
+}
+.fl-site[data-theme] .fl-filter {
+  background: var(--ft-canvas);
+  color: var(--fl-muted);
+}
+.fl-site[data-theme] .fl-filter:hover {
+  background: var(--ft-soft);
+}
+.fl-site[data-theme] .fl-filter-active {
+  background: var(--fl-blue) !important;
+  border-color: var(--fl-blue);
+  color: var(--ft-button-ink);
+}
+.fl-site[data-theme] .fl-card-image-button {
+  background: var(--ft-soft);
+}
+.fl-site[data-theme] .fl-card-badge {
+  background: var(--ft-tag);
+  color: var(--fl-ink);
+}
+.fl-site[data-theme] .fl-card-arrow {
+  background: var(--ft-surface);
+  color: var(--fl-blue);
+}
+.fl-site[data-theme] .fl-card-category,
+.fl-site[data-theme] .fl-partner-label,
+.fl-site[data-theme] .fl-partner-agency .fl-partner-label,
+.fl-site[data-theme] .fl-partner-card .fl-text-link {
+  color: var(--fl-blue);
+}
+.fl-site[data-theme] .fl-card-content h3 button {
+  color: inherit;
+}
+.fl-site[data-theme] .fl-card-meta span:last-child,
+.fl-site[data-theme] .fl-wide-link,
+.fl-site[data-theme] .fl-dialog-body dl {
+  background: var(--ft-soft);
+}
+.fl-site[data-theme] .fl-wide-link:hover {
+  background: var(--ft-hover);
+}
+.fl-site[data-theme] .fl-workflow {
+  background: var(--ft-workflow);
+}
+.fl-site[data-theme] .fl-final {
+  background: var(--ft-final);
+  color: var(--ft-final-ink);
+}
+.fl-site[data-theme] .fl-final > svg,
+.fl-site[data-theme] .fl-final p {
+  color: var(--ft-final-muted);
+}
+.fl-site[data-theme] .fl-final :focus-visible {
+  outline-color: var(--ft-final-ink);
+}
+.fl-site[data-theme] .fl-button-white {
+  background: var(--ft-final-button);
+  color: var(--ft-final-button-ink) !important;
+}
+.fl-site[data-theme] .fl-button-white:hover {
+  background: var(--ft-final-button-hover);
+}
+.fl-site[data-theme] .fl-concept-dialog {
+  background: var(--ft-surface);
+  box-shadow: 0 20px 100px var(--ft-shadow);
+}
+.fl-site[data-theme="chzzk"] .fl-concept-dialog::backdrop {
+  background: #030b08b3;
+}
+.fl-site[data-theme="orange"] .fl-concept-dialog::backdrop {
+  background: #3a201766;
+}
+
+.fl-site[data-theme] .fm-language-switcher,
+.fl-site[data-theme] .fm-language-option {
+  color: var(--fl-ink);
+}
+.fl-site[data-theme] .fm-language-trigger:hover,
+.fl-site[data-theme] .fm-language-trigger[aria-expanded="true"],
+.fl-site[data-theme] .fm-language-option[aria-checked="true"] {
+  background: var(--ft-soft);
+  color: var(--fl-blue);
+}
+.fl-site[data-theme] .fm-language-menu {
+  background: var(--ft-surface);
+  border-color: var(--fl-line);
+  box-shadow: 0 12px 32px var(--ft-shadow);
+}
+.fl-site[data-theme] .fm-language-option:hover,
+.fl-site[data-theme] .fm-language-option[aria-checked="true"]:hover {
+  background: var(--ft-hover);
+}
+.fl-site[data-theme] .fm-language-switcher
+  :is(.fm-language-trigger, .fm-language-option):focus-visible {
+  outline-color: var(--ft-focus);
+}
+
+.fl-site[data-theme] .fl-theme-preview {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: var(--fl-muted);
+}
+.fl-site[data-theme] .fl-theme-preview > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fl-site[data-theme] .fl-theme-preview a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 7px 13px;
+  border: 1px solid var(--fl-line);
+  border-radius: 30px;
+}
+.fl-site[data-theme] .fl-theme-preview a:hover {
+  background: var(--ft-hover);
+}
+.fl-site[data-theme] .fl-theme-preview a[aria-current="page"] {
+  background: var(--ft-soft);
+  color: var(--fl-ink);
+  border-color: var(--fl-blue);
+  font-weight: 700;
+}
+.fl-site[data-theme] .fl-theme-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #00000015;
+}
+.fl-site[data-theme] .fl-theme-swatch-original { background: #5149dc; }
+.fl-site[data-theme] .fl-theme-swatch-chzzk { background: #00d58a; }
+.fl-site[data-theme] .fl-theme-swatch-orange { background: #e65c18; }
+
+@media (max-width: 700px) {
+  .fl-site[data-theme] .fl-theme-preview {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .fl-site[data-theme] .fl-theme-preview > span {
+    width: 100%;
+  }
+  .fl-site[data-theme] .fl-theme-preview a {
+    padding-inline: 12px;
+  }
+}
