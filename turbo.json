@@ -6,7 +6,8 @@
     "DATABASE_URL_UNPOOLED",
     "DIRECT_URL",
     "BETTER_AUTH_SECRET",
-    "BETTER_AUTH_URL"
+    "BETTER_AUTH_URL",
+    "BLOB_READ_WRITE_TOKEN"
   ],
   "tasks": {
     "build": {
