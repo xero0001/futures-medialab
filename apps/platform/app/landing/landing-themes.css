@@ -82,6 +82,34 @@
   --ft-focus: #141517;
 }
 
+.fl-site[data-theme="thefair"] {
+  color-scheme: light;
+  --fl-ink: #242a30;
+  --fl-muted: #5a5a5a;
+  --fl-blue: #242a30;
+  --fl-line: #e4e4e4;
+  --ft-canvas: #ffffff;
+  --ft-surface: #f2f2f2;
+  --ft-soft: #f2f2f2;
+  --ft-soft-alt: #fafafa;
+  --ft-hover: #e8e8e8;
+  --ft-hero: #ffffff;
+  --ft-accent-fill: #7fffff;
+  --ft-accent-hover: #00dddd;
+  --ft-button-ink: #242a30;
+  --ft-header: #fffffff5;
+  --ft-tag: #fffffff2;
+  --ft-shadow: #00000014;
+  --ft-workflow: #fafafa;
+  --ft-final: #1e1e1e;
+  --ft-final-ink: #ffffff;
+  --ft-final-muted: #c6c6c6;
+  --ft-final-button: #7fffff;
+  --ft-final-button-ink: #242a30;
+  --ft-final-button-hover: #00dddd;
+  --ft-focus: #242a30;
+}
+
 .fl-site[data-theme] {
   background: var(--ft-canvas);
   word-break: keep-all;
@@ -240,6 +268,9 @@
 .fl-site[data-theme="chzzk-light"] .fl-concept-dialog::backdrop {
   background: #14151780;
 }
+.fl-site[data-theme="thefair"] .fl-concept-dialog::backdrop {
+  background: #1e1e1e80;
+}
 
 .fl-site[data-theme] .fm-language-switcher,
 .fl-site[data-theme] .fm-language-option {
@@ -347,6 +378,7 @@
 .fl-site[data-theme] .fl-theme-swatch-chzzk { background: #00d58a; }
 .fl-site[data-theme] .fl-theme-swatch-chzzk-light { background: #00ffa3; }
 .fl-site[data-theme] .fl-theme-swatch-orange { background: #ff4432; }
+.fl-site[data-theme] .fl-theme-swatch-thefair { background: #00dddd; }
 .fl-site[data-theme="orange"] .fl-theme-preview a { border-radius: 8px; }
 
 /* CHZZK light keeps large surfaces neutral and reserves mint for actions. */
@@ -383,6 +415,46 @@
   border-radius: 12px;
   background: #24272b;
   color: var(--ft-accent-fill);
+  transform: none;
+}
+
+/* The Fair pairs bright aqua details with white and neutral gray surfaces. */
+.fl-site[data-theme="thefair"] .fl-logo {
+  color: var(--ft-accent-hover) !important;
+}
+.fl-site[data-theme="thefair"] .fl-status-dot {
+  background: var(--ft-accent-hover);
+}
+.fl-site[data-theme="thefair"] .fl-hero,
+.fl-site[data-theme="thefair"] .fl-quick-link,
+.fl-site[data-theme="thefair"] .fl-partner-card,
+.fl-site[data-theme="thefair"] .fl-card-image-button,
+.fl-site[data-theme="thefair"] .fl-concept-dialog,
+.fl-site[data-theme="thefair"] .fl-final {
+  border-radius: 16px;
+}
+.fl-site[data-theme="thefair"] .fl-button,
+.fl-site[data-theme="thefair"] .fl-announcement,
+.fl-site[data-theme="thefair"] .fl-wide-link {
+  border-radius: 10px;
+}
+.fl-site[data-theme="thefair"] .fl-filter,
+.fl-site[data-theme="thefair"] .fl-desktop-nav a,
+.fl-site[data-theme="thefair"] .fl-art-tag,
+.fl-site[data-theme="thefair"] .fl-theme-preview a {
+  border-radius: 8px;
+}
+.fl-site[data-theme="thefair"] .fl-art-tag {
+  transform: none;
+}
+.fl-site[data-theme="thefair"] .fl-quick-icon,
+.fl-site[data-theme="thefair"] .fl-quick-link:nth-child(2) .fl-quick-icon,
+.fl-site[data-theme="thefair"] .fl-step-icon,
+.fl-site[data-theme="thefair"] .fl-partner-icon,
+.fl-site[data-theme="thefair"] .fl-partner-agency .fl-partner-icon {
+  border-radius: 12px;
+  background: #242a30;
+  color: var(--ft-accent-hover);
   transform: none;
 }
 

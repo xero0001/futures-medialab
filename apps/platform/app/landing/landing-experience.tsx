@@ -33,16 +33,18 @@ const campaignArtwork = [
   "/campaign-art/survival.webp",
 ];
 const stepIcons = [FileText, Users, Check];
-type LandingTheme = "chzzk" | "chzzk-light" | "orange";
+type LandingTheme = "chzzk" | "chzzk-light" | "orange" | "thefair";
 const themeArtwork: Record<LandingTheme, string> = {
   chzzk: "/landing/creator-world-chzzk.webp",
   "chzzk-light": "/landing/creator-world-chzzk-neutral.webp",
   orange: "/landing/creator-world-orange-monochrome.webp",
+  thefair: "/landing/creator-world-thefair.webp",
 };
 const themeRoutes: Record<LandingTheme, string> = {
   chzzk: "/landing-chzzk",
   "chzzk-light": "/chzzk-light",
   orange: "/landing-orange",
+  thefair: "/landing-thefair",
 };
 const themeLabels = {
   ko: {
@@ -51,6 +53,7 @@ const themeLabels = {
     chzzk: "다크 민트",
     "chzzk-light": "라이트 민트",
     orange: "오렌지",
+    thefair: "더페어 아쿠아",
   },
   en: {
     label: "Color previews",
@@ -58,6 +61,7 @@ const themeLabels = {
     chzzk: "Dark mint",
     "chzzk-light": "Light mint",
     orange: "Orange",
+    thefair: "The Fair aqua",
   },
   zh: {
     label: "配色预览",
@@ -65,6 +69,7 @@ const themeLabels = {
     chzzk: "暗夜薄荷",
     "chzzk-light": "明亮薄荷",
     orange: "亮橙",
+    thefair: "The Fair 青色",
   },
 };
 
@@ -207,7 +212,7 @@ export function LandingExperience({
                   <span className="fl-theme-swatch fl-theme-swatch-original" aria-hidden="true" />
                   {themeLabels[locale].original}
                 </Link>
-                {(["chzzk", "chzzk-light", "orange"] as const).map((variant) => (
+                {(["chzzk", "chzzk-light", "orange", "thefair"] as const).map((variant) => (
                   <Link
                     key={variant}
                     href={`${themeRoutes[variant]}?lang=${locale}`}
