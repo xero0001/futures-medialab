@@ -25,6 +25,24 @@ database, UI, lint, and TypeScript code lives in `packages/*`.
 - Request/approval/bank-transfer settlement workflow
 - English, Korean, and Chinese locale-ready user data
 
+## Public landing page
+
+The home page presents managed campaigns and an approved-organization
+marketplace, Korean localization, campaign delivery, and partner requirements.
+Its content is based on the business proposal v2.0, the service proposal, and
+Youdao Ads' public site. Internal revenue, speculative performance statistics,
+customer logos, and unconfirmed pricing are not published.
+
+- Copy: `apps/platform/app/_components/landing-copy.ts`
+- Page components: `apps/platform/app/_components/`
+- Scoped styles: `apps/platform/app/landing.css`
+- Locale priority: `?lang=en|ko|zh`, saved language cookie, browser language,
+  then English. Manual language changes update both the URL and cookie.
+- The brief builder creates a downloadable text file in the browser. It does
+  not submit campaign requests or store the form in a database.
+- Marketplace illustrations are examples. Partner authentication, application
+  intake, live campaigns, and settlement operations are separate backend work.
+
 ## Requirements
 
 - Node.js 22 or later
