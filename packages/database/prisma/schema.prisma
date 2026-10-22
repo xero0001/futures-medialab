@@ -30,6 +30,17 @@ enum MembershipRole {
   MEMBER
 }
 
+enum AgencyDocumentKind {
+  BUSINESS_REGISTRATION
+  CONTRACT
+}
+
+enum AgencyDocumentState {
+  PENDING
+  UPLOADED
+  REJECTED
+}
+
 enum CampaignType {
   OPEN_BIDDING
   MANAGED
@@ -95,6 +106,7 @@ model User {
   directorySearches     DirectorySearch[]
   shortLinks            ShortLink[]
   workspaceToolRequests WorkspaceToolRequest[]
+  agencyDocuments       AgencyDocument[]
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
 }
@@ -175,6 +187,7 @@ model Organization {
   directorySearches     DirectorySearch[]
   shortLinks            ShortLink[]
   workspaceToolRequests WorkspaceToolRequest[]
+  agencyDocuments       AgencyDocument[]
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
 
@@ -192,6 +205,27 @@ model OrganizationMember {
 
   @@id([userId, organizationId])
   @@index([organizationId, role])
+}
+
+// Private onboarding documents. Blob URLs and upload tokens are never persisted.
+model AgencyDocument {
+  id             String              @id @default(cuid())
+  organizationId String
+  userId         String
+  kind           AgencyDocumentKind
+  state          AgencyDocumentState @default(PENDING)
+  pathname       String              @unique
+  fileName       String
+  contentType    String
+  size           Int
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([organizationId, kind, state])
+  @@index([organizationId, createdAt])
+  @@index([userId])
 }
 
 model Campaign {

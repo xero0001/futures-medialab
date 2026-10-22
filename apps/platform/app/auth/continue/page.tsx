@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default async function ContinueAfterAuth({
   searchParams,
 }: {
-  searchParams: Promise<{ lang?: string }>;
+  searchParams: Promise<{ lang?: string; registered?: string }>;
 }) {
   const [query, cookieStore, requestHeaders] = await Promise.all([
     searchParams,
@@ -26,5 +26,5 @@ export default async function ContinueAfterAuth({
     requestHeaders.get("accept-language"),
   );
   // Destinations are selected on the server, never from a caller-provided URL.
-  redirect(await getPostAuthDestination(locale));
+  redirect(await getPostAuthDestination(locale, { registered: query.registered === "1" }));
 }

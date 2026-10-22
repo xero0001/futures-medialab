@@ -70,6 +70,36 @@ customer logos, and unconfirmed pricing are not published.
   for comparison. It is marked as an archived mockup and excluded from indexing;
   its illustrative numbers, original typography, and sample campaign UI remain.
 
+## Agency / Studio onboarding and workspace
+
+- Agency owners continue to `/onboarding/agency` after registration/login.
+  Drafts persist on the owned organization. Company information includes country,
+  registered address, establishment date, contact method, business scope and
+  platform contact. A business license ID is mandatory for Agency, optional for
+  Studio. Both require a business proof document; a contract is optional.
+- Proof and contract uploads use the **private** Vercel Blob store
+  `futures-medialab-documents` in Singapore. Development and Production are
+  connected; Preview is intentionally not connected. Pull development variables
+  without overwriting local auth settings. `BLOB_READ_WRITE_TOKEN` is server-only.
+- PDF, JPEG and PNG uploads are limited to 20 MB, go directly to Blob with a
+  pathname-scoped short-lived token, and require authenticated server completion.
+  The server checks ownership, stored metadata and file signatures before marking
+  a document uploaded. This is format validation, not malware scanning. Download
+  routes recheck organization ownership and stream attachments with no-store.
+- Submission locks the profile and displays **Waiting for Verification**.
+  It does not change the organization from PENDING to ACTIVE or verify email.
+  Email delivery and approval administration remain separate work.
+- `/agency` is an explicitly labeled workspace prototype inferred from the
+  supplied references: offer grid/list and filters, campaign details, project and
+  invitation views, creator roster, payments, organization information and
+  notifications. Campaigns are fictional demo data; no applications, balances,
+  transactions or live deals are fabricated. Pending organizations cannot access
+  live campaigns or initiate payments. Real campaign operations are not wired
+  into this prototype, even for active organizations.
+- `pnpm --filter @futures-medialab/platform test:agency` checks the local
+  onboarding/API/private-Blob path with synthetic accounts/files and cleans up
+  only those fixtures. Start the app at port 3002 with matching BETTER_AUTH_URL.
+
 ## Requirements
 
 - Node.js 22 or later

@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import type { Locale } from "../app/_components/landing-copy";
 import { getAuth } from "./auth";
 import { hasCompletedBrandProfile } from "./brand-profile";
+import { getAuthenticatedAgencyMembership } from "./agency-access";
+import { hasSubmittedAgencyProfile } from "./agency-profile";
 
 // Membership and organization state are read for every request. A session or
 // client-selected role alone never grants access to a brand workspace.
@@ -38,9 +40,16 @@ function brandDestination(membership: BrandMembership) {
   return "/storage/search";
 }
 
-export async function getPostAuthDestination(locale: Locale) {
+export async function getPostAuthDestination(locale: Locale, options: { registered?: boolean } = {}) {
   const membership = await getAuthenticatedBrandMembership(locale);
-  return `${brandDestination(membership)}?lang=${locale}`;
+  if (membership) return `${brandDestination(membership)}?lang=${locale}`;
+  const agency = await getAuthenticatedAgencyMembership(locale);
+  if (!agency || agency.organization.status === "SUSPENDED") return `/account?lang=${locale}`;
+  if (hasSubmittedAgencyProfile(agency.organization.metadata))
+    return `${agency.organization.status === "ACTIVE" || agency.role !== "OWNER" ? "/agency" : "/onboarding/agency"}?lang=${locale}`;
+  return agency.role === "OWNER"
+    ? `/onboarding/agency?lang=${locale}${options.registered ? "&welcome=1" : ""}`
+    : `/account?lang=${locale}`;
 }
 
 export async function requireBrandWorkspace(locale: Locale): Promise<{

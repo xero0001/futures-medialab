@@ -704,8 +704,8 @@ try {
           });
           assertRedirect(
             continuation,
-            "/account",
-            "Agency and studio logins must keep their account destination",
+            "/onboarding/agency",
+            "Agency and studio owners must complete company onboarding",
           );
           await assertStorageAccess(cookie, "/account");
           const deniedProfile = await request("/api/account/brand-profile", {
@@ -854,6 +854,9 @@ try {
           await assertStorageAccess(cookie);
         }
         const account = await request("/account?lang=en", { cookie });
+        if (input.role === "agency") {
+          assertRedirect(account, "/onboarding/agency", "Incomplete agency account must resume onboarding");
+        } else {
         assert.equal(
           account.response.status,
           200,
@@ -867,6 +870,7 @@ try {
           account.text.includes(input.email),
           "Account page must show the stored account",
         );
+        }
         const signedOut = await request("/api/auth/sign-out", {
           body: {},
           cookie,
