@@ -28,29 +28,64 @@
 
 .fl-site[data-theme="orange"] {
   color-scheme: light;
-  --fl-ink: #35271f;
-  --fl-muted: #766252;
-  --fl-blue: #c9440d;
-  --fl-line: #ecdfd3;
-  --ft-canvas: #fffdfa;
-  --ft-surface: #fff9f2;
-  --ft-soft: #ffebd9;
-  --ft-soft-alt: #fff0e5;
-  --ft-hover: #ffdec2;
-  --ft-hero: #fff0e4;
-  --ft-accent-hover: #a93608;
+  --fl-ink: #202735;
+  --fl-muted: #606b7c;
+  --fl-blue: #c23c13;
+  --fl-line: #e3e7ed;
+  --ft-canvas: #ffffff;
+  --ft-surface: #ffffff;
+  --ft-soft: #f2f4f7;
+  --ft-soft-alt: #f7f9fb;
+  --ft-hover: #e9edf3;
+  --ft-hero: #ffffff;
+  --ft-accent-fill: #d13d14;
+  --ft-accent-hover: #b82e0b;
   --ft-button-ink: #ffffff;
-  --ft-header: #fffdfaf5;
-  --ft-tag: #fff9f0ed;
-  --ft-shadow: #6a310d14;
-  --ft-workflow: #fff7ef;
-  --ft-final: #c9440d;
+  --ft-header: #fffffff5;
+  --ft-tag: #ffffffed;
+  --ft-shadow: #20273514;
+  --ft-workflow: #f7f9fb;
+  --ft-final: #d13d14;
   --ft-final-ink: #ffffff;
-  --ft-final-muted: #fff1e4;
-  --ft-final-button: #fff8ed;
-  --ft-final-button-ink: #a53608;
-  --ft-final-button-hover: #ffe3c9;
-  --ft-focus: #bd3d08;
+  --ft-final-muted: #ffffff;
+  --ft-final-button: #ffffff;
+  --ft-final-button-ink: #b82e0b;
+  --ft-final-button-hover: #f2f4f7;
+  --ft-focus: #c23c13;
+  --ft-secondary-blue: #315bbb;
+  --ft-secondary-blue-soft: #edf3ff;
+  --ft-secondary-blue-hover: #e2edff;
+  --ft-secondary-mint: #00764f;
+  --ft-secondary-mint-soft: #e8faf2;
+  --ft-secondary-mint-hover: #dff7ea;
+}
+
+.fl-site[data-theme="chzzk-light"] {
+  color-scheme: light;
+  --fl-ink: #172c23;
+  --fl-muted: #566c63;
+  --fl-blue: #00754b;
+  --fl-line: #cfe4d8;
+  --ft-canvas: #fcfffd;
+  --ft-surface: #f5fcf8;
+  --ft-soft: #dff8eb;
+  --ft-soft-alt: #effaf4;
+  --ft-hover: #d0f2e0;
+  --ft-hero: #edfff6;
+  --ft-accent-fill: #00ffa3;
+  --ft-accent-hover: #29e99e;
+  --ft-button-ink: #073e2b;
+  --ft-header: #fcfffdf5;
+  --ft-tag: #f5fff9ed;
+  --ft-shadow: #173f2814;
+  --ft-workflow: #f1faf5;
+  --ft-final: #00e99a;
+  --ft-final-ink: #083d2a;
+  --ft-final-muted: #18543e;
+  --ft-final-button: #103f2d;
+  --ft-final-button-ink: #dcfff0;
+  --ft-final-button-hover: #1b553d;
+  --ft-focus: #00754b;
 }
 
 .fl-site[data-theme] {
@@ -59,7 +94,7 @@
   overflow-wrap: break-word;
 }
 .fl-site[data-theme] ::selection {
-  background: var(--fl-blue);
+  background: var(--ft-accent-fill, var(--fl-blue));
   color: var(--ft-button-ink);
 }
 .fl-site[data-theme] :focus-visible {
@@ -78,6 +113,7 @@
   background: var(--ft-soft);
 }
 .fl-site[data-theme] .fl-button {
+  background: var(--ft-accent-fill, var(--fl-blue));
   color: var(--ft-button-ink) !important;
 }
 .fl-site[data-theme] .fl-button:hover {
@@ -144,8 +180,8 @@
   background: var(--ft-soft);
 }
 .fl-site[data-theme] .fl-filter-active {
-  background: var(--fl-blue) !important;
-  border-color: var(--fl-blue);
+  background: var(--ft-accent-fill, var(--fl-blue)) !important;
+  border-color: var(--ft-accent-fill, var(--fl-blue));
   color: var(--ft-button-ink);
 }
 .fl-site[data-theme] .fl-card-image-button {
@@ -205,7 +241,10 @@
   background: #030b08b3;
 }
 .fl-site[data-theme="orange"] .fl-concept-dialog::backdrop {
-  background: #3a201766;
+  background: #20273566;
+}
+.fl-site[data-theme="chzzk-light"] .fl-concept-dialog::backdrop {
+  background: #0b302366;
 }
 
 .fl-site[data-theme] .fm-language-switcher,
@@ -230,6 +269,54 @@
 .fl-site[data-theme] .fm-language-switcher
   :is(.fm-language-trigger, .fm-language-option):focus-visible {
   outline-color: var(--ft-focus);
+}
+
+/* Orange is an action accent, balanced with white, blue and mint surfaces. */
+.fl-site[data-theme="orange"] .fl-announcement {
+  background: var(--ft-secondary-blue-soft);
+  color: var(--ft-secondary-blue) !important;
+}
+.fl-site[data-theme="orange"] .fl-status-dot {
+  background: #00c887;
+  box-shadow: 0 0 0 5px var(--ft-secondary-mint-soft);
+}
+.fl-site[data-theme="orange"] .fl-art-tag,
+.fl-site[data-theme="orange"] .fl-card-category {
+  color: var(--ft-secondary-blue);
+}
+.fl-site[data-theme="orange"] .fl-quick-link:first-child,
+.fl-site[data-theme="orange"] .fl-partner-brand {
+  background: var(--ft-secondary-blue-soft);
+}
+.fl-site[data-theme="orange"] .fl-quick-link:nth-child(2),
+.fl-site[data-theme="orange"] .fl-partner-agency {
+  background: var(--ft-secondary-mint-soft);
+}
+.fl-site[data-theme="orange"] .fl-quick-link:first-child:hover {
+  background: var(--ft-secondary-blue-hover);
+}
+.fl-site[data-theme="orange"] .fl-quick-link:nth-child(2):hover {
+  background: var(--ft-secondary-mint-hover);
+}
+.fl-site[data-theme="orange"] .fl-quick-icon,
+.fl-site[data-theme="orange"] .fl-partner-brand .fl-partner-icon,
+.fl-site[data-theme="orange"] .fl-steps li:first-child .fl-step-icon {
+  background: #dde8ff;
+  color: var(--ft-secondary-blue);
+}
+.fl-site[data-theme="orange"] .fl-quick-link:nth-child(2) .fl-quick-icon,
+.fl-site[data-theme="orange"] .fl-partner-agency .fl-partner-icon,
+.fl-site[data-theme="orange"] .fl-steps li:nth-child(2) .fl-step-icon {
+  background: #d3f3e3;
+  color: var(--ft-secondary-mint);
+}
+.fl-site[data-theme="orange"] .fl-partner-brand .fl-partner-label,
+.fl-site[data-theme="orange"] .fl-partner-brand .fl-text-link {
+  color: var(--ft-secondary-blue);
+}
+.fl-site[data-theme="orange"] .fl-partner-agency .fl-partner-label,
+.fl-site[data-theme="orange"] .fl-partner-agency .fl-text-link {
+  color: var(--ft-secondary-mint);
 }
 
 .fl-site[data-theme] .fl-theme-preview {
@@ -273,6 +360,7 @@
 }
 .fl-site[data-theme] .fl-theme-swatch-original { background: #5149dc; }
 .fl-site[data-theme] .fl-theme-swatch-chzzk { background: #00d58a; }
+.fl-site[data-theme] .fl-theme-swatch-chzzk-light { background: #a1ffd4; }
 .fl-site[data-theme] .fl-theme-swatch-orange { background: #e65c18; }
 
 @media (max-width: 700px) {
@@ -287,5 +375,13 @@
   }
   .fl-site[data-theme] .fl-theme-preview a {
     padding-inline: 12px;
+  }
+}
+
+@media (max-width: 460px) {
+  .fl-site[data-theme] .fl-theme-preview > div {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
   }
 }

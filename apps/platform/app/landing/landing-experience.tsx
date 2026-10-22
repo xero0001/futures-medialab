@@ -33,15 +33,39 @@ const campaignArtwork = [
   "/campaign-art/survival.webp",
 ];
 const stepIcons = [FileText, Users, Check];
-type LandingTheme = "chzzk" | "orange";
+type LandingTheme = "chzzk" | "chzzk-light" | "orange";
 const themeArtwork: Record<LandingTheme, string> = {
   chzzk: "/landing/creator-world-chzzk.webp",
-  orange: "/landing/creator-world-orange.webp",
+  "chzzk-light": "/landing/creator-world-chzzk-light.webp",
+  orange: "/landing/creator-world-orange-white.webp",
+};
+const themeRoutes: Record<LandingTheme, string> = {
+  chzzk: "/landing-chzzk",
+  "chzzk-light": "/chzzk-light",
+  orange: "/landing-orange",
 };
 const themeLabels = {
-  ko: { label: "색상 비교", original: "기본", chzzk: "다크 민트", orange: "오렌지" },
-  en: { label: "Color previews", original: "Original", chzzk: "Dark mint", orange: "Orange" },
-  zh: { label: "配色预览", original: "原版", chzzk: "暗夜薄荷", orange: "暖橙" },
+  ko: {
+    label: "색상 비교",
+    original: "기본",
+    chzzk: "다크 민트",
+    "chzzk-light": "라이트 민트",
+    orange: "오렌지",
+  },
+  en: {
+    label: "Color previews",
+    original: "Original",
+    chzzk: "Dark mint",
+    "chzzk-light": "Light mint",
+    orange: "Orange",
+  },
+  zh: {
+    label: "配色预览",
+    original: "原版",
+    chzzk: "暗夜薄荷",
+    "chzzk-light": "明亮薄荷",
+    orange: "亮橙",
+  },
 };
 
 function Logo({ footer = false }: { footer?: boolean }) {
@@ -183,10 +207,10 @@ export function LandingExperience({
                   <span className="fl-theme-swatch fl-theme-swatch-original" aria-hidden="true" />
                   {themeLabels[locale].original}
                 </Link>
-                {(["chzzk", "orange"] as const).map((variant) => (
+                {(["chzzk", "chzzk-light", "orange"] as const).map((variant) => (
                   <Link
                     key={variant}
-                    href={`/landing-${variant}?lang=${locale}`}
+                    href={`${themeRoutes[variant]}?lang=${locale}`}
                     aria-current={theme === variant ? "page" : undefined}
                   >
                     <span className={`fl-theme-swatch fl-theme-swatch-${variant}`} aria-hidden="true" />
