@@ -92,11 +92,11 @@ test("genre artwork comes only from an allowlist for known demo fixtures", () =>
   const expected = {
     "starlight-odyssey": "subculture",
     "frost-haven": "survival",
-    "neon-rally": "subculture",
-    "cloud-garden": "subculture",
-    "pixel-quest": "subculture",
+    "neon-rally": "racing",
+    "cloud-garden": "cozy",
+    "pixel-quest": "pixel",
     "arcane-tactics": "mmorpg",
-    "moonlight-cafe": "subculture",
+    "moonlight-cafe": "cozy",
     "aether-arena": "mmorpg",
   };
   for (const [key, genre] of Object.entries(expected)) {

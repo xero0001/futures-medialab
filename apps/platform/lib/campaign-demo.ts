@@ -5,11 +5,11 @@ export const DEMO_CAMPAIGN_SEED = "agency-workspace-v1";
 const demoArtwork = {
   "fm-demo-campaign-starlight-odyssey": "/campaign-art/subculture.webp",
   "fm-demo-campaign-frost-haven": "/campaign-art/survival.webp",
-  "fm-demo-campaign-neon-rally": "/campaign-art/subculture.webp",
-  "fm-demo-campaign-cloud-garden": "/campaign-art/subculture.webp",
-  "fm-demo-campaign-pixel-quest": "/campaign-art/subculture.webp",
+  "fm-demo-campaign-neon-rally": "/campaign-art/racing.webp",
+  "fm-demo-campaign-cloud-garden": "/campaign-art/cozy.webp",
+  "fm-demo-campaign-pixel-quest": "/campaign-art/pixel.webp",
   "fm-demo-campaign-arcane-tactics": "/campaign-art/mmorpg.webp",
-  "fm-demo-campaign-moonlight-cafe": "/campaign-art/subculture.webp",
+  "fm-demo-campaign-moonlight-cafe": "/campaign-art/cozy.webp",
   "fm-demo-campaign-aether-arena": "/campaign-art/mmorpg.webp",
 } as const;
 
