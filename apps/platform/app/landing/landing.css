@@ -709,7 +709,9 @@
   overflow: hidden;
 }
 .fl-final > svg {
+  display: block;
   color: #d5ccff;
+  margin-inline: auto;
   margin-bottom: 20px;
 }
 .fl-final h2 {

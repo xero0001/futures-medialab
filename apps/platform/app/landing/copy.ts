@@ -27,7 +27,6 @@ export type LandingCopy = {
     agency: { title: string; description: string };
   };
   discovery: {
-    eyebrow: string;
     title: string;
     body: string;
     all: string;
@@ -56,7 +55,6 @@ export type LandingCopy = {
     steps: Array<{ title: string; body: string }>;
   };
   partners: {
-    eyebrow: string;
     title: string;
     body: string;
     brandTitle: string;
@@ -115,7 +113,6 @@ const en: LandingCopy = {
     },
   },
   discovery: {
-    eyebrow: "A LITTLE INSPIRATION",
     title: "Your next collaboration starts here.",
     body: "Explore a few campaign ideas. Real opportunities are available to approved agency partners.",
     all: "All ideas",
@@ -175,7 +172,6 @@ const en: LandingCopy = {
     ],
   },
   partners: {
-    eyebrow: "TWO SIDES. ONE SHARED IDEA.",
     title: "Made for people who make things happen.",
     body: "Global ambition meets local understanding.",
     brandTitle: "For brands with a world to share.",
@@ -260,7 +256,6 @@ const ko: LandingCopy = {
     },
   },
   discovery: {
-    eyebrow: "다음 협업의 힌트",
     title: "이런 만남, 어떨까요?",
     body: "새로운 캠페인 아이디어를 둘러보세요. 실제 모집 중인 캠페인은 승인된 에이전시에게 공개됩니다.",
     all: "전체 아이디어",
@@ -320,7 +315,6 @@ const ko: LandingCopy = {
     ],
   },
   partners: {
-    eyebrow: "서로 다른 출발, 같은 기대",
     title: "함께 만들어갈 사람들을 위해.",
     body: "글로벌 브랜드의 아이디어에, 한국 시장을 아는 파트너의 감각을 더해요.",
     brandTitle: "새로운 세계를 알리고 싶은 브랜드.",
@@ -405,7 +399,6 @@ const zh: LandingCopy = {
     },
   },
   discovery: {
-    eyebrow: "为下一次合作寻找灵感",
     title: "让新的合作，从这里开始。",
     body: "看看这些活动创意。实际招募中的活动将向通过审核的代理机构开放。",
     all: "全部创意",
@@ -464,7 +457,6 @@ const zh: LandingCopy = {
     ],
   },
   partners: {
-    eyebrow: "不同的起点，共同的期待",
     title: "为让创意成真的人而打造。",
     body: "让全球视野，遇见对本地市场的理解。",
     brandTitle: "让更多人发现你的游戏世界。",

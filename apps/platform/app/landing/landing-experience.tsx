@@ -312,7 +312,6 @@ export function LandingExperience({
         >
           <div className="fl-section-heading">
             <div>
-              <p className="fl-eyebrow">{copy.discovery.eyebrow}</p>
               <h2 id="fl-discovery-title">{copy.discovery.title}</h2>
             </div>
             <p>{copy.discovery.body}</p>
@@ -428,7 +427,6 @@ export function LandingExperience({
           id="partners"
           aria-labelledby="fl-partners-title"
         >
-          <p className="fl-eyebrow">{copy.partners.eyebrow}</p>
           <h2 id="fl-partners-title">{copy.partners.title}</h2>
           <p className="fl-partners-intro">{copy.partners.body}</p>
           <div className="fl-partner-grid">
