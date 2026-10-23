@@ -1,404 +1,344 @@
-/* The marketplace keeps the landing's editorial rhythm without changing its data flow. */
+/* Compact, task-first campaign catalog. Shared workspace styling remains in its shell. */
 .cwa-marketplace {
-  --market-ink: #24243e;
-  --market-muted: #6f7087;
-  --market-violet: #5149dc;
-  --market-line: #e9e7f1;
+  --market-ink: #283247;
+  --market-muted: #667085;
+  --market-line: #e6e9ef;
+  --market-indigo: #4f46d8;
   min-width: 0;
 }
-.cwa-marketplace .cwa-demo-notice {
+.cwa-catalog-toolbar {
+  display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 0 0 20px;
-  border: 0;
-  border-radius: 14px;
-  background: #eef3ff;
-  padding: 12px 16px;
-  color: #56648a;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 17px;
+}
+.cwa-catalog-toolbar > p {
+  margin: 0;
+  color: var(--market-muted);
   font-size: 14px;
 }
+.cwa-catalog-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-left: auto;
+}
+.cwa-marketplace .cwa-button {
+  min-height: 39px;
+  border: 1px solid #dfe3eb;
+  border-radius: 7px;
+  background: #fff;
+  padding: 8px 13px;
+  color: #505d73;
+  font-size: 14px;
+  font-weight: 550;
+}
+.cwa-marketplace .cwa-button-primary {
+  border-color: var(--market-indigo);
+  background: var(--market-indigo);
+  color: #fff;
+}
+.cwa-marketplace .cwa-button-primary:not(:disabled):hover {
+  border-color: #4338bc;
+  background: #4338bc;
+  color: #fff;
+}
+.cwa-marketplace .cwa-view-toggle {
+  min-height: 37px;
+  border: 1px solid #e3e6ed;
+  border-radius: 7px;
+  background: #f3f4f7;
+  padding: 3px;
+}
+.cwa-marketplace .cwa-view-toggle > button {
+  gap: 6px;
+  border-radius: 4px;
+  padding: 5px 10px;
+  color: #737d90;
+  font-size: 13px;
+}
+.cwa-marketplace .cwa-view-toggle > button.is-active {
+  background: #fff;
+  color: #3f4a61;
+  box-shadow: 0 1px 4px #2230430b;
+}
+.cwa-marketplace .cwa-demo-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 15px;
+  border: 1px solid #e2e7f6;
+  border-radius: 7px;
+  background: #f4f6fc;
+  padding: 10px 13px;
+  color: #606c84;
+  font-size: 13px;
+  line-height: 1.6;
+}
 .cwa-marketplace .cwa-demo-notice > svg {
-  margin: 0;
-  color: #6658cf;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #676ab2;
 }
 .cwa-marketplace .cwa-demo-notice p {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px 12px;
+  gap: 1px 10px;
   margin: 0;
+  font-size: 13px;
 }
 .cwa-marketplace .cwa-demo-notice strong {
   display: inline;
   margin: 0;
-  color: #4e5981;
-  font-size: 14px;
-  font-weight: 700;
-}
-.cwa-discover-hero {
-  display: grid;
-  grid-template-columns: 1.25fr 1fr;
-  align-items: stretch;
-  min-height: 224px;
-  overflow: hidden;
-  margin-bottom: 28px;
-  border-radius: 24px;
-  background: #efedff;
-}
-.cwa-discover-copy {
-  position: relative;
-  z-index: 1;
-  padding: 28px 34px;
-}
-.cwa-discover-copy h2 {
-  margin: 0;
-  color: var(--market-ink);
-  font-size: clamp(27px, 2.6vw, 36px);
-  font-weight: 750;
-  line-height: 1.18;
-  letter-spacing: -0.055em;
-}
-.cwa-discover-copy h2 > span {
-  display: block;
-  color: var(--market-violet);
-}
-.cwa-discover-copy p {
-  max-width: 440px;
-  margin: 13px 0 16px;
-  color: #62617e;
-  font-size: 15px;
-  line-height: 1.65;
-  word-break: keep-all;
-}
-.cwa-discover-copy button {
-  display: inline-flex;
-  min-height: 34px;
-  align-items: center;
-  gap: 13px;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  color: #514b7a;
-  font-size: 14px;
+  color: #515f7b;
+  font-size: 13px;
   font-weight: 650;
-  text-decoration: none;
-}
-.cwa-discover-copy button:hover {
-  color: var(--market-violet);
-}
-.cwa-discover-art {
-  position: relative;
-  min-height: 100%;
-  overflow: hidden;
-}
-.cwa-discover-art img {
-  object-fit: cover;
-  object-position: center 30%;
-}
-.cwa-discover-art::after {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    #efedff 0%,
-    rgb(239 237 255 / 15%) 24%,
-    transparent 48%
-  );
-  content: "";
 }
 .cwa-marketplace .cwa-filters {
-  margin-bottom: 26px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  padding: 0;
+  margin: 0;
+  border: 1px solid var(--market-line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 16px;
 }
 .cwa-marketplace .cwa-search-row {
   align-items: center;
-  gap: 12px;
-  margin-bottom: 17px;
+  gap: 10px;
+  margin-bottom: 15px;
 }
 .cwa-marketplace .cwa-search-input {
-  min-height: 52px;
-  border: 1px solid #e6e3ef;
-  border-radius: 16px;
+  display: flex;
+  width: 100%;
+  max-width: 390px;
+  min-width: 0;
+  min-height: 39px;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #dfe4ed;
+  border-radius: 6px;
   background: #fff;
-  padding: 12px 17px;
-  color: #8d88a5;
+  padding: 8px 11px;
+  color: #7a8599;
 }
 .cwa-marketplace .cwa-search-input:focus-within {
-  border-color: #a39aee;
-  box-shadow: 0 0 0 3px #efedff;
+  border-color: #9299e3;
+  box-shadow: 0 0 0 2px #eef0ff;
 }
 .cwa-marketplace .cwa-search-input > input {
+  min-width: 0;
+  border: 0;
+  background: transparent;
   color: var(--market-ink);
-  font-size: 15px;
+  font-size: 14px;
 }
 .cwa-marketplace .cwa-search-input > input:focus-visible {
   outline: 0;
 }
-.cwa-marketplace .cwa-button {
-  min-height: 44px;
-  border-color: #e4e1ed;
-  border-radius: 999px;
-  color: #5d5876;
-  font-size: 14px;
+.cwa-marketplace .cwa-search-row > .fmb-select {
+  width: 165px;
+  margin-left: auto;
 }
-.cwa-marketplace .cwa-button-primary {
-  border-color: var(--market-violet);
-  background: var(--market-violet);
-  color: #fff;
-}
-.cwa-marketplace .cwa-button-primary:not(:disabled):hover {
-  border-color: #4138bc;
-  background: #4138bc;
-  color: #fff;
-}
-.cwa-marketplace .cwa-filter-toggle {
-  min-height: 52px;
-  border-radius: 16px;
-  padding-inline: 18px;
-}
-.cwa-marketplace .cwa-filter-toggle.is-open {
-  border-color: #c9c2f6;
-  background: #f3f0ff;
-  color: var(--market-violet);
-}
-.cwa-marketplace .cwa-filter-toggle > svg:last-child {
-  transition: transform 0.2s;
-}
-.cwa-marketplace .cwa-filter-toggle.is-open > svg:last-child {
-  transform: rotate(180deg);
-}
-.cwa-filter-count {
-  display: inline-grid;
-  width: 22px;
-  height: 22px;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--market-violet);
-  color: #fff;
-  font-size: 14px;
+.cwa-marketplace .cwa-search-row > .fmb-select > .fmb-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .cwa-marketplace .cwa-filter-reset {
+  min-height: 37px;
   flex-shrink: 0;
-  min-height: 44px;
   border: 0;
   background: transparent;
-  padding: 8px 3px;
-  color: #70658e;
-  font-size: 14px;
+  padding: 7px 5px;
+  color: #615bad;
+  font-size: 13px;
+}
+.cwa-marketplace .cwa-filter-reset:hover {
   text-decoration: underline;
-  text-underline-offset: 4px;
-}
-.cwa-platform-pills {
-  display: flex;
-  max-width: 100%;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 9px;
-  padding: 2px;
-}
-.cwa-platform-pills > button {
-  display: inline-flex;
-  min-height: 42px;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  border: 1px solid #e7e3f1;
-  border-radius: 999px;
-  background: #fff;
-  padding: 9px 18px;
-  color: #747087;
-  font-size: 14px;
-  font-weight: 550;
-  line-height: 1.5;
-}
-.cwa-platform-pills > button:hover {
-  border-color: #c7bff1;
-  color: var(--market-violet);
-}
-.cwa-platform-pills > button[aria-pressed="true"] {
-  border-color: #36344b;
-  background: #36344b;
-  color: #fff;
+  text-underline-offset: 3px;
 }
 .cwa-marketplace .cwa-filter-grid.cwa-live-filters {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px 20px;
-  margin-top: 20px;
-  border: 1px solid #ede9f6;
-  border-radius: 20px;
-  background: #f9f7fe;
-  padding: 22px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(180px, 1.5fr) minmax(
+      230px,
+      1.8fr
+    );
+  gap: 12px;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
 }
-.cwa-marketplace .cwa-live-filters[hidden] {
-  display: none;
-}
-.cwa-marketplace .cwa-live-filters .fmb-label,
+.cwa-marketplace .fmb-label,
 .cwa-marketplace .cwa-live-field > span,
-.cwa-marketplace .cwa-date-range > legend {
-  color: #6b647f;
-  font-size: 14px;
+.cwa-marketplace .cwa-date-range > legend,
+.cwa-marketplace .cwa-budget-filter > legend {
+  margin-bottom: 6px;
+  color: #657086;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
 }
 .cwa-marketplace .fmb-select-trigger,
 .cwa-marketplace .cwa-live-field > input,
 .cwa-marketplace .cwa-live-field > textarea,
 .cwa-marketplace .cwa-date-range > div {
-  min-height: 44px;
-  border-color: #e5e0ee;
-  border-radius: 11px;
+  min-height: 38px;
+  border-color: #dfe4ed;
+  border-radius: 6px;
   background: #fff;
-  font-size: 14px;
+  padding: 8px 10px;
+  color: #505e76;
+  font-size: 13px;
+  line-height: 1.5;
 }
-.cwa-marketplace .cwa-date-range input {
-  color: #655d7b;
+.cwa-marketplace .cwa-live-field {
+  gap: 0;
 }
 .cwa-marketplace .cwa-live-field > input:disabled {
-  background: #f0edf6;
+  background: #f5f6f9;
+  color: #7a8597;
+}
+.cwa-marketplace .cwa-budget-filter {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+.cwa-marketplace .cwa-budget-filter > legend {
+  padding: 0;
+}
+.cwa-marketplace .cwa-budget-filter > div {
+  display: grid;
+  grid-template-columns: 79px minmax(0, 1fr);
+  gap: 6px;
+}
+.cwa-marketplace .cwa-budget-filter .fmb-label,
+.cwa-marketplace .cwa-budget-filter .cwa-live-field > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.cwa-marketplace .cwa-live-filters .cwa-date-range {
+  grid-column: auto;
+}
+.cwa-marketplace .cwa-date-range > div {
+  gap: 3px;
+  padding-inline: 7px;
+}
+.cwa-marketplace .cwa-date-range input {
+  font-size: 13px;
+  color: #637089;
 }
 .cwa-marketplace .cwa-results-toolbar {
-  align-items: center;
-  gap: 18px;
-  margin: 0 0 21px;
+  margin: 15px 1px 13px;
 }
-.cwa-marketplace .cwa-results-toolbar > .cwa-results-title {
-  display: flex;
-  flex: 1;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 6px 12px;
-  width: auto;
-  min-width: 0;
-}
-.cwa-results-title h2 {
-  margin: 0;
-  color: var(--market-ink);
-  font-size: 24px;
-  font-weight: 720;
-  letter-spacing: -0.045em;
-  line-height: 1.4;
-}
-.cwa-results-title > span {
-  color: #81758e;
-  font-size: 14px;
-}
-.cwa-marketplace .cwa-results-toolbar > .cwa-results-actions {
-  align-items: center;
-  gap: 10px;
-  width: auto;
-}
-.cwa-marketplace .cwa-results-actions .fmb-select {
-  min-width: 150px;
-}
-.cwa-marketplace .cwa-results-actions .fmb-select-trigger {
-  min-height: 42px;
-  border-color: transparent;
-  border-radius: 12px;
-  background: #f6f4fa;
-  padding-inline: 14px;
-}
-.cwa-refresh {
-  display: inline-grid;
-  width: 42px;
-  height: 42px;
-  flex-shrink: 0;
-  place-items: center;
-  border: 1px solid #e6e1ef;
-  border-radius: 50%;
-  background: #fff;
-  color: #78708e;
-}
-.cwa-refresh:hover {
-  border-color: #b9aded;
-  color: var(--market-violet);
-}
-.cwa-marketplace .cwa-view-toggle {
-  min-height: 42px;
-  border: 0;
-  border-radius: 12px;
-  background: #f4f1f9;
-}
-.cwa-marketplace .cwa-view-toggle > button {
-  border-radius: 9px;
-  color: #7e748b;
-}
-.cwa-marketplace .cwa-view-toggle > button.is-active {
-  color: #514774;
-  box-shadow: 0 1px 5px #4136730d;
+.cwa-marketplace .cwa-results-title {
+  display: block;
+  color: #69758b;
+  font-size: 13px;
 }
 .cwa-marketplace .cwa-offers-board {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 32px 25px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
 }
 .cwa-marketplace .cwa-offer {
-  overflow: visible;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #e5e8ef;
+  border-radius: 11px;
+  background: #fff;
   box-shadow: none;
+}
+.cwa-marketplace .cwa-offer:hover {
+  border-color: #c5cae8;
+  box-shadow: 0 3px 12px #2e3e5b06;
 }
 .cwa-marketplace .cwa-offer-art {
   height: auto;
   min-height: 0;
-  aspect-ratio: 1.47;
-  border-radius: 21px;
+  aspect-ratio: 1.65;
+  border-radius: 8px;
+  margin: 10px 10px 0;
+  width: calc(100% - 20px);
+  padding: 15px;
 }
 .cwa-marketplace .cwa-art-image {
-  transition: transform 0.3s ease;
+  transition: transform 0.2s ease;
 }
 .cwa-marketplace .cwa-offer-art:hover .cwa-art-image {
-  transform: scale(1.035);
+  transform: scale(1.025);
 }
 .cwa-marketplace .cwa-art-shade {
-  background: linear-gradient(180deg, rgb(11 14 30 / 13%), transparent 45%);
+  background: linear-gradient(180deg, #111c3126, transparent 45%);
 }
 .cwa-marketplace .cwa-card-badge {
-  top: 14px;
-  left: 14px;
+  top: 9px;
+  left: 9px;
+  max-width: calc(100% - 82px);
+  overflow: hidden;
   border: 0;
-  border-radius: 999px;
+  border-radius: 4px;
   background: #fffffff0;
-  padding: 5px 12px;
-  color: #55516b;
-  font-size: 14px;
-  font-weight: 600;
+  padding: 3px 7px;
+  color: #4d5870;
+  font-size: 13px;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .cwa-marketplace .cwa-demo-badge {
-  top: 14px;
-  right: 14px;
+  top: 9px;
+  right: 9px;
   border: 0;
-  border-radius: 999px;
-  background: #262337bd;
-  padding: 5px 11px;
+  border-radius: 4px;
+  background: #25364cbf;
+  padding: 3px 7px;
   color: #fff;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 550;
   letter-spacing: 0;
 }
+.cwa-marketplace .cwa-offer-art.has-artwork .cwa-card-badge {
+  max-width: calc(100% - 82px);
+}
+.cwa-marketplace .cwa-art-brand {
+  font-size: 24px;
+}
 .cwa-marketplace .cwa-offer-body {
-  padding: 18px 2px 0;
+  padding: 12px;
 }
 .cwa-marketplace .cwa-offer-meta {
-  gap: 5px 10px;
-  color: #8b71b2;
-  font-size: 14px;
+  gap: 5px 8px;
+  color: #6e71a0;
+  font-size: 13px;
+  line-height: 1.5;
 }
 .cwa-marketplace .cwa-offer-meta > span:last-child {
-  color: #81798e;
+  color: #737f92;
 }
-.cwa-marketplace .cwa-offer h3 {
-  margin: 10px 0;
+.cwa-marketplace .cwa-offer h2 {
+  margin: 8px 0 6px;
   color: var(--market-ink);
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.035em;
-  line-height: 1.4;
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.45;
 }
-.cwa-marketplace .cwa-offer h3 > button {
+.cwa-marketplace .cwa-offer h2 > button {
   display: -webkit-box;
   width: 100%;
-  min-height: 58px;
+  min-height: 47px;
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -410,402 +350,436 @@
   text-align: left;
   overflow-wrap: anywhere;
 }
-.cwa-marketplace .cwa-offer h3 > button:hover {
-  color: var(--market-violet);
+.cwa-marketplace .cwa-offer h2 > button:hover {
+  color: var(--market-indigo);
 }
 .cwa-marketplace .cwa-offer-platforms {
-  min-height: 21px;
-  margin: 0 0 12px;
-  color: #737085;
-  font-size: 14px;
+  min-height: 20px;
+  margin: 0 0 9px;
+  color: #6d7890;
+  font-size: 13px;
 }
 .cwa-marketplace .cwa-offer-tags {
-  gap: 6px 8px;
+  gap: 5px;
 }
 .cwa-marketplace .cwa-offer-tags > span {
-  border-radius: 7px;
-  background: #f1eef7;
-  padding: 3px 7px;
-  color: #7c728a;
-  font-size: 14px;
+  border-radius: 4px;
+  background: #f1f4fb;
+  padding: 2px 5px;
+  color: #6375a1;
+  font-size: 13px;
 }
 .cwa-marketplace .cwa-offer-footer {
   align-items: center;
-  gap: 10px;
-  margin-top: 19px;
-  border-top-color: var(--market-line);
-  padding-top: 16px;
+  gap: 8px;
+  margin-top: 15px;
+  border-top-color: #edf0f5;
+  padding-top: 12px;
 }
 .cwa-marketplace .cwa-offer-footer > div > span {
-  margin-bottom: 5px;
-  color: #7e778b;
-  font-size: 14px;
+  margin-bottom: 3px;
+  color: #738098;
+  font-size: 13px;
 }
 .cwa-marketplace .cwa-offer-footer strong {
-  color: #2c2943;
-  font-size: 24px;
+  color: #293650;
+  font-size: 21px;
   font-weight: 720;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.035em;
 }
 .cwa-marketplace .cwa-card-action {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: #eeebfa;
-  color: #6b57b1;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background: #edf0ff;
+  color: #6158c3;
 }
 .cwa-marketplace .cwa-card-action:hover {
-  background: var(--market-violet);
+  background: var(--market-indigo);
   color: #fff;
 }
 .cwa-marketplace .cwa-offers-list {
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 13px;
 }
 .cwa-marketplace .cwa-offers-list .cwa-offer {
-  grid-template-columns: minmax(220px, 0.65fr) minmax(0, 1fr);
-  gap: 24px;
-  border-bottom: 1px solid var(--market-line);
-  padding-bottom: 24px;
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
 }
 .cwa-marketplace .cwa-offers-list .cwa-offer-art {
-  height: 100%;
-  min-height: 220px;
+  width: calc(100% - 20px);
+  height: calc(100% - 20px);
+  min-height: 170px;
   aspect-ratio: auto;
+  margin: 10px;
 }
 .cwa-marketplace .cwa-offers-list .cwa-offer-body {
-  padding: 6px 2px;
+  padding: 18px;
 }
-.cwa-marketplace .cwa-offers-list .cwa-offer h3 > button {
+.cwa-marketplace .cwa-offers-list .cwa-offer h2 {
+  font-size: 18px;
+}
+.cwa-marketplace .cwa-offers-list .cwa-offer h2 > button {
   min-height: 0;
 }
+.cwa-marketplace .cwa-offers-list .cwa-offer-footer {
+  margin-top: 12px;
+  padding-top: 10px;
+}
 .cwa-marketplace .cwa-empty {
-  min-height: 310px;
-  border: 1px dashed #dcd6ed;
-  border-radius: 24px;
-  background: #faf8ff;
+  min-height: 280px;
+  border: 1px solid var(--market-line);
+  border-radius: 10px;
+  background: #fff;
 }
 .cwa-marketplace .cwa-empty h2 {
-  color: #4a4265;
+  color: #48566e;
+  font-size: 20px;
 }
 .cwa-marketplace .cwa-empty p {
-  color: #797185;
+  color: #728099;
+  font-size: 14px;
 }
-.cwa-marketplace .cwa-project-intro {
-  margin-bottom: 22px;
-}
-.cwa-marketplace .cwa-project-intro p {
-  color: #767087;
-  font-size: 15px;
-}
-.cwa-marketplace .cwa-application-list {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 22px;
-}
-.cwa-marketplace .cwa-application-card {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  border: 1px solid #ebe5f3;
-  border-radius: 23px;
+.cwa-marketplace .cwa-applications-panel {
+  overflow: hidden;
+  border: 1px solid var(--market-line);
+  border-radius: 10px;
   background: #fff;
-  padding: 25px;
 }
-.cwa-marketplace .cwa-application-card .cwa-live-toolbar {
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 8px;
+.cwa-application-tabs {
+  display: flex;
+  max-width: 100%;
+  overflow-x: auto;
+  gap: 20px;
+  border-bottom: 1px solid var(--market-line);
+  padding: 0 19px;
+  scrollbar-width: thin;
 }
-.cwa-marketplace .cwa-application-card .cwa-live-toolbar > span {
-  color: #847b91;
+.cwa-application-tabs > button {
+  display: inline-flex;
+  min-height: 52px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  padding: 12px 2px;
+  color: #6b778c;
+  font-size: 14px;
+  white-space: nowrap;
 }
-.cwa-marketplace .cwa-application-card h2 {
-  color: var(--market-ink);
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.035em;
+.cwa-application-tabs > button > span {
+  border-radius: 5px;
+  background: #f2f4f8;
+  padding: 1px 6px;
+  font-size: 13px;
 }
-.cwa-marketplace .cwa-application-card > p {
-  color: #726b81;
+.cwa-application-tabs > button[aria-pressed="true"] {
+  border-bottom-color: var(--market-indigo);
+  color: var(--market-indigo);
+  font-weight: 650;
+}
+.cwa-application-tabs > button[aria-pressed="true"] > span {
+  background: #eef0ff;
+}
+.cwa-application-search {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 19px;
+}
+.cwa-application-search > span {
+  color: #77839a;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.cwa-application-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+.cwa-application-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  text-align: left;
+}
+.cwa-application-table th {
+  border-top: 1px solid #edf0f5;
+  border-bottom: 1px solid #e7ebf1;
+  background: #f9fafc;
+  padding: 13px 18px;
+  color: #68758c;
+  font-size: 13px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+.cwa-application-table th:first-child {
+  width: 37%;
+}
+.cwa-application-table td {
+  border-bottom: 1px solid #edf0f5;
+  padding: 17px 18px;
+  color: #53617a;
+  font-size: 14px;
+  vertical-align: middle;
+}
+.cwa-application-table tbody > tr:last-child > td {
+  border-bottom: 0;
+}
+.cwa-application-table .cwa-application-campaign > strong {
+  display: block;
+  color: #35425b;
   font-size: 15px;
+  font-weight: 600;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.cwa-application-table .cwa-application-campaign > span {
+  display: block;
+  margin: 4px 0 0;
+  color: #75819a;
+  font-size: 13px;
 }
 .cwa-marketplace .cwa-application-status {
-  border-radius: 999px;
-  background: #f0ebfd;
-  padding: 5px 12px;
-  color: #6a51ac;
+  border-radius: 5px;
+  background: #eff1ff;
+  padding: 4px 8px;
+  color: #625cad;
+  font-size: 13px;
+  white-space: nowrap;
 }
 .cwa-marketplace .cwa-application-status[data-status="ACCEPTED"] {
-  background: #e9f7ef;
-  color: #3b7658;
-}
-.cwa-marketplace .cwa-application-status[data-status="WITHDRAWN"] {
-  background: #f0eff3;
-  color: #77717f;
+  background: #edf7f2;
+  color: #3e7a5f;
 }
 .cwa-marketplace .cwa-application-status[data-status="REJECTED"] {
-  background: #faf0f3;
-  color: #a66079;
+  background: #fff1f2;
+  color: #a45f70;
 }
-.cwa-marketplace .cwa-application-card dl {
-  gap: 18px 30px;
-  border-radius: 15px;
-  background: #faf8fd;
-  padding: 16px;
+.cwa-marketplace .cwa-application-status[data-status="WITHDRAWN"] {
+  background: #f0f2f6;
+  color: #747e91;
 }
-.cwa-marketplace .cwa-application-card dt {
-  color: #81768d;
+.cwa-application-expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  padding: 5px 0;
+  color: #625bad;
+  font-size: 13px;
+  white-space: nowrap;
 }
-.cwa-marketplace .cwa-application-card dd {
-  color: #524665;
-  font-size: 16px;
+.cwa-application-expand[aria-expanded="true"] > svg {
+  transform: rotate(180deg);
+}
+.cwa-application-detail-row[hidden] {
+  display: none;
+}
+.cwa-application-table .cwa-application-detail-row > td {
+  background: #fbfcfe;
+  padding: 20px 24px;
+}
+.cwa-application-detail {
+  max-width: 920px;
+}
+.cwa-application-detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.cwa-application-detail-heading h3 {
+  margin: 0;
+  color: #41516d;
+  font-size: 15px;
+  font-weight: 650;
+}
+.cwa-application-detail-heading span {
+  color: #75829b;
+  font-size: 13px;
+}
+.cwa-application-detail > p {
+  margin: 12px 0 0;
+  color: #626f87;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.cwa-application-detail .cwa-application-recruitment {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+}
+.cwa-application-recruitment strong {
+  font-weight: 550;
 }
 .cwa-marketplace .cwa-withdraw {
-  margin-top: auto;
-  border-top-color: var(--market-line);
+  margin-top: 17px;
+  border-top-color: #e8edf4;
+  padding-top: 14px;
+}
+.cwa-marketplace .cwa-withdraw > p {
+  margin-top: 0;
+  font-size: 14px;
+}
+.cwa-application-table .cwa-table-empty {
+  padding-block: 50px;
+  color: #76839b;
+  text-align: center;
 }
 .cwa-marketplace .cwa-drawer {
-  border-color: #e7e0f2;
-  border-radius: 25px 0 0 25px;
+  border-color: #e2e7ef;
+  border-radius: 14px 0 0 14px;
 }
 .cwa-marketplace .cwa-drawer-heading {
   border-bottom-color: var(--market-line);
-  padding-block: 17px;
+  padding-block: 14px;
 }
 .cwa-marketplace .cwa-drawer-heading > span {
-  color: #776b88;
+  color: #65738b;
 }
 .cwa-marketplace .cwa-detail-art {
-  border-radius: 18px;
+  border-radius: 9px;
 }
 .cwa-marketplace .cwa-drawer-content h2 {
-  color: var(--market-ink);
+  color: #35445f;
+  font-size: 25px;
 }
 .cwa-marketplace .cwa-drawer-content p {
-  color: #766d85;
-  font-size: 15px;
+  color: #6a7890;
+  font-size: 14px;
 }
 .cwa-marketplace .cwa-brief-payout {
-  border-radius: 14px;
-  background: #f4f0fd;
-  padding: 18px;
+  border-radius: 8px;
+  background: #f3f5fc;
+  padding: 16px;
 }
 .cwa-marketplace .cwa-brief-payout > strong {
-  color: #6553a4;
+  color: #5b60a5;
 }
 .cwa-marketplace .cwa-brief-details dt,
 .cwa-marketplace .cwa-brief-details dd {
-  color: #746b83;
+  color: #65748e;
+  font-size: 14px;
 }
 .cwa-marketplace .cwa-proposal {
-  gap: 20px;
+  gap: 18px;
 }
 
-@media (max-width: 1180px) {
-  .cwa-discover-copy {
-    padding: 26px;
-  }
-  .cwa-discover-hero {
-    grid-template-columns: 1.25fr 1fr;
-  }
-  .cwa-marketplace .cwa-results-toolbar {
-    flex-wrap: wrap;
-  }
-  .cwa-marketplace .cwa-results-toolbar > .cwa-results-title {
-    flex-basis: 100%;
-  }
-  .cwa-marketplace .cwa-offers-board {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 30px 22px;
-  }
+@media (max-width: 1400px) {
   .cwa-marketplace .cwa-filter-grid.cwa-live-filters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-  .cwa-marketplace .cwa-application-list {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-@media (max-width: 700px) {
-  .cwa-discover-hero {
-    min-height: 210px;
-    grid-template-columns: 1.3fr 1fr;
-    margin-bottom: 24px;
-    border-radius: 20px;
-  }
-  .cwa-discover-copy {
-    padding: 25px 0 24px 24px;
-  }
-  .cwa-discover-copy h2 {
-    font-size: 29px;
-  }
-  .cwa-discover-copy p {
-    margin-block: 12px;
-    font-size: 14px;
-  }
-  .cwa-discover-art img {
-    object-position: 60% center;
-  }
-  .cwa-marketplace .cwa-platform-pills {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding: 4px 2px 10px;
-    scrollbar-width: thin;
-    scrollbar-color: #d4cdeb transparent;
-  }
-  .cwa-platform-pills > button {
-    min-height: 40px;
-    padding-inline: 15px;
-  }
-  .cwa-marketplace .cwa-offer h3 {
-    font-size: 20px;
-  }
-  .cwa-marketplace .cwa-offer-footer strong {
-    font-size: 22px;
-  }
-  .cwa-marketplace .cwa-offers-list .cwa-offer {
-    grid-template-columns: minmax(180px, 0.8fr) minmax(0, 1fr);
-    gap: 18px;
-  }
-}
-@media (max-width: 560px) {
-  .cwa-marketplace .cwa-demo-notice {
-    align-items: flex-start;
-    padding: 12px 14px;
-  }
-  .cwa-marketplace .cwa-demo-notice > svg {
-    margin-top: 3px;
-  }
-  .cwa-marketplace .cwa-demo-notice p {
-    gap: 3px;
-  }
-  .cwa-discover-hero {
-    position: relative;
-    display: block;
-    min-height: 224px;
-  }
-  .cwa-discover-copy {
-    width: 76%;
-    padding: 25px 0 24px 23px;
-  }
-  .cwa-discover-copy h2 {
-    font-size: 30px;
-  }
-  .cwa-discover-copy p {
-    max-width: 245px;
-    color: #60576f;
-  }
-  .cwa-discover-art {
-    position: absolute;
-    inset: 0 0 0 43%;
-    min-height: 0;
-    opacity: 0.53;
-  }
-  .cwa-discover-art::after {
-    background: linear-gradient(
-      90deg,
-      #efedff,
-      #efedff85 40%,
-      transparent 100%
-    );
-  }
-  .cwa-marketplace .cwa-search-row {
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 13px;
-  }
-  .cwa-marketplace .cwa-search-input {
-    flex-basis: calc(100% - 132px);
-    min-height: 50px;
-    border-radius: 14px;
-    padding-inline: 13px;
-  }
-  .cwa-marketplace .cwa-search-input > input {
-    font-size: 14px;
-  }
-  .cwa-marketplace .cwa-search-row > .cwa-filter-toggle {
-    width: auto;
-    min-height: 50px;
-    gap: 6px;
-    border-radius: 14px;
-    padding-inline: 11px;
-  }
-  .cwa-marketplace .cwa-filter-toggle > svg:last-child {
-    display: none;
-  }
-  .cwa-marketplace .cwa-filter-reset {
-    min-height: 30px;
-    margin-left: auto;
-    padding: 0 3px;
-  }
-  .cwa-marketplace .cwa-filter-grid.cwa-live-filters {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
-    border-radius: 16px;
-    padding: 18px;
+  .cwa-marketplace .cwa-budget-filter {
+    grid-column: span 2;
   }
   .cwa-marketplace .cwa-live-filters .cwa-date-range {
-    grid-column: auto;
+    grid-column: span 2;
   }
-  .cwa-marketplace .cwa-results-toolbar {
-    gap: 15px;
-    margin-bottom: 20px;
-  }
-  .cwa-marketplace .cwa-results-toolbar > .cwa-results-title {
-    justify-content: flex-start;
-    gap: 6px 10px;
-  }
-  .cwa-results-title h2 {
-    font-size: 23px;
-  }
-  .cwa-marketplace .cwa-results-toolbar > .cwa-results-actions {
-    width: 100%;
-    gap: 8px;
-  }
-  .cwa-marketplace .cwa-results-actions .fmb-select {
-    min-width: 0;
-  }
-  .cwa-marketplace .cwa-view-toggle > button {
-    padding-inline: 8px;
-  }
+}
+@media (max-width: 1180px) {
   .cwa-marketplace .cwa-offers-board {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 31px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .cwa-marketplace .cwa-offer-art {
     aspect-ratio: 1.5;
-    border-radius: 19px;
+  }
+}
+@media (max-width: 1000px) {
+  .cwa-marketplace .cwa-offers-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .cwa-marketplace .cwa-filter-grid.cwa-live-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .cwa-marketplace .cwa-offers-list .cwa-offer {
+    grid-template-columns: 180px minmax(0, 1fr);
+  }
+  .cwa-marketplace .cwa-offers-list .cwa-offer-body {
+    padding: 13px;
+  }
+}
+@media (max-width: 560px) {
+  .cwa-catalog-toolbar {
+    gap: 12px;
+  }
+  .cwa-catalog-actions {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+  }
+  .cwa-marketplace .cwa-demo-notice {
+    padding: 9px 11px;
+  }
+  .cwa-marketplace .cwa-demo-notice p {
+    display: block;
+  }
+  .cwa-marketplace .cwa-demo-notice strong {
+    margin-right: 7px;
+  }
+  .cwa-marketplace .cwa-filters {
+    padding: 13px;
+  }
+  .cwa-marketplace .cwa-search-row {
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+  .cwa-marketplace .cwa-search-input {
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .cwa-marketplace .cwa-search-row > .fmb-select {
+    width: auto;
+    flex: 1;
+    margin-left: 0;
+  }
+  .cwa-marketplace .cwa-filter-grid.cwa-live-filters {
+    gap: 12px 9px;
+  }
+  .cwa-marketplace .cwa-offers-board {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 15px;
+  }
+  .cwa-marketplace .cwa-offer-art {
+    aspect-ratio: 1.8;
+  }
+  .cwa-marketplace .cwa-offer h2 {
+    font-size: 17px;
+  }
+  .cwa-marketplace .cwa-offer h2 > button {
+    min-height: 0;
   }
   .cwa-marketplace .cwa-offer-body {
-    padding-top: 16px;
-  }
-  .cwa-marketplace .cwa-offer h3 {
-    font-size: 23px;
-  }
-  .cwa-marketplace .cwa-offer h3 > button {
-    min-height: 0;
+    padding: 13px;
   }
   .cwa-marketplace .cwa-offers-list .cwa-offer {
     grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
   }
   .cwa-marketplace .cwa-offers-list .cwa-offer-art {
     height: auto;
     min-height: 0;
-    aspect-ratio: 2;
+    aspect-ratio: 2.4;
   }
-  .cwa-marketplace .cwa-application-card {
-    border-radius: 20px;
-    padding: 21px;
+  .cwa-application-tabs {
+    gap: 16px;
+    padding-inline: 13px;
   }
-  .cwa-marketplace .cwa-application-card h2 {
-    font-size: 21px;
+  .cwa-application-search {
+    padding: 14px 13px;
   }
   .cwa-marketplace .cwa-drawer {
     border-radius: 0;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cwa-marketplace .cwa-art-image,
-  .cwa-marketplace .cwa-filter-toggle > svg:last-child {
+  .cwa-marketplace .cwa-art-image {
     transition: none;
   }
 }

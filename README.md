@@ -27,6 +27,9 @@ database, UI, lint, and TypeScript code lives in `packages/*`.
 
 ## Public landing page
 
+`/` directly re-exports `/landing`, so both use the same current design and
+locale handling. The previous main remains available at `/test` with noindex.
+
 The home page presents managed campaigns and an approved-organization
 marketplace, Korean localization, campaign delivery, and partner requirements.
 Its content is based on the business proposal v2.0, the service proposal, and
@@ -66,9 +69,8 @@ customer logos, and unconfirmed pricing are not published.
   Google OAuth, email verification and password recovery
   are not enabled. Confirmed legal/privacy policies, verification emails and
   account recovery must be prepared before a broad public launch.
-- `/test` preserves the August 8, 2026 landing design from commit `d6bfb3e`
-  for comparison. It is marked as an archived mockup and excluded from indexing;
-  its illustrative numbers, original typography, and sample campaign UI remain.
+- `/test` preserves the prior `LandingPage` implementation for comparison and is
+  excluded from indexing. Its brief builder remains local-only.
 
 ## Agency / Studio onboarding and workspace
 
@@ -92,8 +94,18 @@ customer logos, and unconfirmed pricing are not published.
 - `/agency` shows real published campaigns to approved agencies, with grid/list
   views, platform/region/category/follower/budget/deadline filters, a proposal
   form and persisted application history. Pending organizations cannot access
-  live campaigns. Creator rosters, invitations, payments and notifications remain
-  explicitly labeled unconnected areas; no balances or live deals are fabricated.
+  live campaigns. Application history is separate from accepted projects.
+- `GET /api/agency/operations` reads only the approved session organization's
+  accepted projects, linked creators, latest submission versions, settlements,
+  sanitized profile and recent activity derived from current records. It is not
+  a complete notification/event history. Result limits are displayed in the UI;
+  demo records remain isolated and are excluded from financial totals.
+- The workspace includes official projects, creator projects, invitation status
+  tabs, settlement tabs, organization details and recent activity. Direct
+  invitations, creator task assignment, content submission and withdrawals are
+  not connected; their limitations are explicit rather than simulated.
+- Read-only operations boundary tests:
+  `node apps/platform/scripts/agency-operations.test.mjs` (mocked DB/auth).
 - `pnpm --filter @futures-medialab/platform test:agency` checks the local
   onboarding/API/private-Blob path with synthetic accounts/files and cleans up
   only those fixtures. Start the app at port 3002 with matching BETTER_AUTH_URL.

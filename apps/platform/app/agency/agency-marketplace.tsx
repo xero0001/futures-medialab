@@ -14,6 +14,7 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronDown,
+  ClipboardList,
   FileText,
   FolderOpen,
   Gamepad2,
@@ -22,7 +23,6 @@ import {
   List,
   RefreshCw,
   Search,
-  SlidersHorizontal,
   Users,
   X,
 } from "lucide-react";
@@ -189,7 +189,8 @@ export function AgencyMarketplace({
   const [notice, setNotice] = useState<"applied" | "withdrawn" | "">("");
   const [view, setView] = useState<"board" | "list">("board");
   const [filters, setFilters] = useState(defaultFilters);
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState("");
+  const [applicationQuery, setApplicationQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const request = useRef<AbortController | null>(null);
   const mutationInFlight = useRef(false);
@@ -354,6 +355,15 @@ export function AgencyMarketplace({
     advancedFilterCount ||
     filters.sort !== "newest",
   );
+  const applications = data?.applications ?? [];
+  const filteredApplications = applications.filter(
+    (application) =>
+      (!applicationStatus || application.status === applicationStatus) &&
+      (!applicationQuery.trim() ||
+        `${application.campaignTitle} ${application.proposal}`
+          .toLowerCase()
+          .includes(applicationQuery.toLowerCase().trim())),
+  );
 
   function updateFilter(key: keyof typeof defaultFilters, value: string) {
     setFilters((current) => ({
@@ -425,15 +435,42 @@ export function AgencyMarketplace({
 
   return (
     <div className={`cwa-marketplace cwa-marketplace-${section}`}>
-      {section === "projects" && (
-        <div className="cwa-live-toolbar cwa-project-intro">
+      <div className="cwa-catalog-toolbar">
+        {section === "offers" ? (
+          <div
+            className="cwa-view-toggle"
+            role="group"
+            aria-label={t("Display mode", "표시 방식", "显示方式")}
+          >
+            <button
+              type="button"
+              aria-pressed={view === "list"}
+              className={view === "list" ? "is-active" : ""}
+              onClick={() => setView("list")}
+            >
+              <List size={17} aria-hidden="true" />
+              {copy.list}
+            </button>
+            <button
+              type="button"
+              aria-pressed={view === "board"}
+              className={view === "board" ? "is-active" : ""}
+              onClick={() => setView("board")}
+            >
+              <LayoutGrid size={17} aria-hidden="true" />
+              {copy.board}
+            </button>
+          </div>
+        ) : (
           <p>
             {t(
-              "Your organization's applications are saved here, including closed campaigns.",
-              "모집이 종료된 캠페인을 포함해 우리 조직의 신청 내역을 확인합니다.",
-              "查看组织申请记录，包括已结束招募的活动。",
+              "View your organization's application history.",
+              "우리 조직이 제출한 신청과 검토 상태를 확인하세요.",
+              "查看组织提交的申请及审核状态。",
             )}
           </p>
+        )}
+        <div className="cwa-catalog-actions">
           <button
             className="cwa-button"
             type="button"
@@ -443,8 +480,18 @@ export function AgencyMarketplace({
             <RefreshCw size={16} aria-hidden="true" />
             {t("Refresh", "새로고침", "刷新")}
           </button>
+          {section === "offers" && (
+            <button
+              type="button"
+              className="cwa-button cwa-button-primary"
+              onClick={onProjects}
+            >
+              <ClipboardList size={17} aria-hidden="true" />
+              {t("Track submission status", "신청 상태 조회", "查看申请状态")}
+            </button>
+          )}
         </div>
-      )}
+      </div>
       {data &&
         (data.campaigns.some((campaign) => campaign.isDemo) ||
           data.applications.some((application) => application.isDemo)) && (
@@ -467,51 +514,14 @@ export function AgencyMarketplace({
             </p>
           </aside>
         )}
-      {section === "offers" && (
-        <section
-          className="cwa-discover-hero"
-          aria-labelledby="agency-discover-title"
-        >
-          <div className="cwa-discover-copy">
-            <h2 id="agency-discover-title">
-              {t(
-                "Your next collaboration",
-                "다음 협업의 시작,",
-                "下一次合作，",
-              )}
-              <span>{t("starts here.", "여기서.", "从这里开始。")}</span>
-            </h2>
-            <p>
-              {t(
-                "Discover a game your creators will love. Explore the brief, then share your proposal.",
-                "우리 크리에이터와 잘 맞는 게임을 발견하고, 새로운 이야기를 함께 만들어보세요.",
-                "发现适合创作者的游戏，携手创造全新故事。",
-              )}
-            </p>
-            <button type="button" onClick={onProjects}>
-              {t("View my applications", "나의 신청 내역", "查看我的申请")}
-              <ArrowUpRight size={18} aria-hidden="true" />
-            </button>
-          </div>
-          <div className="cwa-discover-art" aria-hidden="true">
-            <Image
-              src="/campaign-art/subculture.webp"
-              alt=""
-              fill
-              loading="eager"
-              sizes="(max-width: 700px) 100vw, 40vw"
-            />
-          </div>
-        </section>
-      )}
       {notice && (
         <p className="cwa-success" role="status">
           <CheckCircle2 size={18} aria-hidden="true" />
           {notice === "applied"
             ? t(
-                "Application submitted. You can follow its status in My Projects.",
-                "신청이 접수되었습니다. 내 프로젝트에서 상태를 확인하세요.",
-                "申请已提交，可在我的项目查看状态。",
+                "Application submitted. You can follow its status in Application History.",
+                "신청이 접수되었습니다. 신청 내역에서 상태를 확인하세요.",
+                "申请已提交，可在申请记录中查看状态。",
               )
             : t(
                 "Your application has been withdrawn.",
@@ -566,22 +576,18 @@ export function AgencyMarketplace({
                   }
                 />
               </label>
-              <button
-                className={`cwa-button cwa-filter-toggle${advancedOpen ? " is-open" : ""}`}
-                type="button"
-                aria-expanded={advancedOpen}
-                aria-controls="agency-advanced-filters"
-                onClick={() => setAdvancedOpen((current) => !current)}
-              >
-                <SlidersHorizontal size={18} aria-hidden="true" />
-                {t("Filters", "상세 필터", "筛选")}
-                {advancedFilterCount > 0 && (
-                  <span className="cwa-filter-count">
-                    {advancedFilterCount}
-                  </span>
-                )}
-                <ChevronDown size={16} aria-hidden="true" />
-              </button>
+              {select("sort", copy.sort, [
+                { value: "newest", label: copy.newest },
+                { value: "closing", label: copy.closing },
+                {
+                  value: "highest",
+                  label: t(
+                    "Budget (by currency)",
+                    "통화별 예산순",
+                    "按币种和预算",
+                  ),
+                },
+              ])}
               {hasFilters && (
                 <button
                   className="cwa-filter-reset"
@@ -592,35 +598,14 @@ export function AgencyMarketplace({
                 </button>
               )}
             </div>
-            <div
-              className="cwa-platform-pills"
-              role="group"
-              aria-label={copy.platform}
-            >
-              <button
-                type="button"
-                aria-pressed={!filters.platform}
-                onClick={() => updateFilter("platform", "")}
-              >
-                <LayoutGrid size={17} aria-hidden="true" />
-                {t("All platforms", "전체 플랫폼", "所有平台")}
-              </button>
-              {Object.entries(platformLabels).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={filters.platform === value}
-                  onClick={() => updateFilter("platform", value)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div
-              id="agency-advanced-filters"
-              className="cwa-filter-grid cwa-live-filters"
-              hidden={!advancedOpen}
-            >
+            <div className="cwa-filter-grid cwa-live-filters">
+              {select("platform", copy.platform, [
+                { value: "", label: copy.allPlatforms },
+                ...Object.entries(platformLabels).map(([value, label]) => ({
+                  value,
+                  label,
+                })),
+              ])}
               {select("country", copy.country, [
                 { value: "", label: copy.allCountries },
                 ...countries.map((value) => ({
@@ -648,34 +633,43 @@ export function AgencyMarketplace({
                   }
                 />
               </label>
-              {select(
-                "currency",
-                t("Budget currency", "예산 통화", "预算币种"),
-                [
-                  { value: "", label: copy.any },
-                  ...["USD", "KRW", "CNY"].map((value) => ({
-                    value,
-                    label: value,
-                  })),
-                ],
-              )}
-              <label className="cwa-live-field">
-                <span>{t("Minimum budget", "최소 예산", "最低预算")}</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  disabled={!filters.currency}
-                  placeholder={
-                    filters.currency ||
-                    t("Select currency first", "통화부터 선택", "先选择币种")
-                  }
-                  value={filters.budget}
-                  onChange={(event) =>
-                    updateFilter("budget", event.target.value)
-                  }
-                />
-              </label>
+              <fieldset className="cwa-budget-filter">
+                <legend>{t("Budget", "예산", "预算")}</legend>
+                <div>
+                  {select(
+                    "currency",
+                    t("Budget currency", "예산 통화", "预算币种"),
+                    [
+                      { value: "", label: copy.any },
+                      ...["USD", "KRW", "CNY"].map((value) => ({
+                        value,
+                        label: value,
+                      })),
+                    ],
+                  )}
+                  <label className="cwa-live-field">
+                    <span>{t("Minimum budget", "최소 예산", "最低预算")}</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      disabled={!filters.currency}
+                      placeholder={
+                        filters.currency ||
+                        t(
+                          "Select currency first",
+                          "통화부터 선택",
+                          "先选择币种",
+                        )
+                      }
+                      value={filters.budget}
+                      onChange={(event) =>
+                        updateFilter("budget", event.target.value)
+                      }
+                    />
+                  </label>
+                </div>
+              </fieldset>
               <fieldset className="cwa-date-range">
                 <legend>{copy.deadline}</legend>
                 <div>
@@ -707,13 +701,6 @@ export function AgencyMarketplace({
           </section>
           <div className="cwa-results-toolbar">
             <div className="cwa-results-title">
-              <h2>
-                {t(
-                  "Find your next campaign",
-                  "지금 만나는 캠페인",
-                  "发现下一场活动",
-                )}
-              </h2>
               <span aria-live="polite" aria-atomic="true">
                 {t(
                   `${offers.length} campaigns`,
@@ -721,57 +708,6 @@ export function AgencyMarketplace({
                   `${offers.length} 个活动`,
                 )}
               </span>
-            </div>
-            <div className="cwa-results-actions">
-              <button
-                className="cwa-refresh"
-                type="button"
-                disabled={loading || busy}
-                onClick={() => void refresh()}
-                aria-label={t(
-                  "Refresh campaigns",
-                  "캠페인 새로고침",
-                  "刷新活动",
-                )}
-                title={t("Refresh campaigns", "캠페인 새로고침", "刷新活动")}
-              >
-                <RefreshCw size={18} aria-hidden="true" />
-              </button>
-              {select("sort", copy.sort, [
-                { value: "newest", label: copy.newest },
-                { value: "closing", label: copy.closing },
-                {
-                  value: "highest",
-                  label: t(
-                    "Budget (by currency)",
-                    "통화별 예산순",
-                    "按币种和预算",
-                  ),
-                },
-              ])}
-              <div
-                className="cwa-view-toggle"
-                aria-label={t("Display mode", "표시 방식", "显示方式")}
-              >
-                <button
-                  type="button"
-                  aria-pressed={view === "board"}
-                  className={view === "board" ? "is-active" : ""}
-                  onClick={() => setView("board")}
-                >
-                  <LayoutGrid size={18} aria-hidden="true" />
-                  {copy.board}
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={view === "list"}
-                  className={view === "list" ? "is-active" : ""}
-                  onClick={() => setView("list")}
-                >
-                  <List size={18} aria-hidden="true" />
-                  {copy.list}
-                </button>
-              </div>
             </div>
           </div>
           {offers.length ? (
@@ -800,8 +736,8 @@ export function AgencyMarketplace({
                             fill
                             sizes={
                               view === "list"
-                                ? "(max-width: 620px) 100vw, 220px"
-                                : "(max-width: 700px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                ? "(max-width: 560px) 100vw, 230px"
+                                : "(max-width: 560px) 100vw, (max-width: 1000px) 50vw, (max-width: 1180px) 33vw, 25vw"
                             }
                           />
                           <span className="cwa-art-shade" aria-hidden="true" />
@@ -848,14 +784,14 @@ export function AgencyMarketplace({
                           {date(campaign.applicationDeadline, locale)}
                         </span>
                       </div>
-                      <h3>
+                      <h2>
                         <button
                           type="button"
                           onClick={() => setSelectedId(campaign.id)}
                         >
                           {campaign.title}
                         </button>
-                      </h3>
+                      </h2>
                       <p className="cwa-offer-platforms">
                         {campaign.platforms
                           .map((value) => platformLabels[value] ?? value)
@@ -933,18 +869,118 @@ export function AgencyMarketplace({
       {data &&
         section === "projects" &&
         (data.applications.length ? (
-          <div className="cwa-application-list">
-            {data.applications.map((application) => (
-              <ApplicationCard
-                key={application.id}
-                application={application}
-                locale={locale}
-                canManage={canManage}
-                busy={busy}
-                onMutate={mutate}
-              />
-            ))}
-          </div>
+          <section
+            className="cwa-applications-panel"
+            aria-label={t("Application history", "신청 내역", "申请记录")}
+          >
+            <div
+              className="cwa-application-tabs"
+              role="group"
+              aria-label={t("Application status", "신청 상태", "申请状态")}
+            >
+              {[
+                "",
+                "SUBMITTED",
+                "SHORTLISTED",
+                "ACCEPTED",
+                "REJECTED",
+                "WITHDRAWN",
+              ].map((value) => (
+                <button
+                  key={value || "all"}
+                  type="button"
+                  aria-pressed={applicationStatus === value}
+                  onClick={() => setApplicationStatus(value)}
+                >
+                  {value
+                    ? applicationLabel(value, locale)
+                    : t("All", "전체", "全部")}
+                  <span>
+                    {value
+                      ? applications.filter(
+                          (application) => application.status === value,
+                        ).length
+                      : applications.length}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className="cwa-application-search">
+              <label className="cwa-search-input">
+                <Search size={17} aria-hidden="true" />
+                <input
+                  aria-label={t(
+                    "Search applications",
+                    "신청 내역 검색",
+                    "搜索申请",
+                  )}
+                  placeholder={t(
+                    "Search campaign or proposal",
+                    "캠페인 또는 제안 내용 검색",
+                    "搜索活动或提案",
+                  )}
+                  value={applicationQuery}
+                  onChange={(event) => setApplicationQuery(event.target.value)}
+                />
+              </label>
+              <span aria-live="polite">
+                {t(
+                  `${filteredApplications.length} applications`,
+                  `${filteredApplications.length}건`,
+                  `${filteredApplications.length} 条申请`,
+                )}
+              </span>
+            </div>
+            <div
+              className="cwa-application-table-scroll"
+              tabIndex={0}
+              role="region"
+              aria-label={t("Application list", "신청 목록", "申请列表")}
+            >
+              <table className="cwa-application-table">
+                <thead>
+                  <tr>
+                    <th scope="col">{t("Campaign", "캠페인", "活动")}</th>
+                    <th scope="col">{t("Status", "신청 상태", "申请状态")}</th>
+                    <th scope="col">
+                      {t("Proposed amount", "제안 금액", "提案金额")}
+                    </th>
+                    <th scope="col">
+                      {t("Last updated", "최근 업데이트", "最近更新")}
+                    </th>
+                    <th scope="col">{t("Details", "상세", "详情")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredApplications.length ? (
+                    filteredApplications.map((application) => (
+                      <ApplicationRow
+                        key={application.id}
+                        application={application}
+                        campaign={campaigns.find(
+                          (campaign) => campaign.id === application.campaignId,
+                        )}
+                        locale={locale}
+                        canManage={canManage}
+                        busy={busy}
+                        onMutate={mutate}
+                      />
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="cwa-table-empty">
+                        {t(
+                          "No applications match your filters.",
+                          "조건에 맞는 신청 내역이 없습니다.",
+                          "暂无符合筛选条件的申请。",
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
         ) : (
           <section className="cwa-empty">
             <FolderOpen size={34} aria-hidden="true" />
@@ -984,14 +1020,16 @@ export function AgencyMarketplace({
   );
 }
 
-function ApplicationCard({
+function ApplicationRow({
   application,
+  campaign,
   locale,
   canManage,
   busy,
   onMutate,
 }: {
   application: AgencyApplication;
+  campaign?: AgencyCampaign;
   locale: Locale;
   canManage: boolean;
   busy: boolean;
@@ -999,58 +1037,87 @@ function ApplicationCard({
 }) {
   const t = (en: string, ko: string, zh: string) =>
     agencyText(locale, en, ko, zh);
+  const [expanded, setExpanded] = useState(false);
+  const detailId = `application-detail-${application.id}`;
   return (
-    <article className="cwa-application-card">
-      <div className="cwa-live-toolbar">
-        <div>
+    <>
+      <tr>
+        <td className="cwa-application-campaign">
+          <strong>{application.campaignTitle}</strong>
+          {campaign && (
+            <span>
+              {campaign.platforms
+                .map((value) => platformLabels[value] ?? value)
+                .join(" · ")}
+            </span>
+          )}
+          {application.isDemo && (
+            <span className="cwa-demo-label">
+              {t("Demo application", "데모 신청", "演示申请")}
+            </span>
+          )}
+        </td>
+        <td>
           <span
             className="cwa-application-status"
             data-status={application.status}
           >
             {applicationLabel(application.status, locale)}
           </span>
-          {application.isDemo && (
-            <span className="cwa-demo-label">
-              {t("Demo application", "데모 신청", "演示申请")}
-            </span>
-          )}
-          <h2>{application.campaignTitle}</h2>
-        </div>
-        <span>{date(application.createdAt, locale)}</span>
-      </div>
-      <p className="cwa-pre-line">{application.proposal}</p>
-      <dl>
-        <div>
-          <dt>
-            {application.isDemo
-              ? t("Example proposal amount", "예시 제안 금액", "示例提案金额")
-              : t("Proposed amount", "제안 금액", "提案金额")}
-          </dt>
-          <dd>
-            {amount(application.proposedAmount, application.currency, locale)}
-          </dd>
-        </div>
-        <div>
-          <dt>{t("Recruitment", "모집 상태", "招募状态")}</dt>
-          <dd>
-            {application.campaignStatus === "RECRUITING"
-              ? t("Recruiting", "모집 중", "招募中")
-              : t(
-                  "Closed / not recruiting",
-                  "모집 종료 / 비공개",
-                  "已结束 / 不在招募",
-                )}
-          </dd>
-        </div>
-      </dl>
-      <WithdrawAction
-        application={application}
-        locale={locale}
-        canManage={canManage}
-        busy={busy}
-        onMutate={onMutate}
-      />
-    </article>
+        </td>
+        <td>
+          {amount(application.proposedAmount, application.currency, locale)}
+        </td>
+        <td>{date(application.updatedAt, locale)}</td>
+        <td>
+          <button
+            type="button"
+            className="cwa-application-expand"
+            aria-label={`${t("View details", "상세 보기", "查看详情")}: ${application.campaignTitle}`}
+            aria-expanded={expanded}
+            aria-controls={detailId}
+            onClick={() => setExpanded((current) => !current)}
+          >
+            {t("Details", "상세", "详情")}
+            <ChevronDown size={16} aria-hidden="true" />
+          </button>
+        </td>
+      </tr>
+      <tr
+        id={detailId}
+        hidden={!expanded}
+        className="cwa-application-detail-row"
+      >
+        <td colSpan={5}>
+          <div className="cwa-application-detail">
+            <div className="cwa-application-detail-heading">
+              <h3>
+                {t("Submitted proposal", "제출한 제안서", "已提交的提案")}
+              </h3>
+              <span>{date(application.createdAt, locale)}</span>
+            </div>
+            <p className="cwa-pre-line">{application.proposal}</p>
+            <p className="cwa-application-recruitment">
+              <strong>{t("Recruitment", "모집 상태", "招募状态")}</strong>
+              {application.campaignStatus === "RECRUITING"
+                ? t("Recruiting", "모집 중", "招募中")
+                : t(
+                    "Closed / not recruiting",
+                    "모집 종료 / 비공개",
+                    "已结束 / 不在招募",
+                  )}
+            </p>
+            <WithdrawAction
+              application={application}
+              locale={locale}
+              canManage={canManage}
+              busy={busy}
+              onMutate={onMutate}
+            />
+          </div>
+        </td>
+      </tr>
+    </>
   );
 }
 

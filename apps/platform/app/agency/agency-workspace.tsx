@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
-  ArrowRight,
   Bell,
   Building2,
-  CheckCircle2,
-  Clock3,
+  ChevronDown,
+  History,
   FileText,
   FolderOpen,
   Handshake,
@@ -25,6 +24,7 @@ import { LanguageSwitcher } from "../_components/language-switcher";
 import { Wordmark } from "../_components/brand-logo";
 import { authClient } from "../../lib/auth-client";
 import { AgencyMarketplace } from "./agency-marketplace";
+import { AgencyOperations } from "./agency-operations";
 import {
   agencyCopy,
   agencySections,
@@ -50,7 +50,6 @@ export function AgencyWorkspace({
   role,
   userName,
   agencyType,
-  submittedAt,
 }: AgencyAccount & { initialLocale: Locale; initialSection?: AgencySection }) {
   const copy = agencyCopy[locale];
   const t = (en: string, ko: string, zh: string) =>
@@ -136,38 +135,6 @@ export function AgencyWorkspace({
       </Link>
     );
   }
-  const emptyContent = {
-    invitations: {
-      title: copy.emptyInvitations,
-      body: copy.emptyInvitationsBody,
-      icon: Mail,
-    },
-    "creator-projects": {
-      title: copy.emptyCreatorProjects,
-      body: copy.emptyCreatorProjectsBody,
-      icon: FileText,
-    },
-    creators: {
-      title: copy.emptyCreators,
-      body: copy.emptyCreatorsBody,
-      icon: Users,
-    },
-    payments: {
-      title: copy.emptyPayments,
-      body: copy.emptyPaymentsBody,
-      icon: Wallet,
-    },
-    notifications: {
-      title: copy.emptyNotifications,
-      body: copy.emptyNotificationsBody,
-      icon: Bell,
-    },
-  };
-  const empty =
-    section !== "offers" && section !== "projects" && section !== "organization"
-      ? emptyContent[section]
-      : null;
-  const EmptyIcon = empty?.icon ?? FolderOpen;
 
   return (
     <div className="cwa-workspace" lang={locale === "zh" ? "zh-CN" : locale}>
@@ -228,35 +195,36 @@ export function AgencyWorkspace({
         id="agency-navigation"
         className={`cwa-sidebar${navOpen ? " is-open" : ""}`}
       >
-        <p className="cwa-sidebar-eyebrow">
-          {t("Your workspace", "우리 팀의 작업 공간", "团队工作区")}
-        </p>
         <nav aria-label={copy.workspace}>
           {navLink("offers", LayoutGrid)}
-          <div className="cwa-nav-group">
-            <span>
+          {navLink("applications", History)}
+          <details className="cwa-nav-group" open>
+            <summary>
               <Handshake size={17} aria-hidden="true" />
               {copy.officialGroup}
-            </span>
+              <ChevronDown size={15} aria-hidden="true" />
+            </summary>
             {navLink("projects", FolderOpen, true)}
-          </div>
-          <div className="cwa-nav-group">
-            <span>
+          </details>
+          <details className="cwa-nav-group" open>
+            <summary>
               <Users size={17} aria-hidden="true" />
               {copy.creatorsGroup}
-            </span>
+              <ChevronDown size={15} aria-hidden="true" />
+            </summary>
             {navLink("invitations", Mail, true)}
             {navLink("creator-projects", FileText, true)}
-          </div>
+          </details>
           {navLink("creators", Users)}
           {navLink("payments", Wallet)}
-          <div className="cwa-nav-group">
-            <span>
+          <details className="cwa-nav-group" open>
+            <summary>
               <Building2 size={17} aria-hidden="true" />
               {copy.accountGroup}
-            </span>
+              <ChevronDown size={15} aria-hidden="true" />
+            </summary>
             {navLink("organization", Building2, true)}
-          </div>
+          </details>
           {navLink("notifications", Bell)}
           <button
             type="button"
@@ -290,9 +258,8 @@ export function AgencyWorkspace({
       <main className="cwa-main">
         <div className="cwa-heading">
           <div>
-            <p>{copy.eyebrow}</p>
             <h1 ref={mainHeading} tabIndex={-1}>
-              {section === "offers" ? copy.offersTitle : copy[section]}
+              {copy[section]}
             </h1>
             {section === "organization" && (
               <p className="cwa-subtitle">{copy.organizationSubtitle}</p>
@@ -329,126 +296,30 @@ export function AgencyWorkspace({
           </section>
         )}
 
-        {section === "offers" || section === "projects" ? (
+        {section === "offers" || section === "applications" ? (
           <AgencyMarketplace
             locale={locale}
-            section={section}
+            section={section === "offers" ? "offers" : "projects"}
             status={status}
             role={role}
             onExplore={() => navigate("offers")}
-            onProjects={() => navigate("projects")}
+            onProjects={() => navigate("applications")}
           />
-        ) : section === "organization" ? (
-          <section className="cwa-organization">
-            <div className="cwa-section-heading">
-              <Building2 size={24} aria-hidden="true" />
-              <div>
-                <h2>{organizationName}</h2>
-                <p>
-                  {t(
-                    "Your organization and current review status. Company information is managed through the verification process.",
-                    "조직 정보와 현재 심사 상태입니다. 회사 정보는 심사 절차를 통해 관리합니다.",
-                    "组织资料与当前审核状态。公司资料通过审核流程管理。",
-                  )}
-                </p>
-              </div>
-            </div>
-            <dl>
-              <div>
-                <dt>{copy.company}</dt>
-                <dd>{organizationName}</dd>
-              </div>
-              <div>
-                <dt>{copy.type}</dt>
-                <dd>{agencyType === "studio" ? copy.studio : copy.agency}</dd>
-              </div>
-              <div>
-                <dt>{copy.status}</dt>
-                <dd className="cwa-review-status">
-                  {pending ? (
-                    <Clock3 size={17} aria-hidden="true" />
-                  ) : (
-                    <CheckCircle2 size={17} aria-hidden="true" />
-                  )}
-                  {pending ? copy.pending : copy.active}
-                </dd>
-              </div>
-              <div>
-                <dt>{copy.submitted}</dt>
-                <dd>
-                  {submittedAt
-                    ? new Intl.DateTimeFormat(locale, {
-                        timeZone: "UTC",
-                      }).format(new Date(submittedAt))
-                    : copy.notSubmitted}
-                </dd>
-              </div>
-            </dl>
-            {pending && (
-              <Link
-                className="cwa-button cwa-button-primary"
-                href={`/onboarding/agency?lang=${locale}`}
-              >
-                {copy.reviewProfile}
-                <ArrowRight size={17} aria-hidden="true" />
-              </Link>
-            )}
-          </section>
+        ) : !pending ? (
+          <AgencyOperations
+            key={section}
+            locale={locale}
+            section={section}
+            onExplore={() => navigate("offers")}
+            onApplications={() => navigate("applications")}
+          />
         ) : (
-          <>
-            {section === "payments" && (
-              <>
-                <div className="cwa-payment-summary">
-                  {[copy.available, copy.pendingEarnings, copy.paid].map(
-                    (label) => (
-                      <div key={label}>
-                        <span>{label}</span>
-                        <strong>—</strong>
-                        <small>{copy.noFinancialData}</small>
-                      </div>
-                    ),
-                  )}
-                </div>
-                <div className="cwa-payment-note">
-                  <ShieldCheck size={20} aria-hidden="true" />
-                  <p>{copy.paymentNotice}</p>
-                  <button className="cwa-button" type="button" disabled>
-                    {copy.withdrawal}
-                  </button>
-                </div>
-              </>
-            )}
-            {empty && (
-              <section className="cwa-empty">
-                <span className="cwa-empty-icon">
-                  <EmptyIcon size={34} aria-hidden="true" />
-                </span>
-                <span className="cwa-empty-eyebrow">
-                  {t(
-                    "Not connected yet",
-                    "아직 연결되지 않은 기능",
-                    "功能尚未接入",
-                  )}
-                </span>
-                <h2>{empty.title}</h2>
-                <p>{empty.body}</p>
-                {section === "creators" ? (
-                  <button type="button" className="cwa-button" disabled>
-                    {copy.rosterAction}
-                  </button>
-                ) : section !== "payments" && section !== "notifications" ? (
-                  <button
-                    type="button"
-                    className="cwa-button cwa-button-primary"
-                    onClick={() => navigate("offers")}
-                  >
-                    {t("Browse campaigns", "캠페인 둘러보기", "浏览活动")}
-                    <ArrowRight size={17} aria-hidden="true" />
-                  </button>
-                ) : null}
-              </section>
-            )}
-          </>
+          <section className="cwa-empty">
+            <ShieldCheck size={34} aria-hidden="true" />
+            <h2>{copy.pendingTitle}</h2>
+            <p>{t("Workspace records become available after approval.", "조직 승인이 완료되면 프로젝트와 정산 내역을 확인할 수 있습니다.", "组织审核通过后可查看项目和结算记录。")}</p>
+            <Link className="cwa-button" href={`/onboarding/agency?lang=${locale}`}>{copy.reviewProfile}</Link>
+          </section>
         )}
       </main>
     </div>

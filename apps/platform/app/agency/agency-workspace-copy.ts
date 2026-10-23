@@ -1,11 +1,12 @@
 import type { Locale } from "../_components/landing-copy";
 
-export type AgencySection = "offers" | "projects" | "invitations" | "creator-projects" | "creators" | "payments" | "organization" | "notifications";
-export const agencySections: AgencySection[] = ["offers", "projects", "invitations", "creator-projects", "creators", "payments", "organization", "notifications"];
+export type AgencySection = "offers" | "applications" | "projects" | "invitations" | "creator-projects" | "creators" | "payments" | "organization" | "notifications";
+export const agencySections: AgencySection[] = ["offers", "applications", "projects", "invitations", "creator-projects", "creators", "payments", "organization", "notifications"];
 export const agencyText = (locale: Locale, en: string, ko: string, zh: string) => ({ en, ko, zh })[locale];
 
 export const agencyCopy = {
   en: {
+    applications: "Submission History",
     workspace: "Partner workspace", agency: "Agency", studio: "Studio", language: "Language", menu: "Toggle navigation",
     offers: "Offer Browser", projects: "My Projects", invitations: "Offer Invitations", "creator-projects": "Creator Projects", creators: "My Creators", payments: "Payment", organization: "Organization Info", notifications: "Notifications",
     officialGroup: "Official Business Collaboration", creatorsGroup: "My Creators’ Offers", accountGroup: "Account Center",
@@ -34,6 +35,7 @@ export const agencyCopy = {
     prototypeNote: "This workspace structure is a proposed starting point and may change after the agency workflow is confirmed.", latest: "Most recent", noActualData: "No live records yet", invalidDates: "The start date must be on or before the end date.",
   },
   ko: {
+    applications: "신청 내역",
     workspace: "파트너 작업 공간", agency: "에이전시", studio: "스튜디오", language: "언어", menu: "메뉴 열기",
     offers: "캠페인 찾기", projects: "내 프로젝트", invitations: "캠페인 초대", "creator-projects": "크리에이터 프로젝트", creators: "소속 크리에이터", payments: "정산", organization: "조직 정보", notifications: "알림",
     officialGroup: "공식 비즈니스 협업", creatorsGroup: "크리에이터 캠페인", accountGroup: "계정 관리",
@@ -62,6 +64,7 @@ export const agencyCopy = {
     prototypeNote: "에이전시 운영 흐름을 확정하기 전의 초기 화면안이며, 세부 구성은 이후 조정할 수 있습니다.", latest: "최근순", noActualData: "실제 내역 없음", invalidDates: "시작일은 종료일보다 빠르거나 같아야 합니다.",
   },
   zh: {
+    applications: "申请记录",
     workspace: "合作伙伴工作区", agency: "代理机构", studio: "工作室", language: "语言", menu: "切换导航",
     offers: "活动浏览", projects: "我的项目", invitations: "活动邀请", "creator-projects": "达人项目", creators: "我的达人", payments: "结算", organization: "组织信息", notifications: "通知",
     officialGroup: "官方商务合作", creatorsGroup: "达人活动", accountGroup: "账户中心",
