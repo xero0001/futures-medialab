@@ -89,7 +89,7 @@ export type AgencyOperationsBootstrap = {
   capabilities: {
     invitations: false;
     payouts: false;
-    contentSubmission: false;
+    contentSubmission: boolean;
     activityHistory: false;
   };
   limits: { projects: number; settlements: number; activity: number };

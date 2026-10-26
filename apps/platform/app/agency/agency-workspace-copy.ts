@@ -1,7 +1,7 @@
 import type { Locale } from "../_components/landing-copy";
 
-export type AgencySection = "offers" | "applications" | "projects" | "invitations" | "creator-projects" | "creators" | "payments" | "organization" | "notifications";
-export const agencySections: AgencySection[] = ["offers", "applications", "projects", "invitations", "creator-projects", "creators", "payments", "organization", "notifications"];
+export type AgencySection = "offers" | "applications" | "projects" | "invitations" | "creator-projects" | "payments" | "organization" | "notifications";
+export const agencySections: AgencySection[] = ["offers", "applications", "projects", "invitations", "creator-projects", "payments", "organization", "notifications"];
 export const agencyText = (locale: Locale, en: string, ko: string, zh: string) => ({ en, ko, zh })[locale];
 
 export const agencyCopy = {

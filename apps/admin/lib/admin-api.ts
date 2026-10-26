@@ -21,6 +21,7 @@ import {
   text,
 } from "./verification";
 import type { Bootstrap, CampaignDetail, OrganizationDetail } from "./types";
+import { safeOperationUrl } from "./campaign-operations-validation";
 
 const idSchema = z
   .string()
@@ -291,6 +292,10 @@ export function campaignDetail(request: Request, id: string) {
       select: {
         id: true,
         summary: true,
+        regions: true, categories: true, followerMin: true, followerMax: true,
+        title: true, status: true, platforms: true, currency: true, budgetAmount: true, applicationDeadline: true, createdAt: true,
+        brandOrganization: { select: { name: true, status: true } },
+        briefUrl: true, contentDeadline: true, requirements: true, settlementPolicy: true, managedRequest: true,
         _count: { select: { applications: true } },
         applications: {
           orderBy: { createdAt: "desc" },
@@ -302,6 +307,10 @@ export function campaignDetail(request: Request, id: string) {
             proposedAmount: true,
             currency: true,
             createdAt: true,
+            agencyOrganizationId: true,
+            rosterSnapshot: true,
+            creators: { orderBy: { creatorId: "asc" }, take: 100, select: { deliverables: true,
+              creator: { select: { id: true, agencyOrganizationId: true, displayName: true, channels: true, categories: true } } } },
             agencyOrganization: { select: { name: true, status: true } },
           },
         },
@@ -312,12 +321,22 @@ export function campaignDetail(request: Request, id: string) {
     return json({
       id,
       summary: campaign.summary,
+      regions: campaign.regions, categories: campaign.categories, followerMin: campaign.followerMin, followerMax: campaign.followerMax,
+      campaign: { id, title: campaign.title, summary: campaign.summary, status: campaign.status,
+        brandName: campaign.brandOrganization.name, brandStatus: campaign.brandOrganization.status,
+        platforms: campaign.platforms, currency: campaign.currency, budgetAmount: campaign.budgetAmount?.toFixed(2) ?? null,
+        applicationDeadline: campaign.applicationDeadline?.toISOString() ?? null, createdAt: campaign.createdAt.toISOString(),
+        applicationCount: campaign._count.applications, reviewReason: reviewReason(campaign.requirements) },
+      briefUrl: safeOperationUrl(campaign.briefUrl), contentDeadline: campaign.contentDeadline?.toISOString() ?? null,
+      requirements: campaign.requirements, settlementPolicy: campaign.settlementPolicy, managedRequest: campaign.managedRequest,
       total: campaign._count.applications,
       applications: campaign.applications.map(
         ({
           agencyOrganization,
           proposedAmount,
           createdAt,
+          agencyOrganizationId,
+          creators,
           ...application
         }) => ({
           ...application,
@@ -325,6 +344,8 @@ export function campaignDetail(request: Request, id: string) {
           agencyStatus: agencyOrganization.status,
           proposedAmount: proposedAmount?.toFixed(2) ?? null,
           createdAt: createdAt.toISOString(),
+          creators: creators.filter(({ creator }) => creator.agencyOrganizationId === agencyOrganizationId)
+            .map(({ creator, deliverables }) => ({ id: creator.id, name: creator.displayName, channels: creator.channels, categories: creator.categories, deliverables })),
         }),
       ),
     } satisfies CampaignDetail);

@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -29,8 +35,7 @@ type Section =
   | "creator-projects"
   | "payments"
   | "organization"
-  | "notifications"
-  | "creators";
+  | "notifications";
 type Props = {
   locale: Locale;
   section: Section;
@@ -258,6 +263,7 @@ export function AgencyOperations({
             locale={locale}
             onExplore={onExplore}
             onApplications={onApplications}
+            onRefresh={reload}
           />
         </div>
       )}
@@ -271,7 +277,8 @@ function OperationSection({
   locale,
   onExplore,
   onApplications,
-}: Props & { data: AgencyOperationsBootstrap }) {
+  onRefresh,
+}: Props & { data: AgencyOperationsBootstrap; onRefresh: () => void }) {
   if (section === "invitations")
     return <Invitations locale={locale} onExplore={onExplore} />;
   if (section === "payments") return <Payments data={data} locale={locale} />;
@@ -279,7 +286,6 @@ function OperationSection({
     return <Organization data={data} locale={locale} />;
   if (section === "notifications")
     return <Activity data={data} locale={locale} />;
-  if (section === "creators") return <Creators data={data} locale={locale} />;
   return (
     <Projects
       data={data}
@@ -287,6 +293,7 @@ function OperationSection({
       creatorView={section === "creator-projects"}
       onExplore={onExplore}
       onApplications={onApplications}
+      onRefresh={onRefresh}
     />
   );
 }
@@ -560,12 +567,14 @@ function Projects({
   creatorView,
   onExplore,
   onApplications,
+  onRefresh,
 }: {
   data: AgencyOperationsBootstrap;
   locale: Locale;
   creatorView: boolean;
   onExplore: () => void;
   onApplications: () => void;
+  onRefresh: () => void;
 }) {
   const t = useText(locale);
   const [tab, setTab] = useState("active");
@@ -781,10 +790,19 @@ function Projects({
                         : t("No submission", "제출 내역 없음", "暂无交付")}
                     </span>
                   </td>
-                  <td className="aop-date-cell">{displayDate(project.createdAt, locale)}</td>
-                  <td className="aop-date-cell">{displayDate(project.contentDeadline, locale)}</td>
+                  <td className="aop-date-cell">
+                    {displayDate(project.createdAt, locale)}
+                  </td>
+                  <td className="aop-date-cell">
+                    {displayDate(project.contentDeadline, locale)}
+                  </td>
                   <td>
-                    <ProjectDetails project={project} locale={locale} />
+                    <ProjectDetails
+                      project={project}
+                      locale={locale}
+                      canSubmit={data.capabilities.contentSubmission}
+                      onRefresh={onRefresh}
+                    />
                   </td>
                 </tr>
               ))
@@ -807,9 +825,13 @@ function Projects({
 function ProjectDetails({
   project,
   locale,
+  canSubmit,
+  onRefresh,
 }: {
   project: AgencyProject;
   locale: Locale;
+  canSubmit: boolean;
+  onRefresh: () => void;
 }) {
   const t = useText(locale);
   return (
@@ -864,14 +886,160 @@ function ProjectDetails({
         ) : (
           <p className="aop-muted">
             {t(
-              "No submission records. Content submission is not available in this workspace yet.",
-              "제출 내역이 없습니다. 이 작업 공간에서는 콘텐츠 제출 기능을 준비 중입니다.",
-              "暂无交付记录，工作区交付功能正在准备中。",
+              "No content has been submitted yet.",
+              "아직 제출된 콘텐츠가 없습니다.",
+              "暂无交付记录。",
             )}
           </p>
         )}
+        {canSubmit &&
+        ["RECRUITING", "IN_PROGRESS", "VERIFYING", "SETTLING"].includes(
+          project.campaignStatus,
+        ) ? (
+          <ContentSubmissionForm
+            key={project.submissions[0]?.updatedAt ?? "first"}
+            project={project}
+            locale={locale}
+            onSaved={onRefresh}
+          />
+        ) : null}
       </div>
     </details>
+  );
+}
+
+function ContentSubmissionForm({
+  project,
+  locale,
+  onSaved,
+}: {
+  project: AgencyProject;
+  locale: Locale;
+  onSaved: () => void;
+}) {
+  const t = useText(locale);
+  const id = useId();
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const latest = project.submissions[0];
+  const publish = latest?.status === "APPROVED";
+  const available =
+    !latest ||
+    ["DRAFT", "REVISION_REQUESTED", "APPROVED"].includes(latest.status);
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/agency/content-submissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: publish ? "publishContent" : "submitDraft",
+          applicationId: project.id,
+          expectedSubmissionId: latest?.id ?? null,
+          expectedUpdatedAt: latest?.updatedAt ?? null,
+          url,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setError(
+          result.code === "CONFLICT"
+            ? t(
+                "This record changed. Refresh and try again.",
+                "내역이 변경되었습니다. 새로고침 후 다시 제출해 주세요.",
+                "记录已更新，请刷新后重试。",
+              )
+            : result.code === "INVALID_STATE" || result.code === "LOCKED"
+              ? t(
+                  "This submission is currently locked for review.",
+                  "현재 상태에서는 제출할 수 없습니다. 검토 상태를 확인해 주세요.",
+                  "当前状态无法提交，请检查审核状态。",
+                )
+              : t(
+                  "Unable to submit. Check the HTTPS link and your permissions, then try again.",
+                  "제출하지 못했습니다. HTTPS 링크와 권한을 확인한 후 다시 시도해 주세요.",
+                  "无法提交，请检查 HTTPS 链接和权限后重试。",
+                ),
+        );
+        return;
+      }
+      onSaved();
+    } catch {
+      setError(
+        t(
+          "Connection failed. Please try again.",
+          "연결에 실패했습니다. 다시 시도해 주세요.",
+          "连接失败，请重试。",
+        ),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (!available)
+    return (
+      <p className="aop-muted">
+        {latest?.status === "VERIFIED"
+          ? t(
+              "Content verification is complete.",
+              "콘텐츠 검증이 완료되었습니다.",
+              "内容核验已完成。",
+            )
+          : t(
+              "Your submission is under review. A new version can be submitted after a revision request.",
+              "제출 내용을 검토 중입니다. 수정 요청을 받으면 새 버전을 제출할 수 있습니다.",
+              "交付内容正在审核，收到修改要求后可提交新版本。",
+            )}
+      </p>
+    );
+  return (
+    <form className="aop-submit-form" onSubmit={submit} aria-busy={busy}>
+      <label htmlFor={id}>
+        {publish
+          ? t("Published content URL", "게시물 링크", "已发布内容链接")
+          : t("Draft content URL", "콘텐츠 초안 링크", "内容草稿链接")}
+      </label>
+      <p>
+        {publish
+          ? t(
+              "Submit the published link for final verification after your draft is approved.",
+              "승인된 초안의 게시물 링크를 제출하면 운영팀이 최종 검증합니다.",
+              "提交已获批草稿的发布链接以完成最终核验。",
+            )
+          : t(
+              "Share an HTTPS link that the operations team can open. File upload is not provided here.",
+              "운영팀이 열람할 수 있는 HTTPS 링크를 입력하세요. 이 화면은 파일 업로드가 아닌 링크 제출 방식입니다.",
+              "请输入运营团队可访问的 HTTPS 链接。此页面不提供文件上传。",
+            )}
+      </p>
+      <input
+        id={id}
+        type="url"
+        pattern="https://.*"
+        required
+        maxLength={2048}
+        value={url}
+        onChange={(event) => setUrl(event.target.value)}
+        placeholder="https://…"
+        disabled={busy}
+      />
+      {error ? (
+        <p className="aop-error-text" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <button type="submit" className="aop-button aop-primary" disabled={busy}>
+        {busy
+          ? t("Submitting…", "제출 중…", "提交中…")
+          : publish
+            ? t("Submit published link", "게시물 검증 요청", "申请发布核验")
+            : t("Submit draft", "초안 제출", "提交草稿")}
+      </button>
+    </form>
   );
 }
 
@@ -1071,8 +1239,12 @@ function Payments({
                         {statusText(row.status, t)}
                       </span>
                     </td>
-                    <td className="aop-date-cell">{displayDate(row.createdAt, locale)}</td>
-                    <td className="aop-date-cell">{displayDate(row.paidAt, locale)}</td>
+                    <td className="aop-date-cell">
+                      {displayDate(row.createdAt, locale)}
+                    </td>
+                    <td className="aop-date-cell">
+                      {displayDate(row.paidAt, locale)}
+                    </td>
                   </tr>
                 ))
               : null}
@@ -1290,82 +1462,6 @@ function Activity({
           )}
         />
       )}
-    </section>
-  );
-}
-
-function Creators({
-  data,
-  locale,
-}: {
-  data: AgencyOperationsBootstrap;
-  locale: Locale;
-}) {
-  const t = useText(locale);
-  const roster = [
-    ...new Map(
-      data.projects
-        .flatMap((project) => project.creators)
-        .map((creator) => [creator.id, creator]),
-    ).values(),
-  ];
-  return (
-    <section className="aop-panel">
-      <div className="aop-panel-intro">
-        <p>
-          {t(
-            "Creators linked to your selected projects. This is not your complete agency roster.",
-            "선정된 프로젝트에 연결된 크리에이터입니다. 조직의 전체 소속 명단은 아닙니다.",
-            "已获选项目中关联的达人，并非组织完整名册。",
-          )}
-        </p>
-      </div>
-      <Table
-        headers={[
-          t("Creator", "크리에이터", "达人"),
-          t("Country / region", "국가 / 지역", "国家 / 地区"),
-          t("Status", "상태", "状态"),
-          t("Selected projects", "선정 프로젝트", "获选项目"),
-        ]}
-        empty={
-          <Empty
-            title={t(
-              "No linked creators",
-              "연결된 크리에이터가 없습니다",
-              "暂无关联达人",
-            )}
-            body={t(
-              "Creator assignments and roster management are not connected in this workspace yet.",
-              "이 작업 공간의 크리에이터 배정·소속 명단 관리 기능을 준비 중입니다.",
-              "工作区达人分配与名册管理功能正在准备中。",
-            )}
-          />
-        }
-      >
-        {roster.length
-          ? roster.map((creator) => (
-              <tr key={creator.id}>
-                <td>
-                  <strong>{creator.displayName}</strong>
-                </td>
-                <td>{creator.countryCode ?? "—"}</td>
-                <td>
-                  {creator.isActive
-                    ? t("Active", "활성", "活跃")
-                    : t("Inactive", "비활성", "停用")}
-                </td>
-                <td>
-                  {data.projects
-                    .filter((project) =>
-                      project.creators.some((item) => item.id === creator.id),
-                    )
-                    .map((project) => project.campaignTitle)
-                    .join(", ")}
-                </td>
-              </tr>
-            ))
-          : null}
-      </Table>
     </section>
   );
 }

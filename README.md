@@ -213,6 +213,7 @@ cannot enter the workspace or mutate its data.
 | `/shortLinks`                   | HTTPS short links, copy/pause, raw redirect-request counts                                     |
 | `/agent`                        | Three analysis-request types, persisted intake and request history                             |
 | `/advertiser/campaign`          | Drafts/editing, review submission, applications, shortlist/accept/reject                       |
+| `/advertiser/requests`          | Organization request inbox, public replies, private attachments, status/history and reopening |
 | `/advertiser/accountManagement` | Contact/company edits and read-only account/security information                               |
 
 All views use the shared indigo workspace shell, custom selection controls,
@@ -220,6 +221,40 @@ English/Korean/Chinese labels, and 14px minimum text. Reference inspection used
 Youdao's logged-in pages at the corresponding paths. Reference collection and
 short-link creation were membership-gated; reference campaign management exposed
 only managed-service/contact information. No paid analysis/search quota was used.
+
+### Request handling and campaign operations
+
+The admin console's request inbox handles both new brand support requests and
+existing analysis requests in `WorkspaceToolRequest`. Administrators can assign
+an active operator, set priority/deadline, reply publicly, add private internal
+notes, and resolve/close requests. Brands only see their organization's public
+conversation; resolved requests can be reopened, but closed requests are final.
+Changes use optimistic versions, session/organization rechecks and audit records.
+
+Attachments use the existing private Blob store (`BLOB_READ_WRITE_TOKEN` in both
+apps), accept PDF/PNG/JPEG up to 4 MB each and five files per reply. Downloads
+are authenticated; neither Blob URLs nor tokens are returned to clients.
+Unsent uploads are restored after refresh and can be cancelled. Cancellation
+marks the record discarded before deleting the Blob, so it cannot be attached
+by a concurrent reply. Failed storage cleanup can be retried with the same
+authenticated DELETE. Cancelled files cannot be recovered through the workspace.
+
+For accepted agency applications, the admin campaign detail now includes draft
+review/revision, published-link verification, external contract reference records,
+and settlement preparation/review. Agency projects support versioned HTTPS draft
+and publication links. Settlement amounts are computed on the server and checked
+against the proposal, currency and campaign-wide budget. Approval requires the
+latest verified content and a confirmed contract reference. This does **not**
+perform electronic signing, automated analysis, email delivery or money transfers;
+settlements are never marked `PAID` by these endpoints.
+
+Apply migrations before running the updated apps. Restart long-running `next dev`
+processes after changing/regenerating Prisma models to replace cached clients.
+Regression tests: `node --experimental-strip-types --test apps/admin/scripts/*.test.mjs apps/platform/scripts/*.test.mjs`.
+Opt-in real-DB checks (local servers on 3000/3001, DB credentials supplied by the
+caller): `RUN_DB_SMOKE=1 node apps/platform/scripts/requests-smoke.mjs` and
+`RUN_DB_SMOKE=1 node apps/platform/scripts/campaign-operations-smoke.mjs`.
+Both create isolated, temporary fixtures and remove only their own records.
 
 ### Data and provider boundary
 

@@ -106,6 +106,9 @@ model User {
   directorySearches     DirectorySearch[]
   shortLinks            ShortLink[]
   workspaceToolRequests WorkspaceToolRequest[]
+  assignedRequests      WorkspaceToolRequest[] @relation("RequestAssignee")
+  requestMessages       RequestMessage[]
+  requestAttachments    RequestAttachment[]
   agencyDocuments       AgencyDocument[]
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
@@ -229,35 +232,36 @@ model AgencyDocument {
 }
 
 model Campaign {
-  id                  String                @id @default(cuid())
+  id                  String                 @id @default(cuid())
   brandOrganizationId String
   createdById         String
-  type                CampaignType          @default(OPEN_BIDDING)
-  status              CampaignStatus        @default(DRAFT)
+  type                CampaignType           @default(OPEN_BIDDING)
+  status              CampaignStatus         @default(DRAFT)
   title               String
   privateTitle        String?
-  summary             String                @default("") @db.Text
+  summary             String                 @default("") @db.Text
   briefUrl            String?
   coverImageUrl       String?
-  platforms           String[]              @default([])
-  regions             String[]              @default([])
-  categories          String[]              @default([])
+  platforms           String[]               @default([])
+  regions             String[]               @default([])
+  categories          String[]               @default([])
   followerMin         Int?
   followerMax         Int?
-  budgetAmount        Decimal?              @db.Decimal(18, 2)
-  currency            Currency              @default(USD)
-  requirements        Json                  @default("{}")
-  settlementPolicy    Json                  @default("{}")
-  managedRequest      Json                  @default("{}")
+  budgetAmount        Decimal?               @db.Decimal(18, 2)
+  currency            Currency               @default(USD)
+  requirements        Json                   @default("{}")
+  settlementPolicy    Json                   @default("{}")
+  managedRequest      Json                   @default("{}")
   applicationDeadline DateTime?
   contentDeadline     DateTime?
   publishedAt         DateTime?
-  brandOrganization   Organization          @relation("BrandCampaigns", fields: [brandOrganizationId], references: [id], onDelete: Restrict)
-  createdBy           User                  @relation("CampaignCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  brandOrganization   Organization           @relation("BrandCampaigns", fields: [brandOrganizationId], references: [id], onDelete: Restrict)
+  createdBy           User                   @relation("CampaignCreator", fields: [createdById], references: [id], onDelete: Restrict)
   applications        CampaignApplication[]
   questions           CampaignQuestion[]
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
+  requests            WorkspaceToolRequest[]
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
 
   @@index([status, applicationDeadline])
   @@index([brandOrganizationId, status])
@@ -335,19 +339,64 @@ model ShortLink {
 }
 
 model WorkspaceToolRequest {
-  id             String       @id @default(cuid())
+  id             String              @id @default(cuid())
   organizationId String
   userId         String
   tool           String
   title          String
   inputJson      Json
-  status         String       @default("REQUESTED")
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  status         String              @default("REQUESTED")
+  campaignId     String?
+  assignedToId   String?
+  priority       String              @default("NORMAL")
+  dueAt          DateTime?
+  version        Int                 @default(0)
+  campaign       Campaign?           @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  assignedTo     User?               @relation("RequestAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  messages       RequestMessage[]
+  attachments    RequestAttachment[]
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
 
   @@index([organizationId, createdAt])
+  @@index([status, updatedAt])
+  @@index([assignedToId, dueAt])
+  @@index([campaignId])
+}
+
+model RequestMessage {
+  id          String               @id @default(cuid())
+  requestId   String
+  authorId    String
+  body        String               @db.Text
+  internal    Boolean              @default(false)
+  authorRole  String
+  request     WorkspaceToolRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  author      User                 @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  attachments RequestAttachment[]
+  createdAt   DateTime             @default(now())
+
+  @@index([requestId, createdAt])
+}
+
+model RequestAttachment {
+  id          String               @id @default(cuid())
+  requestId   String
+  uploaderId  String
+  messageId   String?
+  fileName    String
+  contentType String
+  size        Int
+  pathname    String               @unique
+  discardedAt DateTime?
+  request     WorkspaceToolRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  uploader    User                 @relation(fields: [uploaderId], references: [id], onDelete: Restrict)
+  message     RequestMessage?      @relation(fields: [messageId], references: [id], onDelete: Restrict)
+  createdAt   DateTime             @default(now())
+
+  @@index([requestId, messageId])
 }
 
 model CreatorProfile {
@@ -384,11 +433,25 @@ model CampaignApplication {
   creators             ApplicationCreator[]
   submissions          ContentSubmission[]
   settlement           Settlement?
+  contract             CampaignContract?
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
 
   @@unique([campaignId, agencyOrganizationId])
   @@index([agencyOrganizationId, status])
+}
+
+model CampaignContract {
+  id            String              @id @default(cuid())
+  applicationId String              @unique
+  status        String              @default("DRAFT")
+  referenceUrl  String?
+  notes         String              @default("") @db.Text
+  confirmedAt   DateTime?
+  version       Int                 @default(0)
+  application   CampaignApplication @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 }
 
 model ApplicationCreator {
@@ -452,6 +515,8 @@ model Settlement {
   netAmount            Decimal             @db.Decimal(18, 2)
   exchangeRate         Decimal?            @db.Decimal(18, 8)
   transferReference    String?
+  version              Int                 @default(0)
+  adminReviewNotes     String              @default("") @db.Text
   requestedAt          DateTime?
   approvedAt           DateTime?
   paidAt               DateTime?

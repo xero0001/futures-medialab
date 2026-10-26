@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "exports": {
+    "./brand-symbol": "./src/components/brand-symbol.tsx",
     "./button": "./src/components/button.tsx",
     "./globals.css": "./src/styles/globals.css",
     "./utils": "./src/lib/utils.ts"

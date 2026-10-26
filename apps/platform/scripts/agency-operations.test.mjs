@@ -174,7 +174,7 @@ test("approved test access does not fabricate profile proof, review activity, se
   assert.deepEqual(body.projects, []);
   assert.deepEqual(body.settlements, []);
   assert.deepEqual(body.activity, []);
-  assert.deepEqual(body.capabilities, { invitations: false, payouts: false, contentSubmission: false, activityHistory: false });
+  assert.deepEqual(body.capabilities, { invitations: false, payouts: false, contentSubmission: true, activityHistory: false });
 });
 
 test("only approved explicit test access includes demo records with their demo label", async () => {
@@ -202,6 +202,7 @@ test("members receive non-sensitive organization details; review activity requir
   } });
   const body = await (await state.run()).json();
   assert.equal(body.organization.profile.address, "Seoul");
+  assert.equal(body.capabilities.contentSubmission, false);
   for (const field of ["contactName", "contactValue", "businessLicenseId", "platformContact"]) assert.equal(body.organization.profile[field], "");
   assert.equal(body.activity.length, 1);
   assert.equal(body.activity[0].kind, "organization_review");

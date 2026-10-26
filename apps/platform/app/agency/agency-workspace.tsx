@@ -215,7 +215,6 @@ export function AgencyWorkspace({
             {navLink("invitations", Mail, true)}
             {navLink("creator-projects", FileText, true)}
           </details>
-          {navLink("creators", Users)}
           {navLink("payments", Wallet)}
           <details className="cwa-nav-group" open>
             <summary>

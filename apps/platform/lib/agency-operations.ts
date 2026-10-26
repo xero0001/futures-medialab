@@ -187,7 +187,7 @@ export async function agencyOperations(request: Request) {
           submissions: row.submissions.map((submission) => ({
             id: submission.id, version: submission.version, status: submission.status,
             draftUrl: safeLink(submission.draftUrl), publishedUrl: safeLink(submission.publishedUrl),
-            reviewNotes: text(submission.reviewNotes, 500), submittedAt: date(submission.submittedAt),
+            reviewNotes: text(submission.reviewNotes, 1000), submittedAt: date(submission.submittedAt),
             reviewedAt: date(submission.reviewedAt), verifiedAt: date(submission.verifiedAt), updatedAt: submission.updatedAt.toISOString(),
           })),
         })),
@@ -199,7 +199,7 @@ export async function agencyOperations(request: Request) {
           requestedAt: date(row.requestedAt), approvedAt: date(row.approvedAt), paidAt: date(row.paidAt), isDemo: isDemoCampaign(row.application.campaign),
         })),
         activity: activity.sort((a, b) => b.occurredAt.localeCompare(a.occurredAt) || a.id.localeCompare(b.id)).slice(0, limits.activity),
-        capabilities: { invitations: false, payouts: false, contentSubmission: false, activityHistory: false },
+        capabilities: { invitations: false, payouts: false, contentSubmission: member.role !== "MEMBER", activityHistory: false },
         limits,
       };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, timeout: 15000 });

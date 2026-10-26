@@ -4,7 +4,9 @@
   "type": "module",
   "private": true,
   "exports": {
-    ".": "./src/client.ts"
+    ".": "./src/client.ts",
+    "./requests": "./src/requests.ts",
+    "./request-http": "./src/request-http.ts"
   },
   "scripts": {
     "build": "prisma generate && tsup src/client.ts --format esm --dts",
@@ -20,8 +22,10 @@
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
     "@vercel/functions": "3.9.8",
+    "@vercel/blob": "^2.8.2",
     "dotenv": "18.0.0",
-    "pg": "8.23.0"
+    "pg": "8.23.0",
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@futures-medialab/eslint-config": "workspace:*",

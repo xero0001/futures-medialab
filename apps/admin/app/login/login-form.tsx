@@ -1,8 +1,10 @@
 "use client";
 import { useState, type FormEvent } from "react";
+import { ArrowRight, Eye, EyeOff, LoaderCircle } from "lucide-react";
 
 export function LoginForm({ denied }: { denied: boolean }) {
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(
     denied ? "이 계정에는 관리자 권한이 없습니다." : "",
   );
@@ -57,29 +59,49 @@ export function LoginForm({ denied }: { denied: boolean }) {
           type="email"
           name="email"
           autoComplete="username"
+          placeholder="이메일 주소를 입력해주세요"
           required
           maxLength={254}
           disabled={busy}
         />
       </label>
-      <label>
-        비밀번호
-        <input
-          type="password"
-          name="password"
-          autoComplete="current-password"
-          required
-          maxLength={128}
-          disabled={busy}
-        />
-      </label>
+      <div className="admin-password-field">
+        <label htmlFor="admin-password">비밀번호</label>
+        <div className="admin-password-input">
+          <input
+            id="admin-password"
+            type={showPassword ? "text" : "password"}
+            name="password"
+            autoComplete="current-password"
+            placeholder="비밀번호를 입력해주세요"
+            required
+            maxLength={128}
+            disabled={busy}
+          />
+          <button
+            type="button"
+            className="admin-password-toggle"
+            aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 표시"}
+            aria-pressed={showPassword}
+            disabled={busy}
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+        </div>
+      </div>
       {error && (
         <p role="alert" className="admin-alert error">
           {error}
         </p>
       )}
-      <button className="primary" disabled={busy}>
+      <button className="primary admin-login-submit" disabled={busy}>
         {busy ? "권한 확인 중…" : "로그인"}
+        {busy ? (
+          <LoaderCircle className="admin-spin" size={19} />
+        ) : (
+          <ArrowRight size={19} />
+        )}
       </button>
     </form>
   );

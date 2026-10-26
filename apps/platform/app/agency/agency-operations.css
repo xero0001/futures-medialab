@@ -561,3 +561,7 @@
     align-items: flex-start;
   }
 }
+.aop-submit-form { margin-top: 20px; padding-top: 18px; border-top: 1px solid #e8e5ed; display: grid; gap: 12px; font-size: 14px; }
+.aop-submit-form label { font-weight: 600; }.aop-submit-form p { margin: 0; color: #716c83; line-height: 1.6; }
+.aop-submit-form input { min-height: 44px; width: 100%; border: 1px solid #dcd8e8; border-radius: 9px; padding: 10px 12px; font: inherit; background: white; }
+.aop-submit-form button { justify-self: start; }

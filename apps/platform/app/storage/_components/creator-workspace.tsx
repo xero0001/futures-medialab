@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import {
   Bookmark,
@@ -12,6 +13,7 @@ import {
   Link2,
   LogOut,
   Menu,
+  MessageSquareText,
   Search,
   SlidersHorizontal,
   Sparkles,
@@ -42,6 +44,10 @@ import {
 import { WorkspaceTools } from "./workspace-tools";
 import "./workspace.css";
 
+const RequestWorkspace = dynamic(() =>
+  import("./request-workspace").then((module) => module.RequestWorkspace),
+);
+
 export type WorkspaceMode =
   | "search"
   | "similar"
@@ -49,6 +55,7 @@ export type WorkspaceMode =
   | "collect"
   | "links"
   | "campaigns"
+  | "requests"
   | "agent"
   | "account";
 const routes: Record<WorkspaceMode, string> = {
@@ -58,6 +65,7 @@ const routes: Record<WorkspaceMode, string> = {
   collect: "/storage/collect",
   links: "/shortLinks",
   campaigns: "/advertiser/campaign",
+  requests: "/advertiser/requests",
   agent: "/agent",
   account: "/advertiser/accountManagement",
 };
@@ -111,11 +119,13 @@ export function CreatorWorkspace({
     collect: t("Collections", "즐겨찾기", "收藏夹"),
     links: t("Short links", "단축 링크", "短链服务"),
     campaigns: t("Campaigns", "캠페인 관리", "推广系列管理"),
+    requests: t("Request inbox", "요청함", "请求中心"),
     agent: t("Intelligence tools", "분석 도구", "智能工具集"),
     account: t("Account settings", "계정 관리", "账户管理"),
   };
 
   useEffect(() => {
+    if (mode === "requests") return;
     const controller = new AbortController();
     fetch("/api/workspace/bootstrap", {
       signal: controller.signal,
@@ -137,7 +147,7 @@ export function CreatorWorkspace({
           );
       });
     return () => controller.abort();
-  }, [locale]);
+  }, [locale, mode]);
 
   useEffect(() => {
     if (detail) dialogRef.current?.showModal();
@@ -393,6 +403,7 @@ export function CreatorWorkspace({
     { key: "collect", icon: FolderHeart },
     { key: "links", icon: Link2 },
     { key: "campaigns", icon: Compass },
+    { key: "requests", icon: MessageSquareText },
     { key: "account", icon: Users },
   ] as const;
 
@@ -507,7 +518,9 @@ export function CreatorWorkspace({
             {notice}
           </div>
         )}
-        {!data ? (
+        {mode === "requests" ? (
+          <RequestWorkspace locale={locale} />
+        ) : !data ? (
           <div className="cw-panel cw-loading" role="status">
             {error
               ? t(

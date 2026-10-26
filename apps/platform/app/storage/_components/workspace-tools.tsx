@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState, type FormEvent } from "react";
 import {
   ArrowUpRight,
@@ -1425,7 +1426,13 @@ function AgentView({ locale, data, onMutate, busy }: ViewProps) {
         </form>
       </section>
       <section className="cw-panel">
-        <h2>{t("Request history", "요청 이력", "请求历史")}</h2>
+        <div className="cw-tools-heading">
+          <h2>{t("Request history", "요청 이력", "请求历史")}</h2>
+          <Link className="cw-button" href={`/advertiser/requests?lang=${locale}`}>
+            <MessageSquareText size={18} aria-hidden="true" />
+            {t("View replies in request inbox", "요청함에서 답변 확인", "在请求中心查看回复")}
+          </Link>
+        </div>
         {data.requests.length === 0 ? (
           <div className="cw-empty">
             <MessageSquareText size={32} aria-hidden="true" />
