@@ -149,8 +149,7 @@ html:root:not([data-seed]) {
   padding: 4px 10px 4px 4px;
   border-radius: var(--seed-radius-full);
 }
-.seed-search-user-avatar .seed-avatar__fallback,
-.seed-search-org-avatar .seed-avatar__fallback {
+.seed-search-user-avatar .seed-avatar__fallback {
   background: var(--seed-color-bg-brand-weak);
   color: var(--seed-color-fg-brand-contrast);
   font-weight: var(--seed-font-weight-bold);
@@ -179,33 +178,8 @@ html:root:not([data-seed]) {
   width: 100%;
   min-height: 0;
 }
-.seed-search-navigation .seed-search-nav-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 60px;
-  padding: 12px;
-  margin: 16px 0 8px;
-  border-radius: var(--seed-radius-r3);
-  background: var(--seed-color-bg-brand-weak);
-}
-.seed-search-workspace-mark {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
-  border-radius: var(--seed-radius-r2);
-  background: var(--seed-color-bg-neutral-subtle);
-  color: var(--seed-color-fg-brand);
-}
-.seed-search-nav-header strong {
-  display: block;
-  font-size: 14px;
-  color: var(--seed-color-fg-brand-contrast);
-}
 .seed-search-navigation .seed-side-navigation__content {
-  padding: 0 0 8px;
+  padding: 24px 0 8px;
   gap: 12px;
 }
 .seed-search-navigation .seed-side-navigation__groupLabel {
@@ -234,13 +208,6 @@ html:root:not([data-seed]) {
   color: var(--seed-color-fg-brand-contrast);
   font-weight: var(--seed-font-weight-bold);
 }
-.seed-search-nav-dot {
-  width: 6px;
-  height: 6px;
-  flex-shrink: 0;
-  border-radius: var(--seed-radius-full);
-  background: var(--ss-brand);
-}
 .seed-search-navigation .seed-search-sidebar-bottom {
   margin-top: auto;
   padding: 8px 0;
@@ -251,30 +218,6 @@ html:root:not([data-seed]) {
   width: 100%;
   padding-inline: 12px;
   color: var(--ss-muted);
-}
-.seed-search-org {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 6px 0;
-  padding: 8px 12px;
-  border: 1px solid var(--ss-border);
-  border-radius: var(--seed-radius-r3);
-}
-.seed-search-org-copy {
-  min-width: 0;
-}
-.seed-search-org-copy strong {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 13px;
-}
-.seed-search-org-copy > span {
-  display: block;
-  color: var(--ss-muted);
-  font-size: 12px;
 }
 .seed-search-main {
   min-width: 0;

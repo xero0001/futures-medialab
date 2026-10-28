@@ -69,7 +69,6 @@ const platforms = Object.keys(platformNames) as PlatformId[];
 
 export function SeedSearchWorkspace({
   locale,
-  organizationName,
   status,
   userName,
 }: {
@@ -395,16 +394,6 @@ export function SeedSearchWorkspace({
           className="seed-search-navigation"
           aria-label={t("Workspace navigation", "작업 공간 메뉴", "工作区导航")}
         >
-          <SideNavigation.Header className="seed-search-nav-header">
-            <span className="seed-search-workspace-mark" aria-hidden="true">
-              <Layers size={19} />
-            </span>
-            <div>
-              <strong>
-                {t("My workspace", "내 워크스페이스", "我的工作区")}
-              </strong>
-            </div>
-          </SideNavigation.Header>
           <SideNavigation.Content>
             {[navItems.slice(0, 4), navItems.slice(4)].map((items, group) => (
               <SideNavigation.Group key={group}>
@@ -427,12 +416,6 @@ export function SeedSearchWorkspace({
                       <SideNavigation.ItemLabel>
                         {label}
                       </SideNavigation.ItemLabel>
-                      {href === "/storage/search/seed" && (
-                        <span
-                          className="seed-search-nav-dot"
-                          aria-hidden="true"
-                        />
-                      )}
                     </Link>
                   </SideNavigation.Item>
                 ))}
@@ -448,17 +431,6 @@ export function SeedSearchWorkspace({
                 </SideNavigation.ItemLabel>
               </Link>
             </SideNavigation.Item>
-            <div className="seed-search-org">
-              <Avatar.Root size="36" className="seed-search-org-avatar">
-                <Avatar.Fallback>
-                  {organizationName.slice(0, 1).toUpperCase()}
-                </Avatar.Fallback>
-              </Avatar.Root>
-              <div className="seed-search-org-copy">
-                <strong>{organizationName}</strong>
-                <span>{t("Brand account", "브랜드 계정", "品牌账户")}</span>
-              </div>
-            </div>
             <ActionButton
               size="small"
               variant="ghost"
