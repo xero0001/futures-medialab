@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import {
   Bookmark,
+  Building2,
   ArrowRight,
   Check,
   ChevronLeft,
@@ -418,6 +419,46 @@ export function CreatorWorkspace({
     { key: "requests", icon: MessageSquareText },
     { key: "account", icon: Users },
   ] as const;
+  const navGroups = [
+    {
+      label: t("Discover", "크리에이터 탐색", "达人探索"),
+      items: navItems.slice(0, 3),
+    },
+    {
+      label: t("My tools", "나의 도구", "我的工具"),
+      items: navItems.slice(3, 6),
+    },
+    {
+      label: t("Workspace", "워크스페이스", "工作区"),
+      items: navItems.slice(6),
+    },
+  ];
+  const renderNavItem = (
+    { key, icon: Icon }: (typeof navItems)[number],
+    index: number,
+  ) => (
+    <Link
+      key={key}
+      href={`${routeFor(key)}?lang=${locale}`}
+      onClick={() => setNavOpen(false)}
+      aria-current={mode === key ? "page" : undefined}
+      className={`cw-nav-item ${mode === key ? "is-active" : ""} ${!isTds && index === 3 ? "cw-nav-divider" : ""}`}
+    >
+      {isTds ? (
+        <>
+          <span className="tds-nav-icon">
+            <Icon size={19} aria-hidden="true" />
+          </span>
+          <span className="tds-nav-text">{titles[key]}</span>
+        </>
+      ) : (
+        <>
+          <Icon size={19} />
+          {titles[key]}
+        </>
+      )}
+    </Link>
+  );
 
   return (
     <div
@@ -439,11 +480,28 @@ export function CreatorWorkspace({
           aria-controls="workspace-sidebar"
           onClick={() => setNavOpen(!navOpen)}
         >
-          <Menu size={22} />
+          {isTds && navOpen ? (
+            <X size={22} aria-hidden="true" />
+          ) : (
+            <Menu size={22} aria-hidden="true" />
+          )}
         </button>
-        <Wordmark href={`/?lang=${locale}`} />
+        {isTds ? (
+          <div className="tds-brand-area">
+            <Wordmark href={`/?lang=${locale}`} />
+            <span className="tds-header-divider" aria-hidden="true" />
+            <span className="tds-header-label">
+              {t("Workspace", "워크스페이스", "工作区")}
+            </span>
+          </div>
+        ) : (
+          <Wordmark href={`/?lang=${locale}`} />
+        )}
         <div className="cw-top-actions">
-          <span className="cw-status">
+          <span
+            className={`cw-status${isTds ? " tds-workspace-status" : ""}${status === "PENDING" ? " is-pending" : ""}`}
+          >
+            {isTds && <span className="tds-status-dot" aria-hidden="true" />}
             {status === "PENDING"
               ? t("Approval pending", "승인 대기", "待审核")
               : t("Brand workspace", "브랜드 작업 공간", "品牌工作区")}
@@ -458,10 +516,23 @@ export function CreatorWorkspace({
           />
           <Link
             href={`/advertiser/accountManagement?lang=${locale}`}
-            className="cw-avatar"
+            className={isTds ? "tds-account-link" : "cw-avatar"}
             aria-label={t("Account settings", "계정 관리", "账户管理")}
           >
-            {userName.slice(0, 2).toUpperCase()}
+            {isTds ? (
+              <>
+                <span className="cw-avatar" aria-hidden="true">
+                  {userName.slice(0, 2).toUpperCase()}
+                </span>
+                <span className="tds-account-copy">
+                  <strong>{userName}</strong>
+                  <span>{t("Brand account", "브랜드 계정", "品牌账户")}</span>
+                </span>
+                <ChevronRight size={16} aria-hidden="true" />
+              </>
+            ) : (
+              userName.slice(0, 2).toUpperCase()
+            )}
           </Link>
         </div>
       </header>
@@ -481,28 +552,42 @@ export function CreatorWorkspace({
         id="workspace-sidebar"
         className={`cw-sidebar ${navOpen ? "is-open" : ""}`}
       >
-        <div className="cw-nav-group">
-          {t("Creator intelligence", "크리에이터 탐색", "达人资源")}
-        </div>
+        {isTds ? (
+          <div className="tds-workspace-card">
+            <span className="tds-workspace-icon">
+              <Building2 size={20} aria-hidden="true" />
+            </span>
+            <div>
+              <strong>{organizationName}</strong>
+              <span>
+                {t("Brand workspace", "브랜드 작업 공간", "品牌工作区")}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="cw-nav-group">
+            {t("Creator intelligence", "크리에이터 탐색", "达人资源")}
+          </div>
+        )}
         <nav
           aria-label={t("Workspace navigation", "작업 공간 메뉴", "工作区导航")}
         >
-          {navItems.map(({ key, icon: Icon }, index) => (
-            <Link
-              key={key}
-              href={`${routeFor(key)}?lang=${locale}`}
-              onClick={() => setNavOpen(false)}
-              aria-current={mode === key ? "page" : undefined}
-              className={`cw-nav-item ${mode === key ? "is-active" : ""} ${index === 3 ? "cw-nav-divider" : ""}`}
-            >
-              <Icon size={19} />
-              {titles[key]}
-            </Link>
-          ))}
+          {isTds
+            ? navGroups.map((group) => (
+                <div className="tds-nav-section" key={group.label}>
+                  <h2 className="cw-nav-group">{group.label}</h2>
+                  {group.items.map(renderNavItem)}
+                </div>
+              ))
+            : navItems.map(renderNavItem)}
         </nav>
-        <div className="cw-sidebar-foot">
-          <strong>{organizationName}</strong>
-          <span>{t("Brand account", "브랜드 계정", "品牌账户")}</span>
+        <div className={`cw-sidebar-foot${isTds ? " tds-sidebar-foot" : ""}`}>
+          {!isTds && (
+            <>
+              <strong>{organizationName}</strong>
+              <span>{t("Brand account", "브랜드 계정", "品牌账户")}</span>
+            </>
+          )}
           <button className="cw-nav-item" onClick={signOut} disabled={busy}>
             <LogOut size={18} />
             {t("Sign out", "로그아웃", "退出登录")}
