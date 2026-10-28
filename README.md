@@ -207,6 +207,7 @@ cannot enter the workspace or mutate its data.
 | Route                           | Implemented scope                                                                              |
 | ------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `/storage/search`               | Six-platform directory, content/channel/audience filters, sorting, pagination, profile preview |
+| `/storage/search/seed`          | SEED Design comparison with a carrot-themed header/navigation, responsive results and the same authenticated directory APIs |
 | `/storage/search/tds`           | Toss-blue visual variant with quick filters, card/list views, and the same authenticated directory APIs |
 | `/storage/similar-search`       | YouTube/TikTok stored-channel similarity using shared topics                                   |
 | `/storage/similar-brands`       | Stored sample-brand recommendations with publishing-platform filters                           |
