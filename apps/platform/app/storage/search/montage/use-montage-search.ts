@@ -366,7 +366,8 @@ export function useMontageSearch(locale: Locale) {
         ? b[viewsKey] - a[viewsKey]
         : sort === "engagement"
           ? b.engagement - a.engagement
-          : 0,
+          : Number(b.identityKind === "public_channel") -
+            Number(a.identityKind === "public_channel"),
   );
   const pages = Math.max(1, Math.ceil(sorted.length / 8));
 

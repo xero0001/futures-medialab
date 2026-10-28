@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Button,
   Chip,
@@ -49,6 +49,7 @@ import {
   tagLabel,
   translate,
 } from "../../_components/directory-filters";
+import { CreatorAvatar } from "../../_components/creator-avatar";
 import { MontageProvider } from "./montage-provider";
 import { MontageShell } from "./montage-shell";
 import { MontageFilters } from "./montage-filters";
@@ -401,9 +402,9 @@ function SearchWorkspace({
           <p>
             <strong>{t("Demo directory", "데모 디렉터리", "演示目录")}</strong>
             {t(
-              "Profiles and metrics are fictional. Searches and collections are saved to your workspace.",
-              "프로필과 지표는 가상 데이터이며, 검색 이력과 즐겨찾기는 작업 공간에 저장됩니다.",
-              "达人与指标均为虚构数据，搜索记录与收藏保存至工作区。",
+              "This internal demo includes public channels and fictional profiles. Metrics are illustrative, not actual figures.",
+              "공개 채널과 가상 프로필이 포함된 내부 데모입니다. 지표는 실제 수치가 아닙니다.",
+              "此内部演示包含公开频道和虚构资料。所有指标均为示例，并非实际数据。",
             )}
           </p>
         </div>
@@ -566,15 +567,12 @@ function SearchWorkspace({
                               className={styles.creator}
                               onClick={() => setDetail(creator)}
                             >
-                              <span
-                                className={styles.creatorAvatar}
-                                style={
-                                  {
-                                    "--avatar-color": creator.accent,
-                                  } as CSSProperties
-                                }
-                              >
-                                {creator.name.slice(0, 1)}
+                              <span className={styles.creatorAvatar}>
+                                <CreatorAvatar
+                                  name={creator.name}
+                                  avatarUrl={creator.avatarUrl}
+                                  size={40}
+                                />
                                 <CreatorPlatformIcon size={12} />
                               </span>
                               <span>
@@ -766,14 +764,17 @@ function SearchWorkspace({
               <X size={22} />
             </IconButton>
             <span className={styles.demoBadge}>
-              {t("Fictional profile", "가상 프로필", "虚构达人")}
+              {detail.identityKind === "public_channel"
+                ? t("Demo metrics", "데모 지표", "演示指标")
+                : t("Fictional profile", "가상 프로필", "虚构达人")}
             </span>
-            <span
-              className={styles.profileAvatar}
-              style={{ "--avatar-color": detail.accent } as CSSProperties}
-            >
-              {detail.name.slice(0, 1)}
-            </span>
+            <div className={styles.profileAvatar}>
+              <CreatorAvatar
+                name={detail.name}
+                avatarUrl={detail.avatarUrl}
+                size={72}
+              />
+            </div>
             <h2 id="montage-profile-title">
               {detail.name.replace(/\s*\(Demo\)$/, "")}
             </h2>
@@ -781,6 +782,21 @@ function SearchWorkspace({
               {detail.handle} · {countries[detail.country] ?? detail.country} ·{" "}
               {platformNames[detail.platform]}
             </p>
+            {detail.identityKind === "public_channel" && (
+              <a
+                className={styles.profileSource}
+                href={detail.profileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t(
+                  "Source: official channel",
+                  "출처: 공식 채널",
+                  "来源：官方频道",
+                )}
+                <ArrowUpRight size={13} aria-hidden="true" />
+              </a>
+            )}
             <div className={styles.profileStats}>
               <div>
                 <strong>{number(detail.followers)}</strong>
@@ -803,25 +819,29 @@ function SearchWorkspace({
                 <span>{t("Engagement", "참여율", "互动率")}</span>
               </div>
             </div>
+            <p className={styles.profileNote}>
+              {t(
+                "All metrics, including followers, views, and engagement, are sample values.",
+                "팔로워·조회수·참여율 등 모든 지표는 예시 값입니다.",
+                "粉丝数、播放量和互动率等所有指标均为示例值。",
+              )}
+            </p>
             <h3>{t("Content topics", "콘텐츠 주제", "内容主题")}</h3>
             <div className={styles.tags}>
               {detail.tags.map((tag) => (
                 <span key={tag}>{tagLabel(tag, locale)}</span>
               ))}
             </div>
-            <h3>{t("Sample posts", "예시 게시물", "示例内容")}</h3>
-            <ul>
-              {detail.content.map((content) => (
-                <li key={content}>{content}</li>
-              ))}
-            </ul>
-            <p className={styles.profileNote}>
-              {t(
-                "These topics and metrics are illustrative, not live channel activity.",
-                "주제, 게시물, 지표는 예시이며 실제 채널 활동이 아닙니다.",
-                "主题、内容与指标仅为示例，并非真实频道活动。",
-              )}
-            </p>
+            {detail.content.length > 0 && (
+              <>
+                <h3>{t("Sample posts", "예시 게시물", "示例内容")}</h3>
+                <ul>
+                  {detail.content.map((content) => (
+                    <li key={content}>{content}</li>
+                  ))}
+                </ul>
+              </>
+            )}
             {error && (
               <p className={styles.error} role="alert">
                 {error}

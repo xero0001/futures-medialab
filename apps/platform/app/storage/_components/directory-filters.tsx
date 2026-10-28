@@ -28,6 +28,16 @@ export function tagLabel(tag: string, locale: Locale) {
     technology: ["Technology", "테크", "科技"],
     lifestyle: ["Lifestyle", "라이프스타일", "生活方式"],
     entertainment: ["Entertainment", "엔터테인먼트", "娱乐"],
+    travel: ["Travel", "여행", "旅行"],
+    food: ["Food", "푸드", "美食"],
+    mukbang: ["Mukbang", "먹방", "吃播"],
+    reviews: ["Reviews", "리뷰", "评测"],
+    economy: ["Economy", "경제", "经济"],
+    knowledge: ["Knowledge", "지식", "知识"],
+    talk: ["Talk", "토크", "访谈"],
+    comedy: ["Comedy", "코미디", "喜剧"],
+    fitness: ["Fitness", "운동", "健身"],
+    cooking: ["Cooking", "요리", "烹饪"],
   };
   const values = names[tag];
   return values ? translate(locale, ...values) : tag;

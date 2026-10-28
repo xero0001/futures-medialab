@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import {
-  Avatar,
   Button,
   Chip,
   ContentBadge,
@@ -46,6 +45,7 @@ import {
   tagLabel,
   translate,
 } from "../../_components/directory-filters";
+import { CreatorAvatar } from "../../_components/creator-avatar";
 import { MontageProvider } from "../montage/montage-provider";
 import { MontageShell } from "../montage/montage-shell";
 import { useMontageSearch } from "../montage/use-montage-search";
@@ -407,9 +407,9 @@ function Workspace({ locale, organizationName, status, userName }: Props) {
               color="semantic.foreground.neutral.tertiary"
             >
               {t(
-                "Profiles and metrics are fictional. Searches and collections are saved to your workspace.",
-                "프로필과 지표는 가상 데이터입니다. 검색 이력과 즐겨찾기는 작업 공간에 저장됩니다.",
-                "达人与指标为虚构数据。搜索记录与收藏保存在工作区。",
+                "This internal demo includes public channels and fictional profiles. Metrics are example values, not actual measurements.",
+                "공개 채널과 가상 프로필이 포함된 내부 데모입니다. 지표는 실제 수치가 아닙니다.",
+                "此内部演示包含公开频道和虚构资料。指标均为示例，并非真实数据。",
               )}
             </Typography>
           </div>
@@ -528,10 +528,16 @@ function Workspace({ locale, organizationName, status, userName }: Props) {
           {profile && (
             <ModalContent gap="24px" verticalPadding="bottom-only">
               <div className={styles.profileHeading}>
-                <Avatar size="xlarge" alt="" />
+                <CreatorAvatar
+                  name={profile.name}
+                  avatarUrl={profile.avatarUrl}
+                  size={72}
+                />
                 <div className={styles.profileTitle}>
                   <ContentBadge size="small">
-                    {t("Demo profile", "가상 프로필", "虚构资料")}
+                    {profile.identityKind === "public_channel"
+                      ? t("Demo metrics", "데모 지표", "演示指标")
+                      : t("Fictional profile", "가상 프로필", "虚构资料")}
                   </ContentBadge>
                   <Typography as="h2" variant="title3" weight="bold">
                     {profile.name.replace(/\s*\(Demo\)$/, "")}
@@ -544,6 +550,21 @@ function Workspace({ locale, organizationName, status, userName }: Props) {
                   </Typography>
                 </div>
               </div>
+              {profile.identityKind === "public_channel" && (
+                <TextButton
+                  as="a"
+                  href={profile.profileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="small"
+                >
+                  {t(
+                    "Profile source: official channel",
+                    "프로필 출처: 공식 채널",
+                    "资料来源：官方频道",
+                  )}
+                </TextButton>
+              )}
               <div className={styles.profileStats}>
                 {[
                   [
@@ -578,6 +599,17 @@ function Workspace({ locale, organizationName, status, userName }: Props) {
                   </div>
                 ))}
               </div>
+              <Typography
+                as="p"
+                variant="caption1"
+                color="semantic.foreground.neutral.secondary"
+              >
+                {t(
+                  "Followers, views, engagement, and all other metrics are example values for this demo.",
+                  "팔로워·조회수·참여율 등 모든 지표는 데모용 예시 값입니다.",
+                  "粉丝数、播放量、互动率等所有指标均为演示示例值。",
+                )}
+              </Typography>
               <Divider />
               <div className={styles.profileSection}>
                 <Typography variant="label1" weight="bold">
@@ -591,21 +623,23 @@ function Workspace({ locale, organizationName, status, userName }: Props) {
                   ))}
                 </div>
               </div>
-              <div className={styles.profileSection}>
-                <Typography variant="label1" weight="bold">
-                  {t("Example posts", "예시 게시물", "示例内容")}
-                </Typography>
-                {profile.content.map((content) => (
-                  <Typography
-                    key={content}
-                    as="p"
-                    variant="body2"
-                    color="semantic.foreground.neutral.secondary"
-                  >
-                    {content}
+              {profile.content.length > 0 && (
+                <div className={styles.profileSection}>
+                  <Typography variant="label1" weight="bold">
+                    {t("Example posts", "예시 게시물", "示例内容")}
                   </Typography>
-                ))}
-              </div>
+                  {profile.content.map((content) => (
+                    <Typography
+                      key={content}
+                      as="p"
+                      variant="body2"
+                      color="semantic.foreground.neutral.secondary"
+                    >
+                      {content}
+                    </Typography>
+                  ))}
+                </div>
+              )}
               {error && (
                 <SectionMessage
                   variant="negative"

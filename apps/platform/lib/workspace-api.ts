@@ -7,6 +7,10 @@ import { getAuth } from "./auth";
 import { hasCompletedBrandProfile } from "./brand-profile";
 import { hasApprovedTestWorkspaceAccess } from "./test-workspace-access";
 import {
+  creatorAvatarSchema,
+  publicCreatorImageProperties,
+} from "./creator-images";
+import {
   campaignMutationSchema,
   canSubmitCampaign,
 } from "./campaign-validation";
@@ -79,6 +83,8 @@ const creatorSchema = z.strictObject({
   name: shortString.min(1),
   handle: shortString.min(1),
   profileUrl: z.url().max(2048),
+  identityKind: z.literal("public_channel").optional(),
+  avatar: creatorAvatarSchema.optional(),
   platform: platformSchema,
   country: z.string().regex(/^[A-Z]{2}$/),
   language: z.string().min(2).max(10),
@@ -326,7 +332,9 @@ async function directory(
     } catch {
       return [];
     }
-    return [parsed.data];
+    const { avatar, ...creator } = parsed.data;
+    const image = avatar ? publicCreatorImageProperties(entry) : null;
+    return [{ ...creator, ...(image ?? {}) }];
   });
 }
 

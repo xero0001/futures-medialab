@@ -38,6 +38,10 @@ export type Creator = {
   name: string;
   handle: string;
   profileUrl: string;
+  /** Same-origin URL for an approved public demo portrait, never a Blob URL. */
+  avatarUrl?: string;
+  /** The channel identity is public; demo performance metrics remain illustrative. */
+  identityKind?: "public_channel";
   platform: PlatformId;
   country: string;
   language: string;
@@ -78,6 +82,16 @@ export const DIRECTORY_TAGS = [
   "technology",
   "lifestyle",
   "entertainment",
+  "travel",
+  "food",
+  "mukbang",
+  "reviews",
+  "economy",
+  "knowledge",
+  "talk",
+  "comedy",
+  "fitness",
+  "cooking",
 ];
 
 export const DEMO_BRANDS: DemoBrand[] = [

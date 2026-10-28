@@ -274,14 +274,43 @@ models. Directory entries contain indexed publication/platform flags and a
 strictly validated JSON profile; they never expose private `CreatorProfile`
 notes or MCN ownership. The database is not an external creator-data provider.
 
-The initial directory contains **60 fictional, visibly labeled demo profiles**,
-not scraped creator data. The example.com profile URLs are identifiers only.
+The directory retains **60 fictional demo profiles** with example.com identifiers.
+An explicit internal-demo import additionally stores **10 Korean public YouTube
+channel identities and official channel avatars**; their follower counts, views,
+engagement, posting recency and audience breakdowns remain synthetic. No real
+endorsements or video titles are invented. Only verified YouTube accounts are
+added; identities are not copied to other platforms. The source URLs, channel
+verification evidence and image provenance are recorded in
+`apps/platform/scripts/fixtures/korean-creators.sources.json`.
+
 Search and recommendation operate on published database entries; PENDING brands
 can read only demo entries. Similarity is deterministic topic overlap, not AI.
-The current UI is explicitly demo-labeled; update provenance presentation before
-publishing non-demo provider records. Query history retains the latest 100 per
-user/organization. A separate ingestion/admin workflow is still needed for real
-verified creators, metric refresh, licensing and data provenance.
+Query history retains the latest 100 per user/organization. A separate ingestion
+workflow is still needed for non-demo provider records and measured metrics.
+
+The Montage views use `next/image` (Vercel Image Optimization in production) for
+creator avatars. Reviewed 512px WebP assets live in the existing private Blob
+store under `creator-directory/public-demo/{id}/{sha256}.webp`. The intentionally
+public `/api/creator-images/{id}/{sha256}` route serves only exact assets approved
+in `creator-demo-images.json` and matching a published demo DB record. It validates
+MIME, size and file digest; it cannot proxy arbitrary URLs or serve private agency
+documents. The workspace API exposes only the derived image endpoint and official
+profile link, never Blob credentials or private storage paths. Content hashes
+version image URLs; already optimized public images can remain cached after a
+record is unpublished.
+
+Maintenance (from the repository root; not invoked by startup or request handlers):
+
+```sh
+node apps/platform/scripts/seed-korean-creators.mjs             # validate sources; no DB/Blob access
+node apps/platform/scripts/seed-korean-creators.mjs --prepare   # download verified avatars and prepare local WebP/manifest
+node apps/platform/scripts/seed-korean-creators.mjs --apply     # upsert only the reviewed demo IDs and immutable Blob objects
+```
+
+`--apply` uses the ignored `apps/platform/.env.local` by default (override with
+`--env-file`). It refuses non-demo ID collisions and never deletes existing entries.
+Profile images are official public-channel references for the requested internal
+demo; the provenance file does not assert a verified reuse license.
 
 Analysis tools only save `REQUESTED` records; there is no background worker,
 external data collection, LLM execution, automatic report, or promised SLA.

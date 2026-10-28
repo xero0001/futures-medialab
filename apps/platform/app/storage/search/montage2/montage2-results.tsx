@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {
-  Avatar,
   Button,
   ContentBadge,
   IconButton,
@@ -27,6 +26,7 @@ import {
 } from "@montage-ui/icon";
 import type { Locale } from "../../../_components/landing-copy";
 import type { Creator } from "../../../../lib/creator-directory";
+import { CreatorAvatar } from "../../_components/creator-avatar";
 import {
   platformNames,
   tagLabel,
@@ -105,7 +105,11 @@ export function Montage2Results({ locale, state, onProfile }: Props) {
           `查看${creator.name}的资料`,
         )}
       >
-        <Avatar size="medium" alt="" />
+        <CreatorAvatar
+          name={creator.name}
+          avatarUrl={creator.avatarUrl}
+          size={40}
+        />
         <span className={styles.profileText}>
           <Typography
             as="span"

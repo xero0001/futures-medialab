@@ -443,14 +443,9 @@
   position: relative;
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
+  width: 40px;
+  height: 40px;
   flex: none;
-  color: var(--avatar-color);
-  background: color-mix(in srgb, var(--avatar-color) 11%, white);
-  font-size: 18px;
-  font-weight: 700;
 }
 .creatorAvatar > svg {
   position: absolute;
@@ -706,16 +701,14 @@
   margin-bottom: 22px;
 }
 .profileAvatar {
-  display: grid;
-  place-items: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 20px;
-  font-size: 28px;
-  font-weight: 700;
-  background: color-mix(in srgb, var(--avatar-color) 10%, white);
-  color: var(--avatar-color);
   margin-bottom: 14px;
+}
+.profileSource {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  color: var(--fm-blue-text);
+  text-decoration: none;
 }
 .profileContent h2 {
   margin: 0;
