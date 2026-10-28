@@ -6,9 +6,11 @@ import { CreatorWorkspace, type WorkspaceMode } from "./creator-workspace";
 export async function WorkspacePage({
   mode,
   searchParams,
+  variant = "default",
 }: {
   mode: WorkspaceMode;
   searchParams: Promise<{ lang?: string }>;
+  variant?: "default" | "tds";
 }) {
   const [query, jar, requestHeaders] = await Promise.all([
     searchParams,
@@ -21,5 +23,12 @@ export async function WorkspacePage({
     requestHeaders.get("accept-language"),
   );
   const account = await requireBrandWorkspace(locale);
-  return <CreatorWorkspace mode={mode} initialLocale={locale} {...account} />;
+  return (
+    <CreatorWorkspace
+      mode={mode}
+      variant={variant}
+      initialLocale={locale}
+      {...account}
+    />
+  );
 }

@@ -207,6 +207,7 @@ cannot enter the workspace or mutate its data.
 | Route                           | Implemented scope                                                                              |
 | ------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `/storage/search`               | Six-platform directory, content/channel/audience filters, sorting, pagination, profile preview |
+| `/storage/search/tds`           | Toss-blue visual variant with quick filters, card/list views, and the same authenticated directory APIs |
 | `/storage/similar-search`       | YouTube/TikTok stored-channel similarity using shared topics                                   |
 | `/storage/similar-brands`       | Stored sample-brand recommendations with publishing-platform filters                           |
 | `/storage/collect`              | Organization collections, saved creators, CSV export                                           |
@@ -221,6 +222,13 @@ English/Korean/Chinese labels, and 14px minimum text. Reference inspection used
 Youdao's logged-in pages at the corresponding paths. Reference collection and
 short-link creation were membership-gated; reference campaign management exposed
 only managed-service/contact information. No paid analysis/search quota was used.
+
+The `/storage/search/tds` comparison view uses an independently implemented
+TDS-inspired presentation with `#3182F6` as its brand accent; it does not include
+TDS packages, restricted fonts, or Toss brand assets. Its CSS is scoped to that
+view. Authentication, demo-data labels, search history, collections, and profile
+details reuse the existing workspace behavior. Language changes stay on the
+comparison route, and “Original view” returns to `/storage/search`.
 
 ### Request handling and campaign operations
 

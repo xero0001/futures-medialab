@@ -5,12 +5,16 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import {
   Bookmark,
+  ArrowRight,
+  Check,
   ChevronLeft,
   ChevronRight,
   Compass,
   FolderHeart,
   Layers,
+  LayoutGrid,
   Link2,
+  List,
   LogOut,
   Menu,
   MessageSquareText,
@@ -42,6 +46,7 @@ import {
   translate,
 } from "./directory-filters";
 import { WorkspaceTools } from "./workspace-tools";
+import { TdsCreatorGrid, TdsPlatformIcon } from "./tds-search-parts";
 import "./workspace.css";
 
 const RequestWorkspace = dynamic(() =>
@@ -76,13 +81,18 @@ export function CreatorWorkspace({
   organizationName,
   status,
   userName,
+  variant = "default",
 }: {
   mode: WorkspaceMode;
   initialLocale: Locale;
   organizationName: string;
   status: "PENDING" | "ACTIVE";
   userName: string;
+  variant?: "default" | "tds";
 }) {
+  const isTds = variant === "tds";
+  const routeFor = (key: WorkspaceMode) =>
+    isTds && key === "search" ? "/storage/search/tds" : routes[key];
   const t = (en: string, ko: string, zh: string) =>
     translate(locale, en, ko, zh);
   const [data, setData] = useState<WorkspaceBootstrap | null>(null);
@@ -98,7 +108,8 @@ export function CreatorWorkspace({
   const [publishingPlatform, setPublishingPlatform] =
     useState<PublishingPlatform>("all");
   const [relatedBrands, setRelatedBrands] = useState<string[]>([]);
-  const [expanded, setExpanded] = useState(mode === "search");
+  const [expanded, setExpanded] = useState(mode === "search" && !isTds);
+  const [resultView, setResultView] = useState<"cards" | "list">("cards");
   const [sort, setSort] = useState("relevance");
   const [page, setPage] = useState(1);
   const [collectionId, setCollectionId] = useState("");
@@ -347,7 +358,8 @@ export function CreatorWorkspace({
           ? b.engagement - a.engagement
           : 0,
   );
-  const pages = Math.max(1, Math.ceil(sorted.length / 8));
+  const pageSize = isTds && resultView === "cards" ? 6 : 8;
+  const pages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const activeCollection =
     data?.collections.find((collection) => collection.id === collectionId) ??
     data?.collections[0];
@@ -409,7 +421,7 @@ export function CreatorWorkspace({
 
   return (
     <div
-      className="cw-workspace"
+      className={`cw-workspace${isTds ? " cw-tds" : ""}`}
       data-creator-workspace="demo"
       lang={locale === "zh" ? "zh-CN" : locale}
     >
@@ -418,7 +430,11 @@ export function CreatorWorkspace({
           ref={navToggleRef}
           type="button"
           className="cw-icon-button cw-mobile-menu"
-          aria-label={navOpen ? t("Close navigation", "메뉴 닫기", "关闭导航") : t("Open navigation", "메뉴 열기", "打开导航")}
+          aria-label={
+            navOpen
+              ? t("Close navigation", "메뉴 닫기", "关闭导航")
+              : t("Open navigation", "메뉴 열기", "打开导航")
+          }
           aria-expanded={navOpen}
           aria-controls="workspace-sidebar"
           onClick={() => setNavOpen(!navOpen)}
@@ -437,7 +453,7 @@ export function CreatorWorkspace({
             label={t("Language", "언어", "语言")}
             onChange={(next) => {
               document.cookie = `fm-locale=${next};path=/;max-age=31536000;SameSite=Lax`;
-              window.location.assign(`${routes[mode]}?lang=${next}`);
+              window.location.assign(`${routeFor(mode)}?lang=${next}`);
             }}
           />
           <Link
@@ -461,7 +477,10 @@ export function CreatorWorkspace({
           }}
         />
       )}
-      <aside id="workspace-sidebar" className={`cw-sidebar ${navOpen ? "is-open" : ""}`}>
+      <aside
+        id="workspace-sidebar"
+        className={`cw-sidebar ${navOpen ? "is-open" : ""}`}
+      >
         <div className="cw-nav-group">
           {t("Creator intelligence", "크리에이터 탐색", "达人资源")}
         </div>
@@ -471,7 +490,7 @@ export function CreatorWorkspace({
           {navItems.map(({ key, icon: Icon }, index) => (
             <Link
               key={key}
-              href={`${routes[key]}?lang=${locale}`}
+              href={`${routeFor(key)}?lang=${locale}`}
               onClick={() => setNavOpen(false)}
               aria-current={mode === key ? "page" : undefined}
               className={`cw-nav-item ${mode === key ? "is-active" : ""} ${index === 3 ? "cw-nav-divider" : ""}`}
@@ -494,18 +513,51 @@ export function CreatorWorkspace({
         <div className="cw-heading">
           <div>
             <p>
-              {t(
-                "Your next collaboration starts here",
-                "다음 협업을 발견하는 곳",
-                "发现下一次合作",
-              )}
+              {isTds
+                ? t(
+                    "Workspace / Creator discovery",
+                    "워크스페이스 / 크리에이터 탐색",
+                    "工作区 / 达人探索",
+                  )
+                : t(
+                    "Your next collaboration starts here",
+                    "다음 협업을 발견하는 곳",
+                    "发现下一次合作",
+                  )}
             </p>
-            <h1>{titles[mode]}</h1>
+            <h1>
+              {isTds
+                ? t(
+                    "Find your next creator",
+                    "크리에이터를 찾아보세요",
+                    "发现下一位合作达人",
+                  )
+                : titles[mode]}
+            </h1>
+            {isTds && (
+              <p className="tds-heading-description">
+                {t(
+                  "Discover creators who are the right fit for your brand.",
+                  "우리 브랜드와 잘 맞는 크리에이터, 데이터로 발견해 보세요.",
+                  "用数据发现与品牌契合的达人。",
+                )}
+              </p>
+            )}
           </div>
-          {discovery && (
-            <span className="cw-status">
-              {t("Database connected", "DB 연결됨", "数据库已连接")}
-            </span>
+          {isTds ? (
+            <Link
+              className="tds-original-link"
+              href={`/storage/search?lang=${locale}`}
+            >
+              {t("Original view", "기존 화면 보기", "查看原版")}
+              <ArrowRight size={16} />
+            </Link>
+          ) : (
+            discovery && (
+              <span className="cw-status">
+                {t("Database connected", "DB 연결됨", "数据库已连接")}
+              </span>
+            )
           )}
         </div>
         {error && (
@@ -539,14 +591,23 @@ export function CreatorWorkspace({
             <div className="cw-demo-notice">
               <Sparkles size={19} />
               <span>
-                {t(
-                  "Demo directory · Profiles and metrics are fictional. Searches and collections are saved to your database; live platform data is not connected yet.",
-                  "데모 디렉터리 · 프로필과 지표는 가상 데이터입니다. 검색 이력·즐겨찾기는 실제 DB에 저장되며, 외부 플랫폼 데이터는 아직 연결되지 않았습니다.",
-                  "演示目录 · 达人和指标均为虚构数据。搜索记录和收藏保存至数据库，尚未接入外部平台数据。",
-                )}
+                {isTds
+                  ? t(
+                      "Demo directory · Profiles and metrics are fictional. Searches and collections are saved.",
+                      "데모 디렉터리 · 프로필과 지표는 예시이며, 검색 이력과 즐겨찾기는 저장돼요.",
+                      "演示目录 · 达人和指标为虚构数据，搜索记录和收藏会保存。",
+                    )
+                  : t(
+                      "Demo directory · Profiles and metrics are fictional. Searches and collections are saved to your database; live platform data is not connected yet.",
+                      "데모 디렉터리 · 프로필과 지표는 가상 데이터입니다. 검색 이력·즐겨찾기는 실제 DB에 저장되며, 외부 플랫폼 데이터는 아직 연결되지 않았습니다.",
+                      "演示目录 · 达人和指标均为虚构数据。搜索记录和收藏保存至数据库，尚未接入外部平台数据。",
+                    )}
               </span>
             </div>
-            <section className="cw-panel" aria-label={titles[mode]}>
+            <section
+              className={`cw-panel${isTds ? " tds-search-panel" : ""}`}
+              aria-label={titles[mode]}
+            >
               <div
                 className="cw-platforms"
                 aria-label={t("Platform", "플랫폼", "平台")}
@@ -568,7 +629,11 @@ export function CreatorWorkspace({
                     <span
                       className={`cw-platform-icon cw-platform-${platform}`}
                     >
-                      {platformNames[platform as PlatformId].slice(0, 1)}
+                      {isTds ? (
+                        <TdsPlatformIcon platform={platform as PlatformId} />
+                      ) : (
+                        platformNames[platform as PlatformId].slice(0, 1)
+                      )}
                     </span>
                     {platformNames[platform as PlatformId]}
                   </button>
@@ -728,32 +793,126 @@ export function CreatorWorkspace({
                   </p>
                 )}
                 <div className="cw-filter-toggle">
+                  {isTds && (
+                    <div
+                      className="tds-quick-filters"
+                      aria-label={t("Quick filters", "빠른 필터", "快速筛选")}
+                    >
+                      {[
+                        {
+                          label: t("South Korea", "대한민국", "韩国"),
+                          active: filters.country === "KR",
+                          next: {
+                            ...filters,
+                            country: filters.country === "KR" ? "" : "KR",
+                          },
+                        },
+                        {
+                          label: t("Gaming", "게임", "游戏"),
+                          active: filters.includeTags.includes("gaming"),
+                          next: {
+                            ...filters,
+                            includeTags: filters.includeTags.includes("gaming")
+                              ? filters.includeTags.filter(
+                                  (tag) => tag !== "gaming",
+                                )
+                              : [...filters.includeTags, "gaming"],
+                          },
+                        },
+                        {
+                          label: t(
+                            "100K+ followers",
+                            "팔로워 10만 이상",
+                            "粉丝10万以上",
+                          ),
+                          active: filters.followersMin === "100",
+                          next: {
+                            ...filters,
+                            followersMin:
+                              filters.followersMin === "100" ? "" : "100",
+                          },
+                        },
+                        {
+                          label: t(
+                            "Posted this week",
+                            "최근 7일 내 게시",
+                            "近7天发布",
+                          ),
+                          active: filters.lastPosted === "7",
+                          next: {
+                            ...filters,
+                            lastPosted:
+                              filters.lastPosted === "7"
+                                ? ("" as const)
+                                : ("7" as const),
+                          },
+                        },
+                      ].map(({ label, active, next }) => (
+                        <button
+                          type="button"
+                          key={label}
+                          aria-pressed={active}
+                          disabled={busy}
+                          onClick={() => {
+                            setFilters(next);
+                            void search(next);
+                          }}
+                        >
+                          {active && <Check size={14} />}
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <button
                     className="cw-button"
                     type="button"
                     aria-expanded={expanded}
+                    aria-controls="directory-filters"
                     onClick={() => setExpanded(!expanded)}
                   >
                     <SlidersHorizontal size={17} />
-                    {t("Search filters", "검색 필터", "搜索筛选")}
+                    {isTds
+                      ? t("All filters", "상세 필터", "更多筛选")
+                      : t("Search filters", "검색 필터", "搜索筛选")}
                     {expanded ? " −" : " +"}
                   </button>
-                  <span className="cw-muted">
-                    {t(
-                      "Numeric ranges use K (1,000).",
-                      "숫자 범위 단위 K = 1,000",
-                      "数值范围单位 K = 1,000。",
-                    )}
-                  </span>
+                  {!isTds && (
+                    <span className="cw-muted">
+                      {t(
+                        "Numeric ranges use K (1,000).",
+                        "숫자 범위 단위 K = 1,000",
+                        "数值范围单位 K = 1,000。",
+                      )}
+                    </span>
+                  )}
                 </div>
                 {expanded && (
-                  <>
+                  <div id="directory-filters">
                     <DirectoryFiltersPanel
                       filters={filters}
                       setFilters={setFilters}
                       locale={locale}
                       compact={mode !== "search"}
                     />
+                    {isTds && (
+                      <div className="tds-filter-actions">
+                        <span className="cw-muted">
+                          {t(
+                            "Numeric ranges use K (1,000).",
+                            "숫자 범위 단위 K = 1,000",
+                            "数值范围单位 K = 1,000。",
+                          )}
+                        </span>
+                        <button
+                          className="cw-button cw-button-primary"
+                          type="submit"
+                          disabled={busy}
+                        >
+                          {t("Apply filters", "필터 적용하기", "应用筛选")}
+                        </button>
+                      </div>
+                    )}
                     {mode === "brands" && (
                       <div className="cw-publishing">
                         <ProfileSelect
@@ -793,7 +952,7 @@ export function CreatorWorkspace({
                         />
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
               </form>
             </section>
@@ -865,129 +1024,183 @@ export function CreatorWorkspace({
                       },
                     ]}
                   />
+                  {isTds && (
+                    <div
+                      className="tds-view-toggle"
+                      aria-label={t(
+                        "Results layout",
+                        "결과 보기 방식",
+                        "结果视图",
+                      )}
+                    >
+                      {(
+                        [
+                          [
+                            "cards",
+                            LayoutGrid,
+                            t("Card view", "카드 보기", "卡片视图"),
+                          ],
+                          [
+                            "list",
+                            List,
+                            t("List view", "목록 보기", "列表视图"),
+                          ],
+                        ] as const
+                      ).map(([view, Icon, label]) => (
+                        <button
+                          type="button"
+                          key={view}
+                          aria-label={label}
+                          aria-pressed={resultView === view}
+                          onClick={() => {
+                            setResultView(view);
+                            setPage(1);
+                          }}
+                        >
+                          <Icon size={18} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               {sorted.length ? (
                 <>
-                  <div className="cw-table-wrap">
-                    <table className="cw-table">
-                      <thead>
-                        <tr>
-                          {[
-                            t("Creator", "크리에이터", "达人"),
-                            t("Followers", "팔로워", "粉丝数"),
-                            t("Average views", "평균 조회수", "平均播放量"),
-                            t("Topics", "주제", "主题"),
-                            t("Engagement", "참여율", "互动率"),
-                            t("Last posted", "최근 게시", "最近发布"),
-                            t("Save", "저장", "收藏"),
-                          ].map((heading) => (
-                            <th key={heading} scope="col">
-                              {heading}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sorted
-                          .slice((page - 1) * 8, page * 8)
-                          .map((creator) => (
-                            <tr key={creator.id}>
-                              <td>
-                                <button
-                                  className="cw-person"
-                                  onClick={() => setDetail(creator)}
-                                >
-                                  <span
-                                    className="cw-avatar-small"
-                                    style={{ background: creator.accent }}
+                  {isTds && resultView === "cards" ? (
+                    <TdsCreatorGrid
+                      creators={sorted.slice(
+                        (page - 1) * pageSize,
+                        page * pageSize,
+                      )}
+                      locale={locale}
+                      viewsWindow={(applied ?? filters).viewsWindow}
+                      savedIds={activeCollection?.creatorIds ?? []}
+                      busy={busy}
+                      onDetail={setDetail}
+                      onSave={(creator) => void saveCreator(creator)}
+                    />
+                  ) : (
+                    <div className="cw-table-wrap">
+                      <table className="cw-table">
+                        <thead>
+                          <tr>
+                            {[
+                              t("Creator", "크리에이터", "达人"),
+                              t("Followers", "팔로워", "粉丝数"),
+                              t("Average views", "평균 조회수", "平均播放量"),
+                              t("Topics", "주제", "主题"),
+                              t("Engagement", "참여율", "互动率"),
+                              t("Last posted", "최근 게시", "最近发布"),
+                              t("Save", "저장", "收藏"),
+                            ].map((heading) => (
+                              <th key={heading} scope="col">
+                                {heading}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sorted
+                            .slice((page - 1) * pageSize, page * pageSize)
+                            .map((creator) => (
+                              <tr key={creator.id}>
+                                <td>
+                                  <button
+                                    className="cw-person"
+                                    onClick={() => setDetail(creator)}
                                   >
-                                    {creator.name.slice(0, 1)}
-                                  </span>
-                                  <span>
-                                    <strong>{creator.name}</strong>
-                                    <span className="cw-muted">
-                                      {creator.country} ·{" "}
-                                      {creator.language.toUpperCase()} ·{" "}
-                                      {platformNames[creator.platform]}
+                                    <span
+                                      className="cw-avatar-small"
+                                      style={{ background: creator.accent }}
+                                    >
+                                      {creator.name.slice(0, 1)}
                                     </span>
+                                    <span>
+                                      <strong>{creator.name}</strong>
+                                      <span className="cw-muted">
+                                        {creator.country} ·{" "}
+                                        {creator.language.toUpperCase()} ·{" "}
+                                        {platformNames[creator.platform]}
+                                      </span>
+                                    </span>
+                                  </button>
+                                </td>
+                                <td className="cw-metric">
+                                  {number(creator.followers)}
+                                </td>
+                                <td>
+                                  <strong>
+                                    {number(
+                                      creator[
+                                        (applied ?? filters).viewsWindow ===
+                                        "last10"
+                                          ? "views10"
+                                          : "views30"
+                                      ],
+                                    )}
+                                  </strong>
+                                  <span className="cw-muted">
+                                    {(applied ?? filters).viewsWindow ===
+                                    "last10"
+                                      ? t(
+                                          "Last 10 posts",
+                                          "최근 10개",
+                                          "最近10条",
+                                        )
+                                      : t(
+                                          "Last 30 days",
+                                          "최근 30일",
+                                          "最近30天",
+                                        )}
                                   </span>
-                                </button>
-                              </td>
-                              <td className="cw-metric">
-                                {number(creator.followers)}
-                              </td>
-                              <td>
-                                <strong>
-                                  {number(
-                                    creator[
-                                      (applied ?? filters).viewsWindow ===
-                                      "last10"
-                                        ? "views10"
-                                        : "views30"
-                                    ],
+                                </td>
+                                <td>
+                                  <div className="cw-tags">
+                                    {creator.tags.slice(0, 2).map((tag) => (
+                                      <span className="cw-tag" key={tag}>
+                                        {tagLabel(tag, locale)}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td>{creator.engagement.toFixed(1)}%</td>
+                                <td>
+                                  {t(
+                                    `${creator.daysSincePosted} ${creator.daysSincePosted === 1 ? "day" : "days"} ago`,
+                                    `${creator.daysSincePosted}일 전`,
+                                    `${creator.daysSincePosted}天前`,
                                   )}
-                                </strong>
-                                <span className="cw-muted">
-                                  {(applied ?? filters).viewsWindow === "last10"
-                                    ? t(
-                                        "Last 10 posts",
-                                        "최근 10개",
-                                        "最近10条",
-                                      )
-                                    : t(
-                                        "Last 30 days",
-                                        "최근 30일",
-                                        "最近30天",
-                                      )}
-                                </span>
-                              </td>
-                              <td>
-                                <div className="cw-tags">
-                                  {creator.tags.slice(0, 2).map((tag) => (
-                                    <span className="cw-tag" key={tag}>
-                                      {tagLabel(tag, locale)}
-                                    </span>
-                                  ))}
-                                </div>
-                              </td>
-                              <td>{creator.engagement.toFixed(1)}%</td>
-                              <td>
-                                {t(
-                                  `${creator.daysSincePosted} ${creator.daysSincePosted === 1 ? "day" : "days"} ago`,
-                                  `${creator.daysSincePosted}일 전`,
-                                  `${creator.daysSincePosted}天前`,
-                                )}
-                              </td>
-                              <td>
-                                <button
-                                  className="cw-icon-button"
-                                  disabled={busy}
-                                  aria-label={`${activeCollection?.creatorIds.includes(creator.id) ? t("Unsave", "저장 해제", "取消收藏") : t("Save", "저장", "收藏")} ${creator.name}`}
-                                  aria-pressed={
-                                    activeCollection?.creatorIds.includes(
-                                      creator.id,
-                                    ) ?? false
-                                  }
-                                  onClick={() => void saveCreator(creator)}
-                                >
-                                  <Bookmark
-                                    size={20}
-                                    fill={
+                                </td>
+                                <td>
+                                  <button
+                                    className="cw-icon-button"
+                                    disabled={busy}
+                                    aria-label={`${activeCollection?.creatorIds.includes(creator.id) ? t("Unsave", "저장 해제", "取消收藏") : t("Save", "저장", "收藏")} ${creator.name}`}
+                                    aria-pressed={
                                       activeCollection?.creatorIds.includes(
                                         creator.id,
-                                      )
-                                        ? "currentColor"
-                                        : "none"
+                                      ) ?? false
                                     }
-                                  />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
+                                    onClick={() => void saveCreator(creator)}
+                                  >
+                                    <Bookmark
+                                      size={20}
+                                      fill={
+                                        activeCollection?.creatorIds.includes(
+                                          creator.id,
+                                        )
+                                          ? "currentColor"
+                                          : "none"
+                                      }
+                                    />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                   <div className="cw-pagination">
                     <span>
                       {t(
@@ -1048,6 +1261,16 @@ export function CreatorWorkspace({
                           "请选择示例品牌或调整筛选条件。",
                         )}
                   </p>
+                  {isTds && (
+                    <button
+                      type="button"
+                      className="cw-button cw-button-primary tds-empty-reset"
+                      disabled={busy}
+                      onClick={() => reset()}
+                    >
+                      {t("Clear filters", "검색 조건 초기화", "重置筛选")}
+                    </button>
+                  )}
                 </div>
               )}
             </section>
@@ -1059,8 +1282,16 @@ export function CreatorWorkspace({
                     <span key={item.id}>
                       {item.query ||
                         (item.mode === "brands"
-                          ? t("Related brand search", "동종 브랜드 검색", "同类品牌搜索")
-                          : t("Filtered creator search", "크리에이터 조건 검색", "达人筛选搜索"))}{" "}
+                          ? t(
+                              "Related brand search",
+                              "동종 브랜드 검색",
+                              "同类品牌搜索",
+                            )
+                          : t(
+                              "Filtered creator search",
+                              "크리에이터 조건 검색",
+                              "达人筛选搜索",
+                            ))}{" "}
                       <time>
                         {new Date(item.createdAt).toLocaleDateString(locale)}
                       </time>
