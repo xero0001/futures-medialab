@@ -47,18 +47,24 @@
   position: sticky;
   top: 0;
   z-index: 30;
+  border-bottom: 1px solid var(--semantic-line-neutral-tertiary);
+  background: var(--semantic-surface-neutral-primary);
+}
+.topNavigation {
+  --top-navigation-min-height: 76px;
+  --top-navigation-padding-x: 28px;
+  --top-navigation-padding-y: 18px;
+}
+.headerLeading {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--fm-line);
-  background: rgb(255 255 255 / 96%);
-  backdrop-filter: blur(12px);
+  gap: 28px;
 }
 .brand {
-  width: 228px;
+  width: 172px;
   flex: none;
   display: flex;
   align-items: center;
-  padding: 0 28px;
 }
 .brand :global(.fm-wordmark) {
   gap: 10px;
@@ -75,53 +81,22 @@
 .topContext {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding-left: 32px;
-  color: #62656d;
-  font-size: 13px;
-  font-weight: 500;
-}
-.topContext > span {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--fm-blue);
+  gap: 20px;
 }
 .topActions {
   display: flex;
   align-items: center;
-  gap: 18px;
-  margin-left: auto;
-  padding-right: 32px;
+  gap: 16px;
 }
 .topDivider {
-  height: 24px;
-  width: 1px;
-  background: var(--fm-line);
-}
-.account {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: var(--fm-secondary);
-}
-.accountAvatar {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: #edf4ff;
-  color: var(--fm-blue-text);
-  font-size: 12px;
-  font-weight: 700;
 }
 .accountName {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 13px;
-  font-weight: 600;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .sidebar {
   position: fixed;
@@ -132,121 +107,44 @@
   width: 228px;
   display: flex;
   flex-direction: column;
-  background: #fcfcfd;
-  border-right: 1px solid var(--fm-line);
-  padding: 24px 16px 16px;
+  background: var(--semantic-surface-neutral-primary);
+  border-right: 1px solid var(--semantic-line-neutral-tertiary);
+  padding: 28px 16px 16px;
   overflow-y: auto;
 }
-.workspaceIdentity {
-  display: flex;
-  gap: 11px;
-  align-items: center;
-  padding: 0 10px 26px;
-}
-.workspaceIcon {
-  width: 36px;
-  height: 36px;
-  flex: none;
-  display: grid;
-  place-items: center;
-  border: 1px solid #e2e7ed;
-  border-radius: 11px;
-  background: #fff;
-  color: var(--fm-blue-text);
-  font-weight: 700;
-  font-size: 16px;
-  box-shadow: 0 2px 3px rgb(23 23 25 / 3%);
-}
-.workspaceIdentity strong {
-  font-size: 13px;
-  font-weight: 600;
-  display: block;
-}
-.workspaceIdentity span {
-  font-size: 11px;
-  color: var(--fm-muted);
-}
 .navGroup {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
-.navGroup > p {
-  font-size: 11px;
-  letter-spacing: 0.02em;
-  color: #96999f;
-  margin: 0 12px 10px;
-  font-weight: 500;
+.navGroupLabel {
+  display: block;
+  margin: 0 12px 8px;
 }
 .navItem {
-  min-height: 44px;
-  width: 100%;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  margin: 4px 0;
-  border-radius: 10px;
-  border: 0;
-  background: transparent;
-  color: #63666f;
+  margin: 2px 0;
   text-align: left;
-  font-size: 13px;
-  font-weight: 500;
-  transition:
-    background 150ms,
-    color 150ms;
-}
-.navItem > svg {
-  flex: none;
-}
-.navItem:hover {
-  background: #f0f2f5;
-  color: #292c33;
-}
-.navItem[aria-current="page"] {
-  background: var(--fm-blue-soft);
-  color: var(--fm-blue-text);
-  font-weight: 650;
-}
-.activeDot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--fm-blue);
-  margin-left: auto;
 }
 .sidebarBottom {
   margin-top: auto;
   padding-top: 16px;
 }
+.sidebarBottom > ul {
+  padding-top: 12px;
+}
 .helpCard {
   display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  background: #f3f5f8;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--semantic-surface-neutral-secondary);
   border-radius: 12px;
-  padding: 15px 12px;
-  margin-bottom: 16px;
-  color: #626a78;
+  padding: 16px;
+  margin-bottom: 20px;
 }
-.helpCard strong {
-  display: block;
-  color: #545a66;
-  font-size: 12px;
-  font-weight: 600;
-}
-.helpCard span {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: #7b8390;
-  margin-top: 3px;
+.helpCard > a {
+  align-self: flex-start;
 }
 .copyright {
   display: block;
   padding: 16px 12px 0;
-  color: #a2a5ab;
-  font-size: 10px;
 }
 .main {
   margin-left: 228px;
@@ -758,7 +656,7 @@
 .footer a:hover {
   color: var(--fm-blue-text);
 }
-.mobileMenu,
+.headerLeading .mobileMenu,
 .backdrop {
   display: none;
 }
@@ -878,7 +776,9 @@
   }
 }
 @media (max-width: 1199px) {
-  .brand,
+  .brand {
+    width: 152px;
+  }
   .sidebar {
     width: 208px;
   }
@@ -905,8 +805,8 @@
   }
   .brand {
     width: auto;
-    padding-inline: 20px;
-    gap: 14px;
+    padding: 0;
+    gap: 12px;
   }
   .brand :global(.fm-wordmark > span) {
     font-size: 21px;
@@ -918,17 +818,21 @@
   .topContext {
     display: none;
   }
+  .topNavigation {
+    --top-navigation-min-height: 68px;
+    --top-navigation-padding-x: 20px;
+    --top-navigation-padding-y: 14px;
+  }
   .topActions {
-    padding-right: 20px;
     gap: 12px;
   }
-  .mobileMenu {
+  .headerLeading .mobileMenu {
     display: grid;
     place-items: center;
     background: none;
     border: 0;
     padding: 5px;
-    color: #6b7280;
+    color: var(--semantic-foreground-neutral-secondary);
   }
   .sidebar {
     top: 68px;
@@ -946,7 +850,7 @@
     display: block;
     position: fixed;
     inset: 68px 0 0;
-    background: rgb(18 25 38 / 30%);
+    background: rgb(23 23 25 / 32%);
     z-index: 35;
     border: 0;
   }
@@ -963,17 +867,16 @@
     height: 64px;
   }
   .brand {
-    padding-inline: 14px;
-    gap: 7px;
-  }
-  .topActions {
-    padding-right: 14px;
+    padding: 0;
     gap: 8px;
   }
-  .accountAvatar {
-    width: 30px;
-    height: 30px;
-    font-size: 11px;
+  .topNavigation {
+    --top-navigation-min-height: 64px;
+    --top-navigation-padding-x: 14px;
+    --top-navigation-padding-y: 12px;
+  }
+  .topActions {
+    gap: 8px;
   }
   .topDivider {
     display: none;
@@ -1105,6 +1008,11 @@
   }
   .footer {
     margin-top: 26px;
+  }
+}
+@media (max-width: 360px) {
+  .brand :global(.fm-wordmark > span) {
+    display: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {

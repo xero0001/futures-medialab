@@ -21,31 +21,21 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  CircleHelp,
   Clock3,
-  Compass,
   FolderHeart,
   Globe2,
   Info,
   Instagram,
-  Layers,
-  Link2,
-  LogOut,
-  Menu,
-  MessageSquareText,
   Music2,
   RotateCcw,
   Search,
   SlidersHorizontal,
-  Sparkles,
   Twitch,
   Users,
   X,
   Youtube,
   type LucideIcon,
 } from "lucide-react";
-import { Wordmark } from "../../../_components/brand-logo";
-import { LanguageSwitcher } from "../../../_components/language-switcher";
 import type { Locale } from "../../../_components/landing-copy";
 import {
   defaultFilters,
@@ -60,6 +50,7 @@ import {
   translate,
 } from "../../_components/directory-filters";
 import { MontageProvider } from "./montage-provider";
+import { MontageShell } from "./montage-shell";
 import { MontageFilters } from "./montage-filters";
 import { useMontageSearch } from "./use-montage-search";
 import styles from "./montage-search.module.css";
@@ -111,10 +102,8 @@ function SearchWorkspace({
     activeCollection,
   } = state;
   const [expanded, setExpanded] = useState(false);
-  const [navOpen, setNavOpen] = useState(false);
   const [detail, setDetail] = useState<Creator | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const menuRef = useRef<HTMLButtonElement>(null);
   const previousFocus = useRef<HTMLElement | null>(null);
   const searchInput = useRef<HTMLInputElement>(null);
   const defaults = defaultFilters(filters.platform);
@@ -152,71 +141,6 @@ function SearchWorkspace({
     }
   }, [detail]);
 
-  useEffect(() => {
-    if (!navOpen) return;
-    const close = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setNavOpen(false);
-        menuRef.current?.focus();
-      }
-    };
-    document.addEventListener("keydown", close);
-    return () => document.removeEventListener("keydown", close);
-  }, [navOpen]);
-
-  const navigation = [
-    {
-      group: t("Discover", "크리에이터 탐색", "达人探索"),
-      items: [
-        {
-          href: "/storage/search/montage",
-          label: t("Creator search", "크리에이터 검색", "达人查询"),
-          icon: Search,
-        },
-        {
-          href: "/storage/similar-search",
-          label: t("Similar creators", "유사 크리에이터", "相似达人"),
-          icon: Users,
-        },
-        {
-          href: "/storage/similar-brands",
-          label: t("Related brands", "동종 브랜드", "同类品牌"),
-          icon: Layers,
-        },
-        {
-          href: "/agent",
-          label: t("Intelligence tools", "분석 도구", "智能工具"),
-          icon: Sparkles,
-        },
-      ],
-    },
-    {
-      group: t("Workspace", "내 작업 공간", "工作区"),
-      items: [
-        {
-          href: "/storage/collect",
-          label: t("Collections", "즐겨찾기", "收藏夹"),
-          icon: FolderHeart,
-        },
-        {
-          href: "/advertiser/campaign",
-          label: t("Campaigns", "캠페인 관리", "推广系列"),
-          icon: Compass,
-        },
-        {
-          href: "/shortLinks",
-          label: t("Short links", "단축 링크", "短链服务"),
-          icon: Link2,
-        },
-        {
-          href: "/advertiser/requests",
-          label: t("Request inbox", "요청함", "请求中心"),
-          icon: MessageSquareText,
-        },
-      ],
-    },
-  ];
-
   function quickFilter(key: "country" | "includeTags", value: string) {
     const next =
       key === "includeTags"
@@ -237,140 +161,13 @@ function SearchWorkspace({
       lang={locale === "zh" ? "zh-CN" : locale}
       data-montage-workspace="demo"
     >
-      <a className={styles.skipLink} href="#montage-main">
-        {t("Skip to content", "본문 바로가기", "跳转到内容")}
-      </a>
-      <header className={styles.topbar}>
-        <div className={styles.brand}>
-          <button
-            ref={menuRef}
-            type="button"
-            className={styles.mobileMenu}
-            aria-label={t("Toggle navigation", "메뉴 열기·닫기", "打开导航")}
-            aria-expanded={navOpen}
-            aria-controls="montage-sidebar"
-            onClick={() => setNavOpen(!navOpen)}
-          >
-            <Menu size={22} />
-          </button>
-          <Wordmark href={localHref("/")} />
-        </div>
-        <div className={styles.topContext}>
-          <span />
-          {t("Brand workspace", "브랜드 워크스페이스", "品牌工作区")}
-        </div>
-        <div className={styles.topActions}>
-          <LanguageSwitcher
-            locale={locale}
-            label={t("Language", "언어", "语言")}
-            onChange={(next) => {
-              document.cookie = `fm-locale=${next};path=/;max-age=31536000;SameSite=Lax`;
-              window.location.assign(`/storage/search/montage?lang=${next}`);
-            }}
-          />
-          <span className={styles.topDivider} />
-          <Link
-            href={localHref("/advertiser/accountManagement")}
-            className={styles.account}
-            aria-label={t("Account settings", "계정 관리", "账户管理")}
-          >
-            <span className={styles.accountAvatar}>
-              {userName.slice(0, 2).toUpperCase()}
-            </span>
-            <span className={styles.accountName}>
-              {organizationName}
-              <ChevronDown size={14} />
-            </span>
-          </Link>
-        </div>
-      </header>
-
-      {navOpen && (
-        <button
-          className={styles.backdrop}
-          aria-label={t("Close navigation", "메뉴 닫기", "关闭导航")}
-          onClick={() => {
-            setNavOpen(false);
-            menuRef.current?.focus();
-          }}
-        />
-      )}
-      <aside
-        id="montage-sidebar"
-        className={`${styles.sidebar} ${navOpen ? styles.sidebarOpen : ""}`}
-      >
-        <div className={styles.workspaceIdentity}>
-          <div className={styles.workspaceIcon}>
-            {organizationName.slice(0, 1).toUpperCase()}
-          </div>
-          <div>
-            <strong>{organizationName}</strong>
-            <span>
-              {status === "PENDING"
-                ? t("Approval pending", "승인 대기", "待审核")
-                : t("Brand account", "브랜드 계정", "品牌账户")}
-            </span>
-          </div>
-        </div>
-        <nav
-          aria-label={t("Workspace navigation", "작업 공간 메뉴", "工作区导航")}
-        >
-          {navigation.map((group) => (
-            <div key={group.group} className={styles.navGroup}>
-              <p>{group.group}</p>
-              {group.items.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={localHref(href)}
-                  aria-current={href.endsWith("/montage") ? "page" : undefined}
-                  className={styles.navItem}
-                  onClick={() => setNavOpen(false)}
-                >
-                  <Icon size={19} strokeWidth={1.8} />
-                  <span>{label}</span>
-                  {href.endsWith("/montage") && (
-                    <span className={styles.activeDot} />
-                  )}
-                </Link>
-              ))}
-            </div>
-          ))}
-        </nav>
-        <div className={styles.sidebarBottom}>
-          <Link
-            href={localHref("/advertiser/requests")}
-            className={styles.helpCard}
-          >
-            <CircleHelp size={21} />
-            <div>
-              <strong>
-                {t("Need a hand?", "도움이 필요하신가요?", "需要帮助吗？")}
-              </strong>
-              <span>
-                {t("Ask our team", "요청함에서 문의하기", "联系团队")}
-                <ArrowUpRight size={13} />
-              </span>
-            </div>
-          </Link>
-          <Link
-            className={styles.navItem}
-            href={localHref("/advertiser/accountManagement")}
-          >
-            <Users size={18} />
-            {t("Account settings", "계정 관리", "账户管理")}
-          </Link>
-          <button
-            type="button"
-            className={styles.navItem}
-            disabled={busy}
-            onClick={() => void state.signOut()}
-          >
-            <LogOut size={18} />
-            {t("Sign out", "로그아웃", "退出登录")}
-          </button>
-          <span className={styles.copyright}>© Futures Medialab</span>
-        </div>
-      </aside>
+      <MontageShell
+        locale={locale}
+        organizationName={organizationName}
+        userName={userName}
+        busy={busy}
+        onSignOut={() => void state.signOut()}
+      />
 
       <main id="montage-main" className={styles.main}>
         <div className={styles.breadcrumb}>
