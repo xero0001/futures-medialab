@@ -24,32 +24,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
-  Compass,
   FolderHeart,
-  Globe2,
   Grid2X2,
   Info,
-  Instagram,
-  Layers,
   LayoutList,
-  Link2,
-  LogOut,
-  Menu,
-  MessageSquareText,
-  Music2,
   RotateCcw,
   Search,
-  Settings2,
   SlidersHorizontal,
-  Sparkles,
-  Twitch,
-  Users,
   X,
-  Youtube,
 } from "lucide-react";
-import { BrandSymbol } from "@futures-medialab/ui/brand-symbol";
 import type { Locale } from "../../../_components/landing-copy";
-import { LanguageSwitcher } from "../../../_components/language-switcher";
 import { authClient } from "../../../../lib/auth-client";
 import {
   defaultFilters,
@@ -69,19 +53,11 @@ import {
   translate,
 } from "../../_components/directory-filters";
 import { BezierFiltersPanel, BezierSelect } from "./bezier-filters";
+import { BezierWorkspaceShell } from "./bezier-workspace-shell";
 import "@channel.io/bezier-react/styles.css";
 import "./bezier-search.css";
 
-const path = "/storage/search/beizier";
 const pageSize = 8;
-const platformIcons = {
-  youtube: Youtube,
-  tiktok: Music2,
-  instagram: Instagram,
-  twitch: Twitch,
-  x: X,
-  facebook: Globe2,
-};
 
 export function BezierSearchWorkspace(props: {
   locale: Locale;
@@ -91,7 +67,7 @@ export function BezierSearchWorkspace(props: {
 }) {
   return (
     <AppProvider themeName="light">
-      <SearchWorkspace {...props} />
+      <SearchWorkspace key={props.locale} {...props} />
     </AppProvider>
   );
 }
@@ -126,11 +102,9 @@ function SearchWorkspace({
   const [view, setView] = useState<"list" | "grid">("list");
   const [collectionId, setCollectionId] = useState("");
   const [detail, setDetail] = useState<Creator | null>(null);
-  const [navOpen, setNavOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const searchController = useRef<AbortController | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const menuRef = useRef<HTMLButtonElement>(null);
   const detailTrigger = useRef<HTMLElement | null>(null);
 
   async function loadWorkspace(signal?: AbortSignal) {
@@ -140,14 +114,15 @@ function SearchWorkspace({
     });
     if (!response.ok) throw new Error("load");
     const next: WorkspaceBootstrap = await response.json();
-    setData(next);
     return next;
   }
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
     loadWorkspace(controller.signal)
+      .then((next) => {
+        if (!controller.signal.aborted) setData(next);
+      })
       .catch((reason) => {
         if (reason.name !== "AbortError")
           setError(
@@ -175,18 +150,6 @@ function SearchWorkspace({
       detailTrigger.current?.focus();
     }
   }, [detail]);
-
-  useEffect(() => {
-    if (!navOpen) return;
-    const close = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setNavOpen(false);
-        menuRef.current?.focus();
-      }
-    };
-    document.addEventListener("keydown", close);
-    return () => document.removeEventListener("keydown", close);
-  }, [navOpen]);
 
   function reset(platform = filters.platform) {
     searchController.current?.abort();
@@ -236,7 +199,11 @@ function SearchWorkspace({
       setApplied(next);
       setPage(1);
       // A history refresh failure must not turn a successful search into a failure.
-      await loadWorkspace(controller.signal).catch(() => undefined);
+      await loadWorkspace(controller.signal)
+        .then((next) => {
+          if (!controller.signal.aborted) setData(next);
+        })
+        .catch(() => undefined);
     } catch (reason) {
       if (controller.signal.aborted) return;
       setError(
@@ -379,58 +346,6 @@ function SearchWorkspace({
       JSON.stringify(value) !==
         JSON.stringify(defaults[key as keyof DirectoryFilters]),
   ).length;
-  const navGroups = [
-    {
-      title: t("DISCOVER", "크리에이터 탐색", "达人探索"),
-      items: [
-        {
-          href: path,
-          label: t("Creator search", "크리에이터 검색", "达人查询"),
-          icon: Search,
-        },
-        {
-          href: "/storage/similar-search",
-          label: t("Similar creators", "유사 크리에이터", "相似达人"),
-          icon: Users,
-        },
-        {
-          href: "/storage/similar-brands",
-          label: t("Related brands", "동종 브랜드", "同类品牌"),
-          icon: Layers,
-        },
-        {
-          href: "/storage/collect",
-          label: t("Collections", "즐겨찾기", "收藏夹"),
-          icon: FolderHeart,
-        },
-      ],
-    },
-    {
-      title: t("WORKSPACE", "작업 공간", "工作区"),
-      items: [
-        {
-          href: "/advertiser/campaign",
-          label: t("Campaigns", "캠페인 관리", "推广管理"),
-          icon: Compass,
-        },
-        {
-          href: "/advertiser/requests",
-          label: t("Request inbox", "요청함", "请求中心"),
-          icon: MessageSquareText,
-        },
-        {
-          href: "/shortLinks",
-          label: t("Short links", "단축 링크", "短链服务"),
-          icon: Link2,
-        },
-        {
-          href: "/agent",
-          label: t("Intelligence tools", "분석 도구", "智能工具"),
-          icon: Sparkles,
-        },
-      ],
-    },
-  ];
 
   function openDetail(creator: Creator, trigger: HTMLElement) {
     detailTrigger.current = trigger;
@@ -501,125 +416,14 @@ function SearchWorkspace({
       <a href="#bz-main" className="bz-skip">
         {t("Skip to content", "본문으로 바로가기", "跳到内容")}
       </a>
-      {navOpen && (
-        <button
-          className="bz-backdrop"
-          aria-label={t("Close navigation", "메뉴 닫기", "关闭导航")}
-          onClick={() => {
-            setNavOpen(false);
-            menuRef.current?.focus();
-          }}
-        />
-      )}
-      <aside
-        className={`bz-sidebar ${navOpen ? "is-open" : ""}`}
-        id="bz-sidebar"
+      <BezierWorkspaceShell
+        locale={locale}
+        organizationName={organizationName}
+        userName={userName}
+        status={status}
+        signingOut={signingOut}
+        onSignOut={() => void signOut()}
       >
-        <a
-          href={`/?lang=${locale}`}
-          className="bz-wordmark"
-          aria-label="Futures Medialab home"
-        >
-          <BrandSymbol />
-          <span>
-            futures<small>MEDIALAB</small>
-          </span>
-        </a>
-        <div className="bz-workspace-label">
-          <span className="bz-org-icon">{organizationName.slice(0, 1)}</span>
-          <div>
-            <strong>{organizationName}</strong>
-            <small>
-              {t("Brand workspace", "브랜드 작업 공간", "品牌工作区")}
-            </small>
-          </div>
-          <Badge size="xs" variant="blue">
-            {t("Brand", "브랜드", "品牌")}
-          </Badge>
-        </div>
-        <nav
-          aria-label={t("Workspace navigation", "작업 공간 메뉴", "工作区导航")}
-        >
-          {navGroups.map((group) => (
-            <div className="bz-nav-group" key={group.title}>
-              <p>{group.title}</p>
-              {group.items.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={`${href}?lang=${locale}`}
-                  aria-current={href === path ? "page" : undefined}
-                  onClick={() => setNavOpen(false)}
-                  className="bz-nav-link"
-                >
-                  <Icon size={18} />
-                  <span>{label}</span>
-                  {href === path && <span className="bz-active-dot" />}
-                </Link>
-              ))}
-            </div>
-          ))}
-        </nav>
-        <div className="bz-sidebar-bottom">
-          <Link
-            className="bz-nav-link"
-            href={`/advertiser/accountManagement?lang=${locale}`}
-          >
-            <Settings2 size={18} />
-            {t("Account settings", "계정 관리", "账户管理")}
-          </Link>
-          <div className="bz-user">
-            <span className="bz-user-avatar">
-              {userName.slice(0, 2).toUpperCase()}
-            </span>
-            <div>
-              <strong>{userName}</strong>
-              <small>
-                {status === "ACTIVE"
-                  ? t("Approved brand", "승인된 브랜드", "已批准品牌")
-                  : t("Approval pending", "승인 대기", "待审核")}
-              </small>
-            </div>
-            <Button
-              size="m"
-              styleVariant="tertiary"
-              colorVariant="monochrome-light"
-              leftContent={<LogOut size={17} />}
-              aria-label={t("Sign out", "로그아웃", "退出登录")}
-              loading={signingOut}
-              onClick={() => void signOut()}
-            />
-          </div>
-        </div>
-      </aside>
-
-      <div className="bz-body">
-        <header className="bz-topbar">
-          <Button
-            ref={menuRef}
-            className="bz-mobile-menu"
-            size="m"
-            styleVariant="tertiary"
-            colorVariant="monochrome-dark"
-            leftContent={<Menu size={20} />}
-            aria-label={t("Open navigation", "메뉴 열기", "打开导航")}
-            aria-expanded={navOpen}
-            aria-controls="bz-sidebar"
-            onClick={() => setNavOpen(!navOpen)}
-          />
-          <div className="bz-breadcrumb">
-            <span>{t("Discover", "크리에이터 탐색", "达人探索")}</span>
-            <ChevronRight size={14} />
-            <strong>{t("Search", "크리에이터 검색", "达人查询")}</strong>
-          </div>
-          <LanguageSwitcher
-            locale={locale}
-            label={t("Language", "언어", "语言")}
-            onChange={(next) => {
-              document.cookie = `fm-locale=${next};path=/;max-age=31536000;SameSite=Lax`;
-              window.location.assign(`${path}?lang=${next}`);
-            }}
-          />
-        </header>
         <main className="bz-main" id="bz-main">
           <div className="bz-heading">
             <div>
@@ -682,23 +486,15 @@ function SearchWorkspace({
               <TabList size="l" className="bz-platform-tabs">
                 <TabItems aria-label={t("Platform", "플랫폼", "平台")}>
                   {(Object.keys(platformNames) as PlatformId[]).map(
-                    (platform) => {
-                      const Icon = platformIcons[platform];
-                      return (
-                        <TabItem
-                          key={platform}
-                          value={platform}
-                          disabled={searching}
-                        >
-                          <span
-                            className={`bz-platform-icon bz-platform-${platform}`}
-                          >
-                            <Icon size={18} />
-                          </span>
-                          {platformNames[platform]}
-                        </TabItem>
-                      );
-                    },
+                    (platform) => (
+                      <TabItem
+                        key={platform}
+                        value={platform}
+                        disabled={searching}
+                      >
+                        {platformNames[platform]}
+                      </TabItem>
+                    ),
                   )}
                 </TabItems>
               </TabList>
@@ -1201,7 +997,7 @@ function SearchWorkspace({
             </span>
           </footer>
         </main>
-      </div>
+      </BezierWorkspaceShell>
       <dialog
         ref={dialogRef}
         className="bz-profile-dialog"
