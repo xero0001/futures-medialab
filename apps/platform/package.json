@@ -14,8 +14,14 @@
     "start": "next start"
   },
   "dependencies": {
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/server": "^11.11.0",
     "@futures-medialab/database": "workspace:*",
     "@futures-medialab/ui": "workspace:*",
+    "@montage-ui/core": "4.1.5",
+    "@montage-ui/icon": "4.1.5",
+    "@montage-ui/nextjs": "4.1.5",
     "@vercel/blob": "^2.8.2",
     "better-auth": "1.7.12",
     "lucide-react": "^0.468.0",
