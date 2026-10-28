@@ -55,6 +55,7 @@ type Props = {
   userName: string;
   busy: boolean;
   onSignOut: () => void;
+  searchPath?: string;
 };
 
 export function MontageShell({
@@ -63,6 +64,7 @@ export function MontageShell({
   userName,
   busy,
   onSignOut,
+  searchPath = "/storage/search/montage",
 }: Props) {
   const router = useRouter();
   const t = (en: string, ko: string, zh: string) =>
@@ -90,7 +92,7 @@ export function MontageShell({
       label: t("Discover", "크리에이터 탐색", "达人探索"),
       items: [
         {
-          path: "/storage/search/montage",
+          path: searchPath,
           label: t("Creator search", "크리에이터 검색", "达人查询"),
           icon: IconSearch,
         },
@@ -191,7 +193,7 @@ export function MontageShell({
                   if (!languages.some((language) => language.value === value))
                     return;
                   document.cookie = `fm-locale=${value};path=/;max-age=31536000;SameSite=Lax`;
-                  router.push(`/storage/search/montage?lang=${value}`);
+                  router.push(`${searchPath}?lang=${value}`);
                 }}
               >
                 <MenuTrigger>
@@ -344,7 +346,7 @@ export function MontageShell({
               </Typography>
               <List>
                 {group.items.map(({ path, label, icon: Icon }) => {
-                  const active = path === "/storage/search/montage";
+                  const active = path === searchPath;
                   return (
                     <li key={path}>
                       <ListCell

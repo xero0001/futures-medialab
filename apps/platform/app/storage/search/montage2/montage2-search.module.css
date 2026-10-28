@@ -1,0 +1,246 @@
+.workspace {
+  --fm-blue: var(--semantic-surface-brand-primary);
+  --fm-blue-text: var(--semantic-foreground-brand-primary);
+  --fm-blue-soft: var(--semantic-surface-brand-subtle);
+  min-height: 100vh;
+  color: var(--semantic-foreground-neutral-primary);
+  background: var(--semantic-background-neutral-primary);
+  font-family:
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
+}
+.workspace :is(button, a, input):focus-visible {
+  outline: 2px solid var(--semantic-foreground-brand-primary);
+  outline-offset: 3px;
+}
+.main {
+  margin-left: 228px;
+  padding: var(--spacing-32) var(--spacing-40);
+}
+.container {
+  max-width: 1200px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-24);
+}
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-8);
+}
+.breadcrumb > svg {
+  width: 12px;
+  height: 12px;
+  color: var(--semantic-foreground-neutral-tertiary);
+}
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-24);
+  margin-bottom: var(--spacing-8);
+}
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-8);
+}
+.searchSection {
+  border: 1px solid var(--semantic-line-neutral-secondaryOpaque);
+  border-radius: var(--radius-12);
+}
+.searchSection > :first-child {
+  padding-inline: var(--spacing-24);
+}
+.searchBody {
+  padding: var(--spacing-24);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-20);
+}
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-12);
+}
+.modeSelect {
+  width: 160px;
+  flex: none;
+}
+.searchRow > :nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.searchRow > button:last-child {
+  flex: none;
+}
+.filterRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-12);
+}
+.chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-8);
+}
+.filterActions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-12);
+}
+.advanced {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-24);
+}
+.applyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-16);
+}
+.demoNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-8);
+}
+.demoNotice > :first-child {
+  flex: none;
+}
+.demoNotice > p {
+  padding-top: var(--spacing-2);
+}
+.history {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-24);
+  padding-block: var(--spacing-20);
+  border-top: 1px solid var(--semantic-line-neutral-tertiary);
+}
+.historyLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-8);
+}
+.historyLabel svg {
+  width: 16px;
+  height: 16px;
+  color: var(--semantic-foreground-neutral-tertiary);
+}
+.historyItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-8);
+}
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--spacing-8);
+}
+.profileDialog {
+  font-family:
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
+}
+.profileHeading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-16);
+}
+.profileTitle {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-4);
+}
+.profileStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-16);
+  background: var(--semantic-background-neutral-secondary);
+  border-radius: var(--radius-12);
+  padding: var(--spacing-20);
+}
+.profileStats > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+.profileSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-12);
+}
+@media (max-width: 1199px) {
+  .main {
+    margin-left: 208px;
+    padding: var(--spacing-32) var(--spacing-24);
+  }
+}
+@media (max-width: 900px) {
+  .main {
+    margin-left: 0;
+    padding: var(--spacing-24) var(--spacing-20);
+  }
+}
+@media (max-width: 700px) {
+  .heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--spacing-16);
+  }
+  .searchSection > :first-child {
+    padding-inline: var(--spacing-16);
+  }
+  .searchBody {
+    padding: var(--spacing-20) var(--spacing-16);
+  }
+  .searchRow {
+    flex-wrap: wrap;
+    gap: var(--spacing-12);
+  }
+  .modeSelect {
+    width: 100%;
+  }
+  .searchRow > :nth-child(2) {
+    flex-basis: 100%;
+  }
+  .searchRow > button:last-child {
+    width: 100%;
+  }
+  .filterRow > :first-child {
+    width: 100%;
+  }
+  .filterActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .history {
+    gap: var(--spacing-16);
+  }
+  .historyLabel {
+    width: 100%;
+  }
+  .profileStats {
+    gap: var(--spacing-12);
+    padding: var(--spacing-16);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace * {
+    scroll-behavior: auto;
+  }
+}
