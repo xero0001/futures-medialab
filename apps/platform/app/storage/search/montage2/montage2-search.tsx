@@ -96,12 +96,20 @@ function Workspace({ locale, organizationName, status, userName }: Props) {
       value: "KR",
       label: t("South Korea", "대한민국", "韩国"),
     },
-    { key: "includeTags", value: "gaming", label: tagLabel("gaming", locale) },
-    { key: "includeTags", value: "rpg", label: tagLabel("rpg", locale) },
     {
       key: "includeTags",
-      value: "esports",
-      label: tagLabel("esports", locale),
+      value: "lineage",
+      label: tagLabel("lineage", locale),
+    },
+    {
+      key: "includeTags",
+      value: "maplestory",
+      label: tagLabel("maplestory", locale),
+    },
+    {
+      key: "includeTags",
+      value: "lostark",
+      label: tagLabel("lostark", locale),
     },
   ] as const;
 
@@ -626,7 +634,13 @@ function Workspace({ locale, organizationName, status, userName }: Props) {
               {profile.content.length > 0 && (
                 <div className={styles.profileSection}>
                   <Typography variant="label1" weight="bold">
-                    {t("Example posts", "예시 게시물", "示例内容")}
+                    {profile.identityKind === "public_channel"
+                      ? t(
+                          "Related game videos",
+                          "관련 게임 영상",
+                          "相关游戏视频",
+                        )
+                      : t("Example posts", "예시 게시물", "示例内容")}
                   </Typography>
                   {profile.content.map((content) => (
                     <Typography

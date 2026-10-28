@@ -325,7 +325,7 @@ function SearchWorkspace({
               >
                 {t("South Korea", "대한민국", "韩国")}
               </Chip>
-              {["gaming", "rpg", "esports"].map((tag) => (
+              {["lineage", "maplestory", "lostark"].map((tag) => (
                 <Chip
                   type="button"
                   key={tag}
@@ -834,7 +834,11 @@ function SearchWorkspace({
             </div>
             {detail.content.length > 0 && (
               <>
-                <h3>{t("Sample posts", "예시 게시물", "示例内容")}</h3>
+                <h3>
+                  {detail.identityKind === "public_channel"
+                    ? t("Related game videos", "관련 게임 영상", "相关游戏视频")
+                    : t("Sample posts", "예시 게시물", "示例内容")}
+                </h3>
                 <ul>
                   {detail.content.map((content) => (
                     <li key={content}>{content}</li>

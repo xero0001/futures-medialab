@@ -20,6 +20,9 @@ export const platformNames = {
 };
 export function tagLabel(tag: string, locale: Locale) {
   const names: Record<string, [string, string, string]> = {
+    lineage: ["Lineage", "리니지", "天堂"],
+    maplestory: ["MapleStory", "메이플스토리", "冒险岛"],
+    lostark: ["Lost Ark", "로스트아크", "失落的方舟"],
     gaming: ["Gaming", "게임", "游戏"],
     rpg: ["RPG", "RPG", "角色扮演"],
     strategy: ["Strategy", "전략", "策略"],

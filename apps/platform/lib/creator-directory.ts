@@ -74,6 +74,9 @@ export type DemoBrand = {
 };
 
 export const DIRECTORY_TAGS = [
+  "lineage",
+  "maplestory",
+  "lostark",
   "gaming",
   "rpg",
   "strategy",

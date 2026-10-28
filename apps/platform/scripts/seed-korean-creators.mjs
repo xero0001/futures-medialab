@@ -23,6 +23,10 @@ const sourcePath = resolve(
   root,
   "apps/platform/scripts/fixtures/korean-creators.sources.json",
 );
+const retiredPath = resolve(
+  root,
+  "apps/platform/scripts/fixtures/korean-creators.retired.json",
+);
 const manifestPath = resolve(
   root,
   "apps/platform/lib/creator-demo-images.json",
@@ -121,14 +125,36 @@ function validateSources(sources) {
     );
     assert.equal(new URL(source.sourcePageUrl).origin, profile.origin);
     approvedSource(source.imageSourceUrl);
+    assert.ok(
+      ["lineage", "maplestory", "lostark"].includes(source.primaryGame),
+    );
+    assert.ok(source.tags.includes(source.primaryGame));
+    assert.ok(
+      source.relevanceEvidence?.length >= 2,
+      "Require game-specific video evidence for every channel",
+    );
+    for (const evidence of source.relevanceEvidence) {
+      const video = new URL(evidence.url);
+      assert.equal(video.origin, "https://www.youtube.com");
+      assert.equal(video.pathname, "/watch");
+      assert.match(video.searchParams.get("v") ?? "", /^[a-zA-Z0-9_-]{11}$/);
+      assert.ok(
+        evidence.title?.trim() && evidence.title.length <= 300 && evidence.game,
+      );
+    }
   }
+  for (const game of ["lineage", "maplestory", "lostark"])
+    assert.ok(
+      sources.some((source) => source.primaryGame === game),
+      `Missing game coverage: ${game}`,
+    );
 }
 function payload(source, avatar, index) {
   // Deliberately synthetic metrics, not scraped/current audience measurements.
   const followers = [
-    2_450_000, 1_860_000, 2_130_000, 11_200_000, 2_680_000, 3_420_000,
-    2_120_000, 3_180_000, 1_540_000, 2_260_000,
-  ][index % 10];
+    420_000, 180_000, 95_000, 680_000, 330_000, 140_000, 260_000, 175_000,
+    210_000,
+  ][index % 9];
   return {
     id: source.id,
     name: source.name,
@@ -138,14 +164,14 @@ function payload(source, avatar, index) {
     country: "KR",
     language: "ko",
     followers,
-    views10: 180_000 + index * 37_000,
-    views30: 152_000 + index * 29_000,
+    views10: 28_000 + index * 5_500,
+    views30: 24_000 + index * 4_300,
     volatility: Number((0.18 + (index % 5) * 0.13).toFixed(2)),
     engagement: Number((2.8 + (index % 6) * 0.65).toFixed(2)),
     tags: source.tags,
     bio: source.bio,
-    // Do not invent endorsements or attribute fictional video titles to people.
-    content: [],
+    // These titles were checked on the channel's actual game videos. No endorsements.
+    content: source.relevanceEvidence.map((evidence) => evidence.title),
     brands: [],
     videoTypes: ["video", "shorts"],
     daysSincePosted: [1, 3, 6, 2, 5, 4, 8, 7, 2, 9][index % 10],
@@ -161,6 +187,16 @@ function payload(source, avatar, index) {
 try {
   const sources = JSON.parse(await readFile(sourcePath, "utf8"));
   validateSources(sources);
+  const retiredIds = JSON.parse(await readFile(retiredPath, "utf8"));
+  assert.ok(Array.isArray(retiredIds) && retiredIds.length <= 30);
+  assert.equal(new Set(retiredIds).size, retiredIds.length);
+  for (const id of retiredIds) {
+    assert.match(id, /^demo-youtube-kr-[a-z0-9-]+$/);
+    assert.ok(
+      !sources.some((source) => source.id === id),
+      "Active and retired IDs must not overlap",
+    );
+  }
   if (values.prepare) {
     const nextRequire = createRequire(
       platformRequire.resolve("next/package.json"),
@@ -207,6 +243,9 @@ try {
       `DRY RUN: ${sources.length} verified public YouTube identities; metrics will be synthetic. No DB/Blob access.`,
     );
     console.log(sources.map((source) => source.name).join(", "));
+    console.log(
+      `Retire ${retiredIds.length} explicitly listed earlier demo channels by unpublishing only.`,
+    );
   } else {
     const assets = JSON.parse(await readFile(manifestPath, "utf8"));
     assert.equal(
@@ -309,11 +348,19 @@ try {
               update: data,
             });
           }
+          await tx.creatorDirectoryEntry.updateMany({
+            where: {
+              id: { in: retiredIds },
+              platform: "youtube",
+              isDemo: true,
+            },
+            data: { isPublished: false },
+          });
         },
         { maxWait: 10_000, timeout: 60_000 },
       );
       console.log(
-        `SEEDED ${sources.length} Korean public channel demo records with Blob avatars. All other records unchanged.`,
+        `SEEDED ${sources.length} game-focused public channel demos with Blob avatars. Unpublished ${retiredIds.length} explicitly retired demo IDs; no records deleted.`,
       );
     } finally {
       await db.$disconnect();

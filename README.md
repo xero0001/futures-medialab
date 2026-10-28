@@ -275,11 +275,13 @@ strictly validated JSON profile; they never expose private `CreatorProfile`
 notes or MCN ownership. The database is not an external creator-data provider.
 
 The directory retains **60 fictional demo profiles** with example.com identifiers.
-An explicit internal-demo import additionally stores **10 Korean public YouTube
-channel identities and official channel avatars**; their follower counts, views,
+An explicit internal-demo import additionally publishes **9 Korean gaming YouTube
+channel identities and official channel avatars**, three each for Lineage,
+MapleStory and Lost Ark. Each channel has two verified game-video references;
+the game tags support quick filtering in both Montage views. Their follower counts, views,
 engagement, posting recency and audience breakdowns remain synthetic. No real
-endorsements or video titles are invented. Only verified YouTube accounts are
-added; identities are not copied to other platforms. The source URLs, channel
+endorsements or video titles are invented. Channel identity and video ownership
+are checked against official YouTube pages; identities are not copied to other platforms. The source URLs, channel
 verification evidence and image provenance are recorded in
 `apps/platform/scripts/fixtures/korean-creators.sources.json`.
 
@@ -304,11 +306,15 @@ Maintenance (from the repository root; not invoked by startup or request handler
 ```sh
 node apps/platform/scripts/seed-korean-creators.mjs             # validate sources; no DB/Blob access
 node apps/platform/scripts/seed-korean-creators.mjs --prepare   # download verified avatars and prepare local WebP/manifest
-node apps/platform/scripts/seed-korean-creators.mjs --apply     # upsert only the reviewed demo IDs and immutable Blob objects
+node apps/platform/scripts/seed-korean-creators.mjs --apply     # upsert reviewed demos/Blob assets and unpublish explicitly retired demo IDs
 ```
 
 `--apply` uses the ignored `apps/platform/.env.local` by default (override with
 `--env-file`). It refuses non-demo ID collisions and never deletes existing entries.
+The earlier 10 unrelated public-channel demos are unpublished using the explicit
+`korean-creators.retired.json` ID list. Fictional fixtures and private creator records
+are preserved; retired Blob objects remain private and are removed from the public
+image manifest.
 Profile images are official public-channel references for the requested internal
 demo; the provenance file does not assert a verified reuse license.
 
