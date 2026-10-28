@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import {
   Bookmark,
-  Building2,
   ArrowRight,
   Check,
   ChevronLeft,
@@ -22,6 +21,7 @@ import {
   Search,
   SlidersHorizontal,
   Sparkles,
+  UserRound,
   Users,
   X,
 } from "lucide-react";
@@ -498,14 +498,13 @@ export function CreatorWorkspace({
           <Wordmark href={`/?lang=${locale}`} />
         )}
         <div className="cw-top-actions">
-          <span
-            className={`cw-status${isTds ? " tds-workspace-status" : ""}${status === "PENDING" ? " is-pending" : ""}`}
-          >
-            {isTds && <span className="tds-status-dot" aria-hidden="true" />}
-            {status === "PENDING"
-              ? t("Approval pending", "승인 대기", "待审核")
-              : t("Brand workspace", "브랜드 작업 공간", "品牌工作区")}
-          </span>
+          {!isTds && (
+            <span className="cw-status">
+              {status === "PENDING"
+                ? t("Approval pending", "승인 대기", "待审核")
+                : t("Brand workspace", "브랜드 작업 공간", "品牌工作区")}
+            </span>
+          )}
           <LanguageSwitcher
             locale={locale}
             label={t("Language", "언어", "语言")}
@@ -520,16 +519,9 @@ export function CreatorWorkspace({
             aria-label={t("Account settings", "계정 관리", "账户管理")}
           >
             {isTds ? (
-              <>
-                <span className="cw-avatar" aria-hidden="true">
-                  {userName.slice(0, 2).toUpperCase()}
-                </span>
-                <span className="tds-account-copy">
-                  <strong>{userName}</strong>
-                  <span>{t("Brand account", "브랜드 계정", "品牌账户")}</span>
-                </span>
-                <ChevronRight size={16} aria-hidden="true" />
-              </>
+              <span className="cw-avatar" aria-hidden="true">
+                <UserRound size={20} />
+              </span>
             ) : (
               userName.slice(0, 2).toUpperCase()
             )}
@@ -552,19 +544,7 @@ export function CreatorWorkspace({
         id="workspace-sidebar"
         className={`cw-sidebar ${navOpen ? "is-open" : ""}`}
       >
-        {isTds ? (
-          <div className="tds-workspace-card">
-            <span className="tds-workspace-icon">
-              <Building2 size={20} aria-hidden="true" />
-            </span>
-            <div>
-              <strong>{organizationName}</strong>
-              <span>
-                {t("Brand workspace", "브랜드 작업 공간", "品牌工作区")}
-              </span>
-            </div>
-          </div>
-        ) : (
+        {!isTds && (
           <div className="cw-nav-group">
             {t("Creator intelligence", "크리에이터 탐색", "达人资源")}
           </div>
