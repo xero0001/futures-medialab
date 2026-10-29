@@ -53,6 +53,7 @@ type Props = {
   locale: Locale;
   organizationName: string;
   userName: string;
+  isGuest: boolean;
   busy: boolean;
   onSignOut: () => void;
   searchPath?: string;
@@ -62,6 +63,7 @@ export function MontageShell({
   locale,
   organizationName,
   userName,
+  isGuest,
   busy,
   onSignOut,
   searchPath = "/storage/search/montage",
@@ -307,7 +309,9 @@ export function MontageShell({
                         </MenuItemContent>
                       }
                     >
-                      {t("Sign out", "로그아웃", "退出登录")}
+                      {isGuest
+                        ? t("Sign in", "로그인", "登录")
+                        : t("Sign out", "로그아웃", "退出登录")}
                     </MenuItem>
                   </MenuList>
                 </MenuContent>
@@ -454,7 +458,9 @@ export function MontageShell({
                 }
                 sx={{ paddingInline: 12 }}
               >
-                {t("Sign out", "로그아웃", "退出登录")}
+                {isGuest
+                  ? t("Sign in", "로그인", "登录")
+                  : t("Sign out", "로그아웃", "退出登录")}
               </ListCell>
             </li>
           </List>

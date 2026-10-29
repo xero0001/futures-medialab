@@ -70,6 +70,7 @@ type Props = {
   organizationName: string;
   status: "PENDING" | "ACTIVE";
   userName: string;
+  isGuest: boolean;
 };
 
 export function MontageSearch(props: Props) {
@@ -83,12 +84,12 @@ export function MontageSearch(props: Props) {
 function SearchWorkspace({
   locale,
   organizationName,
-  status,
   userName,
+  isGuest,
 }: Props) {
   const t = (en: string, ko: string, zh: string) =>
     translate(locale, en, ko, zh);
-  const state = useMontageSearch(locale);
+  const state = useMontageSearch(locale, isGuest);
   const {
     data,
     error,
@@ -166,6 +167,7 @@ function SearchWorkspace({
         locale={locale}
         organizationName={organizationName}
         userName={userName}
+        isGuest={isGuest}
         busy={busy}
         onSignOut={() => void state.signOut()}
       />
@@ -475,10 +477,12 @@ function SearchWorkspace({
               ) : (
                 <Link
                   className={styles.newFolder}
-                  href={localHref("/storage/collect")}
+                  href={localHref(isGuest ? "/login" : "/storage/collect")}
                 >
                   <FolderHeart size={16} />
-                  {t("Create a folder", "저장 폴더 만들기", "创建收藏夹")}
+                  {isGuest
+                    ? t("Sign in to save", "로그인하고 저장", "登录以收藏")
+                    : t("Create a folder", "저장 폴더 만들기", "创建收藏夹")}
                   <ArrowUpRight size={13} />
                 </Link>
               )}
@@ -875,15 +879,17 @@ function SearchWorkspace({
             ) : (
               <Button
                 as={Link}
-                href={localHref("/storage/collect")}
+                href={localHref(isGuest ? "/login" : "/storage/collect")}
                 fullWidth
                 leadingContent={<FolderHeart size={17} />}
               >
-                {t(
-                  "Create a collection to save",
-                  "저장할 즐겨찾기 폴더 만들기",
-                  "创建收藏夹以保存",
-                )}
+                {isGuest
+                  ? t("Sign in to save", "로그인하고 저장", "登录以收藏")
+                  : t(
+                      "Create a collection to save",
+                      "저장할 즐겨찾기 폴더 만들기",
+                      "创建收藏夹以保存",
+                    )}
               </Button>
             )}
           </div>

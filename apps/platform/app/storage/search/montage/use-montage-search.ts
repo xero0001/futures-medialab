@@ -5,13 +5,14 @@ import type { Locale } from "../../../_components/landing-copy";
 import { authClient } from "../../../../lib/auth-client";
 import {
   defaultFilters,
+  filterCreators,
   validateFilters,
   type Creator,
   type DirectoryFilters,
   type PlatformId,
 } from "../../../../lib/creator-directory";
 import type {
-  WorkspaceBootstrap,
+  SearchWorkspaceData,
   WorkspaceSearchResult,
 } from "../../../../lib/workspace-types";
 import { translate } from "../../_components/directory-filters";
@@ -23,21 +24,22 @@ type Operation = {
 
 async function fetchBootstrap(
   signal: AbortSignal,
-): Promise<WorkspaceBootstrap> {
-  const response = await fetch("/api/workspace/bootstrap", {
-    cache: "no-store",
-    signal,
-  });
+  isGuest: boolean,
+): Promise<SearchWorkspaceData> {
+  const response = await fetch(
+    isGuest ? "/api/directory/preview" : "/api/workspace/bootstrap",
+    { cache: "no-store", signal },
+  );
   if (!response.ok) throw new Error("load");
   return response.json();
 }
 
-export function useMontageSearch(locale: Locale) {
+export function useMontageSearch(locale: Locale, isGuest: boolean) {
   const t = useCallback(
     (en: string, ko: string, zh: string) => translate(locale, en, ko, zh),
     [locale],
   );
-  const [data, setData] = useState<WorkspaceBootstrap | null>(null);
+  const [data, setData] = useState<SearchWorkspaceData | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(true);
@@ -87,7 +89,7 @@ export function useMontageSearch(locale: Locale) {
     const current = begin("load");
     if (!current) return;
     try {
-      const nextData = await fetchBootstrap(current.controller.signal);
+      const nextData = await fetchBootstrap(current.controller.signal, isGuest);
       if (!isCurrent(current)) return;
       setData(nextData);
       mustReload.current = false;
@@ -103,12 +105,13 @@ export function useMontageSearch(locale: Locale) {
     } finally {
       finish(current);
     }
-  }, [begin, finish, isCurrent, t]);
+  }, [begin, finish, isCurrent, isGuest, t]);
 
   useEffect(() => {
     mounted.current = true;
-    void reload();
+    const timer = window.setTimeout(() => void reload(), 0);
     return () => {
+      window.clearTimeout(timer);
       mounted.current = false;
       operation.current?.controller.abort();
       operation.current = null;
@@ -135,6 +138,13 @@ export function useMontageSearch(locale: Locale) {
       excludeTags: [...next.excludeTags],
     };
     try {
+      if (isGuest) {
+        if (!data) throw new Error("search");
+        setResults(filterCreators(submitted, data.creators));
+        setApplied(submitted);
+        setPage(1);
+        return;
+      }
       const response = await fetch("/api/workspace/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -153,7 +163,7 @@ export function useMontageSearch(locale: Locale) {
       setApplied(submitted);
       setPage(1);
       try {
-        const nextData = await fetchBootstrap(current.controller.signal);
+        const nextData = await fetchBootstrap(current.controller.signal, isGuest);
         if (isCurrent(current)) {
           setData(nextData);
           mustReload.current = false;
@@ -212,6 +222,10 @@ export function useMontageSearch(locale: Locale) {
     data?.collections[0];
 
   async function saveCreator(creator: Creator) {
+    if (isGuest) {
+      window.location.assign(`/login?lang=${locale}`);
+      return;
+    }
     if (mustReload.current) {
       setError(
         t(
@@ -304,7 +318,7 @@ export function useMontageSearch(locale: Locale) {
             ),
       );
       try {
-        const nextData = await fetchBootstrap(current.controller.signal);
+        const nextData = await fetchBootstrap(current.controller.signal, isGuest);
         if (isCurrent(current)) setData(nextData);
       } catch {
         if (isCurrent(current))
@@ -333,6 +347,10 @@ export function useMontageSearch(locale: Locale) {
   }
 
   async function signOut() {
+    if (isGuest) {
+      window.location.assign(`/login?lang=${locale}`);
+      return;
+    }
     const current = begin("signout");
     if (!current) return;
     try {

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
-import { requireBrandWorkspace } from "../../../../lib/brand-access";
+import { getSearchWorkspaceAccount } from "../../../../lib/brand-access";
 import { resolveLocale } from "../../../../lib/locale";
 import { SeedSearchWorkspace } from "./seed-search-workspace";
 import "@seed-design/css/all.css";
@@ -27,6 +27,6 @@ export default async function Page({
     jar.get("fm-locale")?.value,
     requestHeaders.get("accept-language"),
   );
-  const account = await requireBrandWorkspace(locale);
+  const account = await getSearchWorkspaceAccount(locale);
   return <SeedSearchWorkspace locale={locale} {...account} />;
 }

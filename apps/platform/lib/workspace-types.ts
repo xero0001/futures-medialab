@@ -71,3 +71,8 @@ export type WorkspaceSearchResult = {
   brands: DemoBrand[];
   searchId: string;
 };
+
+export type SearchWorkspaceData = Pick<
+  WorkspaceBootstrap,
+  "creators" | "collections" | "recentSearches"
+>;

@@ -37,11 +37,12 @@ import styles from "./montage2-results.module.css";
 
 type Props = {
   locale: Locale;
+  isGuest: boolean;
   state: ReturnType<typeof useMontageSearch>;
   onProfile: (creator: Creator) => void;
 };
 
-export function Montage2Results({ locale, state, onProfile }: Props) {
+export function Montage2Results({ locale, isGuest, state, onProfile }: Props) {
   const {
     data,
     error,
@@ -227,13 +228,15 @@ export function Montage2Results({ locale, state, onProfile }: Props) {
             ) : (
               <Button
                 as={Link}
-                href={`/storage/collect?lang=${locale}`}
+                href={`${isGuest ? "/login" : "/storage/collect"}?lang=${locale}`}
                 variant="outlined"
                 color="assistive"
                 size="medium"
                 leadingContent={<IconFolder />}
               >
-                {t("Create a folder", "저장 폴더 만들기", "创建收藏夹")}
+                {isGuest
+                  ? t("Sign in to save", "로그인하고 저장", "登录以收藏")
+                  : t("Create a folder", "저장 폴더 만들기", "创建收藏夹")}
               </Button>
             )}
           </div>

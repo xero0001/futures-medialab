@@ -58,6 +58,7 @@ type Props = {
   organizationName: string;
   status: "PENDING" | "ACTIVE";
   userName: string;
+  isGuest: boolean;
 };
 
 export function Montage2Search(props: Props) {
@@ -68,10 +69,10 @@ export function Montage2Search(props: Props) {
   );
 }
 
-function Workspace({ locale, organizationName, status, userName }: Props) {
+function Workspace({ locale, organizationName, status, userName, isGuest }: Props) {
   const t = (en: string, ko: string, zh: string) =>
     translate(locale, en, ko, zh);
-  const state = useMontageSearch(locale);
+  const state = useMontageSearch(locale, isGuest);
   const { filters, applied, busy, data, error, notice } = state;
   const [expanded, setExpanded] = useState(false);
   const [profile, setProfile] = useState<Creator | null>(null);
@@ -133,6 +134,7 @@ function Workspace({ locale, organizationName, status, userName }: Props) {
         locale={locale}
         organizationName={organizationName}
         userName={userName}
+        isGuest={isGuest}
         busy={busy}
         onSignOut={() => void state.signOut()}
         searchPath="/storage/search/montage2"
@@ -186,7 +188,7 @@ function Workspace({ locale, organizationName, status, userName }: Props) {
             </Button>
           </div>
 
-          {status === "PENDING" && (
+          {!isGuest && status === "PENDING" && (
             <SectionMessage
               variant="cautionary"
               description={t(
@@ -451,6 +453,7 @@ function Workspace({ locale, organizationName, status, userName }: Props) {
 
           <Montage2Results
             locale={locale}
+            isGuest={isGuest}
             state={state}
             onProfile={setProfile}
           />
@@ -686,14 +689,16 @@ function Workspace({ locale, organizationName, status, userName }: Props) {
               ) : (
                 <Button
                   as={Link}
-                  href={`/storage/collect?lang=${locale}`}
+                  href={`${isGuest ? "/login" : "/storage/collect"}?lang=${locale}`}
                   leadingContent={<IconBookmark aria-hidden />}
                 >
-                  {t(
-                    "Create a collection",
-                    "즐겨찾기 폴더 만들기",
-                    "创建收藏夹",
-                  )}
+                  {isGuest
+                    ? t("Sign in to save", "로그인하고 저장", "登录以收藏")
+                    : t(
+                        "Create a collection",
+                        "즐겨찾기 폴더 만들기",
+                        "创建收藏夹",
+                      )}
                 </Button>
               )}
             </ModalContent>

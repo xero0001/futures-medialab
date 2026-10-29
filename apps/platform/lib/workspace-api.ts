@@ -23,6 +23,7 @@ import {
   type Creator,
 } from "./creator-directory";
 import type {
+  SearchWorkspaceData,
   WorkspaceAccount,
   WorkspaceBootstrap,
   WorkspaceSearchResult,
@@ -310,10 +311,10 @@ function publishedWhere(member: Member) {
 }
 async function directory(
   database: Database,
-  member: Member,
+  where: Prisma.CreatorDirectoryEntryWhereInput,
 ): Promise<Creator[]> {
   const entries = await database.creatorDirectoryEntry.findMany({
-    where: publishedWhere(member),
+    where,
     orderBy: { id: "asc" },
     take: 500,
   });
@@ -338,6 +339,26 @@ async function directory(
   });
 }
 
+export async function previewCreatorDirectory() {
+  return workspaceBoundary(async () => {
+    const data: SearchWorkspaceData = {
+      creators: await directory(getDatabase(), {
+        isPublished: true,
+        isDemo: true,
+      }),
+      collections: [],
+      recentSearches: [],
+    };
+    return Response.json(data, {
+      headers: {
+        "Cache-Control": "public, max-age=0, s-maxage=60",
+        "X-Content-Type-Options": "nosniff",
+        "X-Robots-Tag": "noindex, noarchive",
+      },
+    });
+  });
+}
+
 export async function bootstrapWorkspace(request: Request) {
   return workspaceBoundary(async () => {
     const userId = await sessionUser(request);
@@ -348,7 +369,7 @@ export async function bootstrapWorkspace(request: Request) {
           organizationId = member.organizationId;
         const [creators, collections, links, campaigns, requests, searches] =
           await Promise.all([
-            directory(tx, member),
+            directory(tx, publishedWhere(member)),
             tx.creatorCollection.findMany({
               where: { organizationId },
               orderBy: { createdAt: "desc" },
@@ -532,7 +553,7 @@ export async function searchWorkspace(request: Request) {
     request,
     searchSchema,
     async (tx, member, userId, input): Promise<WorkspaceSearchResult> => {
-      const source = await directory(tx, member);
+      const source = await directory(tx, publishedWhere(member));
       let creators: Creator[] = [],
         seed: Creator | null = null,
         brands = DEMO_BRANDS;

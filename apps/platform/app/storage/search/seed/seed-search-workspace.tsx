@@ -32,6 +32,7 @@ import {
   Info,
   Layers,
   Link2,
+  LogIn,
   LogOut,
   Menu,
   MessageSquareText,
@@ -48,6 +49,7 @@ import { Wordmark } from "../../../_components/brand-logo";
 import { authClient } from "../../../../lib/auth-client";
 import {
   defaultFilters,
+  filterCreators,
   validateFilters,
   type Creator,
   type DirectoryFilters,
@@ -55,7 +57,7 @@ import {
   type SearchMode,
 } from "../../../../lib/creator-directory";
 import type {
-  WorkspaceBootstrap,
+  SearchWorkspaceData,
   WorkspaceSearchResult,
 } from "../../../../lib/workspace-types";
 import {
@@ -71,15 +73,17 @@ export function SeedSearchWorkspace({
   locale,
   status,
   userName,
+  isGuest,
 }: {
   locale: Locale;
   organizationName: string;
   status: "PENDING" | "ACTIVE";
   userName: string;
+  isGuest: boolean;
 }) {
   const t = (en: string, ko: string, zh: string) =>
     translate(locale, en, ko, zh);
-  const [data, setData] = useState<WorkspaceBootstrap | null>(null);
+  const [data, setData] = useState<SearchWorkspaceData | null>(null);
   const [loadVersion, setLoadVersion] = useState(0);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -102,7 +106,7 @@ export function SeedSearchWorkspace({
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/workspace/bootstrap", {
+    fetch(isGuest ? "/api/directory/preview" : "/api/workspace/bootstrap", {
       cache: "no-store",
       signal: controller.signal,
     })
@@ -122,7 +126,7 @@ export function SeedSearchWorkspace({
           );
       });
     return () => controller.abort();
-  }, [locale, loadVersion]);
+  }, [locale, loadVersion, isGuest]);
 
   useEffect(() => () => searchController.current?.abort(), []);
   useEffect(() => {
@@ -153,6 +157,17 @@ export function SeedSearchWorkspace({
     const current = ++requestId.current;
     setSearching(true);
     try {
+      if (isGuest) {
+        if (!data) throw new Error("search");
+        setResults(filterCreators(next, data.creators));
+        setApplied({
+          ...next,
+          includeTags: [...next.includeTags],
+          excludeTags: [...next.excludeTags],
+        });
+        setPage(1);
+        return;
+      }
       const response = await fetch("/api/workspace/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -173,7 +188,7 @@ export function SeedSearchWorkspace({
           signal: controller.signal,
         });
         if (responseData.ok) {
-          const refreshed: WorkspaceBootstrap = await responseData.json();
+          const refreshed: SearchWorkspaceData = await responseData.json();
           if (current === requestId.current) setData(refreshed);
         }
       } catch {
@@ -215,6 +230,10 @@ export function SeedSearchWorkspace({
     data?.collections.find((item) => item.id === collectionId) ??
     data?.collections[0];
   async function saveCreator(creator: Creator) {
+    if (isGuest) {
+      window.location.assign(`/login?lang=${locale}`);
+      return;
+    }
     if (!activeCollection) {
       setError(
         t(
@@ -293,6 +312,10 @@ export function SeedSearchWorkspace({
   }
 
   async function signOut() {
+    if (isGuest) {
+      window.location.assign(`/login?lang=${locale}`);
+      return;
+    }
     setSaving(true);
     try {
       const result = await authClient.signOut();
@@ -437,8 +460,12 @@ export function SeedSearchWorkspace({
               onClick={signOut}
               disabled={busy}
             >
-              <PrefixIcon svg={<LogOut size={17} />} />
-              {t("Sign out", "로그아웃", "退出登录")}
+              <PrefixIcon
+                svg={isGuest ? <LogIn size={17} /> : <LogOut size={17} />}
+              />
+              {isGuest
+                ? t("Sign in", "로그인", "登录")
+                : t("Sign out", "로그아웃", "退出登录")}
             </ActionButton>
           </SideNavigation.Footer>
         </SideNavigation.Root>
@@ -508,12 +535,14 @@ export function SeedSearchWorkspace({
           <Badge.Root
             className="seed-search-account-status"
             variant="weak"
-            tone={status === "PENDING" ? "warning" : "brand"}
+            tone={!isGuest && status === "PENDING" ? "warning" : "brand"}
           >
             <Badge.Label>
-              {status === "PENDING"
-                ? t("Approval pending", "승인 대기", "待审核")
-                : t("Brand account", "브랜드 계정", "品牌账户")}
+              {isGuest
+                ? t("Guest preview", "게스트 미리보기", "访客预览")
+                : status === "PENDING"
+                  ? t("Approval pending", "승인 대기", "待审核")
+                  : t("Brand account", "브랜드 계정", "品牌账户")}
             </Badge.Label>
           </Badge.Root>
           <SeedMenu.Root placement="bottom-end" gutter={8} size="small">
@@ -577,15 +606,21 @@ export function SeedSearchWorkspace({
             className="seed-search-user"
           >
             <Link
-              href={`/advertiser/accountManagement?lang=${locale}`}
-              aria-label={`${t("Account settings", "계정 관리", "账户设置")}: ${userName}`}
+              href={`${isGuest ? "/login" : "/advertiser/accountManagement"}?lang=${locale}`}
+              aria-label={
+                isGuest
+                  ? t("Sign in", "로그인", "登录")
+                  : `${t("Account settings", "계정 관리", "账户设置")}: ${userName}`
+              }
             >
               <Avatar.Root size="36" className="seed-search-user-avatar">
                 <Avatar.Fallback>
                   {userName.slice(0, 2).toUpperCase()}
                 </Avatar.Fallback>
               </Avatar.Root>
-              <span className="seed-search-user-name">{userName}</span>
+              <span className="seed-search-user-name">
+                {isGuest ? t("Sign in", "로그인", "登录") : userName}
+              </span>
             </Link>
           </ActionButton>
         </div>
@@ -642,11 +677,17 @@ export function SeedSearchWorkspace({
               {t("Demo workspace", "데모 워크스페이스", "演示工作区")}
             </strong>
             <span>
-              {t(
-                "Profiles and metrics are fictional. Search history and collections are saved; live platform data is not connected.",
-                "프로필·지표는 가상 데이터입니다. 검색 이력과 즐겨찾기는 저장되며, 실시간 플랫폼 데이터는 아직 연결되지 않았어요.",
-                "达人和指标均为虚构数据。搜索和收藏将保存，尚未接入实时平台数据。",
-              )}
+              {isGuest
+                ? t(
+                    "Browse and search sample creator data without signing in. Sign in to save creators and search history.",
+                    "로그인 없이 샘플 크리에이터를 둘러보고 검색할 수 있어요. 크리에이터와 검색 이력을 저장하려면 로그인해 주세요.",
+                    "无需登录即可浏览和搜索示例达人。登录后可保存达人和搜索记录。",
+                  )
+                : t(
+                    "Profiles and metrics are fictional. Search history and collections are saved; live platform data is not connected.",
+                    "프로필·지표는 가상 데이터입니다. 검색 이력과 즐겨찾기는 저장되며, 실시간 플랫폼 데이터는 아직 연결되지 않았어요.",
+                    "达人和指标均为虚构数据。搜索和收藏将保存，尚未接入实时平台数据。",
+                  )}
             </span>
           </p>
           <Badge.Root variant="weak" tone="brand">
@@ -936,12 +977,14 @@ export function SeedSearchWorkspace({
                     label={t("Save to folder", "저장할 폴더", "收藏至")}
                     value={activeCollection?.id ?? ""}
                     onChange={setCollectionId}
-                    disabled={busy}
-                    placeholder={t(
-                      "No folders yet",
-                      "아직 폴더가 없어요",
-                      "尚无文件夹",
-                    )}
+                    disabled={busy || isGuest}
+                    placeholder={isGuest
+                      ? t("Sign in to save", "로그인하고 저장", "登录以收藏")
+                      : t(
+                          "No folders yet",
+                          "아직 폴더가 없어요",
+                          "尚无文件夹",
+                        )}
                     options={data.collections.map((item) => ({
                       value: item.id,
                       label: item.name,

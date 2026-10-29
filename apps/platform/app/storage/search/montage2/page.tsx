@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
-import { requireBrandWorkspace } from "../../../../lib/brand-access";
+import { getSearchWorkspaceAccount } from "../../../../lib/brand-access";
 import { resolveLocale } from "../../../../lib/locale";
 import { Montage2Search } from "./montage2-search";
 
@@ -25,6 +25,6 @@ export default async function Page({
     jar.get("fm-locale")?.value,
     requestHeaders.get("accept-language"),
   );
-  const account = await requireBrandWorkspace(locale);
+  const account = await getSearchWorkspaceAccount(locale);
   return <Montage2Search locale={locale} {...account} />;
 }

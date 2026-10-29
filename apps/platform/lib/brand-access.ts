@@ -16,8 +16,12 @@ export async function getAuthenticatedBrandMembership(locale: Locale) {
   const session = await getAuth().api.getSession({ headers: await headers() });
   if (!session) redirect(`/login?lang=${locale}`);
 
+  return brandMembership(session.user.id);
+}
+
+function brandMembership(userId: string) {
   return getDatabase().organizationMember.findFirst({
-    where: { userId: session.user.id, organization: { type: "BRAND" } },
+    where: { userId, organization: { type: "BRAND" } },
     orderBy: [{ createdAt: "asc" }, { organizationId: "asc" }],
     select: {
       role: true,
@@ -72,5 +76,33 @@ export async function requireBrandWorkspace(locale: Locale): Promise<{
     organizationName: membership.organization.name,
     status: membership.organization.status,
     userName: membership.user.name?.trim() || membership.organization.name,
+  };
+}
+
+// Only the three public search variants use this optional account context.
+// Guests (including accounts without workspace access) see public demo data;
+// private workspace routes and API operations still require membership.
+export async function getSearchWorkspaceAccount(locale: Locale) {
+  const session = await getAuth().api.getSession({ headers: await headers() });
+  const member = session ? await brandMembership(session.user.id) : null;
+  if (
+    member &&
+    member.organization.status !== "SUSPENDED" &&
+    brandDestination(member) === "/storage/search"
+  ) {
+    return {
+      organizationName: member.organization.name,
+      status: member.organization.status,
+      userName: member.user.name?.trim() || member.organization.name,
+      isGuest: false,
+    };
+  }
+
+  const guest = locale === "ko" ? "게스트" : locale === "zh" ? "访客" : "Guest";
+  return {
+    organizationName: guest,
+    status: "ACTIVE" as const,
+    userName: guest,
+    isGuest: true,
   };
 }
