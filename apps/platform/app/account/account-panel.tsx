@@ -14,6 +14,7 @@ const copy = {
     email: "Email",
     organization: "Organization",
     type: "Account type",
+    clientAgency: "Advertising agency (Buyer)",
     status: "Approval status",
     types: {
       AGENCY: "Agency / Studio",
@@ -43,6 +44,7 @@ const copy = {
     email: "이메일",
     organization: "소속 조직",
     type: "회원 유형",
+    clientAgency: "광고 대행사 (구매자)",
     status: "승인 상태",
     types: {
       AGENCY: "에이전시 / 스튜디오",
@@ -71,6 +73,7 @@ const copy = {
     email: "邮箱",
     organization: "所属机构",
     type: "账号类型",
+    clientAgency: "广告代理机构（采购方）",
     status: "审核状态",
     types: {
       AGENCY: "代理机构 / 工作室",
@@ -94,6 +97,7 @@ type AccountOrganization = {
   id: string;
   name: string;
   type: "AGENCY" | "BRAND" | "PLATFORM";
+  isClientAgency?: boolean;
   status: "PENDING" | "ACTIVE" | "SUSPENDED";
 };
 
@@ -174,7 +178,11 @@ export function AccountPanel({
               <dl className="fma-details">
                 <div>
                   <dt>{t.type}</dt>
-                  <dd>{t.types[organization.type]}</dd>
+                  <dd>
+                    {organization.isClientAgency
+                      ? t.clientAgency
+                      : t.types[organization.type]}
+                  </dd>
                 </div>
                 <div>
                   <dt>{t.status}</dt>

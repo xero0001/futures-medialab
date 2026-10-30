@@ -1,0 +1,118 @@
+export const homeCopy = {
+  ko: {
+    title: "한국 게임 마케팅 | Futures Medialab",
+    description:
+      "글로벌 게임을 위한 한국 마케팅 파트너. 캠페인 기획과 콘텐츠 현지화부터 파트너 운영, 결과 확인까지 Futures Medialab이 함께합니다.",
+    services: "서비스 소개",
+    contact: "문의",
+    language: "언어",
+    login: "로그인",
+    skip: "본문으로 바로가기",
+    eyebrow: "글로벌 게임을 위한 한국 마케팅 파트너",
+    headline: ["한국 게임 마케팅,", "한 창구에서 시작하세요."],
+    introduction:
+      "브랜드와 광고 대행사의 캠페인을 한국 시장에 맞게 연결합니다.",
+    body: "기획과 콘텐츠 현지화부터 파트너 운영, 결과 확인까지 Futures Medialab이 함께합니다.",
+    buyer: "브랜드·대행사로 시작",
+    partner: "공급 파트너 입주 신청",
+    approval: "조직 심사 승인 후 플랫폼을 이용할 수 있습니다.",
+    servicesTitle: "한국 캠페인에 필요한 일을 함께합니다.",
+    capabilities: [
+      {
+        title: "캠페인 기획",
+        body: "게임의 목표와 일정에 맞춰 콘텐츠 방향과 실행 구성을 정리합니다.",
+      },
+      {
+        title: "한국형 콘텐츠",
+        body: "한국 시청자의 언어와 문화를 반영해 브리프와 콘텐츠 방향을 다듬습니다.",
+      },
+      {
+        title: "통합 운영",
+        body: "파트너 협의, 제작 피드백과 결과 확인을 하나의 창구에서 조율합니다.",
+      },
+    ],
+    contactTitle: "한국 캠페인을 준비하고 계신가요?",
+    contactBody: "게임과 목표를 알려주세요. 함께할 방법을 이야기하겠습니다.",
+    email: "이메일",
+    emailPlaceholder: "이메일 입력 위치",
+    wechatPlaceholder: "WeChat ID 위치",
+    footer: "글로벌 게임과 한국 시장을 연결합니다.",
+  },
+  en: {
+    title: "Game marketing in Korea | Futures Medialab",
+    description:
+      "Your Korean marketing partner for global games. Campaign planning, localization, partner coordination and delivery through one point of contact.",
+    services: "Our services",
+    contact: "Contact",
+    language: "Language",
+    login: "Log in",
+    skip: "Skip to content",
+    eyebrow: "YOUR KOREAN MARKETING PARTNER FOR GLOBAL GAMES",
+    headline: ["Your game marketing in Korea.", "One point of contact."],
+    introduction: "We connect brands and agencies with the Korean market.",
+    body: "From campaign planning and localization to partner coordination and delivery, Futures Medialab is with you.",
+    buyer: "Get started as a brand or agency",
+    partner: "Apply as a creator partner",
+    approval: "Platform access is available after organization approval.",
+    servicesTitle: "Everything your Korean campaign needs.",
+    capabilities: [
+      {
+        title: "Campaign planning",
+        body: "Shape the content direction and execution around your game's goals and schedule.",
+      },
+      {
+        title: "Korean localization",
+        body: "Adapt your brief and creative direction to the language and culture of Korean audiences.",
+      },
+      {
+        title: "Coordinated delivery",
+        body: "Bring partner coordination, production feedback and results together through one contact.",
+      },
+    ],
+    contactTitle: "Planning your next campaign in Korea?",
+    contactBody:
+      "Tell us about your game and goals. Let's talk about how we can work together.",
+    email: "Email",
+    emailPlaceholder: "Email address placeholder",
+    wechatPlaceholder: "WeChat ID placeholder",
+    footer: "Connecting global games with Korea.",
+  },
+  zh: {
+    title: "韩国游戏营销 | Futures Medialab",
+    description:
+      "全球游戏的韩国营销伙伴。从营销策划、本地化到合作方协调与执行，Futures Medialab 携手品牌与广告代理机构拓展韩国市场。",
+    services: "服务介绍",
+    contact: "联系我们",
+    language: "语言",
+    login: "登录",
+    skip: "跳至正文",
+    eyebrow: "全球游戏的韩国营销伙伴",
+    headline: ["韩国游戏营销，", "一个窗口连接全程。"],
+    introduction: "携手品牌与广告代理机构，拓展韩国市场。",
+    body: "从营销策划、内容本地化到合作方协调与成果确认，Futures Medialab 全程与您同行。",
+    buyer: "品牌与广告代理机构入驻",
+    partner: "创作者合作机构入驻申请",
+    approval: "机构审核通过后即可使用平台。",
+    servicesTitle: "携手完成韩国营销的每一步。",
+    capabilities: [
+      {
+        title: "营销策划",
+        body: "根据游戏目标与时间安排，规划内容方向与执行方案。",
+      },
+      {
+        title: "韩国本地化",
+        body: "结合韩国受众的语言与文化，完善需求与创意方向。",
+      },
+      {
+        title: "统筹执行",
+        body: "通过统一窗口协调合作机构、制作反馈与成果确认。",
+      },
+    ],
+    contactTitle: "正在筹备韩国营销活动？",
+    contactBody: "告诉我们您的游戏与目标，一起探讨合作方式。",
+    email: "邮箱",
+    emailPlaceholder: "邮箱地址填写位置",
+    wechatPlaceholder: "WeChat ID 填写位置",
+    footer: "连接全球游戏与韩国市场。",
+  },
+};

@@ -5,13 +5,14 @@ import { RegisterForm } from "./register-form";
 
 export const metadata: Metadata = {
   title: "Sign up — Futures Medialab",
-  description: "Join Futures Medialab as an agency, studio, or brand.",
+  description:
+    "Join Futures Medialab as a brand, advertising agency, or creator partner.",
 };
 
 export default async function RegisterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ lang?: string }>;
+  searchParams: Promise<{ lang?: string; audience?: string }>;
 }) {
   const [params, cookieStore, requestHeaders] = await Promise.all([
     searchParams,
@@ -23,5 +24,10 @@ export default async function RegisterPage({
     cookieStore.get("fm-locale")?.value,
     requestHeaders.get("accept-language"),
   );
-  return <RegisterForm initialLocale={locale} />;
+  return (
+    <RegisterForm
+      initialLocale={locale}
+      audience={params.audience === "buyer" ? "buyer" : undefined}
+    />
+  );
 }

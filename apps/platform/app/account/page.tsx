@@ -87,6 +87,7 @@ export default async function AccountPage({
         id: organization.id,
         name: organization.name,
         type: organization.type,
+        isClientAgency: organization.type === "BRAND" && !!organization.metadata && typeof organization.metadata === "object" && !Array.isArray(organization.metadata) && organization.metadata.organizationType === "client_agency",
         status: organization.status,
       }))}
     />

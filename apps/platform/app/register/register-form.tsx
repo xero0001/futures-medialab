@@ -44,9 +44,11 @@ type Errors = Partial<Record<Field, ErrorKey>>;
 export function RegisterForm({
   initialLocale,
   role,
+  audience,
 }: {
   initialLocale: Locale;
   role?: RegistrationRole;
+  audience?: "buyer";
 }) {
   const [locale, setLocale] = useState(initialLocale);
   const [organization, setOrganization] = useState("");
@@ -74,6 +76,36 @@ export function RegisterForm({
   const titleRef = useRef<HTMLHeadingElement>(null);
   const t = registerCopy[locale];
   const isAgency = role === "agency";
+  const isClientAgency = role === "client-agency";
+  const roleLabel = isAgency
+    ? t.agency
+    : isClientAgency
+      ? t.clientAgency
+      : t.brand;
+  const roleOptions = [
+    {
+      role: "brand",
+      label: t.brand,
+      description: t.brandDescription,
+      icon: IconCompany,
+    },
+    {
+      role: "client-agency",
+      label: t.clientAgency,
+      description: t.clientAgencyDescription,
+      icon: IconCompany,
+    },
+    ...(audience === "buyer"
+      ? []
+      : [
+          {
+            role: "agency",
+            label: t.agency,
+            description: t.agencyDescription,
+            icon: IconPersons,
+          },
+        ]),
+  ];
 
   useEffect(() => {
     document.documentElement.lang = locale === "zh" ? "zh-CN" : locale;
@@ -195,7 +227,7 @@ export function RegisterForm({
         <div className={styles.back}>
           <TextButton
             as="a"
-            href={`/register?lang=${locale}`}
+            href={`/register?${!isAgency ? "audience=buyer&" : ""}lang=${locale}`}
             color="assistive"
             size="small"
             leadingContent={<IconArrowLeft />}
@@ -214,59 +246,43 @@ export function RegisterForm({
               variant="title1"
               weight="bold"
             >
-              {t.title}
+              {audience === "buyer" ? t.buyerTitle : t.title}
             </Typography>
             <Typography
               as="p"
               variant="body2"
               color="semantic.foreground.neutral.secondary"
             >
-              {t.subtitle}
+              {audience === "buyer" ? t.buyerSubtitle : t.subtitle}
             </Typography>
           </div>
           <div className={styles.roles}>
-            <a
-              href={`/register/agency?lang=${locale}`}
-              className={styles.roleCard}
-            >
-              <span className={styles.roleIcon}>
-                <IconPersons aria-hidden="true" />
-              </span>
-              <span className={styles.roleCopy}>
-                <Typography as="strong" variant="headline1" weight="bold">
-                  {t.agency}
-                </Typography>
-                <Typography
-                  as="span"
-                  variant="label1"
-                  color="semantic.foreground.neutral.secondary"
+            {roleOptions.map(
+              ({ role: option, label, description, icon: Icon }) => (
+                <a
+                  key={option}
+                  href={`/register/${option}?lang=${locale}`}
+                  className={styles.roleCard}
                 >
-                  {t.agencyDescription}
-                </Typography>
-              </span>
-              <IconChevronRight aria-hidden="true" />
-            </a>
-            <a
-              href={`/register/brand?lang=${locale}`}
-              className={styles.roleCard}
-            >
-              <span className={styles.roleIcon}>
-                <IconCompany aria-hidden="true" />
-              </span>
-              <span className={styles.roleCopy}>
-                <Typography as="strong" variant="headline1" weight="bold">
-                  {t.brand}
-                </Typography>
-                <Typography
-                  as="span"
-                  variant="label1"
-                  color="semantic.foreground.neutral.secondary"
-                >
-                  {t.brandDescription}
-                </Typography>
-              </span>
-              <IconChevronRight aria-hidden="true" />
-            </a>
+                  <span className={styles.roleIcon}>
+                    <Icon aria-hidden="true" />
+                  </span>
+                  <span className={styles.roleCopy}>
+                    <Typography as="strong" variant="headline1" weight="bold">
+                      {label}
+                    </Typography>
+                    <Typography
+                      as="span"
+                      variant="label1"
+                      color="semantic.foreground.neutral.secondary"
+                    >
+                      {description}
+                    </Typography>
+                  </span>
+                  <IconChevronRight aria-hidden="true" />
+                </a>
+              ),
+            )}
           </div>
         </>
       ) : review ? (
@@ -293,7 +309,7 @@ export function RegisterForm({
           <dl className={styles.reviewDetails}>
             <div>
               <dt>{t.role}</dt>
-              <dd>{isAgency ? t.agency : t.brand}</dd>
+              <dd>{roleLabel}</dd>
             </div>
             <div>
               <dt>{isAgency ? t.organization : t.company}</dt>
@@ -376,14 +392,22 @@ export function RegisterForm({
               variant="title2"
               weight="bold"
             >
-              {isAgency ? t.agencyTitle : t.brandTitle}
+              {isAgency
+                ? t.agencyTitle
+                : isClientAgency
+                  ? t.clientAgencyTitle
+                  : t.brandTitle}
             </Typography>
             <Typography
               as="p"
               variant="body2"
               color="semantic.foreground.neutral.secondary"
             >
-              {isAgency ? t.agencySubtitle : t.brandSubtitle}
+              {isAgency
+                ? t.agencySubtitle
+                : isClientAgency
+                  ? t.clientAgencySubtitle
+                  : t.brandSubtitle}
             </Typography>
           </div>
           <form

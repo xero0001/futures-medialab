@@ -2,7 +2,14 @@ export const registerCopy = {
   en: {
     title: "Create an account",
     subtitle: "Choose how you work with Futures Medialab.",
-    agency: "Agency / Studio",
+    agency: "Creator partner (MCN / Studio)",
+    buyerTitle: "Join as a brand or agency",
+    buyerSubtitle: "Choose your role in planning and commissioning campaigns.",
+    clientAgency: "Advertising agency (Buyer)",
+    clientAgencyDescription:
+      "Plan and commission Korean campaigns for your clients.",
+    clientAgencyTitle: "Join as an advertising agency",
+    clientAgencySubtitle: "Tell us about the agency commissioning campaigns.",
     agencyDescription: "Connect your creators with global game campaigns.",
     brand: "Brand (Advertiser)",
     brandDescription: "Bring your game to Korea with the right partners.",
@@ -64,7 +71,13 @@ export const registerCopy = {
   ko: {
     title: "회원가입",
     subtitle: "Futures Medialab과 함께할 역할을 선택하세요.",
-    agency: "에이전시 / 스튜디오",
+    agency: "공급 파트너 (MCN·스튜디오)",
+    buyerTitle: "브랜드·대행사로 시작",
+    buyerSubtitle: "캠페인을 의뢰하는 조직의 유형을 선택하세요.",
+    clientAgency: "광고 대행사 (구매자)",
+    clientAgencyDescription: "고객사의 한국 캠페인을 기획하고 의뢰합니다.",
+    clientAgencyTitle: "광고 대행사 가입",
+    clientAgencySubtitle: "캠페인을 의뢰하는 광고 대행사 정보를 입력해 주세요.",
     agencyDescription: "소속 크리에이터와 글로벌 게임 캠페인을 연결하세요.",
     brand: "브랜드 (광고주)",
     brandDescription: "적합한 파트너와 함께 한국 시장에서 캠페인을 시작하세요.",
@@ -125,7 +138,13 @@ export const registerCopy = {
   zh: {
     title: "创建账号",
     subtitle: "选择您与 Futures Medialab 合作的身份。",
-    agency: "代理机构 / 工作室",
+    agency: "创作者合作机构（MCN / 工作室）",
+    buyerTitle: "品牌与广告代理机构入驻",
+    buyerSubtitle: "请选择委托营销活动的机构类型。",
+    clientAgency: "广告代理机构（采购方）",
+    clientAgencyDescription: "为客户策划并委托韩国营销活动。",
+    clientAgencyTitle: "注册广告代理机构",
+    clientAgencySubtitle: "填写委托营销活动的广告代理机构信息。",
     agencyDescription: "为旗下创作者对接全球游戏营销活动。",
     brand: "品牌（广告主）",
     brandDescription: "携手合适的合作伙伴，拓展韩国市场。",
@@ -182,8 +201,8 @@ export const registerCopy = {
   },
 };
 
-export type RegistrationRole = "agency" | "brand";
+export type RegistrationRole = "agency" | "brand" | "client-agency";
 
 export function isRegistrationRole(value: string): value is RegistrationRole {
-  return value === "agency" || value === "brand";
+  return value === "agency" || value === "brand" || value === "client-agency";
 }

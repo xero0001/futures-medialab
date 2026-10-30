@@ -243,7 +243,14 @@ export function organizationDetail(request: Request, id: string) {
       ["국가", org.countryCode ?? profile.countryCode],
       ["웹사이트", org.websiteUrl],
       ["사업자 번호", profile.businessLicenseId ?? org.businessNumber],
-      ["조직 유형", metadata.agencyType],
+      [
+        "조직 유형",
+        metadata.organizationType === "client_agency"
+          ? "광고 대행사 (구매자)"
+          : org.type === "BRAND"
+            ? "브랜드 (광고주)"
+            : metadata.agencyType,
+      ],
       ["주소", profile.address],
       ["설립일", profile.establishedOn],
       ["업종", profile.industry],

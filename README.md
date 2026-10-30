@@ -27,41 +27,44 @@ database, UI, lint, and TypeScript code lives in `packages/*`.
 
 ## Public landing page
 
-`/` directly re-exports `/landing`, so both use the same current design and
-locale handling. The previous main remains available at `/test` with noindex.
+`/` and `/landing` share the current Montage public home and locale handling. The previous main remains available at `/test` with noindex.
 
 `/backup` preserves the public home as it appeared at commit `09176d6`
 (2026-10-31). It has independent landing copy, styles, components and image
 assets under `app/backup` and `public/backup-assets`, plus `noindex, nofollow`.
 The archived CSS uses the `fmb-` prefix to avoid collisions with future landing
 styles. Shared branding, language controls and locale resolution remain shared.
-The next public-home proposal is documented in `docs/design/public-home-plan.md`;
-the proposal does not replace `/` yet.
+The public-home design and implementation scope are documented in
+`docs/design/public-home-plan.md`.
 
-The home page presents managed campaigns and an approved-organization
-marketplace, Korean localization, campaign delivery, and partner requirements.
-Its content is based on the business proposal v2.0, the service proposal, and
-Youdao Ads' public site. Internal revenue, speculative performance statistics,
-customer logos, and unconfirmed pricing are not published.
+The public home is a short company/service introduction with buyer and supplier
+registration, contact placeholders, and login. It uses the service's Montage
+provider, Pretendard, Wanted blue, shared wordmark and language control. Campaigns,
+creator profiles, prices, AI demos, case studies and FAQs are not shown on the home.
 
-- Copy: `apps/platform/app/_components/landing-copy.ts`
-- Page components: `apps/platform/app/_components/`
-- Scoped styles: `apps/platform/app/landing.css`
+- Components, styles and Korean/English/Chinese copy: `apps/platform/app/_components/public-home/`.
 - Locale priority: `?lang=en|ko|zh`, saved language cookie, browser language,
-  then English. Manual language changes update both the URL and cookie.
-- The brief builder creates a downloadable text file in the browser. It does
-  not submit campaign requests or store the form in a database.
-- Five broad sections keep the page focused on the introduction, brand
-  campaigns, MCN partners, workflow, and brief creation. All retained text is
-  at least 14px; body text is 16–18px.
+  then English. Language changes preserve the current route and query parameters.
+- Contact values remain explicit placeholders until real email/WeChat details are supplied.
+- `/register?audience=buyer` offers Brand and Advertising Agency (Buyer).
+  `/register/client-agency` stores a `BRAND` organization with
+  `metadata.organizationType=client_agency`, sharing Buyer Core permissions.
+  `/register/agency` remains the supplier MCN/agency/studio path.
+- Public signup always creates a `PENDING` organization. Completed pending buyer
+  profiles reach `/account`; workspace pages and APIs require `ACTIVE` status.
+  The server-managed approved-test exception still requires an active organization.
+- Registration boundary tests: `node --experimental-strip-types --test apps/platform/scripts/registration-input.test.mjs`.
+  `scripts/buyer-registration-smoke.mjs` (platform working directory) uses a local
+  server and one disposable database account to verify saved roles, approval gates
+  and supplier isolation, then cleans up its own fixture.
 - `/login` authenticates email/password accounts through Better Auth and the
   project's Neon PostgreSQL database. Passwords are hashed, not stored as text.
   Login and registration share the responsive Montage auth layout and workspace
   theme provider, with Pretendard, Wanted blue, localized errors and password
   visibility. Onboarding retains its separate layout.
-- `/register` offers only Agency / Studio and Brand registration paths.
-  `/register/agency` collects organization type; `/register/brand` collects
-  company size. Both provide localized form validation, password confirmation,
+- `/register` offers Brand, Advertising Agency (Buyer), and Creator Partner registration paths.
+  `/register/agency` collects organization type; the buyer forms collect
+  company size. All provide localized form validation, password confirmation,
   and a review before submission. Creator registration routes return 404;
   the API also rejects creator registrations. User, credential account,
   pending organization and owner membership are created in one transaction.
@@ -210,7 +213,7 @@ The platform runs on `http://localhost:3000` and the admin app runs on
 ## Brand workspace
 
 After login `/auth/continue` resolves the destination on the server. A brand
-owner with an incomplete profile goes to onboarding; a completed brand goes to
+owner with an incomplete profile goes to onboarding; an approved, completed buyer goes to
 `/storage/search`. Agency/studio accounts continue to onboarding, verification
 status or `/agency`, according to their stored organization state. Suspended brands
 cannot enter the workspace or mutate its data.

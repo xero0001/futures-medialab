@@ -42,6 +42,7 @@ function brandDestination(membership: BrandMembership) {
     return "/account";
   if (!hasCompletedBrandProfile(membership.organization.metadata) && !hasApprovedTestWorkspaceAccess(membership.organization))
     return membership.role === "OWNER" ? "/onboarding/brand" : "/account";
+  if (membership.organization.status !== "ACTIVE") return "/account";
   return "/storage/search";
 }
 

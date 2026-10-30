@@ -248,6 +248,8 @@ export async function membership(database: Database, userId: string) {
     !hasApprovedTestWorkspaceAccess(member.organization)
   )
     fail(403, "PROFILE_REQUIRED", "Complete your company profile first.");
+  if (member.organization.status !== "ACTIVE")
+    fail(403, "APPROVAL_REQUIRED", "Organization approval is required to access this workspace.");
   return member;
 }
 type Member = Awaited<ReturnType<typeof membership>>;

@@ -837,8 +837,8 @@ try {
           const completed = await request("/auth/continue?lang=en", { cookie });
           assertRedirect(
             completed,
-            "/storage/search",
-            "Completed brand login must enter the creator workspace",
+            "/account",
+            "Completed pending brand must wait for organization approval",
           );
           const completedOnboarding = await request(
             "/onboarding/brand?lang=en",
@@ -848,10 +848,10 @@ try {
           );
           assertRedirect(
             completedOnboarding,
-            "/storage/search",
-            "Completed brands must not repeat onboarding",
+            "/account",
+            "Completed pending brands must not repeat onboarding",
           );
-          await assertStorageAccess(cookie);
+          await assertStorageAccess(cookie, "/account");
         }
         const account = await request("/account?lang=en", { cookie });
         if (input.role === "agency") {
@@ -910,8 +910,8 @@ try {
       const continuation = await request("/auth/continue?lang=zh", { cookie });
       assertRedirect(
         continuation,
-        "/storage/search",
-        "A returning brand must be routed to creator search",
+        "/account",
+        "A returning pending brand must remain on the approval screen",
       );
       assert.equal(
         new URL(
@@ -921,7 +921,7 @@ try {
         "zh",
         "Brand workspace routing must preserve the chosen language",
       );
-      await assertStorageAccess(cookie);
+      await assertStorageAccess(cookie, "/account");
       const user = await readFixture(brand.email);
       await assertStoredBrandProfile(
         brand.email,

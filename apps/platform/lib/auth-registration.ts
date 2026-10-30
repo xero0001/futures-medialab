@@ -7,40 +7,10 @@ import {
   formCsrfMiddleware,
 } from "better-auth/api";
 import { z } from "zod";
-
-const sharedFields = {
-  organizationName: z.string().trim().min(1).max(120),
-  email: z
-    .string()
-    .trim()
-    .max(254)
-    .pipe(z.email())
-    .transform((email) => email.toLowerCase()),
-  password: z.string().min(8).max(128),
-  locale: z.enum(["en", "ko", "zh"]),
-};
-
-const registrationSchema = z.discriminatedUnion("role", [
-  z.strictObject({
-    ...sharedFields,
-    role: z.literal("agency"),
-    agencyType: z.enum(["agency", "studio"]),
-    companySize: z.literal("").optional(),
-  }),
-  z.strictObject({
-    ...sharedFields,
-    role: z.literal("brand"),
-    agencyType: z.literal("").optional(),
-    companySize: z.enum([
-      "1–14",
-      "15–49",
-      "50–99",
-      "100–499",
-      "500–1,999",
-      "2,000+",
-    ]),
-  }),
-]);
+import {
+  registrationSchema,
+  registrationOrganization,
+} from "./registration-input";
 
 const localeValues = { en: "EN", ko: "KO", zh: "ZH" } as const;
 
@@ -95,12 +65,7 @@ export function organizationRegistration() {
                 data: {
                   name: input.organizationName,
                   slug: `${input.role}-${randomUUID()}`,
-                  type: input.role === "agency" ? "AGENCY" : "BRAND",
-                  status: "PENDING",
-                  metadata:
-                    input.role === "agency"
-                      ? { agencyType: input.agencyType }
-                      : { companySize: input.companySize },
+                  ...registrationOrganization(input),
                   members: {
                     create: { userId: user.id, role: "OWNER" },
                   },
