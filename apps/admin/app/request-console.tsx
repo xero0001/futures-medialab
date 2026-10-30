@@ -1,4 +1,5 @@
 "use client";
+import { AdminButton } from "./_components/admin-button";
 
 import {
   useEffect,
@@ -236,9 +237,9 @@ export function RequestConsole({
                 placeholder="제목, 브랜드 또는 캠페인 검색"
                 maxLength={160}
               />
-              <button type="submit" className="primary">
+              <AdminButton type="submit" className="primary">
                 검색
-              </button>
+              </AdminButton>
             </span>
           </label>
           <label>
@@ -292,7 +293,7 @@ export function RequestConsole({
               ? "요청을 불러오는 중…"
               : `총 ${(result?.total ?? 0).toLocaleString()}건의 요청`}
           </p>
-          <button
+          <AdminButton
             type="button"
             className="admin-text-button"
             onClick={() => {
@@ -307,17 +308,17 @@ export function RequestConsole({
             }}
           >
             필터 초기화
-          </button>
+          </AdminButton>
         </div>
         {error ? (
           <div className="admin-alert error" role="alert">
             {error}
-            <button
+            <AdminButton
               type="button"
               onClick={() => setRevision((value) => value + 1)}
             >
               다시 시도
-            </button>
+            </AdminButton>
           </div>
         ) : null}
         <div className="ar-table-wrap">
@@ -373,13 +374,13 @@ export function RequestConsole({
                     <span>접수 {formatDate(request.createdAt)}</span>
                   </td>
                   <td>
-                    <button
+                    <AdminButton
                       type="button"
                       aria-label={`${request.title} 상세 보기`}
                       onClick={() => selectRequest(request.id)}
                     >
                       보기 <ChevronRight size={16} />
-                    </button>
+                    </AdminButton>
                   </td>
                 </tr>
               ))}
@@ -410,7 +411,7 @@ export function RequestConsole({
             {result?.page ?? filters.page} / {pageCount} 페이지
           </span>
           <div>
-            <button
+            <AdminButton
               type="button"
               disabled={loading || filters.page <= 1}
               onClick={() =>
@@ -421,8 +422,8 @@ export function RequestConsole({
               }
             >
               <ChevronLeft size={17} /> 이전
-            </button>
-            <button
+            </AdminButton>
+            <AdminButton
               type="button"
               disabled={loading || filters.page >= pageCount}
               onClick={() =>
@@ -433,7 +434,7 @@ export function RequestConsole({
               }
             >
               다음 <ChevronRight size={17} />
-            </button>
+            </AdminButton>
           </div>
         </nav>
       </section>
@@ -510,22 +511,22 @@ function RequestWorkspace({
       <div className="ar-detail-top">
         <span className="admin-eyebrow">요청 상세</span>
         <div>
-          <button
+          <AdminButton
             type="button"
             className="admin-text-button"
             disabled={loading}
             onClick={reload}
           >
             <RefreshCw size={16} /> 상세 새로고침
-          </button>
-          <button
+          </AdminButton>
+          <AdminButton
             type="button"
             className="icon"
             aria-label="요청 상세 닫기"
             onClick={onClose}
           >
             <X size={20} />
-          </button>
+          </AdminButton>
         </div>
       </div>
       {error ? (
@@ -560,14 +561,14 @@ function RequestWorkspace({
                   <div className="ar-campaign-context">
                     <span>관련 캠페인</span>
                     {onCampaign ? (
-                      <button
+                      <AdminButton
                         type="button"
                         className="admin-text-button"
                         onClick={() => onCampaign(request.campaignId!)}
                       >
                         {request.campaignTitle ?? "캠페인 상세"}
                         <ArrowUpRight size={17} />
-                      </button>
+                      </AdminButton>
                     ) : (
                       <strong>
                         {request.campaignTitle ?? request.campaignId}
@@ -793,13 +794,13 @@ function RequestManagement({
           </label>
           {assignees.some((item) => item.id === userId) &&
           assignee !== userId ? (
-            <button
+            <AdminButton
               type="button"
               className="admin-text-button ar-assign-me"
               onClick={() => setAssignee(userId)}
             >
               <UserRound size={16} /> 나에게 배정
-            </button>
+            </AdminButton>
           ) : null}
           <label>
             처리 기한 <span className="ar-optional">(한국 시간)</span>
@@ -834,14 +835,14 @@ function RequestManagement({
               </span>
             </label>
           ) : null}
-          <button
+          <AdminButton
             type="submit"
             className="primary ar-full"
             disabled={busy || conflict}
           >
             <Check size={17} />
             {busy ? "저장 중…" : "처리 정보 저장"}
-          </button>
+          </AdminButton>
         </fieldset>
         {error ? (
           <p className="admin-alert error" role="alert">
@@ -849,9 +850,9 @@ function RequestManagement({
           </p>
         ) : null}
         {conflict ? (
-          <button type="button" onClick={onReload}>
+          <AdminButton type="button" onClick={onReload}>
             최신 내용 다시 불러오기
-          </button>
+          </AdminButton>
         ) : null}
         {success ? (
           <p className="admin-alert success" role="status">
@@ -1029,7 +1030,7 @@ function ReplyForm({
                   )}{" "}
                   <small>{formatSize(attachment.size)}</small>
                 </span>
-                <button
+                <AdminButton
                   type="button"
                   className="icon"
                   aria-label={`${attachment.fileName} 첨부 취소`}
@@ -1041,7 +1042,7 @@ function ReplyForm({
                   ) : (
                     <X size={16} />
                   )}
-                </button>
+                </AdminButton>
               </li>
             ))}
           </ul>
@@ -1063,13 +1064,13 @@ function ReplyForm({
             {cleanupPending.map((attachment) => (
               <li key={attachment.id}>
                 <span>{attachment.fileName}</span>
-                <button
+                <AdminButton
                   type="button"
                   disabled={busy || uploading || Boolean(discarding)}
                   onClick={() => void discard(attachment)}
                 >
                   {discarding === attachment.id ? "정리 중…" : "정리 재시도"}
-                </button>
+                </AdminButton>
               </li>
             ))}
           </ul>
@@ -1082,20 +1083,20 @@ function ReplyForm({
           role="group"
           aria-label="답변 공개 범위"
         >
-          <button
+          <AdminButton
             type="button"
             aria-pressed={!internal}
             onClick={() => setInternal(false)}
           >
             <MessageSquare size={17} /> 공개 답변
-          </button>
-          <button
+          </AdminButton>
+          <AdminButton
             type="button"
             aria-pressed={internal}
             onClick={() => setInternal(true)}
           >
             <LockKeyhole size={17} /> 내부 메모
-          </button>
+          </AdminButton>
         </div>
         <label>
           <span>
@@ -1130,22 +1131,26 @@ function ReplyForm({
           disabled={!request.attachmentsEnabled || busy || uploading || closed}
         />
         <div className="ar-reply-actions">
-          <button
+          <AdminButton
             type="button"
             disabled={!request.attachmentsEnabled || attachments.length >= 5}
             onClick={() => fileInput.current?.click()}
           >
             <Paperclip size={17} />
             {uploading ? "업로드 중…" : "파일 첨부"}
-          </button>
-          <button type="submit" className="primary" disabled={!body.trim()}>
+          </AdminButton>
+          <AdminButton
+            type="submit"
+            className="primary"
+            disabled={!body.trim()}
+          >
             <Send size={16} />
             {busy
               ? "저장 중…"
               : internal
                 ? "내부 메모 저장"
                 : "공개 답변 보내기"}
-          </button>
+          </AdminButton>
         </div>
         <p className="ar-help">
           {request.attachmentsEnabled

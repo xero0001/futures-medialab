@@ -1,5 +1,10 @@
 "use client";
-import { BrandLogo } from "./brand-logo";
+import {
+  AdminShell,
+  adminNavigation as tabs,
+  type AdminTab as Tab,
+} from "./_components/admin-shell";
+import { AdminButton } from "./_components/admin-button";
 import { RequestConsole } from "./request-console";
 import CampaignOperations from "./campaign-operations";
 import {
@@ -10,16 +15,12 @@ import {
   type FormEvent,
 } from "react";
 import {
-  Activity,
   ArrowUpRight,
   Building2,
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
   Download,
-  Inbox,
-  LayoutDashboard,
-  LogOut,
   Megaphone,
   RefreshCw,
   Search,
@@ -34,22 +35,12 @@ import type {
   OrganizationDetail,
 } from "../lib/types";
 
-type Tab =
-  "overview" | "users" | "organizations" | "campaigns" | "requests" | "audit";
 type Operation = {
   action: AdminAction;
   id: string;
   title: string;
   message: string;
 };
-const tabs = [
-  { key: "overview", label: "운영 현황", icon: LayoutDashboard },
-  { key: "users", label: "사용자 관리", icon: Users },
-  { key: "organizations", label: "조직 · 심사 관리", icon: ShieldCheck },
-  { key: "campaigns", label: "캠페인 · 신청 관리", icon: Megaphone },
-  { key: "requests", label: "브랜드 요청함", icon: Inbox },
-  { key: "audit", label: "변경 이력", icon: Activity },
-] as const;
 const descriptions: Record<Tab, string> = {
   overview: "브랜드와 에이전시의 다음 만남, 오늘의 운영 현황을 확인하세요.",
   users: "플랫폼에 함께하는 사용자와 소속 조직, 접근 권한을 확인하세요.",
@@ -167,7 +158,7 @@ function ConfirmOperation({
         >
           <div className="admin-row">
             <h2 id="admin-operation-title">{operation.title}</h2>
-            <button
+            <AdminButton
               type="button"
               className="icon"
               aria-label="닫기"
@@ -175,7 +166,7 @@ function ConfirmOperation({
               onClick={onClose}
             >
               <X size={22} />
-            </button>
+            </AdminButton>
           </div>
           <p>{operation.message}</p>
           {error && (
@@ -200,12 +191,12 @@ function ConfirmOperation({
             내용을 확인했으며 이 변경을 적용합니다.
           </label>
           <div className="admin-actions">
-            <button type="button" onClick={onClose} disabled={busy}>
+            <AdminButton type="button" onClick={onClose} disabled={busy}>
               취소
-            </button>
-            <button className="primary" disabled={busy}>
+            </AdminButton>
+            <AdminButton className="primary" disabled={busy}>
               {busy ? "처리 중…" : "확인 · 적용"}
-            </button>
+            </AdminButton>
           </div>
         </form>
       )}
@@ -375,699 +366,630 @@ export function AdminConsole({
         match(`${campaign.title} ${campaign.brandName}`),
     ) ?? [];
   return (
-    <div className="admin-shell">
-      <a className="admin-skip-link" href="#admin-content">
-        본문으로 건너뛰기
-      </a>
-      <aside className="admin-sidebar">
-        <BrandLogo />
-        <span className="admin-workspace-label">운영 콘솔</span>
-        <nav aria-label="관리자 메뉴">
-          {tabs.map((item) => (
-            <button
-              key={item.key}
-              aria-current={tab === item.key ? "page" : undefined}
-              className={tab === item.key ? "active" : ""}
-              onClick={() => navigate(item.key)}
-            >
-              <item.icon size={20} />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-        <div className="admin-sidebar-foot">
-          <a
-            href="https://futures-medialab.vercel.app"
-            target="_blank"
-            rel="noreferrer"
-          >
-            퓨쳐스 메인 보기 <ArrowUpRight size={18} />
-          </a>
-          <span>
-            <ShieldCheck size={17} /> 운영자 전용 공간
-          </span>
-        </div>
-      </aside>
-      <div className="admin-main">
-        <header className="admin-topbar">
-          <div className="admin-breadcrumb">
-            <span>운영 콘솔</span>
-            <ChevronRight size={15} />
-            <strong>{title}</strong>
-          </div>
+    <AdminShell
+      name={name}
+      tab={tab}
+      busy={busy}
+      onNavigate={navigate}
+      onLogout={() => void logout()}
+    >
+      <main id="admin-content" tabIndex={-1}>
+        <div className="admin-heading">
           <div>
-            <div className="admin-operator">
-              <span className="admin-avatar" aria-hidden="true">
-                {Array.from(name.trim())[0] || "F"}
-              </span>
-              <span>
-                {name}
-                <small>관리자</small>
-              </span>
-            </div>
-            <button
-              className="icon"
-              aria-label="로그아웃"
-              disabled={busy}
-              onClick={() => void logout()}
-            >
-              <LogOut size={19} />
-            </button>
+            <h1>{title}</h1>
+            <p>{descriptions[tab]}</p>
           </div>
-        </header>
-        <main id="admin-content" tabIndex={-1}>
-          <div className="admin-heading">
-            <div>
-              <span className="admin-eyebrow">퓨쳐스 파트너 운영</span>
-              <h1>{title}</h1>
-              <p>{descriptions[tab]}</p>
-            </div>
-            <button
-              disabled={loading || busy}
-              onClick={() =>
-                tab === "requests"
-                  ? setRequestRefresh((value) => value + 1)
-                  : void refresh()
-              }
-            >
-              <RefreshCw
-                size={17}
-                className={loading ? "admin-spin" : undefined}
-              />
-              새로고침
-            </button>
-          </div>
-          {error && (
-            <div role="alert" className="admin-alert error">
-              {error}
-            </div>
-          )}
-          {notice && (
-            <div role="status" className="admin-alert success">
-              {notice}
-            </div>
-          )}
-          {tab === "requests" && (
-            <RequestConsole
-              userId={userId}
-              refreshToken={requestRefresh}
-              onCampaign={(id) => {
-                navigate("campaigns");
-                setSelected(id);
-              }}
+          <AdminButton
+            disabled={loading || busy}
+            onClick={() =>
+              tab === "requests"
+                ? setRequestRefresh((value) => value + 1)
+                : void refresh()
+            }
+          >
+            <RefreshCw
+              size={17}
+              className={loading ? "admin-spin" : undefined}
             />
-          )}
-          {tab !== "requests" && loading && !data && (
-            <section className="admin-panel admin-empty" aria-live="polite">
-              운영 데이터를 불러오는 중입니다…
-            </section>
-          )}
-          {data && tab !== "requests" && (
-            <>
-              {tab === "overview" ? (
-                <>
-                  <section className="admin-stats" aria-label="운영 지표">
-                    {[
-                      {
-                        label: "전체 사용자",
-                        icon: Users,
-                        value: data.counts.users,
-                        target: "users" as const,
-                        status: "all",
-                      },
-                      {
-                        label: "조직 심사 대기",
-                        icon: ShieldCheck,
-                        value: data.counts.pendingOrganizations,
-                        target: "organizations" as const,
-                        status: "PENDING",
-                      },
-                      {
-                        label: "캠페인 공개 검토",
-                        icon: ClipboardCheck,
-                        value: data.counts.reviewCampaigns,
-                        target: "campaigns" as const,
-                        status: "REVIEW",
-                      },
-                      {
-                        label: "모집 중 캠페인",
-                        icon: Megaphone,
-                        value: data.counts.recruitingCampaigns,
-                        target: "campaigns" as const,
-                        status: "RECRUITING",
-                      },
-                    ].map((stat) => (
-                      <button
-                        key={stat.label}
-                        onClick={() => navigate(stat.target, stat.status)}
-                      >
-                        <span className="admin-stat-top">
-                          <span className="admin-stat-icon">
-                            <stat.icon size={22} />
-                          </span>
-                          <ArrowUpRight size={19} />
+            새로고침
+          </AdminButton>
+        </div>
+        {error && (
+          <div role="alert" className="admin-alert error">
+            {error}
+          </div>
+        )}
+        {notice && (
+          <div role="status" className="admin-alert success">
+            {notice}
+          </div>
+        )}
+        {tab === "requests" && (
+          <RequestConsole
+            userId={userId}
+            refreshToken={requestRefresh}
+            onCampaign={(id) => {
+              navigate("campaigns");
+              setSelected(id);
+            }}
+          />
+        )}
+        {tab !== "requests" && loading && !data && (
+          <section className="admin-panel admin-empty" aria-live="polite">
+            운영 데이터를 불러오는 중입니다…
+          </section>
+        )}
+        {data && tab !== "requests" && (
+          <>
+            {tab === "overview" ? (
+              <>
+                <section className="admin-stats" aria-label="운영 지표">
+                  {[
+                    {
+                      label: "전체 사용자",
+                      icon: Users,
+                      value: data.counts.users,
+                      target: "users" as const,
+                      status: "all",
+                    },
+                    {
+                      label: "조직 심사 대기",
+                      icon: ShieldCheck,
+                      value: data.counts.pendingOrganizations,
+                      target: "organizations" as const,
+                      status: "PENDING",
+                    },
+                    {
+                      label: "캠페인 공개 검토",
+                      icon: ClipboardCheck,
+                      value: data.counts.reviewCampaigns,
+                      target: "campaigns" as const,
+                      status: "REVIEW",
+                    },
+                    {
+                      label: "모집 중 캠페인",
+                      icon: Megaphone,
+                      value: data.counts.recruitingCampaigns,
+                      target: "campaigns" as const,
+                      status: "RECRUITING",
+                    },
+                  ].map((stat) => (
+                    <button
+                      key={stat.label}
+                      onClick={() => navigate(stat.target, stat.status)}
+                    >
+                      <span className="admin-stat-top">
+                        <span className="admin-stat-icon">
+                          <stat.icon size={22} />
                         </span>
-                        <span className="admin-stat-label">{stat.label}</span>
-                        <strong>
-                          {stat.value.toLocaleString()}
-                          <small>{stat.target === "users" ? "명" : "건"}</small>
-                        </strong>
-                      </button>
-                    ))}
-                  </section>
-                  <section className="admin-panel">
-                    <div className="admin-section-heading">
-                      <span className="admin-feature-icon">
-                        <ClipboardCheck size={24} />
+                        <ArrowUpRight size={19} />
                       </span>
-                      <div>
-                        <h2>캠페인이 에이전시에 전달되는 순서</h2>
-                        <p>기업 승인과 캠페인 공개 승인은 별개의 검토입니다.</p>
-                      </div>
+                      <span className="admin-stat-label">{stat.label}</span>
+                      <strong>
+                        {stat.value.toLocaleString()}
+                        <small>{stat.target === "users" ? "명" : "건"}</small>
+                      </strong>
+                    </button>
+                  ))}
+                </section>
+                <section className="admin-panel">
+                  <div className="admin-section-heading">
+                    <span className="admin-feature-icon">
+                      <ClipboardCheck size={24} />
+                    </span>
+                    <div>
+                      <h2>캠페인이 에이전시에 전달되는 순서</h2>
+                      <p>기업 승인과 캠페인 공개 승인은 별개의 검토입니다.</p>
                     </div>
-                    <ol className="admin-flow">
-                      <li>
-                        <span className="admin-flow-number">01</span>
-                        <b>브랜드 등록</b>
-                        <span>브랜드가 초안을 작성하고 검토를 요청합니다.</span>
-                      </li>
-                      <li>
-                        <span className="admin-flow-number">02</span>
-                        <b>운영팀 공개 승인</b>
-                        <span>
-                          요건과 마감일을 확인하면 승인된 에이전시에 공개됩니다.
-                        </span>
-                      </li>
-                      <li>
-                        <span className="admin-flow-number">03</span>
-                        <b>에이전시 신청</b>
-                        <span>
-                          제안서와 신청 내역이 실제 데이터베이스에 저장됩니다.
-                        </span>
-                      </li>
-                    </ol>
-                    <p className="admin-note">
-                      캠페인 {data.counts.applications.toLocaleString()}건의
-                      신청이 접수되어 있습니다. 결제·계약·정산은 이 승인만으로
-                      실행되지 않습니다.
-                    </p>
-                  </section>
-                  <section className="admin-panel">
-                    <div className="admin-row">
-                      <h2>최근 변경 이력</h2>
-                      <button
-                        className="admin-text-button"
-                        onClick={() => navigate("audit")}
-                      >
-                        전체 보기 <ArrowUpRight size={17} />
-                      </button>
-                    </div>
-                    <AuditTable rows={data.audits.slice(0, 8)} />
-                  </section>
-                </>
-              ) : (
-                <>
-                  <section className="admin-panel">
-                    <div className="admin-toolbar">
-                      <label className="admin-search">
-                        <Search size={18} />
-                        <input
-                          value={query}
-                          onChange={(event) => setQuery(event.target.value)}
-                          placeholder={
-                            tab === "users"
-                              ? "이름 또는 이메일 검색"
-                              : tab === "organizations"
-                                ? "조직명 검색"
-                                : tab === "campaigns"
-                                  ? "캠페인 또는 브랜드 검색"
-                                  : "조치 또는 대상 ID 검색"
-                          }
-                          aria-label="목록 검색"
-                        />
-                      </label>
-                      {["organizations", "campaigns"].includes(tab) && (
-                        <label className="admin-filter">
-                          상태
-                          <select
-                            aria-label="상태 필터"
-                            value={filter}
-                            onChange={(event) => setFilter(event.target.value)}
-                          >
-                            <option value="all">전체 상태</option>
-                            {(tab === "organizations"
-                              ? ["PENDING", "ACTIVE", "SUSPENDED"]
-                              : [
-                                  "DRAFT",
-                                  "REVIEW",
-                                  "RECRUITING",
-                                  "IN_PROGRESS",
-                                  "VERIFYING",
-                                  "SETTLING",
-                                  "COMPLETED",
-                                  "CANCELED",
-                                ]
-                            ).map((value) => (
-                              <option key={value} value={value}>
-                                {labels[value]}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      )}
-                    </div>
-                    <p className="admin-small">
-                      최근 {tab === "audit" ? "100" : data.limit}개 항목 내
-                      검색입니다. 조직·캠페인은 최근 변경순, 사용자는 가입순으로
-                      표시합니다.
-                    </p>
-                    {tab === "users" && (
-                      <div className="admin-table-wrap">
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>사용자</th>
-                              <th>소속 조직 / 권한</th>
-                              <th>이메일 인증</th>
-                              <th>가입일</th>
-                              <th>관리</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {!visibleUsers.length && <EmptyRow columns={5} />}
-                            {visibleUsers.map((user) => (
-                              <tr key={user.id}>
-                                <td>
-                                  <strong>{user.name || "이름 없음"}</strong>
-                                  <span className="admin-sub">
-                                    {user.email}
-                                  </span>
-                                </td>
-                                <td>
-                                  {user.organizations.map((org, index) => (
-                                    <span className="admin-sub" key={index}>
-                                      {org.name} · {labels[org.role]} ·{" "}
-                                      {labels[org.status]}
-                                    </span>
-                                  ))}
-                                </td>
-                                <td>
-                                  {user.emailVerified ? "인증됨" : "미인증"}
-                                </td>
-                                <td>{date(user.createdAt)}</td>
-                                <td>
-                                  <button
-                                    disabled={
-                                      busy ||
-                                      user.id === userId ||
-                                      user.organizations.some(
-                                        (org) => org.type === "PLATFORM",
-                                      )
-                                    }
-                                    onClick={() =>
-                                      setOperation({
-                                        action: "revokeUserSessions",
-                                        id: user.id,
-                                        title: "사용자 세션 종료",
-                                        message: `${user.email}의 로그인 세션을 모두 종료합니다. 계정은 삭제되지 않으며 비밀번호로 다시 로그인할 수 있습니다.`,
-                                      })
-                                    }
-                                  >
-                                    세션 종료
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                    {tab === "organizations" && (
-                      <div className="admin-table-wrap">
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>조직</th>
-                              <th>유형</th>
-                              <th>상태</th>
-                              <th>회사 정보</th>
-                              <th>멤버</th>
-                              <th>상세</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {!visibleOrganizations.length && (
-                              <EmptyRow columns={6} />
-                            )}
-                            {visibleOrganizations.map((org) => (
-                              <tr
-                                key={org.id}
-                                className={
-                                  selected === org.id ? "selected" : ""
-                                }
-                              >
-                                <td>
-                                  <strong>{org.name}</strong>
-                                  <span className="admin-sub">
-                                    {org.countryCode || "국가 미입력"}
-                                  </span>
-                                </td>
-                                <td>{labels[org.type]}</td>
-                                <td>{badge(org.status)}</td>
-                                <td>
-                                  {org.testAccess
-                                    ? "테스트 계정 예외"
-                                    : org.submitted
-                                      ? "제출 완료"
-                                      : "미제출 / 보완 중"}
-                                </td>
-                                <td>{org.memberCount}</td>
-                                <td>
-                                  <button onClick={() => setSelected(org.id)}>
-                                    심사 보기
-                                    <ChevronRight size={16} />
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                    {tab === "campaigns" && (
-                      <div className="admin-table-wrap">
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>캠페인 / 브랜드</th>
-                              <th>상태</th>
-                              <th>예산</th>
-                              <th>신청 마감</th>
-                              <th>신청</th>
-                              <th>상세</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {!visibleCampaigns.length && (
-                              <EmptyRow columns={6} />
-                            )}
-                            {visibleCampaigns.map((campaign) => (
-                              <tr
-                                key={campaign.id}
-                                className={
-                                  selected === campaign.id ? "selected" : ""
-                                }
-                              >
-                                <td>
-                                  <strong>{campaign.title}</strong>
-                                  <span className="admin-sub">
-                                    {campaign.brandName} · 브랜드{" "}
-                                    {labels[campaign.brandStatus]}
-                                  </span>
-                                </td>
-                                <td>{badge(campaign.status)}</td>
-                                <td>
-                                  {money(
-                                    campaign.budgetAmount,
-                                    campaign.currency,
-                                  )}
-                                </td>
-                                <td>{date(campaign.applicationDeadline)}</td>
-                                <td>{campaign.applicationCount}</td>
-                                <td>
-                                  <button
-                                    onClick={() => setSelected(campaign.id)}
-                                  >
-                                    검토 · 신청 보기
-                                    <ChevronRight size={16} />
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                    {tab === "audit" && (
-                      <AuditTable
-                        rows={data.audits.filter((audit) =>
-                          match(
-                            `${audit.action} ${audit.entityId} ${audit.reason} ${actionLabels[audit.action.replace("admin.", "")]}`,
-                          ),
-                        )}
+                  </div>
+                  <ol className="admin-flow">
+                    <li>
+                      <span className="admin-flow-number">01</span>
+                      <b>브랜드 등록</b>
+                      <span>브랜드가 초안을 작성하고 검토를 요청합니다.</span>
+                    </li>
+                    <li>
+                      <span className="admin-flow-number">02</span>
+                      <b>운영팀 공개 승인</b>
+                      <span>
+                        요건과 마감일을 확인하면 승인된 에이전시에 공개됩니다.
+                      </span>
+                    </li>
+                    <li>
+                      <span className="admin-flow-number">03</span>
+                      <b>에이전시 신청</b>
+                      <span>
+                        제안서와 신청 내역을 확인하고 협업 파트너를 선정합니다.
+                      </span>
+                    </li>
+                  </ol>
+                  <p className="admin-note">
+                    캠페인 {data.counts.applications.toLocaleString()}건의
+                    신청이 접수되어 있습니다. 결제·계약·정산은 이 승인만으로
+                    실행되지 않습니다.
+                  </p>
+                </section>
+                <section className="admin-panel">
+                  <div className="admin-row">
+                    <h2>최근 변경 이력</h2>
+                    <AdminButton
+                      className="admin-text-button"
+                      onClick={() => navigate("audit")}
+                    >
+                      전체 보기 <ArrowUpRight size={17} />
+                    </AdminButton>
+                  </div>
+                  <AuditTable rows={data.audits.slice(0, 8)} />
+                </section>
+              </>
+            ) : (
+              <>
+                <section className="admin-panel">
+                  <div className="admin-toolbar">
+                    <label className="admin-search">
+                      <Search size={18} />
+                      <input
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder={
+                          tab === "users"
+                            ? "이름 또는 이메일 검색"
+                            : tab === "organizations"
+                              ? "조직명 검색"
+                              : tab === "campaigns"
+                                ? "캠페인 또는 브랜드 검색"
+                                : "조치 또는 대상 ID 검색"
+                        }
+                        aria-label="목록 검색"
                       />
-                    )}
-                  </section>
-                  {selected && ["organizations", "campaigns"].includes(tab) && (
-                    <section className="admin-panel admin-detail">
-                      <div className="admin-row">
-                        <h2>
-                          {tab === "organizations"
-                            ? org?.name
-                            : campaign?.title}
-                        </h2>
-                        <button
-                          className="icon"
-                          aria-label="상세 닫기"
-                          onClick={() => setSelected("")}
+                    </label>
+                    {["organizations", "campaigns"].includes(tab) && (
+                      <label className="admin-filter">
+                        상태
+                        <select
+                          aria-label="상태 필터"
+                          value={filter}
+                          onChange={(event) => setFilter(event.target.value)}
                         >
-                          <X size={22} />
-                        </button>
-                      </div>
-                      {detailLoading ? (
-                        <p role="status">상세 정보를 불러오는 중입니다…</p>
-                      ) : tab === "organizations" && orgDetail && org ? (
-                        <>
-                          <div className="admin-row">
-                            {badge(org.status)}
-                            <span>
-                              {labels[org.type]} ·{" "}
-                              {org.testAccess
-                                ? "서버에서 지정한 테스트 계정"
-                                : "일반 가입 조직"}
-                            </span>
-                          </div>
-                          <dl className="admin-fields">
-                            {orgDetail.fields.map((field) => (
-                              <div key={field.label}>
-                                <dt>{field.label}</dt>
-                                <dd>{field.value}</dd>
-                              </div>
-                            ))}
-                          </dl>
-                          <h3>제출 문서</h3>
-                          {orgDetail.documents.length ? (
-                            <ul className="admin-documents">
-                              {orgDetail.documents.map((doc) => (
-                                <li key={doc.id}>
-                                  <div>
-                                    <strong>{doc.fileName}</strong>
-                                    <span>
-                                      {labels[doc.kind]} ·{" "}
-                                      {(doc.size / 1024).toFixed(0)} KB ·{" "}
-                                      {labels[doc.state] ?? doc.state}
-                                    </span>
-                                  </div>
-                                  {doc.state === "UPLOADED" && (
-                                    <a href={`/api/admin/documents/${doc.id}`}>
-                                      <Download size={16} />
-                                      비공개 다운로드
-                                    </a>
-                                  )}
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="admin-note">
-                              제출된 문서가 없습니다.
-                            </p>
+                          <option value="all">전체 상태</option>
+                          {(tab === "organizations"
+                            ? ["PENDING", "ACTIVE", "SUSPENDED"]
+                            : [
+                                "DRAFT",
+                                "REVIEW",
+                                "RECRUITING",
+                                "IN_PROGRESS",
+                                "VERIFYING",
+                                "SETTLING",
+                                "COMPLETED",
+                                "CANCELED",
+                              ]
+                          ).map((value) => (
+                            <option key={value} value={value}>
+                              {labels[value]}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                  </div>
+                  <p className="admin-small">
+                    최근 {tab === "audit" ? "100" : data.limit}개 항목 내
+                    검색입니다. 조직·캠페인은 최근 변경순, 사용자는 가입순으로
+                    표시합니다.
+                  </p>
+                  {tab === "users" && (
+                    <div className="admin-table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>사용자</th>
+                            <th>소속 조직 / 권한</th>
+                            <th>이메일 인증</th>
+                            <th>가입일</th>
+                            <th>관리</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {!visibleUsers.length && <EmptyRow columns={5} />}
+                          {visibleUsers.map((user) => (
+                            <tr key={user.id}>
+                              <td>
+                                <strong>{user.name || "이름 없음"}</strong>
+                                <span className="admin-sub">{user.email}</span>
+                              </td>
+                              <td>
+                                {user.organizations.map((org, index) => (
+                                  <span className="admin-sub" key={index}>
+                                    {org.name} · {labels[org.role]} ·{" "}
+                                    {labels[org.status]}
+                                  </span>
+                                ))}
+                              </td>
+                              <td>
+                                {user.emailVerified ? "인증됨" : "미인증"}
+                              </td>
+                              <td>{date(user.createdAt)}</td>
+                              <td>
+                                <AdminButton
+                                  disabled={
+                                    busy ||
+                                    user.id === userId ||
+                                    user.organizations.some(
+                                      (org) => org.type === "PLATFORM",
+                                    )
+                                  }
+                                  onClick={() =>
+                                    setOperation({
+                                      action: "revokeUserSessions",
+                                      id: user.id,
+                                      title: "사용자 세션 종료",
+                                      message: `${user.email}의 로그인 세션을 모두 종료합니다. 계정은 삭제되지 않으며 비밀번호로 다시 로그인할 수 있습니다.`,
+                                    })
+                                  }
+                                >
+                                  세션 종료
+                                </AdminButton>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {tab === "organizations" && (
+                    <div className="admin-table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>조직</th>
+                            <th>유형</th>
+                            <th>상태</th>
+                            <th>회사 정보</th>
+                            <th>멤버</th>
+                            <th>상세</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {!visibleOrganizations.length && (
+                            <EmptyRow columns={6} />
                           )}
-                          <div className="admin-actions">
-                            {org.status !== "ACTIVE" && (
-                              <button
+                          {visibleOrganizations.map((org) => (
+                            <tr
+                              key={org.id}
+                              className={selected === org.id ? "selected" : ""}
+                            >
+                              <td>
+                                <strong>{org.name}</strong>
+                                <span className="admin-sub">
+                                  {org.countryCode || "국가 미입력"}
+                                </span>
+                              </td>
+                              <td>{labels[org.type]}</td>
+                              <td>{badge(org.status)}</td>
+                              <td>
+                                {org.testAccess
+                                  ? "테스트 계정 예외"
+                                  : org.submitted
+                                    ? "제출 완료"
+                                    : "미제출 / 보완 중"}
+                              </td>
+                              <td>{org.memberCount}</td>
+                              <td>
+                                <AdminButton
+                                  onClick={() => setSelected(org.id)}
+                                >
+                                  심사 보기
+                                  <ChevronRight size={16} />
+                                </AdminButton>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {tab === "campaigns" && (
+                    <div className="admin-table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>캠페인 / 브랜드</th>
+                            <th>상태</th>
+                            <th>예산</th>
+                            <th>신청 마감</th>
+                            <th>신청</th>
+                            <th>상세</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {!visibleCampaigns.length && <EmptyRow columns={6} />}
+                          {visibleCampaigns.map((campaign) => (
+                            <tr
+                              key={campaign.id}
+                              className={
+                                selected === campaign.id ? "selected" : ""
+                              }
+                            >
+                              <td>
+                                <strong>{campaign.title}</strong>
+                                <span className="admin-sub">
+                                  {campaign.brandName} · 브랜드{" "}
+                                  {labels[campaign.brandStatus]}
+                                </span>
+                              </td>
+                              <td>{badge(campaign.status)}</td>
+                              <td>
+                                {money(
+                                  campaign.budgetAmount,
+                                  campaign.currency,
+                                )}
+                              </td>
+                              <td>{date(campaign.applicationDeadline)}</td>
+                              <td>{campaign.applicationCount}</td>
+                              <td>
+                                <AdminButton
+                                  onClick={() => setSelected(campaign.id)}
+                                >
+                                  검토 · 신청 보기
+                                  <ChevronRight size={16} />
+                                </AdminButton>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {tab === "audit" && (
+                    <AuditTable
+                      rows={data.audits.filter((audit) =>
+                        match(
+                          `${audit.action} ${audit.entityId} ${audit.reason} ${actionLabels[audit.action.replace("admin.", "")]}`,
+                        ),
+                      )}
+                    />
+                  )}
+                </section>
+                {selected && ["organizations", "campaigns"].includes(tab) && (
+                  <section className="admin-panel admin-detail">
+                    <div className="admin-row">
+                      <h2>
+                        {tab === "organizations" ? org?.name : campaign?.title}
+                      </h2>
+                      <AdminButton
+                        className="icon"
+                        aria-label="상세 닫기"
+                        onClick={() => setSelected("")}
+                      >
+                        <X size={22} />
+                      </AdminButton>
+                    </div>
+                    {detailLoading ? (
+                      <p role="status">상세 정보를 불러오는 중입니다…</p>
+                    ) : tab === "organizations" && orgDetail && org ? (
+                      <>
+                        <div className="admin-row">
+                          {badge(org.status)}
+                          <span>
+                            {labels[org.type]} ·{" "}
+                            {org.testAccess
+                              ? "서버에서 지정한 테스트 계정"
+                              : "일반 가입 조직"}
+                          </span>
+                        </div>
+                        <dl className="admin-fields">
+                          {orgDetail.fields.map((field) => (
+                            <div key={field.label}>
+                              <dt>{field.label}</dt>
+                              <dd>{field.value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                        <h3>제출 문서</h3>
+                        {orgDetail.documents.length ? (
+                          <ul className="admin-documents">
+                            {orgDetail.documents.map((doc) => (
+                              <li key={doc.id}>
+                                <div>
+                                  <strong>{doc.fileName}</strong>
+                                  <span>
+                                    {labels[doc.kind]} ·{" "}
+                                    {(doc.size / 1024).toFixed(0)} KB ·{" "}
+                                    {labels[doc.state] ?? doc.state}
+                                  </span>
+                                </div>
+                                {doc.state === "UPLOADED" && (
+                                  <a href={`/api/admin/documents/${doc.id}`}>
+                                    <Download size={16} />
+                                    비공개 다운로드
+                                  </a>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="admin-note">제출된 문서가 없습니다.</p>
+                        )}
+                        <div className="admin-actions">
+                          {org.status !== "ACTIVE" && (
+                            <AdminButton
+                              className="primary"
+                              disabled={
+                                busy || (!org.submitted && !org.testAccess)
+                              }
+                              onClick={() =>
+                                setOperation({
+                                  action: "approveOrganization",
+                                  id: org.id,
+                                  title: "조직 승인",
+                                  message: `${org.name}에 실제 워크스페이스 접근 권한을 부여합니다. 이메일 인증 상태는 변경되지 않습니다.`,
+                                })
+                              }
+                            >
+                              <CheckCircle2 size={18} />
+                              {org.status === "SUSPENDED"
+                                ? "검토 후 이용 재개"
+                                : "승인"}
+                            </AdminButton>
+                          )}
+                          {org.status === "PENDING" && (
+                            <AdminButton
+                              disabled={busy}
+                              onClick={() =>
+                                setOperation({
+                                  action: "requestOrganizationChanges",
+                                  id: org.id,
+                                  title: "회사 정보 보완 요청",
+                                  message:
+                                    "기존 회사 정보와 문서는 보관되며 신청자가 회사 정보를 수정하고 다시 제출할 수 있습니다.",
+                                })
+                              }
+                            >
+                              보완 요청
+                            </AdminButton>
+                          )}
+                          {org.status !== "SUSPENDED" && (
+                            <AdminButton
+                              className="danger"
+                              disabled={busy}
+                              onClick={() =>
+                                setOperation({
+                                  action: "suspendOrganization",
+                                  id: org.id,
+                                  title: "조직 이용 정지",
+                                  message:
+                                    "이 조직의 플랫폼 접근을 즉시 차단합니다. 브랜드인 경우 모집 캠페인도 에이전시 검색에서 제외됩니다. 기존 데이터는 삭제되지 않습니다.",
+                                })
+                              }
+                            >
+                              이용 정지
+                            </AdminButton>
+                          )}
+                        </div>
+                      </>
+                    ) : tab === "campaigns" && campaignDetail && campaign ? (
+                      <>
+                        <div className="admin-row">
+                          {badge(campaign.status)}
+                          <strong>
+                            {money(campaign.budgetAmount, campaign.currency)}
+                          </strong>
+                        </div>
+                        <p className="admin-pre">{campaignDetail.summary}</p>
+                        <p>
+                          플랫폼: {campaign.platforms.join(" · ")} · 신청 마감:{" "}
+                          {date(campaign.applicationDeadline)}
+                        </p>
+                        {campaign.reviewReason && (
+                          <p className="admin-note">
+                            최근 검토 사유: {campaign.reviewReason}
+                          </p>
+                        )}
+                        <div className="admin-actions">
+                          {campaign.status === "REVIEW" && (
+                            <>
+                              <AdminButton
                                 className="primary"
                                 disabled={
-                                  busy || (!org.submitted && !org.testAccess)
+                                  busy || campaign.brandStatus !== "ACTIVE"
                                 }
                                 onClick={() =>
                                   setOperation({
-                                    action: "approveOrganization",
-                                    id: org.id,
-                                    title: "조직 승인",
-                                    message: `${org.name}에 실제 워크스페이스 접근 권한을 부여합니다. 이메일 인증 상태는 변경되지 않습니다.`,
+                                    action: "publishCampaign",
+                                    id: campaign.id,
+                                    title: "캠페인 승인 · 공개",
+                                    message:
+                                      "공개하면 승인된 에이전시가 이 캠페인을 조회하고 신청할 수 있습니다. 결제나 정산은 실행되지 않습니다. 미래 신청 마감일과 0보다 큰 예산이 필요합니다.",
                                   })
                                 }
                               >
-                                <CheckCircle2 size={18} />
-                                {org.status === "SUSPENDED"
-                                  ? "검토 후 이용 재개"
-                                  : "승인"}
-                              </button>
-                            )}
-                            {org.status === "PENDING" && (
-                              <button
+                                승인 · 에이전시에 공개
+                              </AdminButton>
+                              <AdminButton
                                 disabled={busy}
                                 onClick={() =>
                                   setOperation({
-                                    action: "requestOrganizationChanges",
-                                    id: org.id,
-                                    title: "회사 정보 보완 요청",
+                                    action: "returnCampaign",
+                                    id: campaign.id,
+                                    title: "캠페인 보완 요청",
                                     message:
-                                      "기존 회사 정보와 문서는 보관되며 신청자가 회사 정보를 수정하고 다시 제출할 수 있습니다.",
+                                      "캠페인을 비공개 초안으로 돌려보냅니다. 브랜드가 내용을 수정하고 다시 검토를 요청할 수 있습니다.",
                                   })
                                 }
                               >
                                 보완 요청
-                              </button>
-                            )}
-                            {org.status !== "SUSPENDED" && (
-                              <button
-                                className="danger"
-                                disabled={busy}
-                                onClick={() =>
-                                  setOperation({
-                                    action: "suspendOrganization",
-                                    id: org.id,
-                                    title: "조직 이용 정지",
-                                    message:
-                                      "이 조직의 플랫폼 접근을 즉시 차단합니다. 브랜드인 경우 모집 캠페인도 에이전시 검색에서 제외됩니다. 기존 데이터는 삭제되지 않습니다.",
-                                  })
-                                }
-                              >
-                                이용 정지
-                              </button>
-                            )}
-                          </div>
-                        </>
-                      ) : tab === "campaigns" && campaignDetail && campaign ? (
-                        <>
-                          <div className="admin-row">
-                            {badge(campaign.status)}
-                            <strong>
-                              {money(campaign.budgetAmount, campaign.currency)}
-                            </strong>
-                          </div>
-                          <p className="admin-pre">{campaignDetail.summary}</p>
-                          <p>
-                            플랫폼: {campaign.platforms.join(" · ")} · 신청
-                            마감: {date(campaign.applicationDeadline)}
-                          </p>
-                          {campaign.reviewReason && (
-                            <p className="admin-note">
-                              최근 검토 사유: {campaign.reviewReason}
-                            </p>
+                              </AdminButton>
+                            </>
                           )}
-                          <div className="admin-actions">
-                            {campaign.status === "REVIEW" && (
-                              <>
-                                <button
-                                  className="primary"
-                                  disabled={
-                                    busy || campaign.brandStatus !== "ACTIVE"
-                                  }
-                                  onClick={() =>
-                                    setOperation({
-                                      action: "publishCampaign",
-                                      id: campaign.id,
-                                      title: "캠페인 승인 · 공개",
-                                      message:
-                                        "공개하면 승인된 에이전시가 이 캠페인을 조회하고 신청할 수 있습니다. 결제나 정산은 실행되지 않습니다. 미래 신청 마감일과 0보다 큰 예산이 필요합니다.",
-                                    })
-                                  }
-                                >
-                                  승인 · 에이전시에 공개
-                                </button>
-                                <button
-                                  disabled={busy}
-                                  onClick={() =>
-                                    setOperation({
-                                      action: "returnCampaign",
-                                      id: campaign.id,
-                                      title: "캠페인 보완 요청",
-                                      message:
-                                        "캠페인을 비공개 초안으로 돌려보냅니다. 브랜드가 내용을 수정하고 다시 검토를 요청할 수 있습니다.",
-                                    })
-                                  }
-                                >
-                                  보완 요청
-                                </button>
-                              </>
-                            )}
-                            {campaign.status === "RECRUITING" && (
-                              <button
-                                disabled={busy}
-                                onClick={() =>
-                                  setOperation({
-                                    action: "closeCampaign",
-                                    id: campaign.id,
-                                    title: "캠페인 모집 마감",
-                                    message:
-                                      "신규 신청을 중단합니다. 기존 신청 기록은 유지되며, 모집 중 상태로 자동 복구되지 않습니다.",
-                                  })
-                                }
-                              >
-                                모집 마감
-                              </button>
-                            )}
-                          </div>
-                          <h3>신청 에이전시 ({campaignDetail.total})</h3>
-                          {campaignDetail.applications.length ? (
-                            <div className="admin-applications">
-                              {campaignDetail.applications.map(
-                                (application) => (
-                                  <article key={application.id}>
-                                    <div className="admin-row">
-                                      <div>
-                                        <strong>
-                                          {application.agencyName}
-                                        </strong>
-                                        <span className="admin-sub">
-                                          조직{" "}
-                                          {labels[application.agencyStatus]} ·{" "}
-                                          {date(application.createdAt)}
-                                        </span>
-                                      </div>
-                                      {badge(application.status)}
-                                    </div>
-                                    <p className="admin-pre">
-                                      {application.proposal}
-                                    </p>
-                                    <strong>
-                                      제안 금액:{" "}
-                                      {money(
-                                        application.proposedAmount,
-                                        application.currency,
-                                      )}
-                                    </strong>
-                                  </article>
-                                ),
-                              )}
-                            </div>
-                          ) : (
-                            <p className="admin-note">
-                              아직 접수된 신청이 없습니다.
-                            </p>
+                          {campaign.status === "RECRUITING" && (
+                            <AdminButton
+                              disabled={busy}
+                              onClick={() =>
+                                setOperation({
+                                  action: "closeCampaign",
+                                  id: campaign.id,
+                                  title: "캠페인 모집 마감",
+                                  message:
+                                    "신규 신청을 중단합니다. 기존 신청 기록은 유지되며, 모집 중 상태로 자동 복구되지 않습니다.",
+                                })
+                              }
+                            >
+                              모집 마감
+                            </AdminButton>
                           )}
-                          <p className="admin-small">
-                            최근 100건까지 표시합니다. 선정과 미선정 처리는
-                            브랜드의 캠페인 관리에서 진행합니다.
+                        </div>
+                        <h3>신청 에이전시 ({campaignDetail.total})</h3>
+                        {campaignDetail.applications.length ? (
+                          <div className="admin-applications">
+                            {campaignDetail.applications.map((application) => (
+                              <article key={application.id}>
+                                <div className="admin-row">
+                                  <div>
+                                    <strong>{application.agencyName}</strong>
+                                    <span className="admin-sub">
+                                      조직 {labels[application.agencyStatus]} ·{" "}
+                                      {date(application.createdAt)}
+                                    </span>
+                                  </div>
+                                  {badge(application.status)}
+                                </div>
+                                <p className="admin-pre">
+                                  {application.proposal}
+                                </p>
+                                <strong>
+                                  제안 금액:{" "}
+                                  {money(
+                                    application.proposedAmount,
+                                    application.currency,
+                                  )}
+                                </strong>
+                              </article>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="admin-note">
+                            아직 접수된 신청이 없습니다.
                           </p>
-                          <CampaignOperations campaignId={campaign.id} />
-                        </>
-                      ) : null}
-                    </section>
-                  )}
-                </>
-              )}
-            </>
-          )}
-          <footer className="admin-footer">
-            <Building2 size={16} />
-            승인·정지·공개 조치와 문서 다운로드 이력은 데이터베이스에
-            기록됩니다.
-          </footer>
-        </main>
-      </div>
+                        )}
+                        <p className="admin-small">
+                          최근 100건까지 표시합니다. 선정과 미선정 처리는
+                          브랜드의 캠페인 관리에서 진행합니다.
+                        </p>
+                        <CampaignOperations campaignId={campaign.id} />
+                      </>
+                    ) : null}
+                  </section>
+                )}
+              </>
+            )}
+          </>
+        )}
+        <footer className="admin-footer">
+          <Building2 size={16} />
+          승인·정지·공개 조치와 문서 다운로드 이력은 데이터베이스에 기록됩니다.
+        </footer>
+      </main>
       <ConfirmOperation
         operation={operation}
         busy={busy}
@@ -1077,7 +999,7 @@ export function AdminConsole({
         }}
         onSubmit={(reason) => void mutate(reason)}
       />
-    </div>
+    </AdminShell>
   );
 }
 function EmptyRow({ columns }: { columns: number }) {

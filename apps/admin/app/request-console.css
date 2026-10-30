@@ -49,7 +49,7 @@
   align-items: center;
   background: #fff;
   border: 1px solid var(--admin-line);
-  border-radius: 22px;
+  border-radius: 16px;
   padding: 24px;
 }
 .ar-metric-icon {
@@ -171,7 +171,7 @@
   white-space: nowrap;
 }
 .ar-table .ar-selected-row {
-  background: #f9f8ff;
+  background: #f0f6ff;
 }
 .ar-table .ar-campaign-caption {
   margin-top: 4px;
@@ -188,13 +188,13 @@
   border-radius: 8px;
   font-size: 14px;
   line-height: 1.5;
-  background: #f0eff6;
-  color: #616174;
+  background: #f4f4f5;
+  color: #73767d;
   white-space: nowrap;
 }
 .ar-status-requested {
-  background: #f1edff;
-  color: #5944bc;
+  background: #f0f6ff;
+  color: #0066ff;
 }
 .ar-status-in_progress {
   background: #eaf1ff;
@@ -236,7 +236,7 @@
   gap: 8px;
 }
 .ar-detail-anchor {
-  scroll-margin-top: 22px;
+  scroll-margin-top: 100px;
 }
 .ar-detail-anchor:empty {
   display: none;
@@ -329,8 +329,8 @@
   background: #fff;
 }
 .ar-message-internal {
-  background: #f7f5ff;
-  border-color: #e5dff8;
+  background: #f7f7f8;
+  border-color: #eaebee;
 }
 .ar-message header {
   display: flex;
@@ -413,7 +413,7 @@
   background: #fff;
   border-color: var(--admin-line);
   color: var(--admin-accent);
-  box-shadow: 0 2px 6px #24243e08;
+  box-shadow: 0 2px 6px #17171908;
 }
 .ar-reply-actions {
   display: flex;
@@ -461,7 +461,7 @@
 }
 .ar-management {
   position: sticky;
-  top: 24px;
+  top: 100px;
 }
 .ar-management fieldset {
   display: grid;
@@ -534,7 +534,7 @@
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: #c4bfee;
+  background: #b6b8be;
   margin-top: 6px;
   flex-shrink: 0;
   z-index: 1;
