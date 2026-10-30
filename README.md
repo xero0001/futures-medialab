@@ -218,11 +218,14 @@ cannot enter the workspace or mutate its data.
 | `/advertiser/requests`          | Organization request inbox, public replies, private attachments, status/history and reopening |
 | `/advertiser/accountManagement` | Contact/company edits and read-only account/security information                               |
 
-All views use the shared indigo workspace shell, custom selection controls,
-English/Korean/Chinese labels, and 14px minimum text. Reference inspection used
-Youdao's logged-in pages at the corresponding paths. Reference collection and
-short-link creation were membership-gated; reference campaign management exposed
-only managed-service/contact information. No paid analysis/search quota was used.
+The production brand workspace and agency workspace share the Montage header,
+monochrome sidebar, Pretendard typography and Wanted-blue theme through
+`app/_components/workspace`. Navigation keeps role-specific routes, current-page
+selection, the current path/query when changing language, and mobile Escape/focus
+behavior. `/storage/search` renders the selected Montage 2 search layout while
+retaining the authenticated brand access check. The `/storage/search/montage2`
+comparison URL remains available. Landing and onboarding pages use their existing
+layouts. The TDS, SEED and Bezier comparison pages retain their separate shells.
 
 The `/storage/search/tds` comparison view uses an independently implemented
 TDS-inspired presentation with `#3182F6` as its brand accent; it does not include

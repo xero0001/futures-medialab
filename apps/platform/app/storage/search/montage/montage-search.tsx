@@ -54,6 +54,7 @@ import { MontageProvider } from "./montage-provider";
 import { MontageShell } from "./montage-shell";
 import { MontageFilters } from "./montage-filters";
 import { useMontageSearch } from "./use-montage-search";
+import shellStyles from "../../../_components/workspace/workspace-shell.module.css";
 import styles from "./montage-search.module.css";
 
 const platformIcons: Record<PlatformId, LucideIcon> = {
@@ -159,7 +160,7 @@ function SearchWorkspace({
 
   return (
     <div
-      className={styles.workspace}
+      className={shellStyles.workspace}
       lang={locale === "zh" ? "zh-CN" : locale}
       data-montage-workspace="demo"
     >
@@ -172,7 +173,7 @@ function SearchWorkspace({
         onSignOut={() => void state.signOut()}
       />
 
-      <main id="montage-main" className={styles.main}>
+      <main id="workspace-main" className={shellStyles.main}>
         <div className={styles.breadcrumb}>
           {t("Discover", "탐색", "探索")}
           <ChevronRight size={13} />

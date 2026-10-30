@@ -49,6 +49,9 @@ import {
 import { WorkspaceTools } from "./workspace-tools";
 import { TdsCreatorGrid, TdsPlatformIcon } from "./tds-search-parts";
 import "./workspace.css";
+import { WorkspaceProvider } from "../../_components/workspace/workspace-provider";
+import { WorkspaceShell } from "../../_components/workspace/workspace-shell";
+import shellStyles from "../../_components/workspace/workspace-shell.module.css";
 
 const RequestWorkspace = dynamic(() =>
   import("./request-workspace").then((module) => module.RequestWorkspace),
@@ -76,21 +79,31 @@ const routes: Record<WorkspaceMode, string> = {
   account: "/advertiser/accountManagement",
 };
 
-export function CreatorWorkspace({
-  mode,
-  initialLocale: locale,
-  organizationName,
-  status,
-  userName,
-  variant = "default",
-}: {
+type CreatorWorkspaceProps = {
   mode: WorkspaceMode;
   initialLocale: Locale;
   organizationName: string;
   status: "PENDING" | "ACTIVE";
   userName: string;
   variant?: "default" | "tds";
-}) {
+};
+
+export function CreatorWorkspace(props: CreatorWorkspaceProps) {
+  return (
+    <WorkspaceProvider>
+      <WorkspaceContent {...props} />
+    </WorkspaceProvider>
+  );
+}
+
+function WorkspaceContent({
+  mode,
+  initialLocale: locale,
+  organizationName,
+  status,
+  userName,
+  variant = "default",
+}: CreatorWorkspaceProps) {
   const isTds = variant === "tds";
   const routeFor = (key: WorkspaceMode) =>
     isTds && key === "search" ? "/storage/search/tds" : routes[key];
@@ -462,919 +475,958 @@ export function CreatorWorkspace({
 
   return (
     <div
-      className={`cw-workspace${isTds ? " cw-tds" : ""}`}
+      className={`cw-workspace${isTds ? " cw-tds" : ` ${shellStyles.workspace}`}`}
       data-creator-workspace="demo"
       lang={locale === "zh" ? "zh-CN" : locale}
     >
-      <header className="cw-topbar">
-        <button
-          ref={navToggleRef}
-          type="button"
-          className="cw-icon-button cw-mobile-menu"
-          aria-label={
-            navOpen
-              ? t("Close navigation", "메뉴 닫기", "关闭导航")
-              : t("Open navigation", "메뉴 열기", "打开导航")
-          }
-          aria-expanded={navOpen}
-          aria-controls="workspace-sidebar"
-          onClick={() => setNavOpen(!navOpen)}
-        >
-          {isTds && navOpen ? (
-            <X size={22} aria-hidden="true" />
-          ) : (
-            <Menu size={22} aria-hidden="true" />
-          )}
-        </button>
-        {isTds ? (
-          <div className="tds-brand-area">
-            <Wordmark href={`/?lang=${locale}`} />
-            <span className="tds-header-divider" aria-hidden="true" />
-            <span className="tds-header-label">
-              {t("Workspace", "워크스페이스", "工作区")}
-            </span>
-          </div>
-        ) : (
-          <Wordmark href={`/?lang=${locale}`} />
-        )}
-        <div className="cw-top-actions">
-          {!isTds && (
-            <span className="cw-status">
-              {status === "PENDING"
-                ? t("Approval pending", "승인 대기", "待审核")
-                : t("Brand workspace", "브랜드 작업 공간", "品牌工作区")}
-            </span>
-          )}
-          <LanguageSwitcher
-            locale={locale}
-            label={t("Language", "언어", "语言")}
-            onChange={(next) => {
-              document.cookie = `fm-locale=${next};path=/;max-age=31536000;SameSite=Lax`;
-              window.location.assign(`${routeFor(mode)}?lang=${next}`);
-            }}
-          />
-          <Link
-            href={`/advertiser/accountManagement?lang=${locale}`}
-            className={isTds ? "tds-account-link" : "cw-avatar"}
-            aria-label={t("Account settings", "계정 관리", "账户管理")}
-          >
+      {isTds ? (
+        <>
+          <header className="cw-topbar">
+            <button
+              ref={navToggleRef}
+              type="button"
+              className="cw-icon-button cw-mobile-menu"
+              aria-label={
+                navOpen
+                  ? t("Close navigation", "메뉴 닫기", "关闭导航")
+                  : t("Open navigation", "메뉴 열기", "打开导航")
+              }
+              aria-expanded={navOpen}
+              aria-controls="workspace-sidebar"
+              onClick={() => setNavOpen(!navOpen)}
+            >
+              {isTds && navOpen ? (
+                <X size={22} aria-hidden="true" />
+              ) : (
+                <Menu size={22} aria-hidden="true" />
+              )}
+            </button>
             {isTds ? (
-              <span className="cw-avatar" aria-hidden="true">
-                <UserRound size={20} />
-              </span>
+              <div className="tds-brand-area">
+                <Wordmark href={`/?lang=${locale}`} />
+                <span className="tds-header-divider" aria-hidden="true" />
+                <span className="tds-header-label">
+                  {t("Workspace", "워크스페이스", "工作区")}
+                </span>
+              </div>
             ) : (
-              userName.slice(0, 2).toUpperCase()
+              <Wordmark href={`/?lang=${locale}`} />
             )}
-          </Link>
-        </div>
-      </header>
-      {navOpen && (
-        <button
-          type="button"
-          className="cw-sidebar-backdrop"
-          tabIndex={-1}
-          aria-label={t("Close navigation", "메뉴 닫기", "关闭导航")}
-          onClick={() => {
-            setNavOpen(false);
-            navToggleRef.current?.focus();
-          }}
+            <div className="cw-top-actions">
+              {!isTds && (
+                <span className="cw-status">
+                  {status === "PENDING"
+                    ? t("Approval pending", "승인 대기", "待审核")
+                    : t("Brand workspace", "브랜드 작업 공간", "品牌工作区")}
+                </span>
+              )}
+              <LanguageSwitcher
+                locale={locale}
+                label={t("Language", "언어", "语言")}
+                onChange={(next) => {
+                  document.cookie = `fm-locale=${next};path=/;max-age=31536000;SameSite=Lax`;
+                  window.location.assign(`${routeFor(mode)}?lang=${next}`);
+                }}
+              />
+              <Link
+                href={`/advertiser/accountManagement?lang=${locale}`}
+                className={isTds ? "tds-account-link" : "cw-avatar"}
+                aria-label={t("Account settings", "계정 관리", "账户管理")}
+              >
+                {isTds ? (
+                  <span className="cw-avatar" aria-hidden="true">
+                    <UserRound size={20} />
+                  </span>
+                ) : (
+                  userName.slice(0, 2).toUpperCase()
+                )}
+              </Link>
+            </div>
+          </header>
+          {navOpen && (
+            <button
+              type="button"
+              className="cw-sidebar-backdrop"
+              tabIndex={-1}
+              aria-label={t("Close navigation", "메뉴 닫기", "关闭导航")}
+              onClick={() => {
+                setNavOpen(false);
+                navToggleRef.current?.focus();
+              }}
+            />
+          )}
+          <aside
+            id="workspace-sidebar"
+            className={`cw-sidebar ${navOpen ? "is-open" : ""}`}
+          >
+            {!isTds && (
+              <div className="cw-nav-group">
+                {t("Creator intelligence", "크리에이터 탐색", "达人资源")}
+              </div>
+            )}
+            <nav
+              aria-label={t(
+                "Workspace navigation",
+                "작업 공간 메뉴",
+                "工作区导航",
+              )}
+            >
+              {isTds
+                ? navGroups.map((group) => (
+                    <div className="tds-nav-section" key={group.label}>
+                      <h2 className="cw-nav-group">{group.label}</h2>
+                      {group.items.map(renderNavItem)}
+                    </div>
+                  ))
+                : navItems.map(renderNavItem)}
+            </nav>
+            <div
+              className={`cw-sidebar-foot${isTds ? " tds-sidebar-foot" : ""}`}
+            >
+              {!isTds && (
+                <>
+                  <strong>{organizationName}</strong>
+                  <span>{t("Brand account", "브랜드 계정", "品牌账户")}</span>
+                </>
+              )}
+              <button className="cw-nav-item" onClick={signOut} disabled={busy}>
+                <LogOut size={18} />
+                {t("Sign out", "로그아웃", "退出登录")}
+              </button>
+            </div>
+          </aside>
+        </>
+      ) : (
+        <WorkspaceShell
+          locale={locale}
+          organizationName={organizationName}
+          userName={userName}
+          isGuest={false}
+          busy={busy}
+          onSignOut={() => void signOut()}
         />
       )}
-      <aside
-        id="workspace-sidebar"
-        className={`cw-sidebar ${navOpen ? "is-open" : ""}`}
+      <main
+        id="workspace-main"
+        className={`cw-main${isTds ? "" : ` ${shellStyles.main}`}`}
       >
-        {!isTds && (
-          <div className="cw-nav-group">
-            {t("Creator intelligence", "크리에이터 탐색", "达人资源")}
-          </div>
-        )}
-        <nav
-          aria-label={t("Workspace navigation", "작업 공간 메뉴", "工作区导航")}
-        >
-          {isTds
-            ? navGroups.map((group) => (
-                <div className="tds-nav-section" key={group.label}>
-                  <h2 className="cw-nav-group">{group.label}</h2>
-                  {group.items.map(renderNavItem)}
-                </div>
-              ))
-            : navItems.map(renderNavItem)}
-        </nav>
-        <div className={`cw-sidebar-foot${isTds ? " tds-sidebar-foot" : ""}`}>
-          {!isTds && (
-            <>
-              <strong>{organizationName}</strong>
-              <span>{t("Brand account", "브랜드 계정", "品牌账户")}</span>
-            </>
-          )}
-          <button className="cw-nav-item" onClick={signOut} disabled={busy}>
-            <LogOut size={18} />
-            {t("Sign out", "로그아웃", "退出登录")}
-          </button>
-        </div>
-      </aside>
-      <main className="cw-main">
-        <div className="cw-heading">
-          <div>
-            <p>
-              {isTds
-                ? t(
-                    "Workspace / Creator discovery",
-                    "워크스페이스 / 크리에이터 탐색",
-                    "工作区 / 达人探索",
-                  )
-                : t(
-                    "Your next collaboration starts here",
-                    "다음 협업을 발견하는 곳",
-                    "发现下一次合作",
-                  )}
-            </p>
-            <h1>
-              {isTds
-                ? t(
-                    "Find your next creator",
-                    "크리에이터를 찾아보세요",
-                    "发现下一位合作达人",
-                  )
-                : titles[mode]}
-            </h1>
-            {isTds && (
-              <p className="tds-heading-description">
-                {t(
-                  "Discover creators who are the right fit for your brand.",
-                  "우리 브랜드와 잘 맞는 크리에이터, 데이터로 발견해 보세요.",
-                  "用数据发现与品牌契合的达人。",
-                )}
-              </p>
-            )}
-          </div>
-          {isTds ? (
-            <Link
-              className="tds-original-link"
-              href={`/storage/search?lang=${locale}`}
-            >
-              {t("Original view", "기존 화면 보기", "查看原版")}
-              <ArrowRight size={16} />
-            </Link>
-          ) : (
-            discovery && (
-              <span className="cw-status">
-                {t("Database connected", "DB 연결됨", "数据库已连接")}
-              </span>
-            )
-          )}
-        </div>
-        {error && (
-          <div className="cw-error" role="alert">
-            {error}
-          </div>
-        )}
-        {notice && (
-          <div className="cw-success" role="status">
-            {notice}
-          </div>
-        )}
-        {mode === "requests" ? (
-          <RequestWorkspace locale={locale} />
-        ) : !data ? (
-          <div className="cw-panel cw-loading" role="status">
-            {error
-              ? t(
-                  "Workspace unavailable",
-                  "작업 공간을 불러올 수 없습니다",
-                  "工作区不可用",
-                )
-              : t(
-                  "Loading your workspace…",
-                  "작업 공간을 불러오는 중…",
-                  "正在加载工作区…",
-                )}
-          </div>
-        ) : discovery ? (
-          <>
-            <div className="cw-demo-notice">
-              <Sparkles size={19} />
-              <span>
+        <div className={isTds ? undefined : shellStyles.content}>
+          <div className="cw-heading">
+            <div>
+              <p>
                 {isTds
                   ? t(
-                      "Demo directory · Profiles and metrics are fictional. Searches and collections are saved.",
-                      "데모 디렉터리 · 프로필과 지표는 예시이며, 검색 이력과 즐겨찾기는 저장돼요.",
-                      "演示目录 · 达人和指标为虚构数据，搜索记录和收藏会保存。",
+                      "Workspace / Creator discovery",
+                      "워크스페이스 / 크리에이터 탐색",
+                      "工作区 / 达人探索",
                     )
                   : t(
-                      "Demo directory · Profiles and metrics are fictional. Searches and collections are saved to your database; live platform data is not connected yet.",
-                      "데모 디렉터리 · 프로필과 지표는 가상 데이터입니다. 검색 이력·즐겨찾기는 실제 DB에 저장되며, 외부 플랫폼 데이터는 아직 연결되지 않았습니다.",
-                      "演示目录 · 达人和指标均为虚构数据。搜索记录和收藏保存至数据库，尚未接入外部平台数据。",
+                      "Your next collaboration starts here",
+                      "다음 협업을 발견하는 곳",
+                      "发现下一次合作",
                     )}
-              </span>
-            </div>
-            <section
-              className={`cw-panel${isTds ? " tds-search-panel" : ""}`}
-              aria-label={titles[mode]}
-            >
-              <div
-                className="cw-platforms"
-                aria-label={t("Platform", "플랫폼", "平台")}
-              >
-                {(mode === "brands"
-                  ? ["youtube"]
-                  : mode === "similar"
-                    ? ["youtube", "tiktok"]
-                    : Object.keys(platformNames)
-                ).map((platform) => (
-                  <button
-                    key={platform}
-                    disabled={busy}
-                    type="button"
-                    aria-pressed={filters.platform === platform}
-                    className={filters.platform === platform ? "is-active" : ""}
-                    onClick={() => reset(platform as PlatformId)}
-                  >
-                    <span
-                      className={`cw-platform-icon cw-platform-${platform}`}
-                    >
-                      {isTds ? (
-                        <TdsPlatformIcon platform={platform as PlatformId} />
-                      ) : (
-                        platformNames[platform as PlatformId].slice(0, 1)
-                      )}
-                    </span>
-                    {platformNames[platform as PlatformId]}
-                  </button>
-                ))}
-              </div>
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void search();
-                }}
-              >
-                {mode === "search" && (
-                  <div className="cw-search-modes">
-                    {(
-                      [
-                        [
-                          "creator",
-                          t("Creator / channel", "이름 / 채널", "达人 / 频道"),
-                        ],
-                        ["content", t("Content", "콘텐츠", "内容")],
-                        ["bio", t("Biography", "소개", "简介")],
-                        [
-                          "brand",
-                          t("Brand mentions", "브랜드 언급", "品牌名称"),
-                        ],
-                      ] as [SearchMode, string][]
-                    ).map(([key, label]) => (
-                      <button
-                        type="button"
-                        key={key}
-                        aria-pressed={filters.searchMode === key}
-                        className={
-                          filters.searchMode === key ? "is-active" : ""
-                        }
-                        onClick={() =>
-                          setFilters({ ...filters, searchMode: key })
-                        }
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {mode !== "search" && (
-                  <p className="cw-intro">
-                    {mode === "similar"
-                      ? t(
-                          "Start with a creator you like. Find channels with related topics and audiences in this directory.",
-                          "기준 크리에이터를 선택해 비슷한 주제의 채널을 찾아보세요.",
-                          "以喜欢的达人为起点，寻找目录中主题相近的频道。",
-                        )
-                      : t(
-                          "Explore creators associated with similar brands. Recommendations use shared sample tags, not AI or live campaign data.",
-                          "유사한 브랜드와 관련된 크리에이터를 살펴보세요. 예시 태그 기반 추천이며 AI·실시간 캠페인 분석은 아닙니다.",
-                          "发现同类品牌相关达人。推荐基于示例标签，并非AI或实时推广分析。",
-                        )}
-                  </p>
-                )}
-                <div className="cw-search-row">
-                  {mode === "brands" ? (
-                    <ProfileSelect
-                      id="brand-search"
-                      label={t(
-                        "Brand / product",
-                        "브랜드 / 제품",
-                        "品牌 / 产品",
-                      )}
-                      placeholder={t(
-                        "Select a sample brand",
-                        "예시 브랜드 선택",
-                        "选择示例品牌",
-                      )}
-                      value={brandId}
-                      onChange={setBrandId}
-                      options={data.brands.map((brand) => ({
-                        value: brand.id,
-                        label: brand.name,
-                      }))}
-                    />
-                  ) : (
-                    <label className="cw-search-input">
-                      <Search size={20} />
-                      <input
-                        aria-label={
-                          mode === "similar"
-                            ? t(
-                                "Creator name or channel URL",
-                                "크리에이터 이름 또는 채널 URL",
-                                "达人名称或频道链接",
-                              )
-                            : t(
-                                "Search creators",
-                                "크리에이터 검색",
-                                "搜索达人",
-                              )
-                        }
-                        value={filters.query}
-                        maxLength={500}
-                        onChange={(e) =>
-                          setFilters({ ...filters, query: e.target.value })
-                        }
-                        placeholder={
-                          mode === "similar"
-                            ? t(
-                                "Paste a sample channel URL or enter its name",
-                                "예시 채널 URL 또는 이름 입력",
-                                "输入示例频道链接或名称",
-                              )
-                            : t(
-                                "Search a name, channel or keyword…",
-                                "이름, 채널 또는 키워드 검색…",
-                                "搜索名称、频道或关键词…",
-                              )
-                        }
-                      />
-                    </label>
+              </p>
+              <h1>
+                {isTds
+                  ? t(
+                      "Find your next creator",
+                      "크리에이터를 찾아보세요",
+                      "发现下一位合作达人",
+                    )
+                  : titles[mode]}
+              </h1>
+              {isTds && (
+                <p className="tds-heading-description">
+                  {t(
+                    "Discover creators who are the right fit for your brand.",
+                    "우리 브랜드와 잘 맞는 크리에이터, 데이터로 발견해 보세요.",
+                    "用数据发现与品牌契合的达人。",
                   )}
-                  <button
-                    className="cw-button cw-button-primary"
-                    disabled={busy}
-                    type="submit"
-                  >
-                    <Search size={18} />
-                    {busy
-                      ? t("Searching…", "검색 중…", "搜索中…")
-                      : mode === "brands"
-                        ? t("Recommend", "추천 보기", "查看推荐")
-                        : t("Search", "검색", "搜索")}
-                  </button>
-                  <button
-                    type="button"
-                    className="cw-button"
-                    disabled={busy}
-                    onClick={() => reset()}
-                  >
-                    {t("Reset", "초기화", "重置")}
-                  </button>
-                </div>
-                {mode === "similar" && sample && (
-                  <p className="cw-example">
-                    {t(
-                      "Try a stored example:",
-                      "저장된 예시로 시작:",
-                      "尝试已保存示例：",
-                    )}{" "}
+                </p>
+              )}
+            </div>
+            {isTds ? (
+              <Link
+                className="tds-original-link"
+                href={`/storage/search?lang=${locale}`}
+              >
+                {t("Original view", "기존 화면 보기", "查看原版")}
+                <ArrowRight size={16} />
+              </Link>
+            ) : (
+              discovery && (
+                <span className="cw-status">
+                  {t("Database connected", "DB 연결됨", "数据库已连接")}
+                </span>
+              )
+            )}
+          </div>
+          {error && (
+            <div className="cw-error" role="alert">
+              {error}
+            </div>
+          )}
+          {notice && (
+            <div className="cw-success" role="status">
+              {notice}
+            </div>
+          )}
+          {mode === "requests" ? (
+            <RequestWorkspace locale={locale} />
+          ) : !data ? (
+            <div className="cw-panel cw-loading" role="status">
+              {error
+                ? t(
+                    "Workspace unavailable",
+                    "작업 공간을 불러올 수 없습니다",
+                    "工作区不可用",
+                  )
+                : t(
+                    "Loading your workspace…",
+                    "작업 공간을 불러오는 중…",
+                    "正在加载工作区…",
+                  )}
+            </div>
+          ) : discovery ? (
+            <>
+              <div className="cw-demo-notice">
+                <Sparkles size={19} />
+                <span>
+                  {isTds
+                    ? t(
+                        "Demo directory · Profiles and metrics are fictional. Searches and collections are saved.",
+                        "데모 디렉터리 · 프로필과 지표는 예시이며, 검색 이력과 즐겨찾기는 저장돼요.",
+                        "演示目录 · 达人和指标为虚构数据，搜索记录和收藏会保存。",
+                      )
+                    : t(
+                        "Demo directory · Profiles and metrics are fictional. Searches and collections are saved to your database; live platform data is not connected yet.",
+                        "데모 디렉터리 · 프로필과 지표는 가상 데이터입니다. 검색 이력·즐겨찾기는 실제 DB에 저장되며, 외부 플랫폼 데이터는 아직 연결되지 않았습니다.",
+                        "演示目录 · 达人和指标均为虚构数据。搜索记录和收藏保存至数据库，尚未接入外部平台数据。",
+                      )}
+                </span>
+              </div>
+              <section
+                className={`cw-panel${isTds ? " tds-search-panel" : ""}`}
+                aria-label={titles[mode]}
+              >
+                <div
+                  className="cw-platforms"
+                  aria-label={t("Platform", "플랫폼", "平台")}
+                >
+                  {(mode === "brands"
+                    ? ["youtube"]
+                    : mode === "similar"
+                      ? ["youtube", "tiktok"]
+                      : Object.keys(platformNames)
+                  ).map((platform) => (
                     <button
-                      type="button"
+                      key={platform}
                       disabled={busy}
-                      onClick={() => {
-                        const next = { ...filters, query: sample.profileUrl };
-                        setFilters(next);
-                        void search(next);
-                      }}
+                      type="button"
+                      aria-pressed={filters.platform === platform}
+                      className={
+                        filters.platform === platform ? "is-active" : ""
+                      }
+                      onClick={() => reset(platform as PlatformId)}
                     >
-                      {sample.name}
+                      <span
+                        className={`cw-platform-icon cw-platform-${platform}`}
+                      >
+                        {isTds ? (
+                          <TdsPlatformIcon platform={platform as PlatformId} />
+                        ) : (
+                          platformNames[platform as PlatformId].slice(0, 1)
+                        )}
+                      </span>
+                      {platformNames[platform as PlatformId]}
                     </button>
-                  </p>
-                )}
-                <div className="cw-filter-toggle">
-                  {isTds && (
-                    <div
-                      className="tds-quick-filters"
-                      aria-label={t("Quick filters", "빠른 필터", "快速筛选")}
-                    >
-                      {[
-                        {
-                          label: t("South Korea", "대한민국", "韩国"),
-                          active: filters.country === "KR",
-                          next: {
-                            ...filters,
-                            country: filters.country === "KR" ? "" : "KR",
-                          },
-                        },
-                        {
-                          label: t("Gaming", "게임", "游戏"),
-                          active: filters.includeTags.includes("gaming"),
-                          next: {
-                            ...filters,
-                            includeTags: filters.includeTags.includes("gaming")
-                              ? filters.includeTags.filter(
-                                  (tag) => tag !== "gaming",
-                                )
-                              : [...filters.includeTags, "gaming"],
-                          },
-                        },
-                        {
-                          label: t(
-                            "100K+ followers",
-                            "팔로워 10만 이상",
-                            "粉丝10万以上",
-                          ),
-                          active: filters.followersMin === "100",
-                          next: {
-                            ...filters,
-                            followersMin:
-                              filters.followersMin === "100" ? "" : "100",
-                          },
-                        },
-                        {
-                          label: t(
-                            "Posted this week",
-                            "최근 7일 내 게시",
-                            "近7天发布",
-                          ),
-                          active: filters.lastPosted === "7",
-                          next: {
-                            ...filters,
-                            lastPosted:
-                              filters.lastPosted === "7"
-                                ? ("" as const)
-                                : ("7" as const),
-                          },
-                        },
-                      ].map(({ label, active, next }) => (
+                  ))}
+                </div>
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void search();
+                  }}
+                >
+                  {mode === "search" && (
+                    <div className="cw-search-modes">
+                      {(
+                        [
+                          [
+                            "creator",
+                            t(
+                              "Creator / channel",
+                              "이름 / 채널",
+                              "达人 / 频道",
+                            ),
+                          ],
+                          ["content", t("Content", "콘텐츠", "内容")],
+                          ["bio", t("Biography", "소개", "简介")],
+                          [
+                            "brand",
+                            t("Brand mentions", "브랜드 언급", "品牌名称"),
+                          ],
+                        ] as [SearchMode, string][]
+                      ).map(([key, label]) => (
                         <button
                           type="button"
-                          key={label}
-                          aria-pressed={active}
-                          disabled={busy}
-                          onClick={() => {
-                            setFilters(next);
-                            void search(next);
-                          }}
+                          key={key}
+                          aria-pressed={filters.searchMode === key}
+                          className={
+                            filters.searchMode === key ? "is-active" : ""
+                          }
+                          onClick={() =>
+                            setFilters({ ...filters, searchMode: key })
+                          }
                         >
-                          {active && <Check size={14} />}
                           {label}
                         </button>
                       ))}
                     </div>
                   )}
-                  <button
-                    className="cw-button"
-                    type="button"
-                    aria-expanded={expanded}
-                    aria-controls="directory-filters"
-                    onClick={() => setExpanded(!expanded)}
-                  >
-                    <SlidersHorizontal size={17} />
-                    {isTds
-                      ? t("All filters", "상세 필터", "更多筛选")
-                      : t("Search filters", "검색 필터", "搜索筛选")}
-                    {expanded ? " −" : " +"}
-                  </button>
-                  {!isTds && (
-                    <span className="cw-muted">
-                      {t(
-                        "Numeric ranges use K (1,000).",
-                        "숫자 범위 단위 K = 1,000",
-                        "数值范围单位 K = 1,000。",
-                      )}
-                    </span>
+                  {mode !== "search" && (
+                    <p className="cw-intro">
+                      {mode === "similar"
+                        ? t(
+                            "Start with a creator you like. Find channels with related topics and audiences in this directory.",
+                            "기준 크리에이터를 선택해 비슷한 주제의 채널을 찾아보세요.",
+                            "以喜欢的达人为起点，寻找目录中主题相近的频道。",
+                          )
+                        : t(
+                            "Explore creators associated with similar brands. Recommendations use shared sample tags, not AI or live campaign data.",
+                            "유사한 브랜드와 관련된 크리에이터를 살펴보세요. 예시 태그 기반 추천이며 AI·실시간 캠페인 분석은 아닙니다.",
+                            "发现同类品牌相关达人。推荐基于示例标签，并非AI或实时推广分析。",
+                          )}
+                    </p>
                   )}
-                </div>
-                {expanded && (
-                  <div id="directory-filters">
-                    <DirectoryFiltersPanel
-                      filters={filters}
-                      setFilters={setFilters}
-                      locale={locale}
-                      compact={mode !== "search"}
-                    />
-                    {isTds && (
-                      <div className="tds-filter-actions">
-                        <span className="cw-muted">
-                          {t(
-                            "Numeric ranges use K (1,000).",
-                            "숫자 범위 단위 K = 1,000",
-                            "数值范围单位 K = 1,000。",
-                          )}
-                        </span>
-                        <button
-                          className="cw-button cw-button-primary"
-                          type="submit"
-                          disabled={busy}
-                        >
-                          {t("Apply filters", "필터 적용하기", "应用筛选")}
-                        </button>
-                      </div>
-                    )}
-                    {mode === "brands" && (
-                      <div className="cw-publishing">
-                        <ProfileSelect
-                          id="publishing-platform"
-                          label={t(
-                            "Publishing platform",
-                            "게임 출시 플랫폼",
-                            "发行平台",
-                          )}
-                          placeholder={t("All platforms", "전체", "全部")}
-                          value={publishingPlatform}
-                          onChange={(value) =>
-                            setPublishingPlatform(value as PublishingPlatform)
+                  <div className="cw-search-row">
+                    {mode === "brands" ? (
+                      <ProfileSelect
+                        id="brand-search"
+                        label={t(
+                          "Brand / product",
+                          "브랜드 / 제품",
+                          "品牌 / 产品",
+                        )}
+                        placeholder={t(
+                          "Select a sample brand",
+                          "예시 브랜드 선택",
+                          "选择示例品牌",
+                        )}
+                        value={brandId}
+                        onChange={setBrandId}
+                        options={data.brands.map((brand) => ({
+                          value: brand.id,
+                          label: brand.name,
+                        }))}
+                      />
+                    ) : (
+                      <label className="cw-search-input">
+                        <Search size={20} />
+                        <input
+                          aria-label={
+                            mode === "similar"
+                              ? t(
+                                  "Creator name or channel URL",
+                                  "크리에이터 이름 또는 채널 URL",
+                                  "达人名称或频道链接",
+                                )
+                              : t(
+                                  "Search creators",
+                                  "크리에이터 검색",
+                                  "搜索达人",
+                                )
                           }
-                          options={[
-                            {
-                              value: "all",
-                              label: t("All platforms", "전체", "全部"),
-                            },
-                            {
-                              value: "mobile",
-                              label: t("Mobile games", "모바일 게임", "手游"),
-                            },
-                            {
-                              value: "pc",
-                              label: t("PC games", "PC 게임", "端游"),
-                            },
-                            {
-                              value: "console",
-                              label: t(
-                                "Console games",
-                                "콘솔 게임",
-                                "主机游戏",
-                              ),
-                            },
-                          ]}
+                          value={filters.query}
+                          maxLength={500}
+                          onChange={(e) =>
+                            setFilters({ ...filters, query: e.target.value })
+                          }
+                          placeholder={
+                            mode === "similar"
+                              ? t(
+                                  "Paste a sample channel URL or enter its name",
+                                  "예시 채널 URL 또는 이름 입력",
+                                  "输入示例频道链接或名称",
+                                )
+                              : t(
+                                  "Search a name, channel or keyword…",
+                                  "이름, 채널 또는 키워드 검색…",
+                                  "搜索名称、频道或关键词…",
+                                )
+                          }
                         />
-                      </div>
+                      </label>
                     )}
-                  </div>
-                )}
-              </form>
-            </section>
-            {seed && (
-              <div className="cw-seed">
-                <Users size={20} />
-                <span>
-                  {t("Similar to", "기준 크리에이터", "相似于")}{" "}
-                  <strong>{seed.name}</strong>
-                </span>
-              </div>
-            )}
-            {!!relatedBrands.length && (
-              <div className="cw-brand-chips">
-                {relatedBrands.map((name) => (
-                  <span className="cw-tag" key={name}>
-                    {name}
-                  </span>
-                ))}
-              </div>
-            )}
-            <section className="cw-panel cw-results">
-              <div className="cw-toolbar">
-                <h2>
-                  {t("Creators", "크리에이터", "达人列表")}{" "}
-                  <span>{sorted.length}</span>
-                </h2>
-                <div className="cw-toolbar-controls">
-                  <ProfileSelect
-                    id="collection-target"
-                    label={t("Save to collection", "저장할 폴더", "收藏至")}
-                    placeholder={t(
-                      "Create a collection first",
-                      "먼저 폴더를 만드세요",
-                      "请先创建收藏夹",
-                    )}
-                    value={activeCollection?.id ?? ""}
-                    onChange={setCollectionId}
-                    options={data.collections.map((collection) => ({
-                      value: collection.id,
-                      label: collection.name,
-                    }))}
-                  />
-                  <ProfileSelect
-                    id="creator-sort"
-                    label={t("Sort by", "정렬", "排序")}
-                    placeholder=""
-                    value={sort}
-                    onChange={(value) => {
-                      setSort(value);
-                      setPage(1);
-                    }}
-                    options={[
-                      {
-                        value: "relevance",
-                        label: t("Recommended", "추천순", "推荐排序"),
-                      },
-                      {
-                        value: "followers",
-                        label: t("Most followers", "팔로워순", "粉丝数"),
-                      },
-                      {
-                        value: "views",
-                        label: t("Most views", "조회수순", "播放量"),
-                      },
-                      {
-                        value: "engagement",
-                        label: t("Engagement", "참여율순", "互动率"),
-                      },
-                    ]}
-                  />
-                  {isTds && (
-                    <div
-                      className="tds-view-toggle"
-                      aria-label={t(
-                        "Results layout",
-                        "결과 보기 방식",
-                        "结果视图",
-                      )}
+                    <button
+                      className="cw-button cw-button-primary"
+                      disabled={busy}
+                      type="submit"
                     >
-                      {(
-                        [
-                          [
-                            "cards",
-                            LayoutGrid,
-                            t("Card view", "카드 보기", "卡片视图"),
-                          ],
-                          [
-                            "list",
-                            List,
-                            t("List view", "목록 보기", "列表视图"),
-                          ],
-                        ] as const
-                      ).map(([view, Icon, label]) => (
-                        <button
-                          type="button"
-                          key={view}
-                          aria-label={label}
-                          aria-pressed={resultView === view}
-                          onClick={() => {
-                            setResultView(view);
-                            setPage(1);
-                          }}
-                        >
-                          <Icon size={18} />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              {sorted.length ? (
-                <>
-                  {isTds && resultView === "cards" ? (
-                    <TdsCreatorGrid
-                      creators={sorted.slice(
-                        (page - 1) * pageSize,
-                        page * pageSize,
-                      )}
-                      locale={locale}
-                      viewsWindow={(applied ?? filters).viewsWindow}
-                      savedIds={activeCollection?.creatorIds ?? []}
-                      busy={busy}
-                      onDetail={setDetail}
-                      onSave={(creator) => void saveCreator(creator)}
-                    />
-                  ) : (
-                    <div className="cw-table-wrap">
-                      <table className="cw-table">
-                        <thead>
-                          <tr>
-                            {[
-                              t("Creator", "크리에이터", "达人"),
-                              t("Followers", "팔로워", "粉丝数"),
-                              t("Average views", "평균 조회수", "平均播放量"),
-                              t("Topics", "주제", "主题"),
-                              t("Engagement", "참여율", "互动率"),
-                              t("Last posted", "최근 게시", "最近发布"),
-                              t("Save", "저장", "收藏"),
-                            ].map((heading) => (
-                              <th key={heading} scope="col">
-                                {heading}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sorted
-                            .slice((page - 1) * pageSize, page * pageSize)
-                            .map((creator) => (
-                              <tr key={creator.id}>
-                                <td>
-                                  <button
-                                    className="cw-person"
-                                    onClick={() => setDetail(creator)}
-                                  >
-                                    <span
-                                      className="cw-avatar-small"
-                                      style={{ background: creator.accent }}
-                                    >
-                                      {creator.name.slice(0, 1)}
-                                    </span>
-                                    <span>
-                                      <strong>{creator.name}</strong>
-                                      <span className="cw-muted">
-                                        {creator.country} ·{" "}
-                                        {creator.language.toUpperCase()} ·{" "}
-                                        {platformNames[creator.platform]}
-                                      </span>
-                                    </span>
-                                  </button>
-                                </td>
-                                <td className="cw-metric">
-                                  {number(creator.followers)}
-                                </td>
-                                <td>
-                                  <strong>
-                                    {number(
-                                      creator[
-                                        (applied ?? filters).viewsWindow ===
-                                        "last10"
-                                          ? "views10"
-                                          : "views30"
-                                      ],
-                                    )}
-                                  </strong>
-                                  <span className="cw-muted">
-                                    {(applied ?? filters).viewsWindow ===
-                                    "last10"
-                                      ? t(
-                                          "Last 10 posts",
-                                          "최근 10개",
-                                          "最近10条",
-                                        )
-                                      : t(
-                                          "Last 30 days",
-                                          "최근 30일",
-                                          "最近30天",
-                                        )}
-                                  </span>
-                                </td>
-                                <td>
-                                  <div className="cw-tags">
-                                    {creator.tags.slice(0, 2).map((tag) => (
-                                      <span className="cw-tag" key={tag}>
-                                        {tagLabel(tag, locale)}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </td>
-                                <td>{creator.engagement.toFixed(1)}%</td>
-                                <td>
-                                  {t(
-                                    `${creator.daysSincePosted} ${creator.daysSincePosted === 1 ? "day" : "days"} ago`,
-                                    `${creator.daysSincePosted}일 전`,
-                                    `${creator.daysSincePosted}天前`,
-                                  )}
-                                </td>
-                                <td>
-                                  <button
-                                    className="cw-icon-button"
-                                    disabled={busy}
-                                    aria-label={`${activeCollection?.creatorIds.includes(creator.id) ? t("Unsave", "저장 해제", "取消收藏") : t("Save", "저장", "收藏")} ${creator.name}`}
-                                    aria-pressed={
-                                      activeCollection?.creatorIds.includes(
-                                        creator.id,
-                                      ) ?? false
-                                    }
-                                    onClick={() => void saveCreator(creator)}
-                                  >
-                                    <Bookmark
-                                      size={20}
-                                      fill={
-                                        activeCollection?.creatorIds.includes(
-                                          creator.id,
-                                        )
-                                          ? "currentColor"
-                                          : "none"
-                                      }
-                                    />
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                  <div className="cw-pagination">
-                    <span>
-                      {t(
-                        `${sorted.length} sample profiles`,
-                        `예시 프로필 ${sorted.length}개`,
-                        `${sorted.length}个示例达人`,
-                      )}
-                    </span>
-                    <div>
-                      <button
-                        className="cw-icon-button"
-                        disabled={page === 1}
-                        aria-label={t("Previous page", "이전 페이지", "上一页")}
-                        onClick={() => setPage(page - 1)}
-                      >
-                        <ChevronLeft size={18} />
-                      </button>
-                      <span>
-                        {page} / {pages}
-                      </span>
-                      <button
-                        className="cw-icon-button"
-                        disabled={page === pages}
-                        aria-label={t("Next page", "다음 페이지", "下一页")}
-                        onClick={() => setPage(page + 1)}
-                      >
-                        <ChevronRight size={18} />
-                      </button>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="cw-empty">
-                  <Search size={36} />
-                  <h3>
-                    {!applied && mode !== "search"
-                      ? t(
-                          "Start your discovery",
-                          "새로운 크리에이터를 찾아보세요",
-                          "开始探索",
-                        )
-                      : t(
-                          "No matching creators",
-                          "일치하는 크리에이터가 없습니다",
-                          "没有符合条件的达人",
-                        )}
-                  </h3>
-                  <p>
-                    {mode === "similar"
-                      ? t(
-                          "Use a stored sample channel. External URLs cannot be fetched until a data provider is connected.",
-                          "저장된 예시 채널을 사용해 주세요. 데이터 공급원 연결 전에는 외부 URL을 조회할 수 없습니다.",
-                          "请使用已保存的示例频道。接入数据服务前无法读取外部链接。",
-                        )
-                      : t(
-                          "Choose a sample brand or adjust your search filters.",
-                          "예시 브랜드를 선택하거나 검색 조건을 조정해 주세요.",
-                          "请选择示例品牌或调整筛选条件。",
-                        )}
-                  </p>
-                  {isTds && (
+                      <Search size={18} />
+                      {busy
+                        ? t("Searching…", "검색 중…", "搜索中…")
+                        : mode === "brands"
+                          ? t("Recommend", "추천 보기", "查看推荐")
+                          : t("Search", "검색", "搜索")}
+                    </button>
                     <button
                       type="button"
-                      className="cw-button cw-button-primary tds-empty-reset"
+                      className="cw-button"
                       disabled={busy}
                       onClick={() => reset()}
                     >
-                      {t("Clear filters", "검색 조건 초기화", "重置筛选")}
+                      {t("Reset", "초기화", "重置")}
                     </button>
+                  </div>
+                  {mode === "similar" && sample && (
+                    <p className="cw-example">
+                      {t(
+                        "Try a stored example:",
+                        "저장된 예시로 시작:",
+                        "尝试已保存示例：",
+                      )}{" "}
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => {
+                          const next = {
+                            ...filters,
+                            query: sample.profileUrl,
+                          };
+                          setFilters(next);
+                          void search(next);
+                        }}
+                      >
+                        {sample.name}
+                      </button>
+                    </p>
                   )}
+                  <div className="cw-filter-toggle">
+                    {isTds && (
+                      <div
+                        className="tds-quick-filters"
+                        aria-label={t("Quick filters", "빠른 필터", "快速筛选")}
+                      >
+                        {[
+                          {
+                            label: t("South Korea", "대한민국", "韩国"),
+                            active: filters.country === "KR",
+                            next: {
+                              ...filters,
+                              country: filters.country === "KR" ? "" : "KR",
+                            },
+                          },
+                          {
+                            label: t("Gaming", "게임", "游戏"),
+                            active: filters.includeTags.includes("gaming"),
+                            next: {
+                              ...filters,
+                              includeTags: filters.includeTags.includes(
+                                "gaming",
+                              )
+                                ? filters.includeTags.filter(
+                                    (tag) => tag !== "gaming",
+                                  )
+                                : [...filters.includeTags, "gaming"],
+                            },
+                          },
+                          {
+                            label: t(
+                              "100K+ followers",
+                              "팔로워 10만 이상",
+                              "粉丝10万以上",
+                            ),
+                            active: filters.followersMin === "100",
+                            next: {
+                              ...filters,
+                              followersMin:
+                                filters.followersMin === "100" ? "" : "100",
+                            },
+                          },
+                          {
+                            label: t(
+                              "Posted this week",
+                              "최근 7일 내 게시",
+                              "近7天发布",
+                            ),
+                            active: filters.lastPosted === "7",
+                            next: {
+                              ...filters,
+                              lastPosted:
+                                filters.lastPosted === "7"
+                                  ? ("" as const)
+                                  : ("7" as const),
+                            },
+                          },
+                        ].map(({ label, active, next }) => (
+                          <button
+                            type="button"
+                            key={label}
+                            aria-pressed={active}
+                            disabled={busy}
+                            onClick={() => {
+                              setFilters(next);
+                              void search(next);
+                            }}
+                          >
+                            {active && <Check size={14} />}
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <button
+                      className="cw-button"
+                      type="button"
+                      aria-expanded={expanded}
+                      aria-controls="directory-filters"
+                      onClick={() => setExpanded(!expanded)}
+                    >
+                      <SlidersHorizontal size={17} />
+                      {isTds
+                        ? t("All filters", "상세 필터", "更多筛选")
+                        : t("Search filters", "검색 필터", "搜索筛选")}
+                      {expanded ? " −" : " +"}
+                    </button>
+                    {!isTds && (
+                      <span className="cw-muted">
+                        {t(
+                          "Numeric ranges use K (1,000).",
+                          "숫자 범위 단위 K = 1,000",
+                          "数值范围单位 K = 1,000。",
+                        )}
+                      </span>
+                    )}
+                  </div>
+                  {expanded && (
+                    <div id="directory-filters">
+                      <DirectoryFiltersPanel
+                        filters={filters}
+                        setFilters={setFilters}
+                        locale={locale}
+                        compact={mode !== "search"}
+                      />
+                      {isTds && (
+                        <div className="tds-filter-actions">
+                          <span className="cw-muted">
+                            {t(
+                              "Numeric ranges use K (1,000).",
+                              "숫자 범위 단위 K = 1,000",
+                              "数值范围单位 K = 1,000。",
+                            )}
+                          </span>
+                          <button
+                            className="cw-button cw-button-primary"
+                            type="submit"
+                            disabled={busy}
+                          >
+                            {t("Apply filters", "필터 적용하기", "应用筛选")}
+                          </button>
+                        </div>
+                      )}
+                      {mode === "brands" && (
+                        <div className="cw-publishing">
+                          <ProfileSelect
+                            id="publishing-platform"
+                            label={t(
+                              "Publishing platform",
+                              "게임 출시 플랫폼",
+                              "发行平台",
+                            )}
+                            placeholder={t("All platforms", "전체", "全部")}
+                            value={publishingPlatform}
+                            onChange={(value) =>
+                              setPublishingPlatform(value as PublishingPlatform)
+                            }
+                            options={[
+                              {
+                                value: "all",
+                                label: t("All platforms", "전체", "全部"),
+                              },
+                              {
+                                value: "mobile",
+                                label: t("Mobile games", "모바일 게임", "手游"),
+                              },
+                              {
+                                value: "pc",
+                                label: t("PC games", "PC 게임", "端游"),
+                              },
+                              {
+                                value: "console",
+                                label: t(
+                                  "Console games",
+                                  "콘솔 게임",
+                                  "主机游戏",
+                                ),
+                              },
+                            ]}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </form>
+              </section>
+              {seed && (
+                <div className="cw-seed">
+                  <Users size={20} />
+                  <span>
+                    {t("Similar to", "기준 크리에이터", "相似于")}{" "}
+                    <strong>{seed.name}</strong>
+                  </span>
                 </div>
               )}
-            </section>
-            {!!data.recentSearches.length && (
-              <section className="cw-history">
-                <h2>{t("Recent searches", "최근 검색", "最近搜索")}</h2>
-                <div>
-                  {data.recentSearches.slice(0, 5).map((item) => (
-                    <span key={item.id}>
-                      {item.query ||
-                        (item.mode === "brands"
-                          ? t(
-                              "Related brand search",
-                              "동종 브랜드 검색",
-                              "同类品牌搜索",
-                            )
-                          : t(
-                              "Filtered creator search",
-                              "크리에이터 조건 검색",
-                              "达人筛选搜索",
-                            ))}{" "}
-                      <time>
-                        {new Date(item.createdAt).toLocaleDateString(locale)}
-                      </time>
+              {!!relatedBrands.length && (
+                <div className="cw-brand-chips">
+                  {relatedBrands.map((name) => (
+                    <span className="cw-tag" key={name}>
+                      {name}
                     </span>
                   ))}
                 </div>
+              )}
+              <section className="cw-panel cw-results">
+                <div className="cw-toolbar">
+                  <h2>
+                    {t("Creators", "크리에이터", "达人列表")}{" "}
+                    <span>{sorted.length}</span>
+                  </h2>
+                  <div className="cw-toolbar-controls">
+                    <ProfileSelect
+                      id="collection-target"
+                      label={t("Save to collection", "저장할 폴더", "收藏至")}
+                      placeholder={t(
+                        "Create a collection first",
+                        "먼저 폴더를 만드세요",
+                        "请先创建收藏夹",
+                      )}
+                      value={activeCollection?.id ?? ""}
+                      onChange={setCollectionId}
+                      options={data.collections.map((collection) => ({
+                        value: collection.id,
+                        label: collection.name,
+                      }))}
+                    />
+                    <ProfileSelect
+                      id="creator-sort"
+                      label={t("Sort by", "정렬", "排序")}
+                      placeholder=""
+                      value={sort}
+                      onChange={(value) => {
+                        setSort(value);
+                        setPage(1);
+                      }}
+                      options={[
+                        {
+                          value: "relevance",
+                          label: t("Recommended", "추천순", "推荐排序"),
+                        },
+                        {
+                          value: "followers",
+                          label: t("Most followers", "팔로워순", "粉丝数"),
+                        },
+                        {
+                          value: "views",
+                          label: t("Most views", "조회수순", "播放量"),
+                        },
+                        {
+                          value: "engagement",
+                          label: t("Engagement", "참여율순", "互动率"),
+                        },
+                      ]}
+                    />
+                    {isTds && (
+                      <div
+                        className="tds-view-toggle"
+                        aria-label={t(
+                          "Results layout",
+                          "결과 보기 방식",
+                          "结果视图",
+                        )}
+                      >
+                        {(
+                          [
+                            [
+                              "cards",
+                              LayoutGrid,
+                              t("Card view", "카드 보기", "卡片视图"),
+                            ],
+                            [
+                              "list",
+                              List,
+                              t("List view", "목록 보기", "列表视图"),
+                            ],
+                          ] as const
+                        ).map(([view, Icon, label]) => (
+                          <button
+                            type="button"
+                            key={view}
+                            aria-label={label}
+                            aria-pressed={resultView === view}
+                            onClick={() => {
+                              setResultView(view);
+                              setPage(1);
+                            }}
+                          >
+                            <Icon size={18} />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {sorted.length ? (
+                  <>
+                    {isTds && resultView === "cards" ? (
+                      <TdsCreatorGrid
+                        creators={sorted.slice(
+                          (page - 1) * pageSize,
+                          page * pageSize,
+                        )}
+                        locale={locale}
+                        viewsWindow={(applied ?? filters).viewsWindow}
+                        savedIds={activeCollection?.creatorIds ?? []}
+                        busy={busy}
+                        onDetail={setDetail}
+                        onSave={(creator) => void saveCreator(creator)}
+                      />
+                    ) : (
+                      <div className="cw-table-wrap">
+                        <table className="cw-table">
+                          <thead>
+                            <tr>
+                              {[
+                                t("Creator", "크리에이터", "达人"),
+                                t("Followers", "팔로워", "粉丝数"),
+                                t("Average views", "평균 조회수", "平均播放量"),
+                                t("Topics", "주제", "主题"),
+                                t("Engagement", "참여율", "互动率"),
+                                t("Last posted", "최근 게시", "最近发布"),
+                                t("Save", "저장", "收藏"),
+                              ].map((heading) => (
+                                <th key={heading} scope="col">
+                                  {heading}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sorted
+                              .slice((page - 1) * pageSize, page * pageSize)
+                              .map((creator) => (
+                                <tr key={creator.id}>
+                                  <td>
+                                    <button
+                                      className="cw-person"
+                                      onClick={() => setDetail(creator)}
+                                    >
+                                      <span
+                                        className="cw-avatar-small"
+                                        style={{ background: creator.accent }}
+                                      >
+                                        {creator.name.slice(0, 1)}
+                                      </span>
+                                      <span>
+                                        <strong>{creator.name}</strong>
+                                        <span className="cw-muted">
+                                          {creator.country} ·{" "}
+                                          {creator.language.toUpperCase()} ·{" "}
+                                          {platformNames[creator.platform]}
+                                        </span>
+                                      </span>
+                                    </button>
+                                  </td>
+                                  <td className="cw-metric">
+                                    {number(creator.followers)}
+                                  </td>
+                                  <td>
+                                    <strong>
+                                      {number(
+                                        creator[
+                                          (applied ?? filters).viewsWindow ===
+                                          "last10"
+                                            ? "views10"
+                                            : "views30"
+                                        ],
+                                      )}
+                                    </strong>
+                                    <span className="cw-muted">
+                                      {(applied ?? filters).viewsWindow ===
+                                      "last10"
+                                        ? t(
+                                            "Last 10 posts",
+                                            "최근 10개",
+                                            "最近10条",
+                                          )
+                                        : t(
+                                            "Last 30 days",
+                                            "최근 30일",
+                                            "最近30天",
+                                          )}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <div className="cw-tags">
+                                      {creator.tags.slice(0, 2).map((tag) => (
+                                        <span className="cw-tag" key={tag}>
+                                          {tagLabel(tag, locale)}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </td>
+                                  <td>{creator.engagement.toFixed(1)}%</td>
+                                  <td>
+                                    {t(
+                                      `${creator.daysSincePosted} ${creator.daysSincePosted === 1 ? "day" : "days"} ago`,
+                                      `${creator.daysSincePosted}일 전`,
+                                      `${creator.daysSincePosted}天前`,
+                                    )}
+                                  </td>
+                                  <td>
+                                    <button
+                                      className="cw-icon-button"
+                                      disabled={busy}
+                                      aria-label={`${activeCollection?.creatorIds.includes(creator.id) ? t("Unsave", "저장 해제", "取消收藏") : t("Save", "저장", "收藏")} ${creator.name}`}
+                                      aria-pressed={
+                                        activeCollection?.creatorIds.includes(
+                                          creator.id,
+                                        ) ?? false
+                                      }
+                                      onClick={() => void saveCreator(creator)}
+                                    >
+                                      <Bookmark
+                                        size={20}
+                                        fill={
+                                          activeCollection?.creatorIds.includes(
+                                            creator.id,
+                                          )
+                                            ? "currentColor"
+                                            : "none"
+                                        }
+                                      />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    <div className="cw-pagination">
+                      <span>
+                        {t(
+                          `${sorted.length} sample profiles`,
+                          `예시 프로필 ${sorted.length}개`,
+                          `${sorted.length}个示例达人`,
+                        )}
+                      </span>
+                      <div>
+                        <button
+                          className="cw-icon-button"
+                          disabled={page === 1}
+                          aria-label={t(
+                            "Previous page",
+                            "이전 페이지",
+                            "上一页",
+                          )}
+                          onClick={() => setPage(page - 1)}
+                        >
+                          <ChevronLeft size={18} />
+                        </button>
+                        <span>
+                          {page} / {pages}
+                        </span>
+                        <button
+                          className="cw-icon-button"
+                          disabled={page === pages}
+                          aria-label={t("Next page", "다음 페이지", "下一页")}
+                          onClick={() => setPage(page + 1)}
+                        >
+                          <ChevronRight size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="cw-empty">
+                    <Search size={36} />
+                    <h3>
+                      {!applied && mode !== "search"
+                        ? t(
+                            "Start your discovery",
+                            "새로운 크리에이터를 찾아보세요",
+                            "开始探索",
+                          )
+                        : t(
+                            "No matching creators",
+                            "일치하는 크리에이터가 없습니다",
+                            "没有符合条件的达人",
+                          )}
+                    </h3>
+                    <p>
+                      {mode === "similar"
+                        ? t(
+                            "Use a stored sample channel. External URLs cannot be fetched until a data provider is connected.",
+                            "저장된 예시 채널을 사용해 주세요. 데이터 공급원 연결 전에는 외부 URL을 조회할 수 없습니다.",
+                            "请使用已保存的示例频道。接入数据服务前无法读取外部链接。",
+                          )
+                        : t(
+                            "Choose a sample brand or adjust your search filters.",
+                            "예시 브랜드를 선택하거나 검색 조건을 조정해 주세요.",
+                            "请选择示例品牌或调整筛选条件。",
+                          )}
+                    </p>
+                    {isTds && (
+                      <button
+                        type="button"
+                        className="cw-button cw-button-primary tds-empty-reset"
+                        disabled={busy}
+                        onClick={() => reset()}
+                      >
+                        {t("Clear filters", "검색 조건 초기화", "重置筛选")}
+                      </button>
+                    )}
+                  </div>
+                )}
               </section>
-            )}
-          </>
-        ) : (
-          <WorkspaceTools
-            mode={mode}
-            locale={locale}
-            data={data}
-            onMutate={onMutate}
-            busy={busy}
-          />
-        )}
+              {!!data.recentSearches.length && (
+                <section className="cw-history">
+                  <h2>{t("Recent searches", "최근 검색", "最近搜索")}</h2>
+                  <div>
+                    {data.recentSearches.slice(0, 5).map((item) => (
+                      <span key={item.id}>
+                        {item.query ||
+                          (item.mode === "brands"
+                            ? t(
+                                "Related brand search",
+                                "동종 브랜드 검색",
+                                "同类品牌搜索",
+                              )
+                            : t(
+                                "Filtered creator search",
+                                "크리에이터 조건 검색",
+                                "达人筛选搜索",
+                              ))}{" "}
+                        <time>
+                          {new Date(item.createdAt).toLocaleDateString(locale)}
+                        </time>
+                      </span>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          ) : (
+            <WorkspaceTools
+              mode={mode}
+              locale={locale}
+              data={data}
+              onMutate={onMutate}
+              busy={busy}
+            />
+          )}
+        </div>
       </main>
       <dialog
         ref={dialogRef}

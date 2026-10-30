@@ -51,6 +51,7 @@ import { MontageShell } from "../montage/montage-shell";
 import { useMontageSearch } from "../montage/use-montage-search";
 import { Montage2Filters } from "./montage2-filters";
 import { Montage2Results } from "./montage2-results";
+import shellStyles from "../../../_components/workspace/workspace-shell.module.css";
 import styles from "./montage2-search.module.css";
 
 type Props = {
@@ -59,6 +60,7 @@ type Props = {
   status: "PENDING" | "ACTIVE";
   userName: string;
   isGuest: boolean;
+  serviceView?: boolean;
 };
 
 export function Montage2Search(props: Props) {
@@ -69,7 +71,14 @@ export function Montage2Search(props: Props) {
   );
 }
 
-function Workspace({ locale, organizationName, status, userName, isGuest }: Props) {
+function Workspace({
+  locale,
+  organizationName,
+  status,
+  userName,
+  isGuest,
+  serviceView = false,
+}: Props) {
   const t = (en: string, ko: string, zh: string) =>
     translate(locale, en, ko, zh);
   const state = useMontageSearch(locale, isGuest);
@@ -129,7 +138,10 @@ function Workspace({ locale, organizationName, status, userName, isGuest }: Prop
   }
 
   return (
-    <div className={styles.workspace} lang={locale === "zh" ? "zh-CN" : locale}>
+    <div
+      className={shellStyles.workspace}
+      lang={locale === "zh" ? "zh-CN" : locale}
+    >
       <MontageShell
         locale={locale}
         organizationName={organizationName}
@@ -137,9 +149,9 @@ function Workspace({ locale, organizationName, status, userName, isGuest }: Prop
         isGuest={isGuest}
         busy={busy}
         onSignOut={() => void state.signOut()}
-        searchPath="/storage/search/montage2"
+        searchPath="/storage/search"
       />
-      <main id="montage-main" className={styles.main}>
+      <main id="workspace-main" className={shellStyles.main}>
         <div className={styles.container}>
           <nav
             className={styles.breadcrumb}
@@ -502,14 +514,16 @@ function Workspace({ locale, organizationName, status, userName, isGuest }: Prop
             >
               © Futures Medialab
             </Typography>
-            <TextButton
-              as={Link}
-              href={`/storage/search/montage?lang=${locale}`}
-              color="assistive"
-              size="small"
-            >
-              {t("View Montage 1", "Montage 1 비교하기", "查看 Montage 1")}
-            </TextButton>
+            {!serviceView && (
+              <TextButton
+                as={Link}
+                href={`/storage/search/montage?lang=${locale}`}
+                color="assistive"
+                size="small"
+              >
+                {t("View Montage 1", "Montage 1 비교하기", "查看 Montage 1")}
+              </TextButton>
+            )}
           </footer>
         </div>
       </main>

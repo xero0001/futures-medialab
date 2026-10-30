@@ -1,25 +1,3 @@
-.workspace {
-  --fm-blue: var(--semantic-surface-brand-primary);
-  --fm-blue-text: var(--semantic-foreground-brand-primary);
-  --fm-blue-soft: var(--semantic-surface-brand-subtle);
-  min-height: 100vh;
-  color: var(--semantic-foreground-neutral-primary);
-  background: var(--semantic-background-neutral-primary);
-  font-family:
-    Pretendard,
-    -apple-system,
-    BlinkMacSystemFont,
-    system-ui,
-    sans-serif;
-}
-.workspace :is(button, a, input):focus-visible {
-  outline: 2px solid var(--semantic-foreground-brand-primary);
-  outline-offset: 3px;
-}
-.main {
-  margin-left: 228px;
-  padding: var(--spacing-32) var(--spacing-40);
-}
 .container {
   max-width: 1200px;
   margin-inline: auto;
@@ -184,18 +162,6 @@
   flex-direction: column;
   gap: var(--spacing-12);
 }
-@media (max-width: 1199px) {
-  .main {
-    margin-left: 208px;
-    padding: var(--spacing-32) var(--spacing-24);
-  }
-}
-@media (max-width: 900px) {
-  .main {
-    margin-left: 0;
-    padding: var(--spacing-24) var(--spacing-20);
-  }
-}
 @media (max-width: 700px) {
   .heading {
     align-items: flex-start;
@@ -237,10 +203,5 @@
   .profileStats {
     gap: var(--spacing-12);
     padding: var(--spacing-16);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .workspace * {
-    scroll-behavior: auto;
   }
 }
