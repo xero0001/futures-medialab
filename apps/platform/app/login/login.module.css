@@ -1,0 +1,257 @@
+.page {
+  --login-blue: var(--semantic-surface-brand-primary, #0066ff);
+  --login-line: var(--semantic-line-neutral-tertiary, #eaebee);
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  color: var(--semantic-foreground-neutral-primary, #171719);
+  background: var(--semantic-surface-neutral-secondary, #f7f7f8);
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page * {
+  box-sizing: border-box;
+}
+
+.page :is(h1, p) {
+  margin: 0;
+}
+
+.page :is(input, button) {
+  font-family: inherit;
+}
+
+.page :is(a, button):focus-visible {
+  outline: 2px solid var(--login-blue);
+  outline-offset: 3px;
+}
+
+.page button {
+  cursor: pointer;
+}
+
+.page button:disabled {
+  cursor: wait;
+}
+
+.page[lang="ko"] {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 76px;
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--login-line);
+  background: var(--semantic-surface-neutral-primary, #fff);
+}
+
+.brand :global(.fm-wordmark) {
+  gap: 10px;
+}
+
+.brand :global(.fm-wordmark svg),
+.brand :global(.fm-wordmark svg path) {
+  color: var(--login-blue);
+  fill: var(--login-blue);
+}
+
+.brand :global(.fm-wordmark > span) {
+  font-size: 25px;
+}
+
+.language.language {
+  color: var(--semantic-foreground-neutral-secondary, #46474c);
+}
+
+.language :global(.fm-language-trigger):hover,
+.language :global(.fm-language-trigger)[aria-expanded="true"],
+.language :global(.fm-language-option):hover,
+.language :global(.fm-language-option)[aria-checked="true"] {
+  color: var(--semantic-foreground-neutral-primary, #171719);
+  background: var(--semantic-surface-neutral-secondary, #f7f7f8);
+}
+
+.language :global(.fm-language-option) {
+  color: inherit;
+}
+
+.language :global(.fm-language-option)[aria-checked="true"] svg {
+  color: var(--login-blue);
+}
+
+.language :global(.fm-language-menu) {
+  border-color: var(--login-line);
+  box-shadow: 0 4px 16px rgb(23 23 25 / 8%);
+}
+
+.language :global(.fm-language-trigger):focus-visible,
+.language :global(.fm-language-option):focus-visible {
+  outline-color: var(--login-blue);
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px 40px;
+}
+
+.content {
+  width: 100%;
+  max-width: 480px;
+}
+
+.card {
+  padding: 40px;
+  border: 1px solid var(--login-line);
+  border-radius: 24px;
+  background: var(--semantic-surface-neutral-primary, #fff);
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Keep password-manager autofill, labels and the focus ring on the real inputs. */
+.page .form input {
+  min-width: 0;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.form label {
+  font-weight: 600;
+}
+
+.form :global([data-component="text-field"]) {
+  height: 48px;
+  padding-block: 10px;
+  border-radius: 12px;
+}
+
+.form :global([data-role="text-field-reset"]) {
+  display: none;
+}
+
+.form .submit {
+  margin-top: 8px;
+  border-radius: 12px;
+  font-size: 16px;
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--semantic-surface-negative-primary, #fff0f0);
+  color: var(--semantic-foreground-negative-strong, #e52222);
+}
+
+.error > svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+
+.error:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.card .divider {
+  margin-block: 28px;
+}
+
+.register {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.page .partnerNote {
+  margin: 24px auto 0;
+  max-width: 384px;
+  text-align: center;
+  color: var(--semantic-foreground-neutral-tertiary, #878a93);
+}
+
+.home {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px;
+  text-align: center;
+  color: var(--semantic-foreground-neutral-tertiary, #878a93);
+}
+
+@media (max-width: 600px) {
+  .page {
+    background: var(--semantic-surface-neutral-primary, #fff);
+  }
+
+  .header {
+    min-height: 68px;
+    padding: 12px 20px;
+    gap: 12px;
+  }
+
+  .brand :global(.fm-wordmark svg) {
+    width: 36px;
+    height: 36px;
+  }
+
+  .brand :global(.fm-wordmark > span) {
+    font-size: 23px;
+  }
+
+  .main {
+    align-items: flex-start;
+    padding: 48px 24px 32px;
+  }
+
+  .content {
+    max-width: 400px;
+  }
+
+  .card {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .intro {
+    margin-bottom: 32px;
+  }
+
+  .footer {
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+}

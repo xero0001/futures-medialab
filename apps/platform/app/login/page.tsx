@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { resolveLocale } from "../../lib/locale";
 import { LoginForm } from "./login-form";
-import "./login.css";
 
 export const metadata: Metadata = {
   title: "Log in — Futures Medialab",
