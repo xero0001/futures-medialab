@@ -27,7 +27,7 @@
   padding: 15px 18px;
   margin-bottom: 20px;
   background: #fff;
-  color: #536075;
+  color: var(--brand-muted, #536075);
   font-size: 14px;
   line-height: 1.65;
 }
@@ -119,11 +119,11 @@
   color: var(--cw-ink);
 }
 .cwr-list-item:hover {
-  background: #f8f9fc;
+  background: var(--brand-neutral-soft, #f8f9fc);
 }
 .cwr-list-item.is-selected {
-  background: #f5f4ff;
-  border-color: #b9b5f5;
+  background: var(--brand-primary-soft, #f5f4ff);
+  border-color: var(--brand-line, #b9b5f5);
   box-shadow: inset 3px 0 var(--cw-accent);
 }
 .cwr-list-item > div {
@@ -150,14 +150,14 @@
   width: fit-content;
   padding: 3px 9px;
   border-radius: 6px;
-  color: #526074;
-  background: #eef0f4;
+  color: var(--brand-muted, #526074);
+  background: var(--brand-neutral-soft, #eef0f4);
   font-size: 14px;
   font-weight: 600;
 }
 .cwr-status-in_progress {
-  color: #3e48a0;
-  background: #eeefff;
+  color: var(--brand-primary, #3e48a0);
+  background: var(--brand-primary-soft, #eeefff);
 }
 .cwr-status-waiting_brand {
   color: #97551b;
@@ -168,8 +168,8 @@
   background: #edf7f0;
 }
 .cwr-status-closed {
-  color: #667080;
-  background: #f2f3f5;
+  color: var(--brand-muted, #667080);
+  background: var(--brand-neutral-soft, #f2f3f5);
 }
 .cwr-pagination {
   display: flex;
@@ -204,7 +204,7 @@
   min-height: 430px;
 }
 .cwr-detail-placeholder svg {
-  color: #9695b8;
+  color: var(--brand-muted, #9695b8);
 }
 .cwr-detail {
   padding: 28px !important;
@@ -234,7 +234,7 @@
   margin: 0 0 26px;
   padding: 20px;
   border-radius: 12px;
-  background: #f7f8fa;
+  background: var(--brand-neutral-soft, #f7f8fa);
 }
 .cwr-metadata dt {
   color: var(--cw-muted);
@@ -274,8 +274,8 @@
   margin-bottom: 14px;
 }
 .cwr-message.is-operations {
-  background: #fafaff;
-  border-color: #deddf1;
+  background: var(--brand-primary-soft, #fafaff);
+  border-color: var(--brand-line, #deddf1);
 }
 .cwr-message header {
   display: flex;
@@ -398,7 +398,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f6f7fa;
+  background: var(--brand-neutral-soft, #f6f7fa);
   border-radius: 7px;
   padding: 10px;
   font-size: 14px;
@@ -421,7 +421,7 @@
   align-items: center;
   gap: 16px;
   justify-content: space-between;
-  background: #f7f8fa;
+  background: var(--brand-neutral-soft, #f7f8fa);
   border-radius: 10px;
   padding: 17px;
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { BrandButton } from "./brand-controls";
+
 import { useEffect, useState } from "react";
 import { RefreshCw, Users } from "lucide-react";
 import type { Locale } from "../../_components/landing-copy";
@@ -124,7 +126,7 @@ export function CampaignApplications({
           <Users size={19} aria-hidden="true" />
           {t("Applications", "신청 내역", "报名列表")}
         </h4>
-        <button
+        <BrandButton
           type="button"
           className="cw-button"
           onClick={reload}
@@ -132,7 +134,7 @@ export function CampaignApplications({
         >
           <RefreshCw size={16} aria-hidden="true" />
           {t("Refresh", "새로고침", "刷新")}
-        </button>
+        </BrandButton>
       </div>
       <p className="cw-tools-muted">
         {t(
@@ -204,7 +206,7 @@ export function CampaignApplications({
                     {confirmation?.id === application.id ? (
                       <>
                         <span>{decisions[confirmation.action]}?</span>
-                        <button
+                        <BrandButton
                           type="button"
                           className="cw-button cw-button-primary"
                           disabled={busy || loading}
@@ -213,8 +215,8 @@ export function CampaignApplications({
                           }
                         >
                           {t("Confirm", "확정", "确认")}
-                        </button>
-                        <button
+                        </BrandButton>
+                        <BrandButton
                           type="button"
                           className="cw-button"
                           disabled={busy}
@@ -225,12 +227,12 @@ export function CampaignApplications({
                             "기존 상태 유지",
                             "保持当前状态",
                           )}
-                        </button>
+                        </BrandButton>
                       </>
                     ) : (
                       <>
                         {application.status === "SUBMITTED" && (
-                          <button
+                          <BrandButton
                             type="button"
                             className="cw-button"
                             disabled={busy || loading}
@@ -239,9 +241,9 @@ export function CampaignApplications({
                             }
                           >
                             {decisions.shortlist}
-                          </button>
+                          </BrandButton>
                         )}
-                        <button
+                        <BrandButton
                           type="button"
                           className="cw-button cw-button-primary"
                           disabled={busy || loading}
@@ -253,8 +255,8 @@ export function CampaignApplications({
                           }
                         >
                           {decisions.accept}
-                        </button>
-                        <button
+                        </BrandButton>
+                        <BrandButton
                           type="button"
                           className="cw-button"
                           disabled={busy || loading}
@@ -266,7 +268,7 @@ export function CampaignApplications({
                           }
                         >
                           {decisions.reject}
-                        </button>
+                        </BrandButton>
                       </>
                     )}
                   </div>

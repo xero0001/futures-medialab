@@ -1,5 +1,7 @@
 "use client";
 
+import { BrandButton, BrandInput, BrandTextArea } from "./brand-controls";
+
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
@@ -16,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import type { Locale } from "../../_components/landing-copy";
-import { ProfileSelect } from "../../onboarding/brand/profile-select";
+import { BrandSelect as ProfileSelect } from "./brand-controls";
 import "./request-workspace.css";
 
 const statuses = [
@@ -629,7 +631,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
             "在同一处管理推广咨询、资料及运营团队回复。",
           )}
         </p>
-        <button
+        <BrandButton
           className="cw-button cw-button-primary"
           type="button"
           disabled={busy}
@@ -644,7 +646,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
           {compose
             ? t("Cancel", "취소", "取消")
             : t("New request", "새 요청", "新建请求")}
-        </button>
+        </BrandButton>
       </div>
       <div className="cwr-delivery-note">
         <MessageSquareText size={19} aria-hidden="true" />
@@ -678,7 +680,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
             <fieldset disabled={busy}>
               <label className="cw-field">
                 <span>{t("Title", "제목", "标题")} *</span>
-                <input
+                <BrandInput
                   ref={titleRef}
                   required
                   minLength={2}
@@ -720,7 +722,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
               </div>
               <label className="cw-field">
                 <span>{t("Details", "상세 내용", "详细内容")} *</span>
-                <textarea
+                <BrandTextArea
                   required
                   rows={5}
                   maxLength={5000}
@@ -740,7 +742,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
                   "创建请求后，可在回复中添加附件。",
                 )}
               </p>
-              <button
+              <BrandButton
                 type="submit"
                 className="cw-button cw-button-primary"
                 disabled={title.trim().length < 2 || !body.trim()}
@@ -749,7 +751,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
                 {busy
                   ? t("Sending…", "전송 중…", "发送中…")
                   : t("Submit request", "요청 접수", "提交请求")}
-              </button>
+              </BrandButton>
             </fieldset>
           </form>
         </section>
@@ -769,7 +771,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
           >
             <label className="cwr-search-input">
               <Search size={18} aria-hidden="true" />
-              <input
+              <BrandInput
                 aria-label={t("Search requests", "요청 검색", "搜索请求")}
                 placeholder={t("Search requests", "요청 검색", "搜索请求")}
                 maxLength={160}
@@ -777,9 +779,9 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
                 onChange={(event) => setQuery(event.target.value)}
               />
             </label>
-            <button type="submit" className="cw-button" disabled={busy}>
+            <BrandButton type="submit" className="cw-button" disabled={busy}>
               {t("Search", "검색", "搜索")}
-            </button>
+            </BrandButton>
           </form>
           <ProfileSelect
             id="request-filter-status"
@@ -1040,7 +1042,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
                           "运营团队已完成处理，需要进一步审核吗？",
                         )}
                       </p>
-                      <button
+                      <BrandButton
                         type="button"
                         className="cw-button"
                         disabled={busy}
@@ -1052,7 +1054,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
                           "재검토 요청",
                           "请求重新审核",
                         )}
-                      </button>
+                      </BrandButton>
                     </div>
                   )}
                   {reopening && activeDetail.status === "RESOLVED" && (
@@ -1065,7 +1067,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
                             "重新审核原因",
                           )}
                         </span>
-                        <textarea
+                        <BrandTextArea
                           required
                           rows={3}
                           minLength={2}
@@ -1077,7 +1079,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
                           }
                         />
                       </label>
-                      <button
+                      <BrandButton
                         type="submit"
                         className="cw-button cw-button-primary"
                         disabled={busy || reopenReason.trim().length < 2}
@@ -1087,14 +1089,14 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
                           "재검토 요청하기",
                           "提交审核请求",
                         )}
-                      </button>
+                      </BrandButton>
                     </form>
                   )}
                   {activeDetail.status !== "RESOLVED" && (
                     <form className="cwr-reply" onSubmit={sendReply}>
                       <label className="cw-field">
                         <span>{t("Add a reply", "답변 작성", "添加回复")}</span>
-                        <textarea
+                        <BrandTextArea
                           rows={4}
                           required
                           maxLength={5000}
@@ -1118,7 +1120,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
                       )}
                       <div className="cwr-reply-actions">
                         <div>
-                          <input
+                          <BrandInput
                             ref={fileRef}
                             type="file"
                             className="cwr-visually-hidden"
@@ -1138,7 +1140,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
                               void upload(event.target.files?.[0])
                             }
                           />
-                          <button
+                          <BrandButton
                             type="button"
                             className="cw-button"
                             disabled={
@@ -1150,7 +1152,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
                           >
                             <Paperclip size={17} aria-hidden="true" />
                             {t("Attach file", "파일 첨부", "添加附件")}
-                          </button>
+                          </BrandButton>
                           <p className="cwr-muted">
                             {activeDetail.attachmentsEnabled
                               ? t(
@@ -1165,7 +1167,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
                                 )}
                           </p>
                         </div>
-                        <button
+                        <BrandButton
                           type="submit"
                           className="cw-button cw-button-primary"
                           disabled={
@@ -1176,7 +1178,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
                           {busy
                             ? t("Processing…", "처리 중…", "处理中…")
                             : t("Send reply", "답변 보내기", "发送回复")}
-                        </button>
+                        </BrandButton>
                       </div>
                       {attachments.length > 0 && (
                         <p className="cwr-muted">
@@ -1248,13 +1250,13 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
               )}
             </>
           ) : (
-            <button
+            <BrandButton
               type="button"
               className="cw-button"
               onClick={() => setRevision((value) => value + 1)}
             >
               {t("Retry", "다시 시도", "重试")}
-            </button>
+            </BrandButton>
           )}
         </section>
       </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { BrandInput, BrandButton, BrandTextArea } from "./brand-controls";
+
 import Link from "next/link";
 import { useRef, useState, type FormEvent } from "react";
 import {
@@ -20,7 +22,8 @@ import type {
   WorkspaceBootstrap,
   WorkspaceCampaign,
 } from "../../../lib/workspace-types";
-import { ProfileSelect } from "../../onboarding/brand/profile-select";
+import { BrandSelect as ProfileSelect } from "./brand-controls";
+import { CreatorAvatar } from "./creator-avatar";
 import { CampaignApplications } from "./campaign-applications";
 import "./workspace-tools.css";
 
@@ -121,7 +124,7 @@ function CollectionsView({ locale, data, onMutate, busy }: ViewProps) {
         <form className="cw-tools-inline-form" onSubmit={create}>
           <label className="cw-field">
             <span>{t("New folder", "새 폴더", "新建文件夹")}</span>
-            <input
+            <BrandInput
               value={name}
               onChange={(event) => setName(event.target.value)}
               maxLength={80}
@@ -133,21 +136,21 @@ function CollectionsView({ locale, data, onMutate, busy }: ViewProps) {
               )}
             />
           </label>
-          <button
+          <BrandButton
             className="cw-button cw-button-primary"
             disabled={busy || !name.trim()}
             type="submit"
           >
             <Plus size={18} aria-hidden="true" />
             {t("Create folder", "폴더 만들기", "创建文件夹")}
-          </button>
+          </BrandButton>
         </form>
       </section>
       <section className="cw-panel cw-tools-collections">
         <div className="cw-tools-folder-list">
           <label className="cw-field">
             <span>{t("Find a folder", "폴더 검색", "搜索文件夹")}</span>
-            <input
+            <BrandInput
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -185,7 +188,7 @@ function CollectionsView({ locale, data, onMutate, busy }: ViewProps) {
               {collection?.name ??
                 t("Start a shortlist", "첫 목록 만들기", "创建首个收藏列表")}
             </h3>
-            <button
+            <BrandButton
               className="cw-button"
               type="button"
               disabled={creators.length === 0}
@@ -219,7 +222,7 @@ function CollectionsView({ locale, data, onMutate, busy }: ViewProps) {
             >
               <Download size={17} aria-hidden="true" />
               {t("Export CSV", "CSV 내보내기", "导出 CSV")}
-            </button>
+            </BrandButton>
           </div>
           {creators.length === 0 ? (
             <div className="cw-empty">
@@ -243,22 +246,21 @@ function CollectionsView({ locale, data, onMutate, busy }: ViewProps) {
             <div className="cw-tools-saved-list">
               {creators.map((creator) => (
                 <article key={creator.id} className="cw-tools-saved-creator">
-                  <span
-                    className="cw-tools-avatar"
-                    style={{ backgroundColor: creator.accent }}
-                  >
-                    {creator.name.slice(0, 1)}
-                  </span>
+                  <CreatorAvatar
+                    name={creator.name}
+                    avatarUrl={creator.avatarUrl}
+                    size={48}
+                  />
                   <div>
                     <h4>{creator.name}</h4>
                     <p>
                       {creator.platform} · {creator.handle} · {creator.country}
                     </p>
                     <span className="cw-tag">
-                      {t("Demo profile", "가상 프로필", "演示资料")}
+                      {t("Demo metrics", "데모 지표", "演示指标")}
                     </span>
                   </div>
-                  <button
+                  <BrandButton
                     className="cw-button"
                     type="button"
                     disabled={busy}
@@ -271,7 +273,7 @@ function CollectionsView({ locale, data, onMutate, busy }: ViewProps) {
                     }
                   >
                     {t("Remove", "목록에서 빼기", "移除")}
-                  </button>
+                  </BrandButton>
                 </article>
               ))}
             </div>
@@ -356,7 +358,7 @@ function LinksView({ locale, data, onMutate, busy }: ViewProps) {
         <form className="cw-tools-link-form" onSubmit={create}>
           <label className="cw-field">
             <span>{t("Link name", "링크 이름", "链接名称")}</span>
-            <input
+            <BrandInput
               required
               maxLength={100}
               disabled={!canEdit}
@@ -371,7 +373,7 @@ function LinksView({ locale, data, onMutate, busy }: ViewProps) {
           </label>
           <label className="cw-field">
             <span>{t("Destination URL", "이동할 주소", "目标网址")}</span>
-            <input
+            <BrandInput
               required
               type="url"
               maxLength={2048}
@@ -381,14 +383,14 @@ function LinksView({ locale, data, onMutate, busy }: ViewProps) {
               placeholder="https://example.com"
             />
           </label>
-          <button
+          <BrandButton
             className="cw-button cw-button-primary"
             type="submit"
             disabled={busy || !canEdit || !title.trim() || !targetUrl.trim()}
           >
             <Plus size={18} aria-hidden="true" />
             {t("Create link", "링크 만들기", "创建链接")}
-          </button>
+          </BrandButton>
         </form>
         {!canEdit && (
           <p className="cw-tools-notice">
@@ -404,7 +406,7 @@ function LinksView({ locale, data, onMutate, busy }: ViewProps) {
         <div className="cw-tools-filter-row">
           <label className="cw-field">
             <span>{t("Search links", "링크 검색", "搜索链接")}</span>
-            <input
+            <BrandInput
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
@@ -417,7 +419,7 @@ function LinksView({ locale, data, onMutate, busy }: ViewProps) {
           </label>
           <label className="cw-field">
             <span>{t("Created from", "생성일 시작", "创建日期起")}</span>
-            <input
+            <BrandInput
               type="date"
               value={since}
               onChange={(event) => setSince(event.target.value)}
@@ -440,7 +442,7 @@ function LinksView({ locale, data, onMutate, busy }: ViewProps) {
               },
             ]}
           />
-          <button
+          <BrandButton
             className="cw-button"
             type="button"
             onClick={() => {
@@ -450,7 +452,7 @@ function LinksView({ locale, data, onMutate, busy }: ViewProps) {
             }}
           >
             {t("Reset", "초기화", "重置")}
-          </button>
+          </BrandButton>
         </div>
         <p className="cw-tools-muted" role="status">
           {copyState === "error"
@@ -542,7 +544,7 @@ function LinksView({ locale, data, onMutate, busy }: ViewProps) {
                           ? t("Active", "사용 중", "已启用")
                           : t("Paused", "중지됨", "已暂停")}
                       </span>
-                      <button
+                      <BrandButton
                         className="cw-button"
                         type="button"
                         disabled={busy || !canEdit}
@@ -557,7 +559,7 @@ function LinksView({ locale, data, onMutate, busy }: ViewProps) {
                         {link.active
                           ? t("Pause", "중지", "暂停")
                           : t("Enable", "활성화", "启用")}
-                      </button>
+                      </BrandButton>
                     </td>
                   </tr>
                 ))}
@@ -815,7 +817,7 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
             </legend>
             <label className="cw-field cw-tools-span">
               <span>{t("Campaign title", "캠페인 이름", "活动名称")}</span>
-              <input
+              <BrandInput
                 ref={titleInput}
                 required
                 disabled={!canEdit}
@@ -831,7 +833,7 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
             </label>
             <label className="cw-field cw-tools-span">
               <span>{t("Campaign brief", "캠페인 요약", "推广需求")}</span>
-              <textarea
+              <BrandTextArea
                 required
                 disabled={!canEdit}
                 maxLength={5000}
@@ -849,7 +851,7 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
               <legend>{t("Platforms", "플랫폼", "平台")}</legend>
               {campaignPlatforms.map((platform) => (
                 <label key={platform}>
-                  <input
+                  <BrandInput
                     type="checkbox"
                     disabled={!canEdit}
                     checked={platforms.includes(platform)}
@@ -888,7 +890,7 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
             />
             <label className="cw-field">
               <span>{t("Planned budget", "예상 예산", "计划预算")}</span>
-              <input
+              <BrandInput
                 disabled={!canEdit}
                 required
                 inputMode="decimal"
@@ -903,7 +905,7 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
               <span>
                 {t("Application deadline", "신청 마감 일시", "报名截止时间")}
               </span>
-              <input
+              <BrandInput
                 type="datetime-local"
                 value={deadline}
                 onChange={(event) => setDeadline(event.target.value)}
@@ -927,7 +929,7 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
               </legend>
               {regionOptions.map(([value, label]) => (
                 <label key={value}>
-                  <input
+                  <BrandInput
                     type="checkbox"
                     checked={regions.includes(value)}
                     onChange={(event) =>
@@ -952,7 +954,7 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
               </legend>
               {categoryOptions.map(([value, label]) => (
                 <label key={value}>
-                  <input
+                  <BrandInput
                     type="checkbox"
                     checked={categories.includes(value)}
                     onChange={(event) =>
@@ -975,7 +977,7 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
                   "最低粉丝数（选填）",
                 )}
               </span>
-              <input
+              <BrandInput
                 type="number"
                 min="0"
                 max="2147483647"
@@ -993,7 +995,7 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
                   "最高粉丝数（选填）",
                 )}
               </span>
-              <input
+              <BrandInput
                 type="number"
                 min="0"
                 max="2147483647"
@@ -1009,7 +1011,7 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
               </p>
             )}
             <div className="cw-tools-span cw-tools-actions">
-              <button
+              <BrandButton
                 className="cw-button cw-button-primary"
                 disabled={busy || !canEdit || platforms.length === 0}
                 type="submit"
@@ -1018,11 +1020,15 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
                 {editingId
                   ? t("Save changes", "수정 저장", "保存修改")
                   : t("Save draft", "초안 저장", "保存草稿")}
-              </button>
+              </BrandButton>
               {editingId && (
-                <button className="cw-button" type="button" onClick={resetForm}>
+                <BrandButton
+                  className="cw-button"
+                  type="button"
+                  onClick={resetForm}
+                >
                   {t("Cancel editing", "수정 취소", "取消编辑")}
-                </button>
+                </BrandButton>
               )}
               {!canEdit && (
                 <p className="cw-tools-muted">
@@ -1165,17 +1171,17 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
                   </span>
                   <div className="cw-tools-actions">
                     {campaign.status === "DRAFT" && (
-                      <button
+                      <BrandButton
                         type="button"
                         className="cw-button"
                         disabled={busy || !canEdit}
                         onClick={() => editCampaign(campaign)}
                       >
                         {t("Edit draft", "초안 수정", "编辑草稿")}
-                      </button>
+                      </BrandButton>
                     )}
                     {campaign.status === "DRAFT" && (
-                      <button
+                      <BrandButton
                         type="button"
                         className="cw-button cw-button-primary"
                         disabled={
@@ -1186,12 +1192,12 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
                         }
                       >
                         {t("Submit for review", "검토 요청", "提交审核")}
-                      </button>
+                      </BrandButton>
                     )}
                     {["DRAFT", "REVIEW"].includes(campaign.status) &&
                       (cancelId === campaign.id ? (
                         <>
-                          <button
+                          <BrandButton
                             className="cw-button"
                             type="button"
                             disabled={busy}
@@ -1208,29 +1214,29 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
                             }}
                           >
                             {t("Confirm cancellation", "취소 확정", "确认取消")}
-                          </button>
-                          <button
+                          </BrandButton>
+                          <BrandButton
                             className="cw-button"
                             type="button"
                             onClick={() => setCancelId("")}
                           >
                             {t("Keep", "유지", "保留")}
-                          </button>
+                          </BrandButton>
                         </>
                       ) : (
-                        <button
+                        <BrandButton
                           className="cw-button"
                           type="button"
                           disabled={busy || !canEdit}
                           onClick={() => setCancelId(campaign.id)}
                         >
                           {t("Cancel campaign", "캠페인 취소", "取消活动")}
-                        </button>
+                        </BrandButton>
                       ))}
                   </div>
                 </div>
                 <div className="cw-tools-applications-trigger">
-                  <button
+                  <BrandButton
                     type="button"
                     className="cw-button"
                     aria-expanded={applicationsId === campaign.id}
@@ -1248,7 +1254,7 @@ function CampaignsView({ locale, data, onMutate, busy }: ViewProps) {
                       "代理机构报名",
                     )}{" "}
                     · {campaign.applicationCount}
-                  </button>
+                  </BrandButton>
                 </div>
                 {applicationsId === campaign.id && (
                   <CampaignApplications
@@ -1391,7 +1397,7 @@ function AgentView({ locale, data, onMutate, busy }: ViewProps) {
           <h3>{selected.name}</h3>
           <label className="cw-field">
             <span>{t("Request title", "요청 제목", "请求标题")}</span>
-            <input
+            <BrandInput
               required
               maxLength={120}
               value={title}
@@ -1407,7 +1413,7 @@ function AgentView({ locale, data, onMutate, busy }: ViewProps) {
             <span>
               {t("Details and links", "상세 내용과 링크", "详细内容和链接")}
             </span>
-            <textarea
+            <BrandTextArea
               required
               rows={5}
               maxLength={4000}
@@ -1416,21 +1422,28 @@ function AgentView({ locale, data, onMutate, busy }: ViewProps) {
               placeholder={selected.hint}
             />
           </label>
-          <button
+          <BrandButton
             className="cw-button cw-button-primary"
             type="submit"
             disabled={busy || !title.trim() || !input.trim()}
           >
             {t("Save request", "요청 저장", "保存请求")}
-          </button>
+          </BrandButton>
         </form>
       </section>
       <section className="cw-panel">
         <div className="cw-tools-heading">
           <h2>{t("Request history", "요청 이력", "请求历史")}</h2>
-          <Link className="cw-button" href={`/advertiser/requests?lang=${locale}`}>
+          <Link
+            className="cw-button"
+            href={`/advertiser/requests?lang=${locale}`}
+          >
             <MessageSquareText size={18} aria-hidden="true" />
-            {t("View replies in request inbox", "요청함에서 답변 확인", "在请求中心查看回复")}
+            {t(
+              "View replies in request inbox",
+              "요청함에서 답변 확인",
+              "在请求中心查看回复",
+            )}
           </Link>
         </div>
         {data.requests.length === 0 ? (
@@ -1582,7 +1595,7 @@ function AccountView({ locale, data, onMutate, busy }: ViewProps) {
             <>
               <label className="cw-field">
                 <span>{t("Contact name", "담당자 이름", "联系人姓名")}</span>
-                <input
+                <BrandInput
                   required
                   disabled={!canEdit}
                   maxLength={100}
@@ -1592,7 +1605,7 @@ function AccountView({ locale, data, onMutate, busy }: ViewProps) {
               </label>
               <label className="cw-field">
                 <span>{t("Email address", "이메일 주소", "邮箱地址")}</span>
-                <input readOnly value={data.account.email} type="email" />
+                <BrandInput readOnly value={data.account.email} type="email" />
               </label>
               <p className="cw-tools-muted">
                 {t(
@@ -1606,7 +1619,7 @@ function AccountView({ locale, data, onMutate, busy }: ViewProps) {
             <>
               <label className="cw-field">
                 <span>{t("Company name", "회사 이름", "公司名称")}</span>
-                <input
+                <BrandInput
                   required
                   disabled={!canEdit}
                   maxLength={120}
@@ -1616,7 +1629,7 @@ function AccountView({ locale, data, onMutate, busy }: ViewProps) {
               </label>
               <label className="cw-field">
                 <span>{t("Company website", "회사 웹사이트", "公司网址")}</span>
-                <input
+                <BrandInput
                   type="url"
                   disabled={!canEdit}
                   maxLength={2048}
@@ -1641,13 +1654,13 @@ function AccountView({ locale, data, onMutate, busy }: ViewProps) {
               </dl>
             </>
           )}
-          <button
+          <BrandButton
             type="submit"
             className="cw-button cw-button-primary"
             disabled={busy || !canEdit}
           >
             {t("Save changes", "변경 사항 저장", "保存修改")}
-          </button>
+          </BrandButton>
           {!canEdit && (
             <p className="cw-tools-muted">
               {t(

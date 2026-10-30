@@ -1,7 +1,9 @@
 "use client";
 
+import { BrandInput } from "./brand-controls";
+
 import type { Locale } from "../../_components/landing-copy";
-import { ProfileSelect } from "../../onboarding/brand/profile-select";
+import { BrandSelect as ProfileSelect } from "./brand-controls";
 import {
   DIRECTORY_TAGS,
   platformCapabilities,
@@ -107,7 +109,7 @@ export function DirectoryFiltersPanel({
           {label} <span>(K)</span>
         </legend>
         <div>
-          <input
+          <BrandInput
             aria-label={`${label} ${t("minimum", "최솟값", "最小值")}`}
             placeholder={t("Min", "최소", "最小")}
             inputMode="decimal"
@@ -118,7 +120,7 @@ export function DirectoryFiltersPanel({
             onChange={(e) => update(min, e.target.value)}
           />
           <span>–</span>
-          <input
+          <BrandInput
             aria-label={`${label} ${t("maximum", "최댓값", "最大值")}`}
             placeholder={t("Max", "최대", "最大")}
             inputMode="decimal"
@@ -180,7 +182,7 @@ export function DirectoryFiltersPanel({
                   <div className="cw-topic-menu">
                     {DIRECTORY_TAGS.map((tag) => (
                       <label key={tag}>
-                        <input
+                        <BrandInput
                           type="checkbox"
                           checked={filters[key].includes(tag)}
                           onChange={(event) =>
@@ -207,7 +209,7 @@ export function DirectoryFiltersPanel({
                     "채널 키워드 포함",
                     "包含频道关键词",
                   )}
-                  <input
+                  <BrandInput
                     value={filters.keywordInclude}
                     placeholder={t(
                       "Separate with commas",
@@ -223,7 +225,7 @@ export function DirectoryFiltersPanel({
                     "채널 키워드 제외",
                     "排除频道关键词",
                   )}
-                  <input
+                  <BrandInput
                     value={filters.keywordExclude}
                     onChange={(e) => update("keywordExclude", e.target.value)}
                   />

@@ -1,5 +1,7 @@
 "use client";
 
+import { BrandThemeContext, BrandInput, BrandButton } from "./brand-controls";
+
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
@@ -28,7 +30,7 @@ import {
 import type { Locale } from "../../_components/landing-copy";
 import { LanguageSwitcher } from "../../_components/language-switcher";
 import { Wordmark } from "../../_components/brand-logo";
-import { ProfileSelect } from "../../onboarding/brand/profile-select";
+import { BrandSelect as ProfileSelect } from "./brand-controls";
 import { authClient } from "../../../lib/auth-client";
 import {
   defaultFilters,
@@ -46,9 +48,11 @@ import {
   tagLabel,
   translate,
 } from "./directory-filters";
+import { CreatorAvatar } from "./creator-avatar";
 import { WorkspaceTools } from "./workspace-tools";
 import { TdsCreatorGrid, TdsPlatformIcon } from "./tds-search-parts";
 import "./workspace.css";
+import "./brand-workspace.css";
 import { WorkspaceProvider } from "../../_components/workspace/workspace-provider";
 import { WorkspaceShell } from "../../_components/workspace/workspace-shell";
 import shellStyles from "../../_components/workspace/workspace-shell.module.css";
@@ -91,7 +95,9 @@ type CreatorWorkspaceProps = {
 export function CreatorWorkspace(props: CreatorWorkspaceProps) {
   return (
     <WorkspaceProvider>
-      <WorkspaceContent {...props} />
+      <BrandThemeContext value={props.variant !== "tds"}>
+        <WorkspaceContent {...props} />
+      </BrandThemeContext>
     </WorkspaceProvider>
   );
 }
@@ -475,7 +481,7 @@ function WorkspaceContent({
 
   return (
     <div
-      className={`cw-workspace${isTds ? " cw-tds" : ` ${shellStyles.workspace}`}`}
+      className={`cw-workspace${isTds ? " cw-tds" : ` cw-montage ${shellStyles.workspace}`}`}
       data-creator-workspace="demo"
       lang={locale === "zh" ? "zh-CN" : locale}
     >
@@ -620,11 +626,7 @@ function WorkspaceContent({
                       "워크스페이스 / 크리에이터 탐색",
                       "工作区 / 达人探索",
                     )
-                  : t(
-                      "Your next collaboration starts here",
-                      "다음 협업을 발견하는 곳",
-                      "发现下一次合作",
-                    )}
+                  : t("Brand workspace", "브랜드 워크스페이스", "品牌工作区")}
               </p>
               <h1>
                 {isTds
@@ -653,13 +655,7 @@ function WorkspaceContent({
                 {t("Original view", "기존 화면 보기", "查看原版")}
                 <ArrowRight size={16} />
               </Link>
-            ) : (
-              discovery && (
-                <span className="cw-status">
-                  {t("Database connected", "DB 연결됨", "数据库已连接")}
-                </span>
-              )
-            )}
+            ) : null}
           </div>
           {error && (
             <div className="cw-error" role="alert">
@@ -699,9 +695,9 @@ function WorkspaceContent({
                         "演示目录 · 达人和指标为虚构数据，搜索记录和收藏会保存。",
                       )
                     : t(
-                        "Demo directory · Profiles and metrics are fictional. Searches and collections are saved to your database; live platform data is not connected yet.",
-                        "데모 디렉터리 · 프로필과 지표는 가상 데이터입니다. 검색 이력·즐겨찾기는 실제 DB에 저장되며, 외부 플랫폼 데이터는 아직 연결되지 않았습니다.",
-                        "演示目录 · 达人和指标均为虚构数据。搜索记录和收藏保存至数据库，尚未接入外部平台数据。",
+                        "Demo directory · Metrics are sample data. Search history and saved creators are retained.",
+                        "데모 디렉터리 · 지표는 예시 데이터입니다. 검색 이력과 저장한 크리에이터는 유지됩니다.",
+                        "演示目录 · 指标为示例数据。搜索记录和收藏会保存。",
                       )}
                 </span>
               </div>
@@ -732,11 +728,7 @@ function WorkspaceContent({
                       <span
                         className={`cw-platform-icon cw-platform-${platform}`}
                       >
-                        {isTds ? (
-                          <TdsPlatformIcon platform={platform as PlatformId} />
-                        ) : (
-                          platformNames[platform as PlatformId].slice(0, 1)
-                        )}
+                        <TdsPlatformIcon platform={platform as PlatformId} />
                       </span>
                       {platformNames[platform as PlatformId]}
                     </button>
@@ -823,7 +815,7 @@ function WorkspaceContent({
                     ) : (
                       <label className="cw-search-input">
                         <Search size={20} />
-                        <input
+                        <BrandInput
                           aria-label={
                             mode === "similar"
                               ? t(
@@ -858,7 +850,7 @@ function WorkspaceContent({
                         />
                       </label>
                     )}
-                    <button
+                    <BrandButton
                       className="cw-button cw-button-primary"
                       disabled={busy}
                       type="submit"
@@ -869,15 +861,15 @@ function WorkspaceContent({
                         : mode === "brands"
                           ? t("Recommend", "추천 보기", "查看推荐")
                           : t("Search", "검색", "搜索")}
-                    </button>
-                    <button
+                    </BrandButton>
+                    <BrandButton
                       type="button"
                       className="cw-button"
                       disabled={busy}
                       onClick={() => reset()}
                     >
                       {t("Reset", "초기화", "重置")}
-                    </button>
+                    </BrandButton>
                   </div>
                   {mode === "similar" && sample && (
                     <p className="cw-example">
@@ -976,7 +968,7 @@ function WorkspaceContent({
                         ))}
                       </div>
                     )}
-                    <button
+                    <BrandButton
                       className="cw-button"
                       type="button"
                       aria-expanded={expanded}
@@ -988,7 +980,7 @@ function WorkspaceContent({
                         ? t("All filters", "상세 필터", "更多筛选")
                         : t("Search filters", "검색 필터", "搜索筛选")}
                       {expanded ? " −" : " +"}
-                    </button>
+                    </BrandButton>
                     {!isTds && (
                       <span className="cw-muted">
                         {t(
@@ -1016,13 +1008,13 @@ function WorkspaceContent({
                               "数值范围单位 K = 1,000。",
                             )}
                           </span>
-                          <button
+                          <BrandButton
                             className="cw-button cw-button-primary"
                             type="submit"
                             disabled={busy}
                           >
                             {t("Apply filters", "필터 적용하기", "应用筛选")}
-                          </button>
+                          </BrandButton>
                         </div>
                       )}
                       {mode === "brands" && (
@@ -1221,12 +1213,12 @@ function WorkspaceContent({
                                       className="cw-person"
                                       onClick={() => setDetail(creator)}
                                     >
-                                      <span
+                                      <CreatorAvatar
+                                        name={creator.name}
+                                        avatarUrl={creator.avatarUrl}
+                                        size={44}
                                         className="cw-avatar-small"
-                                        style={{ background: creator.accent }}
-                                      >
-                                        {creator.name.slice(0, 1)}
-                                      </span>
+                                      />
                                       <span>
                                         <strong>{creator.name}</strong>
                                         <span className="cw-muted">
@@ -1378,14 +1370,14 @@ function WorkspaceContent({
                           )}
                     </p>
                     {isTds && (
-                      <button
+                      <BrandButton
                         type="button"
                         className="cw-button cw-button-primary tds-empty-reset"
                         disabled={busy}
                         onClick={() => reset()}
                       >
                         {t("Clear filters", "검색 조건 초기화", "重置筛选")}
-                      </button>
+                      </BrandButton>
                     )}
                   </div>
                 )}
@@ -1447,7 +1439,7 @@ function WorkspaceContent({
               <X />
             </button>
             <span className="cw-status">
-              {t("Fictional profile", "가상 프로필", "虚构达人")}
+              {t("Demo metrics", "데모 지표", "演示指标")}
             </span>
             <h2 id="creator-profile-title">{detail.name}</h2>
             <p>
@@ -1487,7 +1479,7 @@ function WorkspaceContent({
                 <li key={content}>{content}</li>
               ))}
             </ul>
-            <button
+            <BrandButton
               className="cw-button cw-button-primary"
               disabled={busy}
               onClick={() => void saveCreator(detail)}
@@ -1496,7 +1488,7 @@ function WorkspaceContent({
               {activeCollection?.creatorIds.includes(detail.id)
                 ? t("Remove from collection", "폴더에서 해제", "取消收藏")
                 : t("Save to collection", "폴더에 저장", "添加收藏")}
-            </button>
+            </BrandButton>
           </>
         )}
       </dialog>

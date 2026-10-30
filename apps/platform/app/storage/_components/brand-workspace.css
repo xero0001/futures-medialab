@@ -1,0 +1,381 @@
+/* Wanted Figma: Pretendard type scale, 4px spacing, 12px fields and neutral surfaces.
+   Scoped to the service workspace; archived design routes retain their theme. */
+.cw-montage.cw-workspace {
+  --brand-primary: var(--semantic-foreground-brand-primary, #0066ff);
+  --brand-primary-hover: #0052cc;
+  --brand-primary-soft: #f0f6ff;
+  --brand-line: var(--semantic-line-neutral-secondaryOpaque, #e5e5e7);
+  --brand-ink: var(--semantic-foreground-neutral-primary, #171719);
+  --brand-muted: var(--semantic-foreground-neutral-secondary, #46474c);
+  --brand-neutral-soft: #f7f7f8;
+  --brand-focus: #0066ff;
+  --cw-paper: #fff;
+  --cw-border: var(--brand-line);
+  --cw-accent: var(--brand-primary);
+  --cw-accent-dark: var(--brand-primary-hover);
+  --cw-soft: var(--brand-primary-soft);
+  --cw-ink: var(--brand-ink);
+  --cw-muted: var(--brand-muted);
+  font-family: var(--fm-font-family);
+  font-size: 15px;
+  line-height: 1.467;
+  letter-spacing: 0.0096em;
+}
+.cw-montage .cw-heading {
+  margin: 8px 0 32px;
+  gap: 16px;
+}
+.cw-montage .cw-heading h1 {
+  color: var(--brand-ink);
+  font-size: 28px;
+  line-height: 38px;
+  font-weight: 700;
+  letter-spacing: -0.0236em;
+}
+.cw-montage .cw-heading > div > p:first-child {
+  font-size: 13px;
+  line-height: 18px;
+  margin-bottom: 8px;
+  color: #73767d;
+}
+.cw-montage .cw-panel {
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+.cw-montage .cw-tools > .cw-panel {
+  margin-bottom: 0;
+}
+.cw-montage :is(.cw-tools h2, .cwr-compose h2) {
+  font-size: 22px;
+  line-height: 30px;
+  letter-spacing: -0.0194em;
+  font-weight: 700;
+}
+.cw-montage :is(.cw-tools h3, .cwr-empty h3) {
+  font-size: 18px;
+  line-height: 26px;
+  letter-spacing: -0.002em;
+}
+.cw-montage :is(.cw-tools-heading > svg, .cw-tools-account-form > svg) {
+  color: #73767d;
+  padding: 10px;
+  width: 48px;
+  height: 48px;
+  background: var(--brand-neutral-soft);
+  border-radius: 12px;
+}
+.cw-montage :is(.cw-field, .brand-select) {
+  min-width: 0;
+  gap: 8px;
+}
+.cw-montage :is(.cw-field > span, .fmb-label, .cw-tools-platforms legend) {
+  color: var(--brand-muted);
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0.0145em;
+  font-weight: 600;
+}
+.cw-montage .brand-select {
+  display: grid;
+  align-content: start;
+}
+.cw-montage .brand-select > [role="combobox"] {
+  min-width: 0;
+}
+/* Montage owns the field border and focus ring; legacy form selectors only own layout. */
+.cw-montage .cw-field input:not([type="checkbox"]):not([type="radio"]) {
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+  min-height: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 16px;
+  line-height: 24px;
+}
+.cw-montage textarea {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  min-height: 0;
+  background: transparent;
+  font-size: 16px;
+  line-height: 24px;
+}
+.cw-montage :is(input, textarea):focus-visible {
+  outline: none;
+}
+.cw-montage :is(.cw-search-input, .cwr-search-input) {
+  border: 0;
+  padding: 0;
+  box-shadow: none;
+  gap: 8px;
+}
+.cw-montage :is(.cw-search-input, .cwr-search-input) > div {
+  flex: 1;
+  min-width: 0;
+}
+.cw-montage .brand-button {
+  min-height: 40px;
+  border-radius: 10px;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  box-shadow: none;
+  padding: 8px 16px;
+}
+.cw-montage .brand-button-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.cw-montage .brand-button-content svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+.cw-montage .brand-button:not(.cw-button-primary) {
+  color: var(--brand-ink);
+  background: #fff;
+  border: 1px solid var(--brand-line);
+}
+.cw-montage .brand-button:not(.cw-button-primary):hover {
+  background: var(--brand-neutral-soft);
+}
+.cw-montage .brand-button.cw-button-primary {
+  background: var(--brand-primary);
+  color: #fff;
+  border-color: transparent;
+}
+.cw-montage .brand-button.cw-button-primary:not(:disabled):hover {
+  background: var(--brand-primary-hover);
+}
+.cw-montage
+  :is(.cw-tools button, .cw-tools a, .cw-tools summary):focus-visible {
+  outline: 2px solid var(--brand-focus);
+  outline-offset: 3px;
+}
+.cw-montage :is(.cw-demo-notice, .cw-tools-notice, .cwr-delivery-note) {
+  border: 1px solid var(--brand-line);
+  border-radius: 12px;
+  background: var(--brand-neutral-soft);
+  color: var(--brand-muted);
+  padding: 16px;
+  font-size: 14px;
+  line-height: 22px;
+}
+.cw-montage .cw-demo-notice svg {
+  color: #73767d;
+}
+.cw-montage :is(.cw-tools-folder, .cw-tools-tabs button) {
+  color: var(--brand-muted);
+}
+.cw-montage .cw-tools-folder.is-active {
+  background: #f4f4f5;
+  color: var(--brand-ink);
+}
+.cw-montage .cw-tools-tabs {
+  gap: 24px;
+}
+.cw-montage .cw-tools-tabs button {
+  padding: 12px 0 16px;
+  font-weight: 600;
+}
+.cw-montage .cw-tools-tabs button.is-active {
+  color: var(--brand-ink);
+  border-color: var(--brand-ink);
+}
+.cw-montage .cw-tools-campaign-form {
+  max-width: none;
+  gap: 24px;
+}
+.cw-montage .cw-tools-campaign-list {
+  display: grid;
+  gap: 16px;
+}
+.cw-montage .cw-tools-campaign-list > article {
+  border: 1px solid var(--brand-line);
+  border-radius: 12px;
+  padding: 24px;
+}
+.cw-montage .cw-tools-campaign-list > article:last-child {
+  border: 1px solid var(--brand-line);
+  padding: 24px;
+}
+.cw-montage .cw-tools-campaign-facts {
+  background: var(--brand-neutral-soft);
+  padding: 20px;
+  border-radius: 12px;
+}
+.cw-montage .cw-tools-tool {
+  border-radius: 12px;
+  padding: 24px;
+  gap: 16px;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.cw-montage .cw-tools-tool > svg {
+  color: var(--brand-muted);
+}
+.cw-montage .cw-tools-tool.is-active {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary-soft);
+  box-shadow: none;
+}
+.cw-montage .cw-tools-tool.is-active > svg {
+  color: var(--brand-primary);
+}
+.cw-montage .cw-tools-tool:hover {
+  border-color: var(--brand-primary);
+}
+.cw-montage .cw-table-wrap {
+  border-radius: 12px;
+  border-color: var(--brand-line);
+}
+.cw-montage .cw-table th {
+  background: var(--brand-neutral-soft);
+  color: var(--brand-muted);
+  font-size: 13px;
+  font-weight: 600;
+  padding-block: 14px;
+}
+.cw-montage .cw-table td {
+  padding-block: 20px;
+  border-color: var(--brand-line);
+}
+.cw-montage .cw-table tbody tr:hover {
+  background: #fafafa;
+}
+.cw-montage .cw-tag {
+  border-radius: 6px;
+  background: var(--brand-neutral-soft);
+  color: var(--brand-muted);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+.cw-montage .cw-empty {
+  padding: 48px 20px;
+}
+.cw-montage .cw-empty > svg {
+  color: #aeb0b6;
+}
+.cw-montage .cw-empty h3 {
+  color: var(--brand-ink);
+  font-size: 18px;
+  line-height: 26px;
+}
+.cw-montage .cwr-list-item.is-selected {
+  background: var(--brand-primary-soft);
+  border-color: var(--brand-primary);
+  box-shadow: none;
+}
+.cw-montage .cwr-status {
+  font-size: 12px;
+  line-height: 16px;
+  padding: 4px 8px;
+}
+.cw-montage .cwr-message.is-operations {
+  background: var(--brand-neutral-soft);
+  border-color: var(--brand-line);
+}
+.cw-montage .cwr-detail-header h3 {
+  font-size: 24px;
+  line-height: 32px;
+  letter-spacing: -0.023em;
+}
+.cw-montage .cwr-detail-placeholder svg {
+  color: #aeb0b6;
+}
+.cw-montage .cw-tools-account-form {
+  max-width: 640px;
+  gap: 24px;
+}
+.cw-montage .cw-tools-definitions > div {
+  border-bottom: 1px solid var(--brand-line);
+  padding-bottom: 20px;
+}
+.cw-montage .cw-tools-definitions > div:last-child {
+  border-bottom: 0;
+}
+@media (max-width: 760px) {
+  .cw-montage .cw-heading {
+    margin: 4px 0 24px;
+  }
+  .cw-montage .cw-heading h1 {
+    font-size: 24px;
+    line-height: 32px;
+  }
+  .cw-montage .cw-panel {
+    padding: 20px;
+  }
+  .cw-montage :is(.cw-tools h2, .cwr-compose h2) {
+    font-size: 20px;
+    line-height: 28px;
+  }
+  .cw-montage .cw-tools-campaign-list > article,
+  .cw-montage .cw-tools-campaign-list > article:last-child {
+    padding: 16px;
+  }
+  .cw-montage .cw-toolbar {
+    align-items: stretch;
+    gap: 16px;
+  }
+  .cw-montage .cw-toolbar > .brand-select {
+    width: 100%;
+  }
+  .cw-montage .cw-tools-tool {
+    padding: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cw-montage * {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}
+.cw-montage .brand-select > .fmb-label {
+  margin: 0;
+}
+.cw-montage .cwr-search-input input {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+}
+.cw-montage.cw-workspace
+  :is(.cw-field, .cw-search-input, .cwr-search-input)
+  input:focus-visible,
+.cw-montage.cw-workspace textarea:focus-visible {
+  outline: none;
+}
+.cw-montage .cw-range > div {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  gap: 8px;
+}
+.cw-montage.cw-workspace .cw-range input {
+  height: auto;
+  padding: 0;
+  font-size: 16px;
+  outline: none;
+}
+.cw-montage .cw-platform-icon {
+  background: transparent;
+  color: #73767d;
+}
+.cw-montage .is-active .cw-platform-icon {
+  background: transparent;
+  color: var(--brand-ink);
+}
+.cw-montage .cw-modal {
+  border-radius: 16px;
+  border: 1px solid var(--brand-line);
+  padding: 32px;
+}
+.cw-montage .cw-modal::backdrop {
+  background: rgb(23 23 25 / 40%);
+}
