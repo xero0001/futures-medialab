@@ -20,12 +20,30 @@ importers:
 
   apps/admin:
     dependencies:
+      '@emotion/cache':
+        specifier: ^11.14.0
+        version: 11.14.0
+      '@emotion/react':
+        specifier: ^11.14.0
+        version: 11.14.0(@types/react@19.2.18)(react@19.2.7)
+      '@emotion/server':
+        specifier: ^11.11.0
+        version: 11.11.0
       '@futures-medialab/database':
         specifier: workspace:*
         version: link:../../packages/database
       '@futures-medialab/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@montage-ui/core':
+        specifier: 4.1.5
+        version: 4.1.5(@emotion/cache@11.14.0)(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.7))(@emotion/serialize@1.3.3)(@emotion/server@11.11.0)(@emotion/utils@1.4.2)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@montage-ui/icon':
+        specifier: 4.1.5
+        version: 4.1.5(@emotion/cache@11.14.0)(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.7))(@emotion/serialize@1.3.3)(@emotion/server@11.11.0)(@emotion/utils@1.4.2)(@types/react@19.2.18)(react@19.2.7)
+      '@montage-ui/nextjs':
+        specifier: 4.1.5
+        version: 4.1.5(@emotion/cache@11.14.0)(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.7))(@emotion/serialize@1.3.3)(@emotion/server@11.11.0)(@emotion/utils@1.4.2)(@types/react@19.2.18)(next@16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)
       '@vercel/blob':
         specifier: ^2.8.2
         version: 2.8.2
