@@ -48,9 +48,9 @@ customer logos, and unconfirmed pricing are not published.
   at least 14px; body text is 16–18px.
 - `/login` authenticates email/password accounts through Better Auth and the
   project's Neon PostgreSQL database. Passwords are hashed, not stored as text.
-  Its responsive Montage form uses the shared workspace theme provider,
-  Pretendard and Wanted blue, with localized errors and password visibility.
-  Registration and onboarding retain their separate auth layout.
+  Login and registration share the responsive Montage auth layout and workspace
+  theme provider, with Pretendard, Wanted blue, localized errors and password
+  visibility. Onboarding retains its separate layout.
 - `/register` offers only Agency / Studio and Brand registration paths.
   `/register/agency` collects organization type; `/register/brand` collects
   company size. Both provide localized form validation, password confirmation,

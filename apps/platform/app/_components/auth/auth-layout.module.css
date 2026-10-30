@@ -1,12 +1,17 @@
 .page {
-  --login-blue: var(--semantic-surface-brand-primary, #0066ff);
-  --login-line: var(--semantic-line-neutral-tertiary, #eaebee);
+  --auth-blue: var(--semantic-surface-brand-primary, #0066ff);
+  --auth-line: var(--semantic-line-neutral-tertiary, #eaebee);
   display: flex;
   flex-direction: column;
   min-height: 100svh;
   color: var(--semantic-foreground-neutral-primary, #171719);
   background: var(--semantic-surface-neutral-secondary, #f7f7f8);
-  font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family:
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -23,7 +28,7 @@
 }
 
 .page :is(a, button):focus-visible {
-  outline: 2px solid var(--login-blue);
+  outline: 2px solid var(--auth-blue);
   outline-offset: 3px;
 }
 
@@ -47,7 +52,7 @@
   gap: 24px;
   min-height: 76px;
   padding: 16px 32px;
-  border-bottom: 1px solid var(--login-line);
+  border-bottom: 1px solid var(--auth-line);
   background: var(--semantic-surface-neutral-primary, #fff);
 }
 
@@ -57,8 +62,8 @@
 
 .brand :global(.fm-wordmark svg),
 .brand :global(.fm-wordmark svg path) {
-  color: var(--login-blue);
-  fill: var(--login-blue);
+  color: var(--auth-blue);
+  fill: var(--auth-blue);
 }
 
 .brand :global(.fm-wordmark > span) {
@@ -82,17 +87,17 @@
 }
 
 .language :global(.fm-language-option)[aria-checked="true"] svg {
-  color: var(--login-blue);
+  color: var(--auth-blue);
 }
 
 .language :global(.fm-language-menu) {
-  border-color: var(--login-line);
+  border-color: var(--auth-line);
   box-shadow: 0 4px 16px rgb(23 23 25 / 8%);
 }
 
 .language :global(.fm-language-trigger):focus-visible,
 .language :global(.fm-language-option):focus-visible {
-  outline-color: var(--login-blue);
+  outline-color: var(--auth-blue);
 }
 
 .main {
@@ -103,6 +108,10 @@
   padding: 64px 24px 40px;
 }
 
+.content.wide {
+  max-width: 560px;
+}
+
 .content {
   width: 100%;
   max-width: 480px;
@@ -110,7 +119,7 @@
 
 .card {
   padding: 40px;
-  border: 1px solid var(--login-line);
+  border: 1px solid var(--auth-line);
   border-radius: 24px;
   background: var(--semantic-surface-neutral-primary, #fff);
 }
@@ -145,11 +154,13 @@
   border-radius: 12px;
 }
 
-.form :global([data-role="text-field-reset"]) {
+.page
+  .form
+  :global([data-component="text-field"] [data-role="text-field-reset"]) {
   display: none;
 }
 
-.form .submit {
+.page .submit {
   margin-top: 8px;
   border-radius: 12px;
   font-size: 16px;
@@ -181,7 +192,7 @@
   margin-block: 28px;
 }
 
-.register {
+.alternate {
   display: flex;
   align-items: center;
   justify-content: center;

@@ -2,19 +2,26 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
-  ArrowLeft,
-  ArrowRight,
-  Building2,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  UsersRound,
-} from "lucide-react";
-import { AuthShell } from "../_components/auth-shell";
+  Button,
+  Divider,
+  RadioGroup,
+  RadioGroupItem,
+  TextButton,
+  Typography,
+} from "@montage-ui/core";
+import {
+  IconArrowLeft,
+  IconChevronRight,
+  IconCompany,
+  IconPersons,
+} from "@montage-ui/icon";
+import { AuthLayout } from "../_components/auth/auth-layout";
+import authStyles from "../_components/auth/auth-layout.module.css";
+import { RegisterField } from "./register-field";
+import styles from "./register.module.css";
 import { authClient } from "../../lib/auth-client";
 import type { Locale } from "../_components/landing-copy";
 import { registerCopy, type RegistrationRole } from "./register-copy";
-import "./register.css";
 
 const companySizes = [
   "1–14",
@@ -50,8 +57,6 @@ export function RegisterForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [review, setReview] = useState(false);
   const [pending, setPending] = useState(false);
@@ -173,352 +178,434 @@ export function RegisterForm({
     }
   }
 
-  function errorMessage(field: Field) {
+  function fieldError(field: Field) {
     const error = errors[field];
-    return error ? (
-      <p id={`register-${field}-error`} className="fmr-error">
-        {t.errors[error]}
-      </p>
-    ) : null;
+    return error ? t.errors[error] : undefined;
   }
 
   return (
-    <AuthShell
+    <AuthLayout
       locale={locale}
       onLocaleChange={changeLocale}
       headingId={review ? "register-review-title" : "register-title"}
-      className={`fmr-page${role ? " fmr-details" : ""}`}
+      supportingText={t.approval}
+      wide
     >
-      <div className="fmr-wrap">
-        {role && (
-          <a href={`/register?lang=${locale}`} className="fmr-back">
-            <ArrowLeft size={18} aria-hidden="true" />
-            {t.back}
-          </a>
-        )}
-
-        {!role ? (
-          <>
-            <header className="fmr-header">
-              <h1 id="register-title">{t.title}</h1>
-              <p>{t.subtitle}</p>
-            </header>
-            <div className="fmr-roles">
-              <a
-                href={`/register/agency?lang=${locale}`}
-                className="fmr-role-card"
-              >
-                <span className="fmr-role-icon">
-                  <UsersRound size={28} aria-hidden="true" />
-                </span>
-                <span className="fmr-role-copy">
-                  <strong>{t.agency}</strong>
-                  <span>{t.agencyDescription}</span>
-                </span>
-                <ArrowRight size={20} aria-hidden="true" />
-              </a>
-              <a
-                href={`/register/brand?lang=${locale}`}
-                className="fmr-role-card"
-              >
-                <span className="fmr-role-icon">
-                  <Building2 size={28} aria-hidden="true" />
-                </span>
-                <span className="fmr-role-copy">
-                  <strong>{t.brand}</strong>
-                  <span>{t.brandDescription}</span>
-                </span>
-                <ArrowRight size={20} aria-hidden="true" />
-              </a>
-            </div>
-            <p className="fmr-approval-note">
-              <ShieldCheck size={18} aria-hidden="true" />
-              {t.approval}
-            </p>
-          </>
-        ) : review ? (
-          <section
-            className="fmr-review"
-            aria-labelledby="register-review-title"
-            aria-busy={pending}
+      {role && (
+        <div className={styles.back}>
+          <TextButton
+            as="a"
+            href={`/register?lang=${locale}`}
+            color="assistive"
+            size="small"
+            leadingContent={<IconArrowLeft />}
           >
-            <h1 id="register-review-title" ref={reviewRef} tabIndex={-1}>
+            {t.back}
+          </TextButton>
+        </div>
+      )}
+
+      {!role ? (
+        <>
+          <div className={authStyles.intro}>
+            <Typography
+              as="h1"
+              id="register-title"
+              variant="title1"
+              weight="bold"
+            >
+              {t.title}
+            </Typography>
+            <Typography
+              as="p"
+              variant="body2"
+              color="semantic.foreground.neutral.secondary"
+            >
+              {t.subtitle}
+            </Typography>
+          </div>
+          <div className={styles.roles}>
+            <a
+              href={`/register/agency?lang=${locale}`}
+              className={styles.roleCard}
+            >
+              <span className={styles.roleIcon}>
+                <IconPersons aria-hidden="true" />
+              </span>
+              <span className={styles.roleCopy}>
+                <Typography as="strong" variant="headline1" weight="bold">
+                  {t.agency}
+                </Typography>
+                <Typography
+                  as="span"
+                  variant="label1"
+                  color="semantic.foreground.neutral.secondary"
+                >
+                  {t.agencyDescription}
+                </Typography>
+              </span>
+              <IconChevronRight aria-hidden="true" />
+            </a>
+            <a
+              href={`/register/brand?lang=${locale}`}
+              className={styles.roleCard}
+            >
+              <span className={styles.roleIcon}>
+                <IconCompany aria-hidden="true" />
+              </span>
+              <span className={styles.roleCopy}>
+                <Typography as="strong" variant="headline1" weight="bold">
+                  {t.brand}
+                </Typography>
+                <Typography
+                  as="span"
+                  variant="label1"
+                  color="semantic.foreground.neutral.secondary"
+                >
+                  {t.brandDescription}
+                </Typography>
+              </span>
+              <IconChevronRight aria-hidden="true" />
+            </a>
+          </div>
+        </>
+      ) : review ? (
+        <div aria-busy={pending}>
+          <div className={authStyles.intro}>
+            <Typography
+              as="h1"
+              id="register-review-title"
+              ref={reviewRef}
+              tabIndex={-1}
+              variant="title2"
+              weight="bold"
+            >
               {t.reviewTitle}
-            </h1>
-            <p>{t.reviewNote}</p>
-            <dl className="fmr-review-details">
-              <div>
-                <dt>{t.role}</dt>
-                <dd>{isAgency ? t.agency : t.brand}</dd>
-              </div>
-              <div>
-                <dt>{isAgency ? t.organization : t.company}</dt>
-                <dd>{organization.trim()}</dd>
-              </div>
-              <div>
-                <dt>{isAgency ? t.organizationType : t.companySize}</dt>
-                <dd>
-                  {isAgency
-                    ? organizationType === "agency"
-                      ? t.agencyCompany
-                      : t.studio
-                    : companySize}
-                </dd>
-              </div>
-              <div>
-                <dt>{t.email}</dt>
-                <dd>{email.trim()}</dd>
-              </div>
-            </dl>
-            <div className="fmr-review-actions">
-              <button
-                type="button"
-                className="fml-submit"
-                onClick={createAccount}
-                disabled={pending || accountCreated}
-              >
-                {pending
+            </Typography>
+            <Typography
+              as="p"
+              variant="body2"
+              color="semantic.foreground.neutral.secondary"
+            >
+              {t.reviewNote}
+            </Typography>
+          </div>
+          <dl className={styles.reviewDetails}>
+            <div>
+              <dt>{t.role}</dt>
+              <dd>{isAgency ? t.agency : t.brand}</dd>
+            </div>
+            <div>
+              <dt>{isAgency ? t.organization : t.company}</dt>
+              <dd>{organization.trim()}</dd>
+            </div>
+            <div>
+              <dt>{isAgency ? t.organizationType : t.companySize}</dt>
+              <dd>
+                {isAgency
+                  ? organizationType === "agency"
+                    ? t.agencyCompany
+                    : t.studio
+                  : companySize}
+              </dd>
+            </div>
+            <div>
+              <dt>{t.email}</dt>
+              <dd>{email.trim()}</dd>
+            </div>
+          </dl>
+          <div className={styles.reviewActions}>
+            <Button
+              type="button"
+              className={styles.button}
+              size="large"
+              fullWidth
+              onClick={createAccount}
+              loading={pending}
+              disabled={pending || accountCreated}
+              aria-label={
+                pending
                   ? t.creatingAccount
                   : accountCreated
                     ? t.created
-                    : t.createAccount}
-              </button>
-              <button
-                type="button"
-                className="fmr-secondary"
-                disabled={pending || accountCreated}
-                onClick={() => {
-                  setReview(false);
-                  setSubmitError(null);
-                  requestAnimationFrame(() => titleRef.current?.focus());
-                }}
-              >
-                {t.edit}
-              </button>
-            </div>
-            <p role="alert" className="fmr-error">
-              {submitError ? t[submitError] : ""}
-            </p>
-          </section>
-        ) : (
-          <>
-            <header className="fmr-header">
-              <h1 id="register-title" ref={titleRef} tabIndex={-1}>
-                {isAgency ? t.agencyTitle : t.brandTitle}
-              </h1>
-              <p>{isAgency ? t.agencySubtitle : t.brandSubtitle}</p>
-            </header>
-            <form
-              className="fmr-form"
-              onSubmit={submit}
-              noValidate
-              aria-describedby="register-required"
+                    : t.createAccount
+              }
             >
-              <p id="register-required" className="fmr-field-hint">
-                {t.required}
-              </p>
-              <div className="fml-field">
-                <label
-                  htmlFor="register-organization"
-                  className="fml-field-label"
-                >
-                  {isAgency ? t.organization : t.company}
-                </label>
-                <input
-                  id="register-organization"
-                  autoComplete="organization"
-                  value={organization}
-                  onChange={(event) => {
-                    setOrganization(event.target.value);
-                    clearError("organization");
+              {pending
+                ? t.creatingAccount
+                : accountCreated
+                  ? t.created
+                  : t.createAccount}
+            </Button>
+            <Button
+              type="button"
+              className={styles.button}
+              size="large"
+              fullWidth
+              variant="outlined"
+              color="assistive"
+              disabled={pending || accountCreated}
+              onClick={() => {
+                setReview(false);
+                setSubmitError(null);
+                requestAnimationFrame(() => titleRef.current?.focus());
+              }}
+            >
+              {t.edit}
+            </Button>
+          </div>
+          <div
+            role="alert"
+            className={`${authStyles.error} ${styles.reviewError}`}
+          >
+            {submitError ? (
+              <Typography as="p" variant="label1">
+                {t[submitError]}
+              </Typography>
+            ) : null}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className={authStyles.intro}>
+            <Typography
+              as="h1"
+              id="register-title"
+              ref={titleRef}
+              tabIndex={-1}
+              variant="title2"
+              weight="bold"
+            >
+              {isAgency ? t.agencyTitle : t.brandTitle}
+            </Typography>
+            <Typography
+              as="p"
+              variant="body2"
+              color="semantic.foreground.neutral.secondary"
+            >
+              {isAgency ? t.agencySubtitle : t.brandSubtitle}
+            </Typography>
+          </div>
+          <form
+            className={authStyles.form}
+            onSubmit={submit}
+            noValidate
+            aria-describedby="register-required"
+          >
+            <Typography
+              as="p"
+              id="register-required"
+              variant="label2"
+              color="semantic.foreground.neutral.tertiary"
+            >
+              {t.required}
+            </Typography>
+            <RegisterField
+              id="register-organization"
+              name="organization"
+              label={isAgency ? t.organization : t.company}
+              autoComplete="organization"
+              value={organization}
+              onChange={(event) => {
+                setOrganization(event.target.value);
+                clearError("organization");
+              }}
+              placeholder={
+                isAgency ? t.organizationPlaceholder : t.companyPlaceholder
+              }
+              required
+              maxLength={120}
+              error={fieldError("organization")}
+            />
+            {isAgency ? (
+              <fieldset className={styles.choices}>
+                <legend id="organization-type-label">
+                  {t.organizationType}
+                </legend>
+                <RadioGroup
+                  className={styles.choiceGrid}
+                  name="organization-type"
+                  value={organizationType}
+                  onValueChange={(value) => {
+                    if (value === "agency" || value === "studio")
+                      setOrganizationType(value);
                   }}
-                  placeholder={
-                    isAgency ? t.organizationPlaceholder : t.companyPlaceholder
-                  }
+                  aria-labelledby="organization-type-label"
                   required
-                  maxLength={120}
-                  aria-invalid={!!errors.organization}
-                  aria-describedby={
-                    errors.organization
-                      ? "register-organization-error"
-                      : undefined
-                  }
-                />
-                {errorMessage("organization")}
-              </div>
-              {isAgency ? (
-                <fieldset className="fmr-choices">
-                  <legend>{t.organizationType}</legend>
-                  <div className="fmr-choice-grid">
-                    {(["agency", "studio"] as const).map((type) => (
-                      <label className="fmr-choice" key={type}>
-                        <input
-                          type="radio"
-                          name="organization-type"
-                          value={type}
-                          checked={organizationType === type}
-                          onChange={() => setOrganizationType(type)}
-                          required
-                        />
-                        <span>
-                          {type === "agency" ? t.agencyCompany : t.studio}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-              ) : (
-                <fieldset
-                  className="fmr-choices"
+                >
+                  {(["agency", "studio"] as const).map((type) => (
+                    <label
+                      className={styles.choice}
+                      key={type}
+                      htmlFor={`register-type-${type}`}
+                    >
+                      <RadioGroupItem
+                        id={`register-type-${type}`}
+                        value={type}
+                        size="small"
+                        tight
+                        aria-label={
+                          type === "agency" ? t.agencyCompany : t.studio
+                        }
+                      />
+                      <span>
+                        {type === "agency" ? t.agencyCompany : t.studio}
+                      </span>
+                    </label>
+                  ))}
+                </RadioGroup>
+              </fieldset>
+            ) : (
+              <fieldset className={styles.choices}>
+                <legend id="company-size-label">{t.companySize}</legend>
+                <Typography
+                  as="p"
+                  variant="label2"
+                  id="company-size-hint"
+                  className={styles.hint}
+                  color="semantic.foreground.neutral.tertiary"
+                >
+                  {t.companySizeHint}
+                </Typography>
+                <RadioGroup
+                  className={`${styles.choiceGrid} ${styles.sizeGrid}`}
+                  name="company-size"
+                  value={companySize}
+                  onValueChange={(value) => {
+                    setCompanySize(value);
+                    clearError("companySize");
+                  }}
+                  aria-labelledby="company-size-label"
+                  aria-invalid={!!errors.companySize}
                   aria-describedby={
                     errors.companySize
                       ? "company-size-hint register-companySize-error"
                       : "company-size-hint"
                   }
-                >
-                  <legend>{t.companySize}</legend>
-                  <p className="fmr-field-hint" id="company-size-hint">
-                    {t.companySizeHint}
-                  </p>
-                  <div className="fmr-choice-grid fmr-size-grid">
-                    {companySizes.map((size, index) => (
-                      <label className="fmr-choice" key={size}>
-                        <input
-                          id={index === 0 ? "register-companySize" : undefined}
-                          type="radio"
-                          name="company-size"
-                          value={size}
-                          checked={companySize === size}
-                          onChange={() => {
-                            setCompanySize(size);
-                            clearError("companySize");
-                          }}
-                          required
-                          aria-invalid={!!errors.companySize}
-                        />
-                        <span>{size}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {errorMessage("companySize")}
-                </fieldset>
-              )}
-              <div className="fml-field">
-                <label htmlFor="register-email" className="fml-field-label">
-                  {t.email}
-                </label>
-                <input
-                  id="register-email"
-                  type="email"
-                  autoComplete="email"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  value={email}
-                  onChange={(event) => {
-                    setEmail(event.target.value);
-                    clearError("email");
-                  }}
-                  placeholder="you@company.com"
                   required
-                  maxLength={254}
-                  aria-invalid={!!errors.email}
-                  aria-describedby={
-                    errors.email ? "register-email-error" : undefined
-                  }
-                />
-                {errorMessage("email")}
-              </div>
-              <div className="fml-field">
-                <label htmlFor="register-password" className="fml-field-label">
-                  {t.password}
-                </label>
-                <div className="fml-password">
-                  <input
-                    id="register-password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    value={password}
-                    onChange={(event) => {
-                      setPassword(event.target.value);
-                      clearError("password");
-                      clearError("confirm");
-                    }}
-                    placeholder={t.passwordPlaceholder}
-                    required
-                    minLength={8}
-                    maxLength={128}
-                    aria-invalid={!!errors.password}
-                    aria-describedby={
-                      errors.password
-                        ? "register-password-error password-hint"
-                        : "password-hint"
-                    }
-                  />
-                  <button
-                    type="button"
-                    aria-label={showPassword ? t.hidePassword : t.showPassword}
-                    aria-pressed={showPassword}
-                    onClick={() => setShowPassword(!showPassword)}
+                >
+                  {companySizes.map((size, index) => (
+                    <label
+                      className={styles.choice}
+                      key={size}
+                      htmlFor={
+                        index === 0
+                          ? "register-companySize"
+                          : `register-companySize-${index}`
+                      }
+                    >
+                      <RadioGroupItem
+                        id={
+                          index === 0
+                            ? "register-companySize"
+                            : `register-companySize-${index}`
+                        }
+                        value={size}
+                        size="small"
+                        tight
+                        aria-label={size}
+                      />
+                      <span>{size}</span>
+                    </label>
+                  ))}
+                </RadioGroup>
+                {errors.companySize && (
+                  <Typography
+                    as="p"
+                    variant="label2"
+                    color="semantic.foreground.negative.strong"
+                    id="register-companySize-error"
+                    className={styles.fieldError}
                   >
-                    {showPassword ? (
-                      <EyeOff size={20} aria-hidden="true" />
-                    ) : (
-                      <Eye size={20} aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
-                <p className="fmr-field-hint" id="password-hint">
-                  {t.passwordHint}
-                </p>
-                {errorMessage("password")}
-              </div>
-              <div className="fml-field">
-                <label htmlFor="register-confirm" className="fml-field-label">
-                  {t.confirm}
-                </label>
-                <div className="fml-password">
-                  <input
-                    id="register-confirm"
-                    type={showConfirm ? "text" : "password"}
-                    autoComplete="new-password"
-                    value={confirm}
-                    onChange={(event) => {
-                      setConfirm(event.target.value);
-                      clearError("confirm");
-                    }}
-                    placeholder={t.confirmPlaceholder}
-                    required
-                    maxLength={128}
-                    aria-invalid={!!errors.confirm}
-                    aria-describedby={
-                      errors.confirm ? "register-confirm-error" : undefined
-                    }
-                  />
-                  <button
-                    type="button"
-                    aria-label={showConfirm ? t.hideConfirm : t.showConfirm}
-                    aria-pressed={showConfirm}
-                    onClick={() => setShowConfirm(!showConfirm)}
-                  >
-                    {showConfirm ? (
-                      <EyeOff size={20} aria-hidden="true" />
-                    ) : (
-                      <Eye size={20} aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
-                {errorMessage("confirm")}
-              </div>
-              <button type="submit" className="fml-submit">
-                {t.continue}
-              </button>
-            </form>
-          </>
-        )}
-        <p className="fmr-login-prompt">
-          {t.existing} <a href={`/login?lang=${locale}`}>{t.login}</a>
-        </p>
+                    {fieldError("companySize")}
+                  </Typography>
+                )}
+              </fieldset>
+            )}
+            <RegisterField
+              id="register-email"
+              name="email"
+              label={t.email}
+              type="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                clearError("email");
+              }}
+              placeholder="you@company.com"
+              required
+              maxLength={254}
+              error={fieldError("email")}
+            />
+            <RegisterField
+              id="register-password"
+              name="password"
+              label={t.password}
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                clearError("password");
+                clearError("confirm");
+              }}
+              placeholder={t.passwordPlaceholder}
+              required
+              minLength={8}
+              maxLength={128}
+              hint={t.passwordHint}
+              error={fieldError("password")}
+              visibilityLabels={{ show: t.showPassword, hide: t.hidePassword }}
+            />
+            <RegisterField
+              id="register-confirm"
+              name="confirm"
+              label={t.confirm}
+              type="password"
+              autoComplete="new-password"
+              value={confirm}
+              onChange={(event) => {
+                setConfirm(event.target.value);
+                clearError("confirm");
+              }}
+              placeholder={t.confirmPlaceholder}
+              required
+              maxLength={128}
+              error={fieldError("confirm")}
+              visibilityLabels={{ show: t.showConfirm, hide: t.hideConfirm }}
+            />
+            <Button
+              type="submit"
+              className={authStyles.submit}
+              size="large"
+              fullWidth
+            >
+              {t.continue}
+            </Button>
+          </form>
+        </>
+      )}
+      <Divider className={authStyles.divider} />
+      <div className={authStyles.alternate}>
+        <Typography
+          as="p"
+          variant="label1"
+          color="semantic.foreground.neutral.secondary"
+        >
+          {t.existing}
+        </Typography>
+        <TextButton
+          as="a"
+          href={`/login?lang=${locale}`}
+          size="small"
+          trailingContent={<IconChevronRight />}
+        >
+          {t.login}
+        </TextButton>
       </div>
-    </AuthShell>
+    </AuthLayout>
   );
 }
