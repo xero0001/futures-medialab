@@ -40,12 +40,15 @@ assets under `app/backup` and `public/backup-assets`, plus `noindex, nofollow`.
 The archived CSS uses the `fmb-` prefix to avoid collisions with future landing
 styles. Shared branding, language controls and locale resolution remain shared.
 The public-home design and implementation scope are documented in
-`docs/design/public-home-plan.md`.
+`docs/design/public-home-redesign.md` (the earlier plan remains as a historical reference).
 
-The public home is a short company/service introduction with buyer and supplier
-registration, contact placeholders, and login. It uses the service's Montage
-provider, Pretendard, Wanted blue, shared wordmark and language control. Campaigns,
-creator profiles, prices, AI demos, case studies and FAQs are not shown on the home.
+The public home follows the archived landing's sequence and visual richness,
+rebuilt with the service's Montage provider, Pretendard and Wanted blue (`#0066FF`).
+It includes a blue hero illustration, buyer/supplier entry points, fictional campaign
+concepts with genre tabs and accessible detail modals, a three-step workflow, partner
+panels, FAQs, a final CTA and contact placeholders. Real campaigns, creator profiles,
+prices and unverified client results remain outside the public home. The archived
+page and its assets are independent and unchanged by this redesign.
 
 - Components, styles and Korean/English/Chinese copy: `apps/platform/app/_components/public-home/`.
 - Locale priority: `?lang=en|ko|zh`, saved language cookie, browser language,

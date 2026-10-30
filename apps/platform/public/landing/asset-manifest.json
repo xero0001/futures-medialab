@@ -11,6 +11,14 @@
       "file": "campaign-worlds.webp",
       "purpose": "Three fictional campaign concept artworks, cropped in CSS",
       "prompt": "Create one wide panoramic game-concept artwork in a 3:1 aspect ratio, with three equal-width distinct scene areas flowing softly into each other. Left third: a dreamy indigo and lavender floating fantasy island with a tiny glowing castle, a crescent moon and soft clouds. Middle third: a futuristic cobalt-blue and violet circular esports arena with luminous curved structures, an electric violet sky and no people. Right third: a cozy miniature pastel lavender planet with rounded blue trees, a tiny white cottage and a winding violet path. Beautiful premium soft 3D clay-and-acrylic illustration, cheerful elevated editorial design, entirely original, no logos, no words, no letters, no numbers, no watermarks, no real brands. Three distinct self-contained focal scenes centered at 1/6, 1/2 and 5/6 of the image width so each third can serve as its own game campaign card crop. Generous blue-purple airy backgrounds, soft studio-like light, polished rounded forms, charming but refined, no black outlines. Landscape very wide composition, no borders or panel separators."
+    },
+    {
+      "file": "creator-world-montage.webp",
+      "purpose": "Montage public home hero — original composition edited to Wanted blue",
+      "source": "creator-world.webp",
+      "mode": "edit",
+      "prompt": "Preserve the game controller, video tile, megaphone, translucent ribbon, pearl spheres and podium composition. Replace lavender, purple and pink with Wanted electric blue #0066FF, cobalt #0052CC, pale ice blue, silver and white. Deep navy controller buttons. Premium polished 3D illustration, generous breathing room, no text or logos. Transparent background.",
+      "transparent_background": true
     }
   ],
   "notes": "Original artwork. No real brand partnerships or campaign availability implied. WebP compression only; originals retained by the image generation tool."
