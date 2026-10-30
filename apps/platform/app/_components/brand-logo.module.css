@@ -6,7 +6,7 @@
   color: #172039;
   line-height: 1;
   text-decoration: none;
-  font-family: Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-family: var(--fm-font-family);
 }
 
 .wordmark > svg {

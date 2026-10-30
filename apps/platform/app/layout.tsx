@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PretendardFont } from "@futures-medialab/ui/pretendard-font";
 
 import "./globals.css";
 
@@ -14,6 +15,9 @@ export default function RootLayout({
   // Montage sets the document theme before React hydrates this layout.
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <PretendardFont />
+      </head>
       <body>{children}</body>
     </html>
   );

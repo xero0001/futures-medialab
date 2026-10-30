@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PretendardFont } from "@futures-medialab/ui/pretendard-font";
 
 import "./globals.css";
 
@@ -13,6 +14,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
+      <head>
+        <PretendardFont />
+      </head>
       <body>{children}</body>
     </html>
   );

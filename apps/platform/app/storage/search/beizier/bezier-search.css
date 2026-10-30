@@ -34,14 +34,7 @@ html:has(.bz-workspace) {
   --bgtxt-cobalt-lightest: #f0efff;
   --color-text-neutral: #191f28;
   --color-text-neutral-light: #6b7684;
-  font-family:
-    "Pretendard",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Apple SD Gothic Neo",
-    "Noto Sans KR",
-    "Malgun Gothic",
-    sans-serif;
+  font-family: var(--fm-font-family);
   font-size: 14px;
   line-height: 1.5;
   color: var(--bz-ink);

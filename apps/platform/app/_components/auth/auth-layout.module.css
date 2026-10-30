@@ -6,12 +6,7 @@
   min-height: 100svh;
   color: var(--semantic-foreground-neutral-primary, #171719);
   background: var(--semantic-surface-neutral-secondary, #f7f7f8);
-  font-family:
-    Pretendard,
-    -apple-system,
-    BlinkMacSystemFont,
-    system-ui,
-    sans-serif;
+  font-family: var(--fm-font-family);
   -webkit-font-smoothing: antialiased;
 }
 

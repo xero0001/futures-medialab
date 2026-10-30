@@ -27,6 +27,11 @@ database, UI, lint, and TypeScript code lives in `packages/*`.
 
 ## Public landing page
 
+Both apps load Pretendard's pinned dynamic subset from their root layout through
+`@futures-medialab/ui/pretendard-font`. Shared CSS defines `--fm-font-family`
+and Tailwind's `font-sans`; public, auth, workspace, portal, archived and admin
+UI use that same stack. Page providers must not load the font again.
+
 `/` and `/landing` share the current Montage public home and locale handling. The previous main remains available at `/test` with noindex.
 
 `/backup` preserves the public home as it appeared at commit `09176d6`

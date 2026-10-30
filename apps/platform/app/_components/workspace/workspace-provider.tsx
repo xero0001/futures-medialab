@@ -12,14 +12,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         <Global
           styles={{
             '[role="menu"], [role="listbox"]': {
-              fontFamily:
-                "Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
+              fontFamily: "var(--fm-font-family)",
             },
           }}
-        />
-        <link
-          rel="stylesheet"
-          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css"
         />
         {children}
       </ThemeProvider>

@@ -8,9 +8,7 @@
   --cw-accent: #3182f6;
   --cw-accent-dark: #1b64da;
   --cw-soft: #e8f3ff;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard",
-    "Malgun Gothic", sans-serif;
+  font-family: var(--fm-font-family);
   letter-spacing: -0.025em;
 }
 

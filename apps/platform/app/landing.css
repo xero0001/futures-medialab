@@ -8,7 +8,7 @@
   --fm-small: 14px;
   color: var(--fm-ink);
   background: #fff;
-  font-family: Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-family: var(--fm-font-family);
   font-size: var(--fm-text);
   line-height: 1.75;
   -webkit-font-smoothing: antialiased;

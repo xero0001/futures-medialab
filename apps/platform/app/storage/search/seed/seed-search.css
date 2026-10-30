@@ -1,5 +1,9 @@
 /* SEED styles are namespaced, but its base sheet opts the document into dark
    native controls. Preserve the application's original document scheme. */
+html:root {
+  --seed-font-family: var(--fm-font-family);
+}
+
 html:root:not([data-seed]) {
   color-scheme: normal;
 }

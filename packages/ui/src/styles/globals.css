@@ -4,6 +4,8 @@
 @source "../**/*.{ts,tsx}";
 
 :root {
+  --fm-font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui,
+    "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
   --background: #f7f8fb;
   --foreground: #16181d;
   --card: #ffffff;
@@ -27,7 +29,7 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-ring: var(--ring);
-  --font-sans: Arial, Helvetica, sans-serif;
+  --font-sans: var(--fm-font-family);
 }
 
 * {
@@ -36,10 +38,11 @@
 }
 
 html {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--fm-font-family);
 }
 
 body {
+  font-family: var(--fm-font-family);
   margin: 0;
   background: var(--background);
   color: var(--foreground);

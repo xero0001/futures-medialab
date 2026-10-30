@@ -6,6 +6,7 @@
   "exports": {
     "./brand-symbol": "./src/components/brand-symbol.tsx",
     "./button": "./src/components/button.tsx",
+    "./pretendard-font": "./src/components/pretendard-font.tsx",
     "./globals.css": "./src/styles/globals.css",
     "./utils": "./src/lib/utils.ts"
   },

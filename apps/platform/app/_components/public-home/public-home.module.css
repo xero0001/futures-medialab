@@ -6,12 +6,7 @@
   min-height: 100svh;
   color: var(--home-ink);
   background: var(--semantic-surface-neutral-primary, #fff);
-  font-family:
-    Pretendard,
-    -apple-system,
-    BlinkMacSystemFont,
-    system-ui,
-    sans-serif;
+  font-family: var(--fm-font-family);
   -webkit-font-smoothing: antialiased;
 }
 .page * {

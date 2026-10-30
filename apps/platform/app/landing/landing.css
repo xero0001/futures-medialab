@@ -5,7 +5,7 @@
   --fl-line: #e9e8f2;
   background: #fff;
   color: var(--fl-ink);
-  font-family: Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  font-family: var(--fm-font-family);
   font-size: 16px;
   line-height: 1.6;
   overflow-x: clip;
