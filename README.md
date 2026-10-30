@@ -30,6 +30,14 @@ database, UI, lint, and TypeScript code lives in `packages/*`.
 `/` directly re-exports `/landing`, so both use the same current design and
 locale handling. The previous main remains available at `/test` with noindex.
 
+`/backup` preserves the public home as it appeared at commit `09176d6`
+(2026-10-31). It has independent landing copy, styles, components and image
+assets under `app/backup` and `public/backup-assets`, plus `noindex, nofollow`.
+The archived CSS uses the `fmb-` prefix to avoid collisions with future landing
+styles. Shared branding, language controls and locale resolution remain shared.
+The next public-home proposal is documented in `docs/design/public-home-plan.md`;
+the proposal does not replace `/` yet.
+
 The home page presents managed campaigns and an approved-organization
 marketplace, Korean localization, campaign delivery, and partner requirements.
 Its content is based on the business proposal v2.0, the service proposal, and
