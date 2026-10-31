@@ -37,8 +37,6 @@ const copy = {
     login: "Log in",
     signingIn: "Logging in…",
     register: "Create an account",
-    partnerNote:
-      "Campaign access is reserved for approved brands, MCNs, agencies, and studios.",
     invalid: "The email or password is incorrect. Please try again.",
     tooMany: "Too many attempts. Please wait a moment and try again.",
     failed: "We couldn’t log you in. Check your connection and try again.",
@@ -55,7 +53,6 @@ const copy = {
     login: "로그인",
     signingIn: "로그인 중…",
     register: "회원가입",
-    partnerNote: "캠페인은 승인된 브랜드·MCN·에이전시·스튜디오에만 공개됩니다.",
     invalid: "이메일 또는 비밀번호가 올바르지 않습니다. 다시 확인해 주세요.",
     tooMany: "시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.",
     failed: "로그인하지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.",
@@ -72,7 +69,6 @@ const copy = {
     login: "登录",
     signingIn: "正在登录…",
     register: "注册",
-    partnerNote: "营销活动仅向通过审核的品牌、MCN、代理机构和工作室开放。",
     invalid: "邮箱或密码不正确，请重新确认。",
     tooMany: "尝试次数过多，请稍后重试。",
     failed: "登录失败，请检查网络连接后重试。",
@@ -145,7 +141,6 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
       locale={locale}
       onLocaleChange={changeLocale}
       headingId="login-title"
-      supportingText={t.partnerNote}
     >
       <div className={styles.intro}>
         <Typography as="h1" id="login-title" variant="title1" weight="bold">

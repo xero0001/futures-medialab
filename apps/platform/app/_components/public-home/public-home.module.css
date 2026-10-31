@@ -117,29 +117,6 @@
 .mobileNavigation {
   display: none !important;
 }
-.announcement {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 18px;
-  min-height: 44px;
-  padding: 10px 20px;
-  font-size: 13px;
-  line-height: 1.5;
-  background: var(--atomic-blue-95);
-  color: var(--atomic-blue-30);
-}
-.announcement a {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--atomic-blue-40);
-  font-weight: 700;
-}
-.announcement svg {
-  width: 16px;
-  height: 16px;
-}
 .heroSurface {
   background: linear-gradient(
     110deg,
@@ -726,10 +703,6 @@
     padding: 10px 0;
     font-size: 15px;
   }
-  .announcement {
-    font-size: 12px;
-    gap: 12px;
-  }
   .headline {
     font-size: 38px !important;
   }
@@ -825,13 +798,6 @@
     gap: 14px;
   }
   .language :global(.fm-language-globe) {
-    display: none;
-  }
-  .announcement {
-    font-size: 11px;
-    min-height: 38px;
-  }
-  .announcement a {
     display: none;
   }
   .hero {

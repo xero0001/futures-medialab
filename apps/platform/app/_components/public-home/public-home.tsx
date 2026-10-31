@@ -149,13 +149,6 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
           </nav>
         </header>
         <main id="main-content" tabIndex={-1}>
-          <div className={styles.announcement}>
-            <span>{t.announcement}</span>
-            <a href="#how-it-works">
-              {t.announcementLink}
-              <IconArrowRight aria-hidden="true" />
-            </a>
-          </div>
           <section className={styles.heroSurface} aria-labelledby="home-title">
             <div className={`${styles.container} ${styles.hero}`}>
               <div className={styles.heroCopy}>

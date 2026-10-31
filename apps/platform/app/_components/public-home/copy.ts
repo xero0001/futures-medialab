@@ -16,8 +16,6 @@ const ko = {
     close: "메뉴 닫기",
     skip: "본문으로 바로가기",
   },
-  announcement: "글로벌 게임과 한국 크리에이터의 새로운 연결",
-  announcementLink: "Futures Medialab 알아보기",
   hero: {
     eyebrow: "GLOBAL GAMES. KOREAN AUDIENCES.",
     lines: ["좋은 게임이,", "한국의 팬을 만나는 곳."],
@@ -188,8 +186,6 @@ const en: HomeCopy = {
     close: "Close menu",
     skip: "Skip to content",
   },
-  announcement: "A new connection for global games and Korean creators.",
-  announcementLink: "Meet Futures Medialab",
   hero: {
     eyebrow: "GLOBAL GAMES. KOREAN AUDIENCES.",
     lines: ["Great games.", "Meet your next fans."],
@@ -358,8 +354,6 @@ const zh: HomeCopy = {
     close: "关闭菜单",
     skip: "跳至正文",
   },
-  announcement: "连接全球游戏与韩国创作者的全新机遇。",
-  announcementLink: "了解 Futures Medialab",
   hero: {
     eyebrow: "GLOBAL GAMES. KOREAN AUDIENCES.",
     lines: ["让好游戏，", "遇见韩国的玩家。"],
