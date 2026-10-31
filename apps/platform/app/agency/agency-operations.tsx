@@ -25,7 +25,12 @@ import type {
   AgencySettlement,
 } from "../../lib/agency-operations-types";
 import type { Locale } from "../_components/landing-copy";
-import { ProfileSelect } from "../onboarding/brand/profile-select";
+import {
+  WorkspaceTabs as Tabs,
+  WorkspaceSelect as ProfileSelect,
+  WorkspaceButton,
+  WorkspaceInput,
+} from "../_components/workspace/workspace-controls";
 import { agencyText } from "./agency-workspace-copy";
 import "./agency-operations.css";
 
@@ -207,7 +212,7 @@ export function AgencyOperations({
                 "组织工作区记录",
               )}
         </p>
-        <button
+        <WorkspaceButton
           type="button"
           className="aop-button"
           onClick={reload}
@@ -215,7 +220,7 @@ export function AgencyOperations({
         >
           <RefreshCw size={16} aria-hidden="true" />
           {t("Refresh", "새로고침", "刷新")}
-        </button>
+        </WorkspaceButton>
       </div>
       {loading && (
         <p className="aop-loading" role="status">
@@ -248,9 +253,13 @@ export function AgencyOperations({
               {t("Log in", "로그인", "登录")}
             </Link>
           ) : (
-            <button className="aop-button" onClick={reload} type="button">
+            <WorkspaceButton
+              className="aop-button"
+              onClick={reload}
+              type="button"
+            >
               {t("Try again", "다시 시도", "重试")}
-            </button>
+            </WorkspaceButton>
           )}
         </div>
       )}
@@ -298,62 +307,6 @@ function OperationSection({
   );
 }
 
-function Tabs({
-  label,
-  options,
-  value,
-  onChange,
-  children,
-}: {
-  label: string;
-  options: { value: string; label: string; count?: number }[];
-  value: string;
-  onChange: (value: string) => void;
-  children: ReactNode;
-}) {
-  const id = useId();
-  return (
-    <>
-      <div className="aop-tabs" role="tablist" aria-label={label}>
-        {options.map((option, index) => (
-          <button
-            key={option.value}
-            id={`${id}-${option.value}`}
-            type="button"
-            role="tab"
-            aria-selected={value === option.value}
-            aria-controls={`${id}-panel`}
-            tabIndex={value === option.value ? 0 : -1}
-            onClick={() => onChange(option.value)}
-            onKeyDown={(event) => {
-              let next = index;
-              if (event.key === "ArrowRight")
-                next = (index + 1) % options.length;
-              else if (event.key === "ArrowLeft")
-                next = (index + options.length - 1) % options.length;
-              else if (event.key === "Home") next = 0;
-              else if (event.key === "End") next = options.length - 1;
-              else return;
-              event.preventDefault();
-              onChange(options[next]!.value);
-              document.getElementById(`${id}-${options[next]!.value}`)?.focus();
-            }}
-          >
-            {option.label}
-            {option.count !== undefined && <span>{option.count}</span>}
-          </button>
-        ))}
-      </div>
-      <div
-        role="tabpanel"
-        id={`${id}-panel`}
-        aria-labelledby={`${id}-${value}`}
-      >
-        {children}
-      </div>
-    </>
-  );
-}
 function Empty({
   title,
   body,
@@ -429,7 +382,7 @@ function DateFilters({
       <legend>{label} (UTC)</legend>
       <label>
         <span className="aop-sr-only">{t("From", "시작일", "开始日期")}</span>
-        <input
+        <WorkspaceInput
           type="date"
           value={start}
           max={end || undefined}
@@ -439,7 +392,7 @@ function DateFilters({
       <span aria-hidden="true">–</span>
       <label>
         <span className="aop-sr-only">{t("To", "종료일", "结束日期")}</span>
-        <input
+        <WorkspaceInput
           type="date"
           value={end}
           min={start || undefined}
@@ -545,14 +498,14 @@ function Invitations({
               )}
             >
               {" "}
-              <button
+              <WorkspaceButton
                 className="aop-button aop-primary"
                 type="button"
                 onClick={onExplore}
               >
                 {t("Browse campaigns", "캠페인 찾기", "浏览活动")}
                 <ArrowRight size={16} aria-hidden="true" />
-              </button>
+              </WorkspaceButton>
             </Empty>
           }
         />
@@ -649,7 +602,7 @@ function Projects({
             <span className="aop-sr-only">
               {t("Search campaigns", "캠페인 검색", "搜索活动")}
             </span>
-            <input
+            <WorkspaceInput
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={t("Search campaigns", "캠페인 검색", "搜索活动")}
@@ -738,14 +691,14 @@ function Projects({
               )}
             >
               {!data.projects.length && (
-                <button
+                <WorkspaceButton
                   type="button"
                   className="aop-button aop-primary"
                   onClick={onExplore}
                 >
                   {t("Browse campaigns", "캠페인 찾기", "浏览活动")}
                   <ArrowRight size={16} aria-hidden="true" />
-                </button>
+                </WorkspaceButton>
               )}
             </Empty>
           }
@@ -1016,7 +969,7 @@ function ContentSubmissionForm({
               "请输入运营团队可访问的 HTTPS 链接。此页面不提供文件上传。",
             )}
       </p>
-      <input
+      <WorkspaceInput
         id={id}
         type="url"
         pattern="https://.*"
@@ -1032,13 +985,17 @@ function ContentSubmissionForm({
           {error}
         </p>
       ) : null}
-      <button type="submit" className="aop-button aop-primary" disabled={busy}>
+      <WorkspaceButton
+        type="submit"
+        className="aop-button aop-primary"
+        disabled={busy}
+      >
         {busy
           ? t("Submitting…", "제출 중…", "提交中…")
           : publish
             ? t("Submit published link", "게시물 검증 요청", "申请发布核验")
             : t("Submit draft", "초안 제출", "提交草稿")}
-      </button>
+      </WorkspaceButton>
     </form>
   );
 }
@@ -1135,14 +1092,14 @@ function Payments({
             "各币种分别汇总，不含示例记录，提现功能尚未接入。",
           )}
         </p>
-        <button
+        <WorkspaceButton
           type="button"
           className="aop-button"
           disabled
           aria-describedby="aop-withdraw-note"
         >
           {t("Withdraw", "출금", "提现")}
-        </button>
+        </WorkspaceButton>
       </div>
       <p id="aop-withdraw-note" className="aop-sr-only">
         {t(

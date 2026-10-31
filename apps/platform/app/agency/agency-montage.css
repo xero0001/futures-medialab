@@ -1,0 +1,633 @@
+/* Shares the Wanted type scale, neutral surfaces and control sizes with the brand workspace. */
+.agency-montage.cwa-workspace {
+  --agency-ink: var(--semantic-foreground-neutral-primary, #171719);
+  --agency-muted: var(--semantic-foreground-neutral-secondary, #46474c);
+  --agency-tertiary: #73767d;
+  --agency-line: var(--semantic-line-neutral-secondaryOpaque, #e5e5e7);
+  --agency-soft: #f7f7f8;
+  --agency-blue: var(--semantic-foreground-brand-primary, #0066ff);
+  --agency-blue-hover: #0052cc;
+  --agency-blue-soft: #f0f6ff;
+  --cwa-ink: var(--agency-ink);
+  --cwa-muted: var(--agency-muted);
+  --cwa-line: var(--agency-line);
+  --cwa-indigo: var(--agency-blue);
+  color: var(--agency-ink);
+  font-family: var(--fm-font-family);
+  font-size: 15px;
+  line-height: 1.467;
+  letter-spacing: 0.0096em;
+  background: #fff;
+}
+.agency-montage .cwa-marketplace {
+  --market-ink: var(--agency-ink);
+  --market-muted: var(--agency-muted);
+  --market-line: var(--agency-line);
+  --market-indigo: var(--agency-blue);
+}
+.agency-montage .cwa-heading {
+  margin: 8px 0 32px;
+  gap: 16px;
+}
+.agency-montage .cwa-heading h1 {
+  font-size: 28px;
+  line-height: 38px;
+  letter-spacing: -0.0236em;
+  font-weight: 700;
+  color: var(--agency-ink);
+}
+.agency-montage .cwa-heading .agency-eyebrow {
+  margin: 0 0 8px;
+  color: var(--agency-tertiary);
+  font-size: 13px;
+  line-height: 18px;
+}
+.agency-montage .cwa-subtitle {
+  margin-top: 8px;
+  color: var(--agency-muted);
+}
+.agency-montage .cwa-partner-status {
+  background: var(--agency-soft);
+  color: var(--agency-muted);
+  border: 1px solid var(--agency-line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.agency-montage .workspace-button {
+  min-height: 40px;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.agency-montage .workspace-button-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.agency-montage .workspace-button-content svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.agency-montage .workspace-button:not(.cwa-button-primary):not(.aop-primary) {
+  background: #fff;
+  border: 1px solid var(--agency-line);
+  color: var(--agency-ink);
+}
+.agency-montage
+  .workspace-button:not(.cwa-button-primary):not(.aop-primary):not(
+    :disabled
+  ):hover {
+  background: var(--agency-soft);
+  border-color: var(--agency-line);
+  color: var(--agency-ink);
+}
+.agency-montage .workspace-button:is(.cwa-button-primary, .aop-primary) {
+  background: var(--agency-blue);
+  border-color: transparent;
+  color: #fff;
+}
+.agency-montage
+  .workspace-button:is(.cwa-button-primary, .aop-primary):not(:disabled):hover {
+  background: var(--agency-blue-hover);
+  border-color: transparent;
+}
+.agency-montage .workspace-select {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+.agency-montage .workspace-select > .fmb-label {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--agency-muted);
+}
+.agency-montage :is(.cwa-live-field, .aop-submit-form) {
+  gap: 8px;
+  min-width: 0;
+}
+.agency-montage
+  :is(
+    .cwa-live-field > span,
+    .cwa-date-range > legend,
+    .cwa-budget-filter > legend,
+    .aop-date-filter > legend,
+    .aop-submit-form label
+  ) {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--agency-muted);
+  margin-bottom: 8px;
+}
+/* The Montage wrapper owns field borders, padding and focus treatment. */
+.agency-montage.cwa-workspace
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  min-height: 0;
+  height: auto;
+  background: transparent;
+  color: inherit;
+  font-size: 16px;
+  line-height: 24px;
+  min-width: 0;
+  width: 100%;
+}
+.agency-montage.cwa-workspace textarea {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  min-height: 0;
+  font-size: 16px;
+  line-height: 24px;
+}
+.agency-montage.cwa-workspace
+  :is(input, textarea):not([type="checkbox"]):not(
+    [type="radio"]
+  ):focus-visible {
+  outline: none;
+}
+.agency-montage.cwa-workspace
+  :is(a, button, summary, [tabindex]):not(input):not(textarea):focus-visible {
+  outline: 2px solid var(--agency-blue);
+  outline-offset: 3px;
+}
+.agency-montage .cwa-filters {
+  padding: 24px;
+  border: 1px solid var(--agency-line);
+  border-radius: 12px;
+}
+.agency-montage .cwa-search-row {
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.agency-montage :is(.cwa-search-input, .aop-search) {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  height: auto;
+  min-height: 48px;
+  box-shadow: none;
+  gap: 8px;
+  color: var(--agency-tertiary);
+}
+.agency-montage :is(.cwa-search-input, .aop-search) > div {
+  flex: 1;
+  min-width: 0;
+}
+.agency-montage.cwa-workspace :is(.cwa-search-input, .aop-search):focus-within {
+  box-shadow: none;
+}
+.agency-montage .cwa-search-input {
+  max-width: 560px;
+}
+.agency-montage .cwa-filter-grid.cwa-live-filters {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px 16px;
+}
+.agency-montage .cwa-budget-filter > div {
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 8px;
+}
+.agency-montage .cwa-date-range > div {
+  display: flex;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.agency-montage .cwa-date-range > div > div {
+  min-width: 0;
+  flex: 1;
+}
+.agency-montage .cwa-live-filters .cwa-date-range {
+  grid-column: span 2;
+}
+.agency-montage .aop-date-filter > label {
+  width: 168px;
+  min-width: 0;
+}
+.agency-montage
+  :is(
+    .cwa-filter-reset,
+    .aop-text-button,
+    .aop-details > summary,
+    .aop-activity-details > summary,
+    .aop-inline a
+  ) {
+  color: var(--agency-blue);
+}
+.agency-montage
+  :is(.cwa-demo-notice, .cwa-marketplace .cwa-demo-notice, .cwa-drawer-notice) {
+  border: 1px solid var(--agency-line);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--agency-soft);
+  color: var(--agency-muted);
+  font-size: 14px;
+  line-height: 22px;
+}
+.agency-montage .cwa-demo-notice :is(strong, svg) {
+  color: var(--agency-muted);
+}
+.agency-montage .cwa-demo-notice p {
+  font-size: 14px;
+  line-height: 22px;
+}
+.agency-montage .cwa-marketplace .cwa-offers-board {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+.agency-montage .cwa-marketplace .cwa-offers-list {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.agency-montage .cwa-offer {
+  border: 1px solid var(--agency-line);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: none;
+}
+.agency-montage .cwa-offer:hover {
+  border-color: #c4c5c9;
+  box-shadow: 0 4px 12px #17171908;
+}
+.agency-montage .cwa-offer-body {
+  padding: 20px;
+}
+.agency-montage .cwa-offer h2 {
+  font-size: 18px;
+  line-height: 26px;
+  letter-spacing: -0.002em;
+  font-weight: 600;
+  color: var(--agency-ink);
+}
+.agency-montage .cwa-offer h2 > button {
+  min-height: 52px;
+}
+.agency-montage
+  :is(
+    .cwa-offer-meta,
+    .cwa-offer-meta > span:last-child,
+    .cwa-offer-platforms,
+    .cwa-offer-footer > div > span
+  ) {
+  color: var(--agency-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+.agency-montage .cwa-offer-footer {
+  border-color: var(--agency-line);
+  margin-top: 20px;
+  padding-top: 16px;
+}
+.agency-montage .cwa-offer-footer strong {
+  font-size: 22px;
+  line-height: 30px;
+  letter-spacing: -0.0194em;
+  color: var(--agency-ink);
+  font-weight: 700;
+}
+.agency-montage
+  :is(.cwa-offer-tags > span, .aop-status, .cwa-application-status) {
+  color: var(--agency-muted);
+  background: var(--agency-soft);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+.agency-montage .cwa-card-action {
+  color: var(--agency-blue);
+  background: var(--agency-blue-soft);
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+}
+.agency-montage .cwa-card-action:hover {
+  color: #fff;
+  background: var(--agency-blue);
+}
+.agency-montage .cwa-view-toggle {
+  border-radius: 10px;
+  background: var(--agency-soft);
+  border-color: var(--agency-line);
+  padding: 4px;
+}
+.agency-montage .cwa-view-toggle > button {
+  border-radius: 7px;
+  min-height: 32px;
+  color: var(--agency-muted);
+}
+.agency-montage .cwa-view-toggle > button.is-active {
+  color: var(--agency-ink);
+  background: #fff;
+}
+.agency-montage .cwa-results-toolbar {
+  margin: 24px 0 16px;
+}
+.agency-montage .cwa-results-title {
+  color: var(--agency-muted);
+  font-size: 14px;
+}
+.agency-montage :is(.cwa-application-card, .aop-panel, .aop-balance) {
+  border: 1px solid var(--agency-line);
+  border-radius: 12px;
+  box-shadow: none;
+}
+.agency-montage .cwa-application-card {
+  padding: 24px;
+}
+.agency-montage .cwa-application-card h2 {
+  color: var(--agency-ink);
+  font-size: 20px;
+  line-height: 28px;
+}
+.agency-montage .aop {
+  color: var(--agency-ink);
+  font-size: 15px;
+  line-height: 1.467;
+}
+.agency-montage
+  :is(
+    .aop-muted,
+    .aop-panel-intro,
+    .aop-footnote,
+    .aop-profile dt,
+    .aop-activity-content > p,
+    .aop-activity-content time,
+    .aop-balance > span,
+    .aop-balance p
+  ) {
+  color: var(--agency-muted);
+  font-size: 14px;
+  line-height: 22px;
+}
+.agency-montage .workspace-tabs {
+  padding-inline: 24px;
+  border-bottom: 1px solid var(--agency-line);
+}
+.agency-montage .workspace-tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.agency-montage
+  .workspace-tabs
+  [role="tab"][aria-selected="false"]
+  [data-role="tab-list-item-text"] {
+  color: var(--agency-muted);
+}
+.agency-montage .workspace-tab-count {
+  border-radius: 6px;
+  padding: 2px 6px;
+  background: var(--agency-soft);
+  color: var(--agency-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+.agency-montage .aop-panel-intro {
+  padding: 24px;
+}
+.agency-montage .aop-filters {
+  padding: 20px 24px;
+  gap: 16px;
+}
+.agency-montage .aop-table th {
+  background: var(--agency-soft);
+  color: var(--agency-muted);
+  font-size: 13px;
+  font-weight: 600;
+  border-color: var(--agency-line);
+}
+.agency-montage .aop-table td {
+  color: var(--agency-muted);
+  border-color: var(--agency-line);
+  padding-block: 24px;
+}
+.agency-montage .aop-table tbody tr:hover {
+  background: #fafafa;
+}
+.agency-montage
+  :is(
+    .aop-campaign > strong,
+    .aop-profile dd,
+    .aop-activity-content strong,
+    .aop-detail-body h3
+  ) {
+  color: var(--agency-ink);
+}
+.agency-montage .aop-table-scroll {
+  max-width: 100%;
+}
+.agency-montage .aop-balance {
+  padding: 24px;
+}
+.agency-montage .aop-balance strong {
+  color: var(--agency-ink);
+  font-size: 28px;
+  line-height: 38px;
+  font-weight: 700;
+  letter-spacing: -0.0236em;
+}
+.agency-montage :is(.aop-organization h2, .aop-empty h2, .cwa-empty h2) {
+  color: var(--agency-ink);
+  font-size: 22px;
+  line-height: 30px;
+  letter-spacing: -0.0194em;
+}
+.agency-montage .aop-organization {
+  max-width: none;
+  padding: 24px;
+}
+.agency-montage .aop-profile {
+  gap: 0 32px;
+}
+.agency-montage .aop-profile > div {
+  border-color: var(--agency-line);
+}
+.agency-montage .aop-activity {
+  padding-inline: 24px;
+}
+.agency-montage .aop-activity > li {
+  border-color: var(--agency-line);
+  gap: 16px;
+}
+.agency-montage .aop-activity-icon {
+  background: var(--agency-soft);
+  color: var(--agency-tertiary);
+  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+}
+.agency-montage :is(.aop-empty, .cwa-empty) {
+  padding: 48px 24px;
+  color: var(--agency-muted);
+}
+.agency-montage :is(.aop-empty > svg, .cwa-empty > svg) {
+  color: #aeb0b6;
+}
+.agency-montage .cwa-drawer {
+  border: 0;
+  border-radius: 16px 0 0 16px;
+}
+.agency-montage .cwa-drawer::backdrop {
+  background: rgb(23 23 25 / 40%);
+}
+.agency-montage .cwa-drawer-heading {
+  border-color: var(--agency-line);
+  padding: 20px 24px;
+  color: var(--agency-ink);
+}
+.agency-montage .cwa-drawer-content {
+  padding: 24px;
+}
+.agency-montage .cwa-drawer-content h2 {
+  font-size: 24px;
+  line-height: 32px;
+  letter-spacing: -0.023em;
+  color: var(--agency-ink);
+}
+.agency-montage .cwa-drawer-content h3 {
+  color: var(--agency-ink);
+  font-size: 18px;
+  line-height: 26px;
+}
+.agency-montage
+  :is(.cwa-drawer-content p, .cwa-brief-details dt, .cwa-brief-details dd) {
+  color: var(--agency-muted);
+}
+.agency-montage .cwa-detail-art {
+  border-radius: 12px;
+}
+.agency-montage .cwa-proposal {
+  gap: 24px;
+}
+.agency-montage .aop-submit-form {
+  border-color: var(--agency-line);
+  gap: 12px;
+}
+@media (max-width: 1199px) {
+  .agency-montage .cwa-marketplace .cwa-offers-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .agency-montage .cwa-marketplace .cwa-offers-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .agency-montage .cwa-filter-grid.cwa-live-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .agency-montage .cwa-heading {
+    margin: 4px 0 24px;
+  }
+  .agency-montage .cwa-heading h1 {
+    font-size: 24px;
+    line-height: 32px;
+  }
+  .agency-montage .cwa-filters,
+  .agency-montage .cwa-application-card,
+  .agency-montage .aop-organization {
+    padding: 20px;
+  }
+  .agency-montage .cwa-filter-grid.cwa-live-filters {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .agency-montage .cwa-live-filters :is(.cwa-date-range, .cwa-budget-filter) {
+    grid-column: auto;
+  }
+  .agency-montage .cwa-date-range > div {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .agency-montage .cwa-date-range > div > span {
+    display: none;
+  }
+  .agency-montage .cwa-marketplace .cwa-offers-board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .agency-montage .workspace-tabs {
+    padding-inline: 16px;
+  }
+  .agency-montage .aop-filters,
+  .agency-montage .aop-panel-intro {
+    padding: 20px 16px;
+  }
+  .agency-montage .aop-date-filter {
+    flex-wrap: wrap;
+  }
+  .agency-montage .aop-date-filter > label {
+    width: auto;
+  }
+  .agency-montage .aop-balance strong {
+    font-size: 24px;
+    line-height: 32px;
+  }
+  .agency-montage .cwa-drawer {
+    border-radius: 0;
+  }
+  .agency-montage .cwa-drawer-content {
+    padding: 20px;
+  }
+  .agency-montage .aop-activity {
+    padding-inline: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .agency-montage * {
+    transition: none;
+    scroll-behavior: auto;
+  }
+}
+.agency-montage .cwa-applications-panel {
+  border-color: var(--agency-line);
+  border-radius: 12px;
+}
+.agency-montage .cwa-application-search {
+  padding: 24px;
+}
+.agency-montage .cwa-application-table th {
+  background: var(--agency-soft);
+  color: var(--agency-muted);
+  font-weight: 600;
+  border-color: var(--agency-line);
+}
+.agency-montage .cwa-application-table td {
+  color: var(--agency-muted);
+  border-color: var(--agency-line);
+  padding-block: 24px;
+}
+.agency-montage .cwa-application-table .cwa-application-campaign > strong {
+  color: var(--agency-ink);
+}
+.agency-montage .cwa-application-table .cwa-application-detail-row > td {
+  background: var(--agency-soft);
+}
+.agency-montage .cwa-application-expand {
+  color: var(--agency-blue);
+}
+.agency-montage .cwa-application-detail-heading h3 {
+  color: var(--agency-ink);
+}
+.agency-montage .cwa-demo-label {
+  color: var(--agency-tertiary);
+}
+@media (max-width: 640px) {
+  .agency-montage .cwa-application-search {
+    padding: 20px 16px;
+  }
+}

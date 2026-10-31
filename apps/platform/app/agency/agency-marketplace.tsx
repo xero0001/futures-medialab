@@ -31,7 +31,13 @@ import type {
   AgencyCampaign,
 } from "../../lib/campaign-marketplace-types";
 import type { Locale } from "../_components/landing-copy";
-import { ProfileSelect } from "../onboarding/brand/profile-select";
+import {
+  WorkspaceTabs,
+  WorkspaceSelect as ProfileSelect,
+  WorkspaceButton,
+  WorkspaceInput,
+  WorkspaceTextArea,
+} from "../_components/workspace/workspace-controls";
 import { agencyCopy, agencyText } from "./agency-workspace-copy";
 import "./agency-marketplace-design.css";
 
@@ -471,7 +477,7 @@ export function AgencyMarketplace({
           </p>
         )}
         <div className="cwa-catalog-actions">
-          <button
+          <WorkspaceButton
             className="cwa-button"
             type="button"
             disabled={loading || busy}
@@ -479,16 +485,16 @@ export function AgencyMarketplace({
           >
             <RefreshCw size={16} aria-hidden="true" />
             {t("Refresh", "새로고침", "刷新")}
-          </button>
+          </WorkspaceButton>
           {section === "offers" && (
-            <button
+            <WorkspaceButton
               type="button"
               className="cwa-button cwa-button-primary"
               onClick={onProjects}
             >
               <ClipboardList size={17} aria-hidden="true" />
               {t("Track submission status", "신청 상태 조회", "查看申请状态")}
-            </button>
+            </WorkspaceButton>
           )}
         </div>
       </div>
@@ -538,13 +544,13 @@ export function AgencyMarketplace({
               {t("Log in", "로그인", "登录")}
             </Link>
           ) : (
-            <button
+            <WorkspaceButton
               className="cwa-button"
               type="button"
               onClick={() => void refresh()}
             >
               {t("Try again", "다시 시도", "重试")}
-            </button>
+            </WorkspaceButton>
           )}
         </section>
       )}
@@ -563,7 +569,7 @@ export function AgencyMarketplace({
             <div className="cwa-search-row">
               <label className="cwa-search-input">
                 <Search size={19} aria-hidden="true" />
-                <input
+                <WorkspaceInput
                   aria-label={copy.searchLabel}
                   placeholder={t(
                     "Search title or brief…",
@@ -622,7 +628,7 @@ export function AgencyMarketplace({
               ])}
               <label className="cwa-live-field">
                 <span>{copy.followers}</span>
-                <input
+                <WorkspaceInput
                   type="number"
                   min="0"
                   step="1"
@@ -649,7 +655,7 @@ export function AgencyMarketplace({
                   )}
                   <label className="cwa-live-field">
                     <span>{t("Minimum budget", "최소 예산", "最低预算")}</span>
-                    <input
+                    <WorkspaceInput
                       type="number"
                       min="0"
                       step="0.01"
@@ -673,7 +679,7 @@ export function AgencyMarketplace({
               <fieldset className="cwa-date-range">
                 <legend>{copy.deadline}</legend>
                 <div>
-                  <input
+                  <WorkspaceInput
                     type="date"
                     aria-label={`${copy.deadline} ${copy.startDate}`}
                     value={filters.start}
@@ -682,7 +688,7 @@ export function AgencyMarketplace({
                     }
                   />
                   <span aria-hidden="true">–</span>
-                  <input
+                  <WorkspaceInput
                     type="date"
                     aria-label={`${copy.deadline} ${copy.endDate}`}
                     value={filters.end}
@@ -855,13 +861,13 @@ export function AgencyMarketplace({
                   "活动经运营审核后会显示。也可尝试清除筛选条件。",
                 )}
               </p>
-              <button
+              <WorkspaceButton
                 type="button"
                 className="cwa-button"
                 onClick={() => setFilters(defaultFilters)}
               >
                 {copy.reset}
-              </button>
+              </WorkspaceButton>
             </section>
           )}
         </>
@@ -873,113 +879,112 @@ export function AgencyMarketplace({
             className="cwa-applications-panel"
             aria-label={t("Application history", "신청 내역", "申请记录")}
           >
-            <div
-              className="cwa-application-tabs"
-              role="group"
-              aria-label={t("Application status", "신청 상태", "申请状态")}
-            >
-              {[
+            <WorkspaceTabs
+              label={t("Application status", "신청 상태", "申请状态")}
+              value={applicationStatus || "all"}
+              onChange={(value) =>
+                setApplicationStatus(value === "all" ? "" : value)
+              }
+              options={[
                 "",
                 "SUBMITTED",
                 "SHORTLISTED",
                 "ACCEPTED",
                 "REJECTED",
                 "WITHDRAWN",
-              ].map((value) => (
-                <button
-                  key={value || "all"}
-                  type="button"
-                  aria-pressed={applicationStatus === value}
-                  onClick={() => setApplicationStatus(value)}
-                >
-                  {value
-                    ? applicationLabel(value, locale)
-                    : t("All", "전체", "全部")}
-                  <span>
-                    {value
-                      ? applications.filter(
-                          (application) => application.status === value,
-                        ).length
-                      : applications.length}
-                  </span>
-                </button>
-              ))}
-            </div>
-            <div className="cwa-application-search">
-              <label className="cwa-search-input">
-                <Search size={17} aria-hidden="true" />
-                <input
-                  aria-label={t(
-                    "Search applications",
-                    "신청 내역 검색",
-                    "搜索申请",
-                  )}
-                  placeholder={t(
-                    "Search campaign or proposal",
-                    "캠페인 또는 제안 내용 검색",
-                    "搜索活动或提案",
-                  )}
-                  value={applicationQuery}
-                  onChange={(event) => setApplicationQuery(event.target.value)}
-                />
-              </label>
-              <span aria-live="polite">
-                {t(
-                  `${filteredApplications.length} applications`,
-                  `${filteredApplications.length}건`,
-                  `${filteredApplications.length} 条申请`,
-                )}
-              </span>
-            </div>
-            <div
-              className="cwa-application-table-scroll"
-              tabIndex={0}
-              role="region"
-              aria-label={t("Application list", "신청 목록", "申请列表")}
+              ].map((value) => ({
+                value: value || "all",
+                label: value
+                  ? applicationLabel(value, locale)
+                  : t("All", "전체", "全部"),
+                count: value
+                  ? applications.filter(
+                      (application) => application.status === value,
+                    ).length
+                  : applications.length,
+              }))}
             >
-              <table className="cwa-application-table">
-                <thead>
-                  <tr>
-                    <th scope="col">{t("Campaign", "캠페인", "活动")}</th>
-                    <th scope="col">{t("Status", "신청 상태", "申请状态")}</th>
-                    <th scope="col">
-                      {t("Proposed amount", "제안 금액", "提案金额")}
-                    </th>
-                    <th scope="col">
-                      {t("Last updated", "최근 업데이트", "最近更新")}
-                    </th>
-                    <th scope="col">{t("Details", "상세", "详情")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredApplications.length ? (
-                    filteredApplications.map((application) => (
-                      <ApplicationRow
-                        key={application.id}
-                        application={application}
-                        campaign={campaigns.find(
-                          (campaign) => campaign.id === application.campaignId,
-                        )}
-                        locale={locale}
-                        canManage={canManage}
-                        busy={busy}
-                        onMutate={mutate}
-                      />
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="cwa-table-empty">
-                        {t(
-                          "No applications match your filters.",
-                          "조건에 맞는 신청 내역이 없습니다.",
-                          "暂无符合筛选条件的申请。",
-                        )}
-                      </td>
-                    </tr>
+              <div className="cwa-application-search">
+                <label className="cwa-search-input">
+                  <Search size={17} aria-hidden="true" />
+                  <WorkspaceInput
+                    aria-label={t(
+                      "Search applications",
+                      "신청 내역 검색",
+                      "搜索申请",
+                    )}
+                    placeholder={t(
+                      "Search campaign or proposal",
+                      "캠페인 또는 제안 내용 검색",
+                      "搜索活动或提案",
+                    )}
+                    value={applicationQuery}
+                    onChange={(event) =>
+                      setApplicationQuery(event.target.value)
+                    }
+                  />
+                </label>
+                <span aria-live="polite">
+                  {t(
+                    `${filteredApplications.length} applications`,
+                    `${filteredApplications.length}건`,
+                    `${filteredApplications.length} 条申请`,
                   )}
-                </tbody>
-              </table>
-            </div>
+                </span>
+              </div>
+              <div
+                className="cwa-application-table-scroll"
+                tabIndex={0}
+                role="region"
+                aria-label={t("Application list", "신청 목록", "申请列表")}
+              >
+                <table className="cwa-application-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">{t("Campaign", "캠페인", "活动")}</th>
+                      <th scope="col">
+                        {t("Status", "신청 상태", "申请状态")}
+                      </th>
+                      <th scope="col">
+                        {t("Proposed amount", "제안 금액", "提案金额")}
+                      </th>
+                      <th scope="col">
+                        {t("Last updated", "최근 업데이트", "最近更新")}
+                      </th>
+                      <th scope="col">{t("Details", "상세", "详情")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredApplications.length ? (
+                      filteredApplications.map((application) => (
+                        <ApplicationRow
+                          key={application.id}
+                          application={application}
+                          campaign={campaigns.find(
+                            (campaign) =>
+                              campaign.id === application.campaignId,
+                          )}
+                          locale={locale}
+                          canManage={canManage}
+                          busy={busy}
+                          onMutate={mutate}
+                        />
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="cwa-table-empty">
+                          {t(
+                            "No applications match your filters.",
+                            "조건에 맞는 신청 내역이 없습니다.",
+                            "暂无符合筛选条件的申请。",
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </WorkspaceTabs>
           </section>
         ) : (
           <section className="cwa-empty">
@@ -998,13 +1003,13 @@ export function AgencyMarketplace({
                 "打开活动详情并提交提案即可开始。",
               )}
             </p>
-            <button
+            <WorkspaceButton
               type="button"
               className="cwa-button cwa-button-primary"
               onClick={onExplore}
             >
               {t("Browse campaigns", "캠페인 둘러보기", "浏览活动")}
-            </button>
+            </WorkspaceButton>
           </section>
         ))}
       <CampaignDrawer
@@ -1157,7 +1162,7 @@ function WithdrawAction({
             )}
           </p>
           <div className="cwa-inline-actions">
-            <button
+            <WorkspaceButton
               className="cwa-button"
               type="button"
               disabled={busy}
@@ -1179,26 +1184,26 @@ function WithdrawAction({
               }}
             >
               {t("Confirm withdrawal", "철회 확정", "确认撤回")}
-            </button>
-            <button
+            </WorkspaceButton>
+            <WorkspaceButton
               className="cwa-button"
               type="button"
               disabled={busy}
               onClick={() => setConfirming(false)}
             >
               {t("Keep application", "신청 유지", "保留申请")}
-            </button>
+            </WorkspaceButton>
           </div>
         </>
       ) : (
-        <button
+        <WorkspaceButton
           className="cwa-button"
           type="button"
           disabled={busy}
           onClick={() => setConfirming(true)}
         >
           {t("Withdraw application", "신청 철회", "撤回申请")}
-        </button>
+        </WorkspaceButton>
       )}
     </div>
   );
@@ -1427,7 +1432,7 @@ function ProposalForm({
       <h3>{t("Apply to this campaign", "캠페인 신청", "申请活动")}</h3>
       <label className="cwa-live-field">
         <span>{t("Proposal", "제안 내용", "提案内容")} *</span>
-        <textarea
+        <WorkspaceTextArea
           required
           rows={6}
           maxLength={5000}
@@ -1450,7 +1455,7 @@ function ProposalForm({
           )}{" "}
           · {campaign.currency}
         </span>
-        <input
+        <WorkspaceInput
           inputMode="decimal"
           maxLength={19}
           pattern="(?:0|[1-9][0-9]{0,15})(\.[0-9]{1,2})?"
@@ -1478,7 +1483,7 @@ function ProposalForm({
           {failureText(error, locale)}
         </p>
       )}
-      <button
+      <WorkspaceButton
         type="submit"
         className="cwa-button cwa-button-primary"
         disabled={busy || !proposal.trim()}
@@ -1488,7 +1493,7 @@ function ProposalForm({
           : campaign.isDemo
             ? t("Try submitting a demo", "데모 신청 체험", "体验演示申请")
             : t("Submit application", "신청 제출", "提交申请")}
-      </button>
+      </WorkspaceButton>
     </form>
   );
 }
