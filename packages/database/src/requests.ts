@@ -109,7 +109,7 @@ export async function authorizeRequestActor(tx: DB, actor: RequestActor) {
         : {
             userId: actor.userId,
             organizationId: actor.organizationId || "",
-            organization: { type: "BRAND", status: { not: "SUSPENDED" } },
+            organization: { type: "BRAND", status: "ACTIVE" },
           },
     select: { organizationId: true },
   });

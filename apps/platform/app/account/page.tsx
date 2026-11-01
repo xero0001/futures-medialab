@@ -61,7 +61,7 @@ export default async function AccountPage({
     (membership) => membership.organization.type === "BRAND",
   );
   if (brand && hasApprovedTestWorkspaceAccess(brand.organization)) {
-    redirect(`/storage/search?lang=${locale}`);
+    redirect(`/advertiser?lang=${locale}`);
   }
   if (
     brand?.role === "OWNER" &&

@@ -1,8 +1,7 @@
-import {
-  brandApplications,
-  reviewBrandApplication,
-} from "../../../../lib/campaign-marketplace";
+import { previewCreatorDirectory } from "../../../../lib/workspace-api";
 export const preferredRegion = "sin1";
 export const dynamic = "force-dynamic";
-export const GET = brandApplications;
-export const POST = reviewBrandApplication;
+// Brands review Futures-published proposals, never supplier applications or
+// supplier bids. Retire both the legacy read and direct-selection endpoints.
+export const GET = previewCreatorDirectory;
+export const POST = previewCreatorDirectory;

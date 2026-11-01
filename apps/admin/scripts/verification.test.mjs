@@ -3,6 +3,7 @@ import test from "node:test";
 import { publicationProblems, submittedProfile } from "../lib/verification.ts";
 
 const campaign = {
+  type: "OPEN_BIDDING",
   status: "REVIEW",
   brandStatus: "ACTIVE",
   summary: "A documented campaign",
@@ -10,6 +11,26 @@ const campaign = {
   budgetAmount: "1000.00",
   applicationDeadline: new Date("2099-01-01T00:00:00Z"),
 };
+test("managed sourcing needs a real publishing date, not an invented recruitment deadline", () => {
+  const managed = {
+    ...campaign,
+    type: "MANAGED",
+    applicationDeadline: null,
+    contentDeadline: new Date("2099-02-01T00:00:00Z"),
+  };
+  assert.deepEqual(publicationProblems(managed), []);
+  assert.ok(
+    publicationProblems({ ...managed, contentDeadline: null }).length > 0,
+  );
+  assert.ok(
+    publicationProblems({ ...managed, contentDeadline: new Date("2020-01-01") })
+      .length > 0,
+  );
+  assert.ok(
+    publicationProblems({ ...managed, brandStatus: "PENDING" }).length > 0,
+  );
+  assert.ok(publicationProblems({ ...campaign, type: "UNKNOWN" }).length > 0);
+});
 test("only reviewed, complete campaigns from approved brands can be published", () => {
   assert.deepEqual(
     publicationProblems(campaign, Date.parse("2026-10-22T00:00:00Z")),

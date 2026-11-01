@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { WorkspacePage } from "../../storage/_components/workspace-page";
+import { BrandWorkspacePage } from "../_components/brand-workspace-page";
 
 export const preferredRegion = "sin1";
 export const metadata: Metadata = {
@@ -11,5 +11,5 @@ export default function Page({
 }: {
   searchParams: Promise<{ lang?: string }>;
 }) {
-  return <WorkspacePage mode="campaigns" searchParams={searchParams} />;
+  return <BrandWorkspacePage mode="campaigns" searchParams={searchParams} />;
 }

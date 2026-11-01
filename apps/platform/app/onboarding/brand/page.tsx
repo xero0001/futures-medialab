@@ -37,7 +37,7 @@ export default async function BrandOnboardingPage({
   if (!membership || membership.organization.status === "SUSPENDED")
     redirect(`/account?lang=${locale}`);
   if (hasCompletedBrandProfile(membership.organization.metadata) || hasApprovedTestWorkspaceAccess(membership.organization))
-    redirect(`${membership.organization.status === "ACTIVE" ? "/storage/search" : "/account"}?lang=${locale}`);
+    redirect(`${membership.organization.status === "ACTIVE" ? "/advertiser" : "/account"}?lang=${locale}`);
   if (membership.role !== "OWNER") redirect(`/account?lang=${locale}`);
   const metadata = membership.organization.metadata;
   const savedSize =

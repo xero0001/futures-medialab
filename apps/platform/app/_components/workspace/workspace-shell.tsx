@@ -27,16 +27,15 @@ import {
   IconCircleQuestion,
   IconCompany,
   IconFolderStar,
+  IconFolder,
   IconGlobe,
+  IconHome,
   IconInbox,
-  IconLink,
   IconLogout,
   IconMegaphone,
   IconMenu,
-  IconPersons,
   IconSearch,
   IconSetting,
-  IconSparkle,
 } from "@montage-ui/icon";
 import { Wordmark } from "../brand-logo";
 import type { Locale } from "../landing-copy";
@@ -108,37 +107,12 @@ export function WorkspaceShell({
 
   const brandNavigation = [
     {
-      label: t("Discover", "크리에이터 탐색", "达人探索"),
-      items: [
-        {
-          path: searchPath,
-          label: t("Creator search", "크리에이터 검색", "达人查询"),
-          icon: IconSearch,
-        },
-        {
-          path: "/storage/similar-search",
-          label: t("Similar creators", "유사 크리에이터", "相似达人"),
-          icon: IconPersons,
-        },
-        {
-          path: "/storage/similar-brands",
-          label: t("Related brands", "동종 브랜드", "同类品牌"),
-          icon: IconCompany,
-        },
-        {
-          path: "/agent",
-          label: t("Intelligence tools", "분석 도구", "智能工具"),
-          icon: IconSparkle,
-        },
-      ],
-    },
-    {
       label: t("Workspace", "내 작업 공간", "工作区"),
       items: [
         {
-          path: "/storage/collect",
-          label: t("Collections", "즐겨찾기", "收藏夹"),
-          icon: IconFolderStar,
+          path: "/advertiser",
+          label: t("Home", "홈", "首页"),
+          icon: IconHome,
         },
         {
           path: "/advertiser/campaign",
@@ -146,14 +120,14 @@ export function WorkspaceShell({
           icon: IconMegaphone,
         },
         {
-          path: "/shortLinks",
-          label: t("Short links", "단축 링크", "短链服务"),
-          icon: IconLink,
-        },
-        {
           path: "/advertiser/requests",
           label: t("Request inbox", "요청함", "请求中心"),
           icon: IconInbox,
+        },
+        {
+          path: "/advertiser/library",
+          label: t("Library", "자료실", "资料库"),
+          icon: IconFolder,
         },
       ],
     },
@@ -179,7 +153,6 @@ export function WorkspaceShell({
           items: [
             agencyItem("projects", IconFolderStar),
             agencyItem("invitations", IconMegaphone),
-            agencyItem("creator-projects", IconPersons),
           ],
         },
         {
@@ -196,7 +169,8 @@ export function WorkspaceShell({
       ? path === `/agency?section=${agencySection}`
       : path === searchPath
         ? pathname === path || pathname.startsWith("/storage/search/")
-        : pathname === path;
+        : pathname === path ||
+          (path === "/advertiser/campaign" && pathname.startsWith(`${path}/`));
   function navigate(path: string) {
     setNavOpen(false);
     if (isAgency && onAgencyNavigate) {

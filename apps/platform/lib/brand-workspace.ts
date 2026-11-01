@@ -1,0 +1,886 @@
+import "server-only";
+import { createHash } from "node:crypto";
+import { getDatabase, Prisma } from "@futures-medialab/database";
+import { getAuth } from "./auth";
+import { campaignIdSchema } from "./campaign-validation";
+import {
+  brandBriefSchema,
+  brandDraftBriefSchema,
+  brandCampaignMutationSchema,
+  isFutureBrandDate,
+} from "./brand-workspace-validation";
+import {
+  fail,
+  json,
+  membership,
+  rateLimit,
+  readBody,
+  requireManager,
+  verifyOrigin,
+  workspaceBoundary,
+} from "./workspace-api";
+import type {
+  BrandCampaign,
+  BrandCampaignCreated,
+  BrandCampaignDetail,
+  BrandRequestSummary,
+  BrandWorkspace,
+  BrandWorkspaceCapabilities,
+} from "./brand-workspace-types";
+
+type Tx = Prisma.TransactionClient;
+const object = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+const string = (value: unknown) => (typeof value === "string" ? value : "");
+const iso = (value: unknown) =>
+  typeof value === "string" && Number.isFinite(Date.parse(value))
+    ? new Date(value).toISOString()
+    : null;
+
+// Brand artifacts require explicit operator publication. Supplier applications,
+// contracts, submissions and settlements are never substituted for those artifacts.
+const capabilities: BrandWorkspaceCapabilities = {
+  anonymousPreview: false,
+  officialProposals: false,
+  productionReview: false,
+  campaignPerformance: false,
+  campaignDocuments: false,
+};
+const campaignSelect = {
+  id: true,
+  title: true,
+  summary: true,
+  type: true,
+  status: true,
+  budgetAmount: true,
+  currency: true,
+  platforms: true,
+  regions: true,
+  categories: true,
+  applicationDeadline: true,
+  contentDeadline: true,
+  requirements: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.CampaignSelect;
+type CampaignRow = Prisma.CampaignGetPayload<{ select: typeof campaignSelect }>;
+const requestSelect = {
+  id: true,
+  title: true,
+  tool: true,
+  status: true,
+  campaignId: true,
+  campaign: { select: { title: true } },
+  dueAt: true,
+  createdAt: true,
+  updatedAt: true,
+  version: true,
+} satisfies Prisma.WorkspaceToolRequestSelect;
+type RequestRow = Prisma.WorkspaceToolRequestGetPayload<{
+  select: typeof requestSelect;
+}>;
+function requestDto(row: RequestRow): BrandRequestSummary {
+  return {
+    id: row.id,
+    title: row.title,
+    tool: row.tool,
+    status: row.status,
+    campaignId: row.campaignId,
+    campaignTitle: row.campaign?.title ?? null,
+    dueAt: row.dueAt?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    version: row.version,
+  };
+}
+function campaignDto(row: CampaignRow, requests: RequestRow[]): BrandCampaign {
+  const requirements = object(row.requirements);
+  const brief = brandDraftBriefSchema.safeParse(requirements.brandBrief);
+  const intake = object(requirements.brandIntake);
+  const intakeRequest = requests.find(
+    (request) =>
+      request.id === intake.requestId && request.campaignId === row.id,
+  );
+  return {
+    id: row.id,
+    title: row.title,
+    summary: row.summary,
+    type: row.type,
+    status: row.status,
+    budgetAmount: row.budgetAmount?.toFixed(2) ?? null,
+    currency: row.currency,
+    platforms: row.platforms,
+    regions: row.regions,
+    categories: row.categories,
+    applicationDeadline: row.applicationDeadline?.toISOString() ?? null,
+    contentDeadline: row.contentDeadline?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    brief: brief.success ? brief.data : null,
+    submittedAt: row.status === "DRAFT" ? null : iso(intake.submittedAt),
+    proposalDueAt:
+      !["DRAFT", "CANCELED", "COMPLETED"].includes(row.status) &&
+      row.type === "MANAGED"
+        ? (intakeRequest?.dueAt?.toISOString() ?? null)
+        : null,
+    requestId: row.status === "DRAFT" ? null : (intakeRequest?.id ?? null),
+    reviewNote: string(object(requirements.adminReview).reason) || null,
+  };
+}
+async function authenticated(request: Request) {
+  const session = await getAuth().api.getSession({ headers: request.headers });
+  if (!session) fail(401, "UNAUTHORIZED", "로그인이 필요합니다.");
+  return session;
+}
+async function authorize(
+  tx: Tx,
+  session: Awaited<ReturnType<typeof authenticated>>,
+) {
+  const live = await tx.session.findFirst({
+    where: {
+      id: session.session.id,
+      userId: session.user.id,
+      expiresAt: { gt: new Date() },
+    },
+    select: { id: true },
+  });
+  if (!live) fail(401, "UNAUTHORIZED", "로그인이 만료되었습니다.");
+  return membership(tx, session.user.id);
+}
+
+export function brandWorkspace(request: Request) {
+  return workspaceBoundary(async () => {
+    const session = await authenticated(request);
+    await rateLimit(session.user.id, "brand-read", 120);
+    const result = await getDatabase().$transaction(
+      async (tx): Promise<BrandWorkspace> => {
+        const member = await authorize(tx, session);
+        const organizationId = member.organizationId;
+        const [campaigns, requests, links, groupedCampaigns, groupedRequests] =
+          await Promise.all([
+            tx.campaign.findMany({
+              where: { brandOrganizationId: organizationId },
+              orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+              take: 101,
+              select: campaignSelect,
+            }),
+            tx.workspaceToolRequest.findMany({
+              where: { organizationId },
+              orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+              take: 101,
+              select: requestSelect,
+            }),
+            tx.shortLink.findMany({
+              where: { organizationId },
+              orderBy: { createdAt: "desc" },
+              take: 100,
+              select: {
+                id: true,
+                code: true,
+                title: true,
+                targetUrl: true,
+                active: true,
+                clickCount: true,
+                createdAt: true,
+              },
+            }),
+            tx.campaign.groupBy({
+              by: ["status"],
+              where: { brandOrganizationId: organizationId },
+              _count: { _all: true },
+            }),
+            tx.workspaceToolRequest.groupBy({
+              by: ["status"],
+              where: { organizationId },
+              _count: { _all: true },
+            }),
+          ]);
+        // Intake threads can be older than the inbox's latest 100 requests.
+        const intakeIds = campaigns
+          .slice(0, 100)
+          .map((campaign) =>
+            string(object(object(campaign.requirements).brandIntake).requestId),
+          )
+          .filter(Boolean);
+        const intakeRequests = intakeIds.length
+          ? await tx.workspaceToolRequest.findMany({
+              where: { organizationId, id: { in: intakeIds } },
+              select: requestSelect,
+            })
+          : [];
+        const metadata = object(member.organization.metadata);
+        return {
+          account: {
+            name: member.organization.name,
+            email: member.user.email,
+            countryCode: member.organization.countryCode,
+            websiteUrl: member.organization.websiteUrl,
+            contactName: string(metadata.contactName),
+            industry: string(metadata.industry),
+            companySize: string(metadata.companySize),
+            role: member.role,
+            status: "ACTIVE",
+          },
+          permissions: {
+            canManageCampaigns: member.role !== "MEMBER",
+            canEditAccount: member.role === "OWNER",
+          },
+          campaigns: campaigns
+            .slice(0, 100)
+            .map((campaign) => campaignDto(campaign, intakeRequests)),
+          requests: requests.slice(0, 100).map(requestDto),
+          links: links.map((link) => ({
+            ...link,
+            createdAt: link.createdAt.toISOString(),
+          })),
+          counts: {
+            campaigns: groupedCampaigns.reduce(
+              (sum, group) => sum + group._count._all,
+              0,
+            ),
+            activeCampaigns: groupedCampaigns
+              .filter(
+                (group) =>
+                  !["DRAFT", "COMPLETED", "CANCELED"].includes(group.status),
+              )
+              .reduce((sum, group) => sum + group._count._all, 0),
+            completedCampaigns:
+              groupedCampaigns.find((group) => group.status === "COMPLETED")
+                ?._count._all ?? 0,
+            openRequests: groupedRequests
+              .filter((group) =>
+                ["REQUESTED", "IN_PROGRESS", "WAITING_BRAND"].includes(
+                  group.status,
+                ),
+              )
+              .reduce((sum, group) => sum + group._count._all, 0),
+            waitingBrandRequests:
+              groupedRequests.find((group) => group.status === "WAITING_BRAND")
+                ?._count._all ?? 0,
+          },
+          hasMoreCampaigns: campaigns.length > 100,
+          hasMoreRequests: requests.length > 100,
+          capabilities,
+        };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        timeout: 15_000,
+      },
+    );
+    return json(result);
+  });
+}
+
+export function brandCampaignDetail(request: Request, id: string) {
+  return workspaceBoundary(async () => {
+    const session = await authenticated(request);
+    await rateLimit(session.user.id, "brand-read", 120);
+    const parsed = campaignIdSchema.safeParse(id);
+    if (!parsed.success) fail(404, "NOT_FOUND", "캠페인을 찾을 수 없습니다.");
+    const result = await getDatabase().$transaction(
+      async (tx): Promise<BrandCampaignDetail> => {
+        const member = await authorize(tx, session);
+        const campaign = await tx.campaign.findFirst({
+          where: {
+            id: parsed.data,
+            brandOrganizationId: member.organizationId,
+          },
+          select: campaignSelect,
+        });
+        if (!campaign) fail(404, "NOT_FOUND", "캠페인을 찾을 수 없습니다.");
+        const requests = await tx.workspaceToolRequest.findMany({
+          where: {
+            organizationId: member.organizationId,
+            campaignId: campaign.id,
+          },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          take: 1000,
+          select: requestSelect,
+        });
+        return {
+          campaign: campaignDto(campaign, requests),
+          requests: requests.map(requestDto),
+          proposals: [],
+          deliverables: [],
+          performance: { status: "not_published", metrics: [] },
+          documents: [],
+          capabilities,
+        };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        timeout: 15_000,
+      },
+    );
+    return json(result);
+  });
+}
+
+function assertFutureDeadline(
+  value: string | null | undefined,
+  desiredDate?: string,
+) {
+  if (
+    value &&
+    (Date.parse(value) <= Date.now() ||
+      (desiredDate &&
+        Date.parse(value) >= Date.parse(`${desiredDate}T00:00:00.000+09:00`)))
+  )
+    fail(
+      400,
+      "INVALID_DEADLINE",
+      "모집 마감은 현재 이후, 희망 게시일 이전으로 지정해 주세요.",
+    );
+}
+async function createIntake(
+  tx: Tx,
+  userId: string,
+  organizationId: string,
+  campaign: { id: string; title: string; summary: string; type: string },
+  now: Date,
+  previousRequestId?: string,
+) {
+  const dueAt =
+    campaign.type === "MANAGED"
+      ? new Date(now.getTime() + 48 * 60 * 60 * 1000)
+      : null;
+  const prior = previousRequestId
+    ? await tx.workspaceToolRequest.findFirst({
+        where: {
+          id: previousRequestId,
+          organizationId,
+          campaignId: campaign.id,
+        },
+        select: { id: true, status: true, version: true, inputJson: true },
+      })
+    : null;
+  if (prior) {
+    const previousInput = object(prior.inputJson);
+    const updated = await tx.workspaceToolRequest.updateMany({
+      where: {
+        id: prior.id,
+        organizationId,
+        campaignId: campaign.id,
+        status: prior.status,
+        version: prior.version,
+      },
+      data: {
+        title: `${campaign.title} · 캠페인 의뢰`.slice(0, 160),
+        inputJson: {
+          ...previousInput,
+          input: campaign.summary,
+          kind: "campaign-intake",
+          firstSubmittedAt:
+            string(previousInput.firstSubmittedAt) ||
+            string(previousInput.submittedAt) ||
+            now.toISOString(),
+          submittedAt: now.toISOString(),
+          route: campaign.type === "MANAGED" ? "managed" : "open",
+        } as Prisma.InputJsonObject,
+        status: "REQUESTED",
+        dueAt,
+        version: { increment: 1 },
+      },
+    });
+    if (updated.count !== 1)
+      fail(
+        409,
+        "CONFLICT",
+        "연결된 의뢰가 변경되었습니다. 새로고침 후 다시 제출해 주세요.",
+      );
+    await tx.auditLog.create({
+      data: {
+        actorId: userId,
+        action: "request.resubmitted",
+        entityType: "WorkspaceToolRequest",
+        entityId: prior.id,
+        payload: {
+          public: true,
+          publicDetail:
+            campaign.type === "MANAGED"
+              ? "보완한 브리프가 다시 접수되었습니다. 제안 예정 시각은 재접수부터 48시간으로 갱신되었습니다."
+              : "보완한 브리프가 다시 접수되었습니다. 변경된 모집 조건을 운영팀이 확인합니다.",
+          detail: "캠페인 보완 후 기존 의뢰 재접수",
+          previousStatus: prior.status,
+        },
+      },
+    });
+    return {
+      requestId: prior.id,
+      submittedAt: now.toISOString(),
+      proposalDueAt: dueAt?.toISOString() ?? null,
+    };
+  }
+  const request = await tx.workspaceToolRequest.create({
+    data: {
+      organizationId,
+      userId,
+      campaignId: campaign.id,
+      tool: "campaign",
+      title: `${campaign.title} · 캠페인 의뢰`.slice(0, 160),
+      inputJson: {
+        input: campaign.summary,
+        kind: "campaign-intake",
+        submittedAt: now.toISOString(),
+        route: campaign.type === "MANAGED" ? "managed" : "open",
+      },
+      status: "REQUESTED",
+      dueAt,
+    },
+    select: { id: true },
+  });
+  await tx.auditLog.create({
+    data: {
+      actorId: userId,
+      action: "request.created",
+      entityType: "WorkspaceToolRequest",
+      entityId: request.id,
+      payload: {
+        public: true,
+        publicDetail: "캠페인 의뢰가 접수되었습니다.",
+        detail: "브랜드 캠페인 의뢰 접수",
+      },
+    },
+  });
+  return {
+    requestId: request.id,
+    submittedAt: now.toISOString(),
+    proposalDueAt: dueAt?.toISOString() ?? null,
+  };
+}
+
+export function mutateBrandCampaign(request: Request) {
+  return workspaceBoundary(async () => {
+    verifyOrigin(request);
+    const session = await authenticated(request);
+    await membership(getDatabase(), session.user.id);
+    await rateLimit(session.user.id, "brand-write", 60);
+    const input = await readBody(request, brandCampaignMutationSchema);
+    const result = await getDatabase().$transaction(
+      async (tx) => {
+        const member = await authorize(tx, session);
+        requireManager(member);
+        const organizationId = member.organizationId;
+        const now = new Date();
+        if ("action" in input && input.action === "cancel") {
+          const campaign = await tx.campaign.findFirst({
+            where: { id: input.id, brandOrganizationId: organizationId },
+            select: campaignSelect,
+          });
+          if (!campaign) fail(404, "NOT_FOUND", "캠페인을 찾을 수 없습니다.");
+          if (
+            !["DRAFT", "REVIEW"].includes(campaign.status) ||
+            campaign.updatedAt.toISOString() !== input.expectedUpdatedAt
+          )
+            fail(
+              409,
+              "INVALID_STATE",
+              "캠페인이 변경되었거나 직접 취소할 수 없는 단계입니다.",
+            );
+          const intakeId = string(
+            object(object(campaign.requirements).brandIntake).requestId,
+          );
+          const intake = intakeId
+            ? await tx.workspaceToolRequest.findFirst({
+                where: {
+                  id: intakeId,
+                  organizationId,
+                  campaignId: campaign.id,
+                },
+                select: { id: true, status: true, version: true },
+              })
+            : null;
+          if (
+            intake &&
+            ["IN_PROGRESS", "WAITING_BRAND"].includes(intake.status)
+          )
+            fail(
+              409,
+              "CANCEL_REVIEW_REQUIRED",
+              "운영팀이 의뢰를 처리 중입니다. 캠페인 문의에서 취소를 요청해 주세요.",
+            );
+          if (intake?.status === "REQUESTED") {
+            const closed = await tx.workspaceToolRequest.updateMany({
+              where: {
+                id: intake.id,
+                organizationId,
+                campaignId: campaign.id,
+                status: "REQUESTED",
+                version: intake.version,
+              },
+              data: {
+                status: "CLOSED",
+                dueAt: null,
+                version: { increment: 1 },
+              },
+            });
+            if (closed.count !== 1)
+              fail(
+                409,
+                "CONFLICT",
+                "의뢰 상태가 변경되었습니다. 새로고침 후 다시 확인해 주세요.",
+              );
+            await tx.auditLog.create({
+              data: {
+                actorId: session.user.id,
+                action: "request.closed",
+                entityType: "WorkspaceToolRequest",
+                entityId: intake.id,
+                payload: {
+                  public: true,
+                  publicDetail:
+                    "브랜드가 캠페인을 취소하여 의뢰를 종료했습니다.",
+                  detail: "캠페인 취소로 접수 상태의 연결 의뢰 종료",
+                },
+              },
+            });
+          }
+          const canceled = await tx.campaign.update({
+            where: { id: campaign.id },
+            data: { status: "CANCELED" },
+            select: { updatedAt: true },
+          });
+          await tx.auditLog.create({
+            data: {
+              actorId: session.user.id,
+              action: "campaign.cancel",
+              entityType: "Campaign",
+              entityId: campaign.id,
+            },
+          });
+          return {
+            id: campaign.id,
+            status: "CANCELED",
+            updatedAt: canceled.updatedAt.toISOString(),
+          };
+        }
+        const isDraft = "action" in input && input.action === "saveDraft";
+        if ("action" in input && input.action === "submitDraft") {
+          const campaign = await tx.campaign.findFirst({
+            where: { id: input.id, brandOrganizationId: organizationId },
+            select: campaignSelect,
+          });
+          if (!campaign) fail(404, "NOT_FOUND", "캠페인을 찾을 수 없습니다.");
+          const requirements = object(campaign.requirements);
+          const previous = object(requirements.brandIntake);
+          if (
+            previous.clientRequestId === input.clientRequestId &&
+            campaign.status !== "DRAFT" &&
+            string(previous.requestId)
+          ) {
+            const existing = await tx.workspaceToolRequest.findFirst({
+              where: {
+                id: string(previous.requestId),
+                campaignId: campaign.id,
+                organizationId,
+              },
+              select: { id: true, dueAt: true },
+            });
+            if (existing)
+              return {
+                id: campaign.id,
+                requestId: existing.id,
+                submittedAt: iso(previous.submittedAt)!,
+                proposalDueAt:
+                  campaign.type === "MANAGED"
+                    ? (existing.dueAt?.toISOString() ?? null)
+                    : null,
+              } satisfies BrandCampaignCreated;
+          }
+          if (
+            campaign.status !== "DRAFT" ||
+            campaign.updatedAt.toISOString() !== input.expectedUpdatedAt
+          )
+            fail(
+              409,
+              "INVALID_STATE",
+              "캠페인이 변경되었습니다. 새로고침 후 다시 확인해 주세요.",
+            );
+          if (
+            (requirements.brandBrief !== undefined &&
+              !brandBriefSchema.safeParse(requirements.brandBrief).success) ||
+            !campaign.summary.trim() ||
+            !campaign.platforms.length ||
+            !campaign.budgetAmount ||
+            Number(campaign.budgetAmount) <= 0 ||
+            !campaign.contentDeadline ||
+            (campaign.type === "OPEN_BIDDING" &&
+              !campaign.applicationDeadline) ||
+            !isFutureBrandDate(
+              campaign.contentDeadline.toISOString().slice(0, 10),
+              now,
+            )
+          )
+            fail(
+              400,
+              "INCOMPLETE_BRIEF",
+              "브리프, 예산, 플랫폼, 희망 게시일을 저장한 뒤 제출해 주세요.",
+            );
+          assertFutureDeadline(
+            campaign.applicationDeadline?.toISOString(),
+            campaign.contentDeadline.toISOString().slice(0, 10),
+          );
+          const intake = await createIntake(
+            tx,
+            session.user.id,
+            organizationId,
+            campaign,
+            now,
+            string(previous.requestId) || undefined,
+          );
+          await tx.campaign.update({
+            where: { id: campaign.id },
+            data: {
+              status: "REVIEW",
+              requirements: {
+                ...requirements,
+                brandIntake: {
+                  schemaVersion: 1,
+                  clientRequestId: input.clientRequestId,
+                  ...intake,
+                },
+              } as Prisma.InputJsonObject,
+            },
+          });
+          await tx.auditLog.create({
+            data: {
+              actorId: session.user.id,
+              action: "campaign.submit",
+              entityType: "Campaign",
+              entityId: campaign.id,
+            },
+          });
+          return { id: campaign.id, ...intake };
+        }
+        if (
+          (!isDraft || input.desiredDate) &&
+          !isFutureBrandDate(input.desiredDate, now)
+        )
+          fail(400, "INVALID_DATE", "희망 게시일은 내일 이후로 선택해 주세요.");
+        if (input.route === "open")
+          assertFutureDeadline(input.applicationDeadline, input.desiredDate);
+        if (!isDraft && input.route === "open" && !input.applicationDeadline)
+          fail(
+            400,
+            "INVALID_DEADLINE",
+            "오픈 캠페인의 모집 마감일을 입력해 주세요.",
+          );
+        const {
+          genre,
+          goal,
+          contentFormat,
+          creatorCount,
+          desiredDate,
+          note,
+          compositionPreference,
+        } = input;
+        const brief = {
+          genre,
+          goal,
+          contentFormat,
+          creatorCount,
+          desiredDate,
+          note,
+          compositionPreference,
+        };
+        const payloadHash = createHash("sha256")
+          .update(JSON.stringify({ ...input, clientRequestId: undefined }))
+          .digest("hex");
+        if (!("id" in input && input.id)) {
+          const duplicate = await tx.campaign.findFirst({
+            where: {
+              brandOrganizationId: organizationId,
+              requirements: {
+                path: ["brandIntake", "clientRequestId"],
+                equals: input.clientRequestId,
+              },
+            },
+            select: campaignSelect,
+          });
+          if (duplicate) {
+            const prior = object(object(duplicate.requirements).brandIntake);
+            if (prior.payloadHash !== payloadHash)
+              fail(
+                409,
+                "DUPLICATE_REQUEST",
+                "이미 처리한 요청입니다. 새 요청으로 다시 작성해 주세요.",
+              );
+            if (isDraft && duplicate.status !== "DRAFT")
+              fail(
+                409,
+                "INVALID_STATE",
+                "이미 제출한 캠페인은 초안으로 저장할 수 없습니다.",
+              );
+            if (isDraft)
+              return {
+                id: duplicate.id,
+                draft: true,
+                updatedAt: duplicate.updatedAt.toISOString(),
+              };
+            const existing = await tx.workspaceToolRequest.findFirst({
+              where: {
+                id: string(prior.requestId),
+                organizationId,
+                campaignId: duplicate.id,
+              },
+              select: { id: true, dueAt: true },
+            });
+            if (!existing)
+              fail(409, "INVALID_STATE", "캠페인 의뢰 상태를 확인해 주세요.");
+            return {
+              id: duplicate.id,
+              requestId: existing.id,
+              submittedAt: iso(prior.submittedAt)!,
+              proposalDueAt:
+                duplicate.type === "MANAGED"
+                  ? (existing.dueAt?.toISOString() ?? null)
+                  : null,
+            } satisfies BrandCampaignCreated;
+          }
+        }
+        const values = {
+          title: input.title,
+          summary: [
+            goal,
+            [
+              genre,
+              contentFormat,
+              creatorCount > 0 ? `희망 ${creatorCount}명` : "",
+            ]
+              .filter(Boolean)
+              .join(" · "),
+            note,
+          ]
+            .filter(Boolean)
+            .join("\n\n"),
+          type:
+            input.route === "managed"
+              ? ("MANAGED" as const)
+              : ("OPEN_BIDDING" as const),
+          currency: input.currency,
+          budgetAmount: input.budgetAmount || null,
+          platforms: input.platforms,
+          regions: input.regions,
+          contentDeadline: input.desiredDate
+            ? new Date(`${input.desiredDate}T00:00:00.000Z`)
+            : null,
+          applicationDeadline:
+            input.route === "open" && input.applicationDeadline
+              ? new Date(input.applicationDeadline)
+              : null,
+        };
+        if ("id" in input && input.id) {
+          const campaign = await tx.campaign.findFirst({
+            where: { id: input.id, brandOrganizationId: organizationId },
+            select: campaignSelect,
+          });
+          if (!campaign) fail(404, "NOT_FOUND", "캠페인을 찾을 수 없습니다.");
+          if (
+            campaign.status !== "DRAFT" ||
+            campaign.updatedAt.toISOString() !== input.expectedUpdatedAt
+          )
+            fail(
+              409,
+              "INVALID_STATE",
+              "수정 가능한 최신 초안인지 확인해 주세요.",
+            );
+          const updated = await tx.campaign.update({
+            where: { id: campaign.id },
+            data: {
+              ...values,
+              requirements: {
+                ...object(campaign.requirements),
+                brandBrief: brief,
+              } as Prisma.InputJsonObject,
+            },
+            select: { updatedAt: true },
+          });
+          await tx.auditLog.create({
+            data: {
+              actorId: session.user.id,
+              action: "campaign.updated",
+              entityType: "Campaign",
+              entityId: campaign.id,
+            },
+          });
+          return {
+            id: campaign.id,
+            draft: true,
+            updatedAt: updated.updatedAt.toISOString(),
+          };
+        }
+        if (
+          (await tx.campaign.count({
+            where: { brandOrganizationId: organizationId },
+          })) >= 100
+        )
+          fail(
+            409,
+            "LIMIT_REACHED",
+            "캠페인 등록 한도에 도달했습니다. 운영팀에 문의해 주세요.",
+          );
+        const campaign = await tx.campaign.create({
+          data: {
+            ...values,
+            brandOrganizationId: organizationId,
+            createdById: session.user.id,
+            status: isDraft ? "DRAFT" : "REVIEW",
+            requirements: {
+              brandBrief: brief,
+              brandIntake: {
+                schemaVersion: 1,
+                clientRequestId: input.clientRequestId,
+                payloadHash,
+              },
+            },
+          },
+          select: campaignSelect,
+        });
+        await tx.auditLog.create({
+          data: {
+            actorId: session.user.id,
+            action: isDraft ? "campaign.created" : "campaign.submit",
+            entityType: "Campaign",
+            entityId: campaign.id,
+          },
+        });
+        if (isDraft)
+          return {
+            id: campaign.id,
+            draft: true,
+            updatedAt: campaign.updatedAt.toISOString(),
+          };
+        const intake = await createIntake(
+          tx,
+          session.user.id,
+          organizationId,
+          campaign,
+          now,
+        );
+        await tx.campaign.update({
+          where: { id: campaign.id },
+          data: {
+            requirements: {
+              brandBrief: brief,
+              brandIntake: {
+                schemaVersion: 1,
+                clientRequestId: input.clientRequestId,
+                payloadHash,
+                ...intake,
+              },
+            },
+          },
+        });
+        return { id: campaign.id, ...intake } satisfies BrandCampaignCreated;
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        timeout: 15_000,
+      },
+    );
+    return json(result);
+  });
+}

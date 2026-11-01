@@ -3,6 +3,7 @@
 import { BrandButton, BrandInput, BrandTextArea } from "./brand-controls";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -231,6 +232,7 @@ function PendingFiles({
 }
 
 export function RequestWorkspace({ locale }: { locale: Locale }) {
+  const searchParams = useSearchParams();
   const t: Text = (en, ko, zh) =>
     locale === "ko" ? ko : locale === "zh" ? zh : en;
   const [data, setData] = useState<RequestList | null>(null);
@@ -242,14 +244,14 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(searchParams.get("request"));
   const [detail, setDetail] = useState<RequestDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
-  const [compose, setCompose] = useState(false);
+  const [compose, setCompose] = useState(searchParams.get("compose") === "1");
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState<RequestCategory>("general");
-  const [campaignId, setCampaignId] = useState("");
+  const [category, setCategory] = useState<RequestCategory>(searchParams.get("campaign") ? "campaign" : "general");
+  const [campaignId, setCampaignId] = useState(searchParams.get("campaign") ?? "");
   const [body, setBody] = useState("");
   const [reply, setReply] = useState("");
   const [reopenReason, setReopenReason] = useState("");

@@ -19,11 +19,25 @@ database, UI, lint, and TypeScript code lives in `packages/*`.
 
 - Approved agency/MCN and brand organizations
 - Open-bidding and managed campaigns sharing one campaign model
-- Private MCN creator rosters, separate from the brand-facing published directory
+- Private MCN creator records; no brand-facing creator directory or direct creator sourcing
 - Blind campaign Q&A relayed through the platform
 - Versioned content review and publication verification
 - Request/approval/bank-transfer settlement workflow
 - English, Korean, and Chinese locale-ready user data
+
+## Creator directory visibility
+
+Brands work with Futures through campaigns. Creator search, similar-creator and
+related-brand recommendations, and creator collections are hidden; legacy page
+URLs retain membership checks and redirect approved brands to campaign management.
+All search design variants are closed. Directory preview, search, collection and
+creator-image endpoints return a no-store 404. Brand bootstrap never queries the
+creator directory, collections or search history and returns empty legacy fields.
+Agency creator-project navigation is hidden, including direct section selection.
+Existing private agency records and campaign collaboration data remain intact.
+The legacy brand supplier-application read and decision endpoint also returns
+404. Supplier applications and bids are internal sourcing records, not the
+Futures-published proposal a brand will review.
 
 ## Public landing page
 
@@ -122,7 +136,7 @@ page and its assets are independent and unchanged by this redesign.
   sanitized profile and recent activity derived from current records. It is not
   a complete notification/event history. Result limits are displayed in the UI;
   demo records remain isolated and are excluded from financial totals.
-- The workspace includes official projects, creator projects, invitation status
+- The workspace includes official projects, invitation status
   tabs, settlement tabs, organization details and recent activity. Direct
   invitations, creator task assignment, content submission and withdrawals are
   not connected; their limitations are explicit rather than simulated.
@@ -191,8 +205,8 @@ must delete only the exact disposable records they created.
 - Better Auth handles password hashing, session cookies and session revocation.
   Sensitive auth cookies are HttpOnly, SameSite and Secure on production HTTPS.
 - `PENDING` organizations can sign in and view account status, but are not
-  approved partners. Completed brands can use the demo directory and prepare
-  drafts. Campaign submission requires ACTIVE status and OWNER/ADMIN membership.
+  approved partners. Workspace access requires ACTIVE status and a completed
+  company profile. Campaign submission also requires OWNER/ADMIN membership.
 - Email ownership is not verified yet (`emailVerified=false`); do not use an
   unverified email domain to grant privileges or organization ownership.
 - `/api/account/brand-profile` requires a same-origin request and a real
@@ -222,39 +236,61 @@ The platform runs on `http://localhost:3000` and the admin app runs on
 
 After login `/auth/continue` resolves the destination on the server. A brand
 owner with an incomplete profile goes to onboarding; an approved, completed buyer goes to
-`/storage/search`. Agency/studio accounts continue to onboarding, verification
+`/advertiser`. Agency/studio accounts continue to onboarding, verification
 status or `/agency`, according to their stored organization state. Suspended brands
 cannot enter the workspace or mutate its data.
 
 | Route                           | Implemented scope                                                                              |
 | ------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `/storage/search`               | Six-platform directory, content/channel/audience filters, sorting, pagination, profile preview |
-| `/storage/search/seed`          | SEED Design comparison with a carrot-themed header/navigation, responsive results and the same authenticated directory APIs |
-| `/storage/search/tds`           | Toss-blue visual variant with quick filters, card/list views, and the same authenticated directory APIs |
-| `/storage/similar-search`       | YouTube/TikTok stored-channel similarity using shared topics                                   |
-| `/storage/similar-brands`       | Stored sample-brand recommendations with publishing-platform filters                           |
-| `/storage/collect`              | Organization collections, saved creators, CSV export                                           |
-| `/shortLinks`                   | HTTPS short links, copy/pause, raw redirect-request counts                                     |
-| `/agent`                        | Three analysis-request types, persisted intake and request history                             |
-| `/advertiser/campaign`          | Drafts/editing, review submission, applications, shortlist/accept/reject                       |
+| `/advertiser` | Organization campaign totals, active campaigns, request status and managed/open intake entry points |
+| `/advertiser/campaign` | Real campaign list, status filters and title/brief search |
+| `/advertiser/campaign/new` | Brief, composition preference and managed/open request; partial drafts and versioned draft editing |
+| `/advertiser/campaign/[id]` | Saved brief, dates, budget, status and related requests; pending proposal/production/performance/document views |
+| `/advertiser/library` | Campaign document entry points; empty until brand-facing documents are published |
+| `/storage/search` and all variants | Retired; approved brands redirect to campaign management |
+| `/storage/similar-search` and `/storage/similar-brands` | Retired recommendations; same redirect |
+| `/storage/collect` | Retired creator collections; same redirect |
+| `/shortLinks`                   | Legacy direct route: HTTPS short links, copy/pause, raw redirect-request counts; outside the brand sidebar |
+| `/agent`                        | Legacy direct route: persisted analysis-request intake and history; outside the brand sidebar |
 | `/advertiser/requests`          | Organization request inbox, public replies, private attachments, status/history and reopening |
 | `/advertiser/accountManagement` | Contact/company edits and read-only account/security information                               |
 
-The production brand workspace and agency workspace share the Montage header,
+The brand workspace implementation and agency workspace share the Montage header,
 monochrome sidebar, Pretendard typography and Wanted-blue theme through
 `app/_components/workspace`. Navigation keeps role-specific routes, current-page
 selection, the current path/query when changing language, and mobile Escape/focus
-behavior. `/storage/search` renders the selected Montage 2 search layout while
-retaining the authenticated brand access check. The `/storage/search/montage2`
-comparison URL remains available. Landing and onboarding pages use their existing
-layouts. The TDS, SEED and Bezier comparison pages retain their separate shells.
+behavior. Creator discovery menus and agency creator-project navigation are hidden.
+The earlier search comparison components remain in source for reference, but their
+page routes no longer render them. Landing and onboarding keep their existing layouts.
 
-The `/storage/search/tds` comparison view uses an independently implemented
-TDS-inspired presentation with `#3182F6` as its brand accent; it does not include
-TDS packages, restricted fonts, or Toss brand assets. Its CSS is scoped to that
-view. Authentication, demo-data labels, search history, collections, and profile
-details reuse the existing workspace behavior. Language changes stay on the
-comparison route, and “Original view” returns to `/storage/search`.
+The brand sidebar is Home, Campaigns, Requests and Library, with Account in the
+shared account controls. The approved `/brand-preview` remains an isolated visual
+prototype; authenticated `/advertiser/*` pages do not import its example campaigns,
+creator identities, prices or results. They use installed Montage 4.1.5 components
+and semantic tokens, following the supplied Wanted Figma system. The design and
+remaining workflow scope are recorded in [the brand workspace plan](docs/design/brand-workspace-plan.md).
+
+Live campaign intake reuses `Campaign` and `WorkspaceToolRequest` without a new
+migration. Saving a draft requires only a title. Submission validates the full
+brief, records the composition preference, and creates a linked request atomically.
+Managed intake records a proposal deadline 48 calendar hours after completed
+submission. Open intake requires a recruiting deadline before the target publication
+date and does not receive the managed 48-hour deadline. These are operating
+schedules, not an automatic proposal-generation engine.
+If an operator returns a request for changes, explicit resubmission updates the
+existing intake with version/audit history and restarts the managed deadline from
+that resubmission; it does not create a second campaign or duplicate intake.
+
+Official proposal versions/decisions, brand production reviews, campaign performance
+and published brand documents do not yet have their own publication models. Their
+capabilities are explicitly false and their screens remain pending. The three
+composition cards save a preference; they do not calculate an anonymous lineup,
+price or projected reach. Existing supplier applications, submissions, contracts
+and settlements are never substituted for brand-facing artifacts. Operators can
+use the campaign-linked request thread for manual communication and attachments;
+that is not a versioned official-proposal or approval workflow. Future identity
+disclosure is limited to selected creators in an operator-published proposal for
+that campaign; private contacts, supplier identity, costs and margins stay hidden.
 
 ### Request handling and campaign operations
 
@@ -310,21 +346,15 @@ are checked against official YouTube pages; identities are not copied to other p
 verification evidence and image provenance are recorded in
 `apps/platform/scripts/fixtures/korean-creators.sources.json`.
 
-Search and recommendation operate on published database entries; PENDING brands
-can read only demo entries. Similarity is deterministic topic overlap, not AI.
-Query history retains the latest 100 per user/organization. A separate ingestion
-workflow is still needed for non-demo provider records and measured metrics.
+Search and recommendation algorithms remain in source for internal reference.
+No brand, guest or approved test account can query the directory through the
+partner platform. Previously stored directory records and history are retained
+in the database but are not returned by the brand APIs.
 
-The Montage views use `next/image` (Vercel Image Optimization in production) for
-creator avatars. Reviewed 512px WebP assets live in the existing private Blob
-store under `creator-directory/public-demo/{id}/{sha256}.webp`. The intentionally
-public `/api/creator-images/{id}/{sha256}` route serves only exact assets approved
-in `creator-demo-images.json` and matching a published demo DB record. It validates
-MIME, size and file digest; it cannot proxy arbitrary URLs or serve private agency
-documents. The workspace API exposes only the derived image endpoint and official
-profile link, never Blob credentials or private storage paths. Content hashes
-version image URLs; already optimized public images can remain cached after a
-record is unpublished.
+Creator portrait assets remain in private Blob storage for maintenance. The former
+public `/api/creator-images/{id}/{sha256}` endpoint is now disabled with a no-store
+404. Previously downloaded or optimized public images may remain cached; hiding
+these routes cannot recall copies already obtained by clients.
 
 Maintenance (from the repository root; not invoked by startup or request handlers):
 
@@ -353,20 +383,51 @@ public HTTPS addresses and are never fetched by the server.
 ### Workspace API and security
 
 - `GET /api/workspace/bootstrap`: allowlisted, organization-scoped DTOs.
-- `POST /api/workspace/search`: validated filters and persisted query history.
-- `POST /api/workspace/collections`, `/links`, `/campaigns`, `/tools`, `/account`:
+- `GET /api/brand/workspace`: organization-scoped account/permissions, recent
+  campaigns and requests, full status totals and explicit workflow capabilities.
+- `GET /api/brand/campaigns/[id]`: own-campaign detail and linked requests;
+  cross-organization IDs return 404. Raw supplier applications are not queried.
+- `POST /api/brand/campaigns`: create, `saveDraft`, `submitDraft` and `cancel`.
+  UUID request keys make intake retries idempotent; draft updates/submission and
+  cancellation use optimistic timestamps. Direct cancellation is limited to
+  drafts/review before an operator begins handling the linked request; it closes
+  an unhandled intake and clears its due date atomically.
+- `/api/directory/preview`, `/api/workspace/search`, `/api/workspace/collections`,
+  `/api/creator-images/*`, `GET|POST /api/workspace/campaign-applications`:
+  retired, no-store 404; no directory or supplier application access.
+- `POST /api/workspace/links`, `/campaigns`, `/tools`, `/account`:
   explicit action/body contracts; the client never supplies an organization ID.
-- All routes recheck the database session, membership, completed profile (or an
+- Active workspace routes recheck the database session, membership, completed profile (or an
   explicitly approved test-organization exemption) and
   suspension status. Mutations require exact trusted Origin, valid JSON,
   bounded bodies (16KiB) and strict schemas. Serializable writes protect state.
 - OWNER/ADMIN can manage links and campaigns; only OWNER can update company
-  identity. Members can search, manage shared collections and submit tool requests.
+  identity. Members can read their organization's campaigns and use permitted
+  request functions; directory search and shared creator collections are retired
+  for every role.
 - Shared database-backed per-user limits: reads 120/min, writes 60/min, searches
   30/min (also counted as writes). Bounded collections/links/campaigns/requests
   prevent unlimited growth. Private responses are `no-store`.
 - `/s/[code]` is deliberately public, checks link/organization status, and uses
   unguessable codes. No contact details or private creator roster is returned.
+
+Brand endpoint and visibility regression tests (no database connection):
+
+```sh
+node --test apps/platform/scripts/brand-workspace.test.mjs apps/platform/scripts/creator-visibility.test.mjs
+```
+
+Opt-in live-data integration check against a running local platform server and its
+matching ignored environment file (creates and removes exact synthetic QA fixtures):
+
+```sh
+BETTER_AUTH_URL=http://127.0.0.1:3100 node apps/platform/scripts/brand-workspace-smoke.mjs --base-url http://127.0.0.1:3100 --env-file apps/platform/.env.local
+```
+
+This suite is restricted to localhost. It checks tenant/role boundaries, partial
+drafts, managed/open intake, persistence, duplicate retries, optimistic conflicts
+and cancellation. Its optional browser-fixture mode deliberately retains the exact
+QA records for UI verification and requires the matching cleanup command afterward.
 
 Explicit demo seed (never runs on requests/builds; no existing records deleted):
 
@@ -400,27 +461,41 @@ node --experimental-strip-types --test apps/platform/scripts/test-workspace-acce
 
 ## Live campaign marketplace and operations console
 
-The existing shared Prisma models support the flow without a new migration:
+The existing shared Prisma models support open recruitment without a new migration:
 
-`Brand DRAFT → REVIEW → admin RECRUITING → agency application → brand decision`
+`Brand DRAFT → REVIEW → operator publication → RECRUITING → agency application → internal operations`
 
-- The brand supplies a public title/brief, platforms, regions, categories,
+- For open recruitment, the brand supplies a public title/brief, platforms, regions, categories,
   follower range, currency, budget and application deadline. Publishing requires
   an ACTIVE brand, positive budget and future deadline. Keep identifying/contact
   information out of the public brief if the campaign should remain blind.
+- Managed operator approval also uses the existing `RECRUITING` database enum,
+  but means **internal sourcing**, shown as `소싱 중` with an `승인·소싱 시작`
+  action. It requires a future target publication date, not an application
+  deadline. Completing sourcing moves the campaign to `IN_PROGRESS`. Managed
+  records are excluded from both the agency campaign list and direct application
+  API regardless of any legacy recruitment deadline. Open `RECRUITING` retains
+  its public recruitment meaning and future application-deadline requirement.
 - The agency API only returns published, recruiting, unexpired campaigns from
   active brands. Brand identity/private fields are omitted. Applications are
   unique per campaign/agency and use the campaign currency. Each agency sees only
-  its own applications; brands see only their campaigns' applications with opaque
-  partner labels. Operators can inspect full organization details separately.
+  its own applications. Brands cannot read supplier application text or bids,
+  even for their own campaigns. Operators can inspect these internal records
+  separately. Managed campaigns use a separate sourcing/intake route rather than
+  inheriting the open marketplace's recruiting deadline or publication behavior.
 - OWNER/ADMIN may submit or withdraw an application; MEMBER is read-only.
   Withdrawal is allowed only before acceptance/rejection. A withdrawn application
-  cannot currently be re-submitted. Shortlist, accept and reject are persisted and
-  audited. Acceptance does not execute a contract or create a settlement.
+  cannot currently be re-submitted. Direct brand shortlist/accept/reject actions
+  are retired; future brand decisions must target an operator-published official
+  proposal. Existing accepted supplier records remain available to the internal
+  production/contract/settlement workflow; acceptance alone does not execute a
+  contract or create a settlement.
 - `GET /api/agency/campaigns`, `POST /api/agency/applications` and
-  `GET|POST /api/workspace/campaign-applications` enforce fresh DB membership,
+  active brand intake APIs enforce fresh DB membership,
   sessions, approval, strict body validation, origin checks and rate limits.
   Serializable writes and the unique key protect concurrent submissions.
+  `GET|POST /api/workspace/campaign-applications` returns 404 for anonymous,
+  same-brand and cross-brand requests without reading or mutating applications.
 - `apps/admin` is a separate Next.js app deployed to Vercel project
   `flamingcc/futures-medialab-admin`, root `apps/admin`. Only ACTIVE PLATFORM
   OWNER/ADMIN members can enter. It shares DB and private documents, not session
@@ -441,7 +516,12 @@ RUN_DB_SMOKE=1 BASE_URL=http://localhost:3000 ADMIN_BASE_URL=http://localhost:30
 ```
 
 The integration suite creates uniquely identified synthetic accounts, organizations
-and campaigns, checks the complete review/application path and security boundaries,
+and campaigns, explicitly marks each exact owned legacy-created draft as
+`OPEN_BIDDING`, and checks open publication, supplier application/withdrawal, operator
+closure and security boundaries, including retired brand decisions leaving the
+database unchanged. An accepted application is explicit fixture setup solely to
+verify that agency withdrawal remains blocked; it does not test a new proposal
+publication or brand approval workflow. The suite
 then deletes only its exact owned fixtures. It never resets shared authentication
 counters or changes the real test accounts.
 

@@ -9,7 +9,6 @@ import { fileURLToPath, URL } from "node:url";
 import { parseArgs } from "node:util";
 import { hashPassword } from "better-auth/crypto";
 import { createDatabaseClient } from "../../../packages/database/src/client-factory.mjs";
-import { defaultFilters } from "../lib/creator-directory.ts";
 
 // Explicitly scoped synthetic fixtures only. This script never reads or changes
 // an existing user's password, profile, approval state, or organization data.
@@ -129,7 +128,7 @@ async function fixture(
   {
     organizationId,
     role = "OWNER",
-    status: orgStatus = "PENDING",
+    status: orgStatus = "ACTIVE",
     completed = true,
     type = "BRAND",
   } = {},
@@ -200,7 +199,7 @@ async function fixture(
 
 try {
   let owner, outsider, member, incomplete, agency;
-  let creator, folder, shortLink, campaign;
+  let shortLink, campaign;
   await check("anonymous workspace access is rejected", async () => {
     status(
       await request("/api/workspace/bootstrap"),
@@ -211,8 +210,8 @@ try {
       await request("/api/workspace/collections", {
         body: { action: "create", name: "Not saved" },
       }),
-      401,
-      "Anonymous write must be rejected",
+      404,
+      "Retired collection writes must be rejected",
     );
   });
   await check("isolated real-DB fixtures authenticate", async () => {
@@ -225,75 +224,13 @@ try {
     incomplete = await fixture("incomplete", { completed: false });
     agency = await fixture("agency", { type: "AGENCY", status: "ACTIVE" });
   });
-  await check("pending brands see published demo entries only", async () => {
-    const data = await bootstrap(owner.cookie);
-    assert.ok(
-      data.creators.length > 0,
-      "Seed the fictional directory before running this suite",
-    );
-    creator = data.creators.find((entry) => entry.platform === "youtube");
-    assert.ok(creator, "Seeded YouTube sample must exist");
-    const entries = await db.creatorDirectoryEntry.findMany({
-      where: { id: { in: data.creators.map((entry) => entry.id) } },
-      select: { id: true, isDemo: true, isPublished: true },
-    });
-    assert.equal(
-      entries.length,
-      data.creators.length,
-      "Every returned profile must be stored in the DB",
-    );
-    assert.ok(
-      entries.every((entry) => entry.isDemo && entry.isPublished),
-      "Pending brands must only see published demo profiles",
-    );
-    assert.equal(
-      data.account.status,
-      "PENDING",
-      "Reading the directory must not approve an organization",
-    );
-    assert.ok(
-      !JSON.stringify(data).includes("internalNotes"),
-      "Internal notes must never be serialized",
-    );
+  await check("brands never receive directory entries, collections or search history", async () => {
+    for (const cookie of [owner.cookie, outsider.cookie, member.cookie]) {
+      const data = await bootstrap(cookie);
+      for (const field of ["creators", "brands", "collections", "recentSearches"])
+        assert.deepEqual(data[field], []);
+    }
   });
-  await check(
-    "private agency profiles and unpublished directory entries never leak",
-    async () => {
-      const privateId = `${prefix}-private`;
-      entryIds.add(privateId);
-      await db.creatorProfile.create({
-        data: {
-          agencyOrganizationId: agency.orgId,
-          displayName: `${prefix}-private-name`,
-          internalNotes: `${prefix}-confidential`,
-        },
-      });
-      await db.creatorDirectoryEntry.create({
-        data: {
-          id: privateId,
-          platform: creator.platform,
-          isDemo: false,
-          isPublished: false,
-          payload: { ...creator, id: privateId, name: `${prefix}-hidden` },
-        },
-      });
-      for (const cookie of [owner.cookie, outsider.cookie]) {
-        const data = await bootstrap(cookie);
-        assert.ok(
-          !data.creators.some((entry) => entry.id === privateId),
-          "Unpublished entries must stay hidden even for approved brands",
-        );
-        assert.ok(
-          !JSON.stringify(data).includes(`${prefix}-confidential`),
-          "Agency internal notes must stay private",
-        );
-        assert.ok(
-          !JSON.stringify(data).includes(`${prefix}-private-name`),
-          "Agency profiles must not be auto-published",
-        );
-      }
-    },
-  );
   await check(
     "incomplete and agency accounts cannot access brand APIs",
     async () => {
@@ -311,212 +248,14 @@ try {
       );
     },
   );
-  await check(
-    "search filters execute against DB entries and persist history",
-    async () => {
-      const filters = {
-        ...defaultFilters("youtube"),
-        country: creator.country,
-        followersMin: String(creator.followers / 1000),
-        followersMax: String(creator.followers / 1000),
-      };
-      const result = await mutate("search", owner.cookie, {
-        mode: "search",
-        filters,
-      });
-      assert.ok(
-        result.json.creators.some((entry) => entry.id === creator.id),
-        "Matching stored creator must appear",
-      );
-      assert.ok(
-        result.json.creators.every(
-          (entry) =>
-            entry.platform === "youtube" &&
-            entry.country === creator.country &&
-            entry.followers === creator.followers,
-        ),
-        "Country and exact K-range must filter results",
-      );
-      const saved = await db.directorySearch.findUnique({
-        where: { id: result.json.searchId },
-      });
-      assert.equal(
-        saved.organizationId,
-        owner.orgId,
-        "Search history must be tenant scoped",
-      );
-      assert.equal(
-        saved.userId,
-        owner.userId,
-        "Search history must be user scoped",
-      );
-      assert.deepEqual(
-        saved.resultIdsJson,
-        result.json.creators.map((entry) => entry.id),
-        "Search result IDs must persist",
-      );
-    },
-  );
-  await check(
-    "similar creator search resolves only a known stored seed",
-    async () => {
-      const filters = {
-        ...defaultFilters("youtube"),
-        query: creator.profileUrl,
-      };
-      const result = await mutate("search", owner.cookie, {
-        mode: "similar",
-        filters,
-      });
-      assert.equal(
-        result.json.seed?.id,
-        creator.id,
-        "Known example URL must resolve the seed",
-      );
-      assert.ok(
-        result.json.creators.every(
-          (entry) => entry.id !== creator.id && entry.platform === "youtube",
-        ),
-        "Similar results exclude the seed and other platforms",
-      );
-      const unknown = await mutate("search", owner.cookie, {
-        mode: "similar",
-        filters: { ...filters, query: "https://example.com/not-in-directory" },
-      });
-      assert.equal(
-        unknown.json.seed,
-        null,
-        "Unknown external URL must not fabricate a creator",
-      );
-      assert.equal(
-        unknown.json.creators.length,
-        0,
-        "Unknown URL must not fabricate results",
-      );
-    },
-  );
-  await check("brand recommendations and search validation work", async () => {
-    const result = await mutate("search", owner.cookie, {
-      mode: "brands",
-      brandId: "lumen-quest",
-      publishingPlatform: "mobile",
-      filters: defaultFilters("youtube"),
-    });
-    assert.ok(
-      result.json.brands.some((brand) => brand.id === "lumen-quest"),
-      "Requested demo brand must be represented",
-    );
-    assert.ok(
-      result.json.creators.length > 0,
-      "Known demo brand must yield matching stored creators",
-    );
-    await mutate(
-      "search",
-      owner.cookie,
-      {
-        mode: "search",
-        filters: {
-          ...defaultFilters("youtube"),
-          followersMin: "50",
-          followersMax: "10",
-        },
-      },
-      400,
-    );
-    await mutate(
-      "search",
-      owner.cookie,
-      { mode: "similar", filters: defaultFilters("instagram") },
-      400,
-    );
-    await mutate(
-      "search",
-      owner.cookie,
-      {
-        mode: "brands",
-        brandId: "lumen-quest",
-        filters: defaultFilters("tiktok"),
-      },
-      400,
-    );
-    const mine = await bootstrap(owner.cookie),
-      other = await bootstrap(outsider.cookie);
-    assert.ok(
-      mine.recentSearches.length >= 4,
-      "Search history must survive bootstrap reload",
-    );
-    assert.equal(
-      other.recentSearches.length,
-      0,
-      "Other tenant must not see the search history",
-    );
+  await check("retired search and collection APIs deny authenticated callers", async () => {
+    for (const cookie of [owner.cookie, outsider.cookie, member.cookie]) {
+      for (const mode of ["search", "similar", "brands"])
+        await mutate("search", cookie, { mode }, 404);
+      await mutate("collections", cookie, { action: "create", name: "Not saved" }, 404);
+    }
+    status(await request("/api/directory/preview"), 404, "Public directory must be closed");
   });
-  await check("collections create, add idempotently and persist", async () => {
-    await mutate("collections", owner.cookie, {
-      action: "create",
-      name: "QA shortlist",
-    });
-    folder = (await bootstrap(owner.cookie)).collections.find(
-      (item) => item.name === "QA shortlist",
-    );
-    assert.ok(folder, "Created folder must survive reload");
-    await mutate("collections", owner.cookie, {
-      action: "add",
-      collectionId: folder.id,
-      creatorId: creator.id,
-    });
-    await mutate("collections", owner.cookie, {
-      action: "add",
-      collectionId: folder.id,
-      creatorId: creator.id,
-    });
-    const stored = (await bootstrap(owner.cookie)).collections.find(
-      (item) => item.id === folder.id,
-    );
-    assert.deepEqual(
-      stored.creatorIds,
-      [creator.id],
-      "Duplicate saves must not duplicate items",
-    );
-  });
-  await check(
-    "collection tenant isolation and removal are enforced",
-    async () => {
-      await mutate(
-        "collections",
-        outsider.cookie,
-        { action: "remove", collectionId: folder.id, creatorId: creator.id },
-        404,
-      );
-      assert.equal(
-        (await bootstrap(outsider.cookie)).collections.length,
-        0,
-        "Other tenant must not see collections",
-      );
-      await mutate(
-        "collections",
-        owner.cookie,
-        {
-          action: "add",
-          collectionId: folder.id,
-          creatorId: `${prefix}-private`,
-        },
-        404,
-      );
-      await mutate("collections", owner.cookie, {
-        action: "remove",
-        collectionId: folder.id,
-        creatorId: creator.id,
-      });
-      assert.equal(
-        (await bootstrap(owner.cookie)).collections.find(
-          (item) => item.id === folder.id,
-        ).creatorIds.length,
-        0,
-        "Removal must persist",
-      );
-    },
-  );
   await check(
     "short links persist and reject unsafe destinations",
     async () => {
@@ -619,6 +358,7 @@ try {
         platforms: ["youtube", "tiktok"],
         currency: "USD",
         budgetAmount: "12345.67",
+        deadline: new Date(Date.now() + 7 * 86400000).toISOString(),
       });
       campaign = (await bootstrap(owner.cookie)).campaigns[0];
       assert.equal(
@@ -631,6 +371,7 @@ try {
         "DRAFT",
         "Creation must never auto-publish",
       );
+      await db.organization.update({ where: { id: owner.orgId }, data: { status: "PENDING" } });
       await mutate(
         "campaigns",
         owner.cookie,
@@ -682,10 +423,6 @@ try {
         "CANCELED",
         "Cancellation must persist",
       );
-      await db.organization.update({
-        where: { id: owner.orgId },
-        data: { status: "PENDING" },
-      });
     },
   );
   await check(
@@ -740,8 +477,8 @@ try {
       );
       assert.equal(
         data.account.status,
-        "PENDING",
-        "Account edits must not grant approval",
+        "ACTIVE",
+        "Account edits must preserve the approved status",
       );
       const after = await db.user.findUnique({ where: { id: owner.userId } });
       assert.equal(
@@ -807,7 +544,7 @@ try {
     async () => {
       for (const origin of [null, "https://foreign.example.com"])
         status(
-          await request("/api/workspace/collections", {
+          await request("/api/workspace/links", {
             cookie: owner.cookie,
             origin,
             body: { action: "create", name: "Not saved" },
@@ -816,9 +553,9 @@ try {
           "Missing or foreign origins must be rejected",
         );
       await mutate(
-        "collections",
+        "links",
         owner.cookie,
-        { action: "create", name: "Not saved", organizationId: outsider.orgId },
+        { action: "create", title: "Not saved", targetUrl: "https://example.com", organizationId: outsider.orgId },
         400,
       );
       await mutate(

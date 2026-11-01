@@ -45,12 +45,14 @@ export function reviewReason(value: unknown) {
 }
 export function publicationProblems(
   campaign: {
+    type: string;
     status: string;
     brandStatus: string;
     summary: string;
     platforms: string[];
     budgetAmount: string | null;
     applicationDeadline: Date | null;
+    contentDeadline?: Date | null;
   },
   now = Date.now(),
 ) {
@@ -68,10 +70,20 @@ export function publicationProblems(
   )
     problems.push("0보다 큰 예산이 필요합니다.");
   if (
-    !campaign.applicationDeadline ||
-    campaign.applicationDeadline.getTime() <= now ||
-    !Number.isFinite(campaign.applicationDeadline.getTime())
+    campaign.type === "OPEN_BIDDING" &&
+    (!campaign.applicationDeadline ||
+      campaign.applicationDeadline.getTime() <= now ||
+      !Number.isFinite(campaign.applicationDeadline.getTime()))
   )
     problems.push("신청 마감일이 현재보다 이후여야 합니다.");
+  if (
+    campaign.type === "MANAGED" &&
+    (!campaign.contentDeadline ||
+      !Number.isFinite(campaign.contentDeadline.getTime()) ||
+      campaign.contentDeadline.getTime() <= now)
+  )
+    problems.push("맞춤 제안의 희망 게시일이 현재보다 이후여야 합니다.");
+  if (!["MANAGED", "OPEN_BIDDING"].includes(campaign.type))
+    problems.push("캠페인 진행 경로를 확인해 주세요.");
   return problems;
 }

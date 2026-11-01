@@ -7,27 +7,10 @@ import { getAuth } from "./auth";
 import { hasCompletedBrandProfile } from "./brand-profile";
 import { hasApprovedTestWorkspaceAccess } from "./test-workspace-access";
 import {
-  creatorAvatarSchema,
-  publicCreatorImageProperties,
-} from "./creator-images";
-import {
   campaignMutationSchema,
   canSubmitCampaign,
 } from "./campaign-validation";
-import {
-  DEMO_BRANDS,
-  filterCreators,
-  findSimilarCreators,
-  recommendForBrand,
-  validateFilters,
-  type Creator,
-} from "./creator-directory";
-import type {
-  SearchWorkspaceData,
-  WorkspaceAccount,
-  WorkspaceBootstrap,
-  WorkspaceSearchResult,
-} from "./workspace-types";
+import type { WorkspaceAccount, WorkspaceBootstrap } from "./workspace-types";
 
 type Transaction = Prisma.TransactionClient;
 type Database = Transaction | ReturnType<typeof getDatabase>;
@@ -35,77 +18,12 @@ export const workspaceHeaders = {
   "Cache-Control": "private, no-store",
   "X-Content-Type-Options": "nosniff",
 };
-const platformSchema = z.enum([
-  "youtube",
-  "tiktok",
-  "instagram",
-  "twitch",
-  "x",
-  "facebook",
-]);
 const idSchema = z
   .string()
   .min(1)
   .max(120)
   .regex(/^[a-zA-Z0-9_-]+$/);
 const shortString = z.string().trim().max(120);
-const numericBound = z.string().trim().max(16);
-
-const filtersSchema = z
-  .strictObject({
-    platform: platformSchema,
-    query: z.string().trim().max(500),
-    searchMode: z.enum(["creator", "content", "bio", "brand"]),
-    videoType: z.enum(["all", "video", "shorts", "live"]),
-    includeTags: z.array(shortString).max(30),
-    excludeTags: z.array(shortString).max(30),
-    tagMatch: z.enum(["any", "all"]),
-    keywordInclude: z.string().trim().max(500),
-    keywordExclude: z.string().trim().max(500),
-    keywordMatch: z.enum(["any", "all"]),
-    country: z.string().regex(/^(?:[A-Z]{2})?$/),
-    followersMin: numericBound,
-    followersMax: numericBound,
-    viewsMin: numericBound,
-    viewsMax: numericBound,
-    viewsWindow: z.enum(["last10", "last30"]),
-    volatility: z.enum(["", "low", "medium", "high"]),
-    lastPosted: z.enum(["", "7", "30", "90"]),
-    language: z.string().max(10),
-    audienceCountry: z.string().regex(/^(?:[A-Z]{2})?$/),
-    audienceAge: z.enum(["", "18-24", "25-34", "35-44", "45+"]),
-    audienceGender: z.enum(["", "mixed", "male", "female"]),
-  })
-  .refine(validateFilters, "Invalid numeric ranges.");
-
-// Validate imported JSON again at the public boundary. Never return raw payloads.
-const creatorSchema = z.strictObject({
-  id: idSchema,
-  name: shortString.min(1),
-  handle: shortString.min(1),
-  profileUrl: z.url().max(2048),
-  identityKind: z.literal("public_channel").optional(),
-  avatar: creatorAvatarSchema.optional(),
-  platform: platformSchema,
-  country: z.string().regex(/^[A-Z]{2}$/),
-  language: z.string().min(2).max(10),
-  followers: z.number().int().min(0).max(10_000_000_000),
-  views10: z.number().int().min(0).max(10_000_000_000),
-  views30: z.number().int().min(0).max(10_000_000_000),
-  volatility: z.number().min(0).max(1),
-  engagement: z.number().min(0).max(100),
-  tags: z.array(shortString).max(30),
-  bio: z.string().max(2000),
-  content: z.array(z.string().max(300)).max(30),
-  brands: z.array(shortString).max(30),
-  videoTypes: z.array(z.enum(["video", "shorts", "live"])).max(3),
-  daysSincePosted: z.number().int().min(0).max(36500),
-  audienceCountry: z.string().regex(/^[A-Z]{2}$/),
-  audienceAge: z.enum(["18-24", "25-34", "35-44", "45+"]),
-  audienceGender: z.enum(["male", "female", "mixed"]),
-  accent: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-});
-
 export class WorkspaceError extends Error {
   constructor(
     public status: number,
@@ -249,7 +167,11 @@ export async function membership(database: Database, userId: string) {
   )
     fail(403, "PROFILE_REQUIRED", "Complete your company profile first.");
   if (member.organization.status !== "ACTIVE")
-    fail(403, "APPROVAL_REQUIRED", "Organization approval is required to access this workspace.");
+    fail(
+      403,
+      "APPROVAL_REQUIRED",
+      "Organization approval is required to access this workspace.",
+    );
   return member;
 }
 type Member = Awaited<ReturnType<typeof membership>>;
@@ -305,61 +227,17 @@ export async function rateLimit(userId: string, bucket: string, limit: number) {
     fail(429, "RATE_LIMITED", "Too many requests. Please wait a minute.");
 }
 
-function publishedWhere(member: Member) {
-  return {
-    isPublished: true,
-    ...(member.organization.status === "PENDING" ? { isDemo: true } : {}),
-  };
+// Creator discovery is retired from the partner platform. These endpoints must
+// never touch the directory, even for approved brands or demo/test accounts.
+export function creatorDirectoryUnavailable() {
+  return json(
+    { code: "NOT_FOUND", message: "This resource is unavailable." },
+    404,
+  );
 }
-async function directory(
-  database: Database,
-  where: Prisma.CreatorDirectoryEntryWhereInput,
-): Promise<Creator[]> {
-  const entries = await database.creatorDirectoryEntry.findMany({
-    where,
-    orderBy: { id: "asc" },
-    take: 500,
-  });
-  return entries.flatMap((entry) => {
-    const parsed = creatorSchema.safeParse(entry.payload);
-    if (
-      !parsed.success ||
-      parsed.data.id !== entry.id ||
-      parsed.data.platform !== entry.platform
-    )
-      return [];
-    try {
-      const profile = new URL(parsed.data.profileUrl);
-      if (profile.protocol !== "https:" || profile.username || profile.password)
-        return [];
-    } catch {
-      return [];
-    }
-    const { avatar, ...creator } = parsed.data;
-    const image = avatar ? publicCreatorImageProperties(entry) : null;
-    return [{ ...creator, ...(image ?? {}) }];
-  });
-}
-
-export async function previewCreatorDirectory() {
-  return workspaceBoundary(async () => {
-    const data: SearchWorkspaceData = {
-      creators: await directory(getDatabase(), {
-        isPublished: true,
-        isDemo: true,
-      }),
-      collections: [],
-      recentSearches: [],
-    };
-    return Response.json(data, {
-      headers: {
-        "Cache-Control": "public, max-age=0, s-maxage=60",
-        "X-Content-Type-Options": "nosniff",
-        "X-Robots-Tag": "noindex, noarchive",
-      },
-    });
-  });
-}
+export const previewCreatorDirectory = creatorDirectoryUnavailable;
+export const searchWorkspace = creatorDirectoryUnavailable;
+export const collectionWorkspace = creatorDirectoryUnavailable;
 
 export async function bootstrapWorkspace(request: Request) {
   return workspaceBoundary(async () => {
@@ -369,91 +247,62 @@ export async function bootstrapWorkspace(request: Request) {
       async (tx): Promise<WorkspaceBootstrap> => {
         const member = await membership(tx, userId),
           organizationId = member.organizationId;
-        const [creators, collections, links, campaigns, requests, searches] =
-          await Promise.all([
-            directory(tx, publishedWhere(member)),
-            tx.creatorCollection.findMany({
-              where: { organizationId },
-              orderBy: { createdAt: "desc" },
-              take: 100,
-              select: {
-                id: true,
-                name: true,
-                items: {
-                  where: { entry: publishedWhere(member) },
-                  take: 500,
-                  select: { entryId: true },
-                },
-              },
-            }),
-            tx.shortLink.findMany({
-              where: { organizationId },
-              orderBy: { createdAt: "desc" },
-              take: 100,
-              select: {
-                id: true,
-                code: true,
-                title: true,
-                targetUrl: true,
-                active: true,
-                clickCount: true,
-                createdAt: true,
-              },
-            }),
-            tx.campaign.findMany({
-              where: { brandOrganizationId: organizationId },
-              orderBy: { createdAt: "desc" },
-              take: 100,
-              select: {
-                id: true,
-                title: true,
-                summary: true,
-                platforms: true,
-                currency: true,
-                budgetAmount: true,
-                status: true,
-                createdAt: true,
-                applicationDeadline: true,
-                regions: true,
-                categories: true,
-                followerMin: true,
-                followerMax: true,
-                requirements: true,
-                _count: { select: { applications: true } },
-              },
-            }),
-            tx.workspaceToolRequest.findMany({
-              where: { organizationId },
-              orderBy: { createdAt: "desc" },
-              take: 100,
-              select: {
-                id: true,
-                tool: true,
-                title: true,
-                inputJson: true,
-                status: true,
-                createdAt: true,
-              },
-            }),
-            tx.directorySearch.findMany({
-              where: { organizationId, userId },
-              orderBy: { createdAt: "desc" },
-              take: 20,
-              select: {
-                id: true,
-                mode: true,
-                filtersJson: true,
-                createdAt: true,
-              },
-            }),
-          ]);
+        const [links, campaigns, requests] = await Promise.all([
+          tx.shortLink.findMany({
+            where: { organizationId },
+            orderBy: { createdAt: "desc" },
+            take: 100,
+            select: {
+              id: true,
+              code: true,
+              title: true,
+              targetUrl: true,
+              active: true,
+              clickCount: true,
+              createdAt: true,
+            },
+          }),
+          tx.campaign.findMany({
+            where: { brandOrganizationId: organizationId },
+            orderBy: { createdAt: "desc" },
+            take: 100,
+            select: {
+              id: true,
+              title: true,
+              summary: true,
+              platforms: true,
+              currency: true,
+              budgetAmount: true,
+              status: true,
+              createdAt: true,
+              applicationDeadline: true,
+              regions: true,
+              categories: true,
+              followerMin: true,
+              followerMax: true,
+              requirements: true,
+              _count: { select: { applications: true } },
+            },
+          }),
+          tx.workspaceToolRequest.findMany({
+            where: { organizationId },
+            orderBy: { createdAt: "desc" },
+            take: 100,
+            select: {
+              id: true,
+              tool: true,
+              title: true,
+              inputJson: true,
+              status: true,
+              createdAt: true,
+            },
+          }),
+        ]);
         return {
-          creators,
-          brands: DEMO_BRANDS,
-          collections: collections.map(({ items, ...collection }) => ({
-            ...collection,
-            creatorIds: items.map((item) => item.entryId),
-          })),
+          // Preserve the response shape without querying or exposing directory data.
+          creators: [],
+          brands: [],
+          collections: [],
           links: links.map((link) => ({
             ...link,
             createdAt: link.createdAt.toISOString(),
@@ -475,11 +324,7 @@ export async function bootstrapWorkspace(request: Request) {
             input: textField(metadataRecord(inputJson).input),
             createdAt: entry.createdAt.toISOString(),
           })),
-          recentSearches: searches.map(({ filtersJson, ...entry }) => ({
-            ...entry,
-            query: textField(metadataRecord(filtersJson).query),
-            createdAt: entry.createdAt.toISOString(),
-          })),
+          recentSearches: [],
           account: accountDto(member),
         };
       },
@@ -501,7 +346,6 @@ async function mutate<T>(
     userId: string,
     input: T,
   ) => Promise<unknown>,
-  search = false,
 ) {
   return workspaceBoundary(async () => {
     verifyOrigin(request);
@@ -512,7 +356,6 @@ async function mutate<T>(
     const userId = session.user.id;
     await membership(getDatabase(), userId);
     await rateLimit(userId, "write", 60);
-    if (search) await rateLimit(userId, "search", 30);
     const input = await readBody(request, schema);
     const result = await getDatabase().$transaction(
       async (tx) => {
@@ -535,163 +378,6 @@ async function mutate<T>(
     );
     return json(result ?? { success: true });
   });
-}
-
-const searchSchema = z
-  .strictObject({
-    mode: z.enum(["search", "similar", "brands"]),
-    filters: filtersSchema,
-    brandId: idSchema.optional(),
-    publishingPlatform: z.enum(["all", "mobile", "pc", "console"]).optional(),
-  })
-  .refine((input) => {
-    if (input.mode === "similar")
-      return ["youtube", "tiktok"].includes(input.filters.platform);
-    if (input.mode === "brands") return input.filters.platform === "youtube";
-    return true;
-  }, "This search mode is not available for the selected platform.");
-export async function searchWorkspace(request: Request) {
-  return mutate(
-    request,
-    searchSchema,
-    async (tx, member, userId, input): Promise<WorkspaceSearchResult> => {
-      const source = await directory(tx, publishedWhere(member));
-      let creators: Creator[] = [],
-        seed: Creator | null = null,
-        brands = DEMO_BRANDS;
-      if (input.mode === "search")
-        creators = filterCreators(input.filters, source);
-      if (input.mode === "similar") {
-        const result = findSimilarCreators(
-          input.filters.platform,
-          input.filters.query,
-          input.filters,
-          source,
-        );
-        creators = result.results;
-        seed = result.seed;
-      }
-      if (input.mode === "brands") {
-        const result = recommendForBrand(
-          input.brandId ?? "",
-          input.filters,
-          input.publishingPlatform ?? "all",
-          source,
-        );
-        creators = result.creators;
-        brands = result.brands;
-      }
-      const resultIds = creators.map((creator) => creator.id);
-      const realResults = await tx.creatorDirectoryEntry.count({
-        where: { id: { in: resultIds }, isDemo: false },
-      });
-      const search = await tx.directorySearch.create({
-        data: {
-          organizationId: member.organizationId,
-          userId,
-          mode: input.mode,
-          filtersJson: {
-            ...input.filters,
-            ...(input.brandId ? { brandId: input.brandId } : {}),
-            ...(input.publishingPlatform
-              ? { publishingPlatform: input.publishingPlatform }
-              : {}),
-          },
-          resultIdsJson: resultIds,
-          isDemo: realResults === 0,
-        },
-      });
-      // Per-user history is useful, but indefinite retention of every query is not.
-      const expired = await tx.directorySearch.findMany({
-        where: { organizationId: member.organizationId, userId },
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-        skip: 100,
-        select: { id: true },
-      });
-      if (expired.length)
-        await tx.directorySearch.deleteMany({
-          where: {
-            organizationId: member.organizationId,
-            userId,
-            id: { in: expired.map((entry) => entry.id) },
-          },
-        });
-      return { creators, seed, brands, searchId: search.id };
-    },
-    true,
-  );
-}
-
-const collectionSchema = z.discriminatedUnion("action", [
-  z.strictObject({
-    action: z.literal("create"),
-    name: z.string().trim().min(1).max(80),
-  }),
-  z.strictObject({
-    action: z.enum(["add", "remove"]),
-    collectionId: idSchema,
-    creatorId: idSchema,
-  }),
-]);
-export async function collectionWorkspace(request: Request) {
-  return mutate(
-    request,
-    collectionSchema,
-    async (tx, member, _userId, input) => {
-      const organizationId = member.organizationId;
-      if (input.action === "create") {
-        if (
-          (await tx.creatorCollection.count({ where: { organizationId } })) >=
-          100
-        )
-          fail(
-            409,
-            "LIMIT_REACHED",
-            "This workspace can contain up to 100 collections.",
-          );
-        await tx.creatorCollection.create({
-          data: { organizationId, name: input.name },
-        });
-        return;
-      }
-      const collection = await tx.creatorCollection.findFirst({
-        where: { id: input.collectionId, organizationId },
-        select: { id: true },
-      });
-      if (!collection) fail(404, "NOT_FOUND", "The collection was not found.");
-      if (input.action === "remove") {
-        await tx.creatorCollectionItem.deleteMany({
-          where: { collectionId: collection.id, entryId: input.creatorId },
-        });
-        return;
-      }
-      const entry = await tx.creatorDirectoryEntry.findFirst({
-        where: { id: input.creatorId, ...publishedWhere(member) },
-        select: { id: true },
-      });
-      if (!entry) fail(404, "NOT_FOUND", "The creator was not found.");
-      if (
-        (await tx.creatorCollectionItem.count({
-          where: { collectionId: collection.id },
-        })) >= 500
-      )
-        fail(
-          409,
-          "LIMIT_REACHED",
-          "A collection can contain up to 500 creators.",
-        );
-      await tx.creatorCollectionItem.upsert({
-        where: {
-          collectionId_entryId: {
-            collectionId: collection.id,
-            entryId: entry.id,
-          },
-        },
-        create: { collectionId: collection.id, entryId: entry.id },
-        update: {},
-      });
-    },
-  );
 }
 
 export function safeExternalUrl(value: string): string | null {

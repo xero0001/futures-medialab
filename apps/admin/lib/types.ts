@@ -20,6 +20,7 @@ export type UserRow = {
 };
 export type CampaignRow = {
   id: string;
+  type: "MANAGED" | "OPEN_BIDDING";
   title: string;
   summary: string;
   status: string;

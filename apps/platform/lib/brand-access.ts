@@ -43,7 +43,7 @@ function brandDestination(membership: BrandMembership) {
   if (!hasCompletedBrandProfile(membership.organization.metadata) && !hasApprovedTestWorkspaceAccess(membership.organization))
     return membership.role === "OWNER" ? "/onboarding/brand" : "/account";
   if (membership.organization.status !== "ACTIVE") return "/account";
-  return "/storage/search";
+  return "/advertiser";
 }
 
 export async function getPostAuthDestination(locale: Locale, options: { registered?: boolean } = {}) {
@@ -66,7 +66,7 @@ export async function requireBrandWorkspace(locale: Locale): Promise<{
 }> {
   const membership = await getAuthenticatedBrandMembership(locale);
   const destination = brandDestination(membership);
-  if (destination !== "/storage/search")
+  if (destination !== "/advertiser")
     redirect(`${destination}?lang=${locale}`);
 
   // Keep the type narrowing explicit and fail closed if the state changes.
@@ -77,33 +77,5 @@ export async function requireBrandWorkspace(locale: Locale): Promise<{
     organizationName: membership.organization.name,
     status: membership.organization.status,
     userName: membership.user.name?.trim() || membership.organization.name,
-  };
-}
-
-// Only the three public search variants use this optional account context.
-// Guests (including accounts without workspace access) see public demo data;
-// private workspace routes and API operations still require membership.
-export async function getSearchWorkspaceAccount(locale: Locale) {
-  const session = await getAuth().api.getSession({ headers: await headers() });
-  const member = session ? await brandMembership(session.user.id) : null;
-  if (
-    member &&
-    member.organization.status !== "SUSPENDED" &&
-    brandDestination(member) === "/storage/search"
-  ) {
-    return {
-      organizationName: member.organization.name,
-      status: member.organization.status,
-      userName: member.user.name?.trim() || member.organization.name,
-      isGuest: false,
-    };
-  }
-
-  const guest = locale === "ko" ? "게스트" : locale === "zh" ? "访客" : "Guest";
-  return {
-    organizationName: guest,
-    status: "ACTIVE" as const,
-    userName: guest,
-    isGuest: true,
   };
 }

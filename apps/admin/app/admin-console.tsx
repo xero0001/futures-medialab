@@ -99,9 +99,9 @@ const money = (value: string | null, currency: string) =>
   value
     ? `${currency} ${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(Number(value))}`
     : "미설정";
-const badge = (value: string) => (
+const badge = (value: string, label?: string) => (
   <span className={`admin-badge state-${value.toLowerCase()}`}>
-    {labels[value] ?? value}
+    {label ?? labels[value] ?? value}
   </span>
 );
 async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
@@ -492,7 +492,8 @@ export function AdminConsole({
                       <span className="admin-flow-number">02</span>
                       <b>운영팀 공개 승인</b>
                       <span>
-                        요건과 마감일을 확인하면 승인된 에이전시에 공개됩니다.
+                        맞춤 제안은 소싱을 시작하고, 오픈 캠페인은 승인된
+                        에이전시에 공개합니다.
                       </span>
                     </li>
                     <li>
@@ -718,14 +719,26 @@ export function AdminConsole({
                                   {labels[campaign.brandStatus]}
                                 </span>
                               </td>
-                              <td>{badge(campaign.status)}</td>
+                              <td>
+                                {badge(
+                                  campaign.status,
+                                  campaign.type === "MANAGED" &&
+                                    campaign.status === "RECRUITING"
+                                    ? "소싱 중"
+                                    : undefined,
+                                )}
+                              </td>
                               <td>
                                 {money(
                                   campaign.budgetAmount,
                                   campaign.currency,
                                 )}
                               </td>
-                              <td>{date(campaign.applicationDeadline)}</td>
+                              <td>
+                                {campaign.type === "MANAGED"
+                                  ? "맞춤 제안 · 모집 없음"
+                                  : date(campaign.applicationDeadline)}
+                              </td>
                               <td>{campaign.applicationCount}</td>
                               <td>
                                 <AdminButton
@@ -871,15 +884,23 @@ export function AdminConsole({
                     ) : tab === "campaigns" && campaignDetail && campaign ? (
                       <>
                         <div className="admin-row">
-                          {badge(campaign.status)}
+                          {badge(
+                            campaign.status,
+                            campaign.type === "MANAGED" &&
+                              campaign.status === "RECRUITING"
+                              ? "소싱 중"
+                              : undefined,
+                          )}
                           <strong>
                             {money(campaign.budgetAmount, campaign.currency)}
                           </strong>
                         </div>
                         <p className="admin-pre">{campaignDetail.summary}</p>
                         <p>
-                          플랫폼: {campaign.platforms.join(" · ")} · 신청 마감:{" "}
-                          {date(campaign.applicationDeadline)}
+                          플랫폼: {campaign.platforms.join(" · ")} ·{" "}
+                          {campaign.type === "MANAGED"
+                            ? `맞춤 제안 · 희망 게시일: ${date(campaignDetail.contentDeadline)}`
+                            : `신청 마감: ${date(campaign.applicationDeadline)}`}
                         </p>
                         {campaign.reviewReason && (
                           <p className="admin-note">
@@ -898,13 +919,20 @@ export function AdminConsole({
                                   setOperation({
                                     action: "publishCampaign",
                                     id: campaign.id,
-                                    title: "캠페인 승인 · 공개",
+                                    title:
+                                      campaign.type === "MANAGED"
+                                        ? "맞춤 제안 승인 · 소싱 시작"
+                                        : "캠페인 승인 · 공개",
                                     message:
-                                      "공개하면 승인된 에이전시가 이 캠페인을 조회하고 신청할 수 있습니다. 결제나 정산은 실행되지 않습니다. 미래 신청 마감일과 0보다 큰 예산이 필요합니다.",
+                                      campaign.type === "MANAGED"
+                                        ? "브리프와 희망 게시일을 확인하고 운영팀의 맞춤 소싱을 시작합니다. 전체 에이전시 모집에는 공개되지 않으며, 공식 제안을 발송하는 동작은 아닙니다."
+                                        : "공개하면 승인된 에이전시가 이 캠페인을 조회하고 신청할 수 있습니다. 결제나 정산은 실행되지 않습니다. 미래 신청 마감일과 0보다 큰 예산이 필요합니다.",
                                   })
                                 }
                               >
-                                승인 · 에이전시에 공개
+                                {campaign.type === "MANAGED"
+                                  ? "승인 · 소싱 시작"
+                                  : "승인 · 에이전시에 공개"}
                               </AdminButton>
                               <AdminButton
                                 disabled={busy}
@@ -929,13 +957,20 @@ export function AdminConsole({
                                 setOperation({
                                   action: "closeCampaign",
                                   id: campaign.id,
-                                  title: "캠페인 모집 마감",
+                                  title:
+                                    campaign.type === "MANAGED"
+                                      ? "소싱 완료 · 진행 단계로 변경"
+                                      : "캠페인 모집 마감",
                                   message:
-                                    "신규 신청을 중단합니다. 기존 신청 기록은 유지되며, 모집 중 상태로 자동 복구되지 않습니다.",
+                                    campaign.type === "MANAGED"
+                                      ? "운영팀 소싱 확인 후 캠페인을 진행 단계로 변경합니다. 공식 제안 공개나 브랜드 승인을 대신하지 않습니다."
+                                      : "신규 신청을 중단합니다. 기존 신청 기록은 유지되며, 모집 중 상태로 자동 복구되지 않습니다.",
                                 })
                               }
                             >
-                              모집 마감
+                              {campaign.type === "MANAGED"
+                                ? "소싱 완료 · 진행"
+                                : "모집 마감"}
                             </AdminButton>
                           )}
                         </div>

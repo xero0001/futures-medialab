@@ -186,6 +186,22 @@ async function createCampaign(label, overrides = {}) {
     "Creation must return a campaign ID.",
   );
   ownedCampaignIds.add(result.json.id);
+  // This legacy creation contract has no campaign-type field. Explicitly scope
+  // the exact owned fixture to open recruitment before testing agency access.
+  const typed = await db.campaign.updateMany({
+    where: {
+      id: result.json.id,
+      brandOrganizationId: fixtures.brand.organizationId,
+      createdById: fixtures.brand.userId,
+      status: "DRAFT",
+    },
+    data: { type: "OPEN_BIDDING" },
+  });
+  assert.equal(
+    typed.count,
+    1,
+    "Only the exact owned draft can become an open fixture.",
+  );
   return result.json.id;
 }
 async function adminAction(action, id, options = {}) {
@@ -227,10 +243,18 @@ try {
   expect(await call("/api/agency/campaigns"), 401);
   expect(
     await call("/api/workspace/campaign-applications?campaignId=missing"),
-    401,
+    404,
+  );
+  expect(
+    await call("/api/workspace/campaign-applications", {
+      body: { action: "accept", applicationId: "missing" },
+    }),
+    404,
   );
   expect(await call("/api/admin/bootstrap", { target: adminBase }), 401);
-  pass("anonymous platform and admin APIs require authentication");
+  pass(
+    "active APIs require authentication; retired brand application APIs always return 404",
+  );
 
   phase = "fixture creation";
   const encodedPassword = await hashPassword(password);
@@ -666,44 +690,51 @@ try {
     fixtures.agency.userId,
     "Application submitter must come from the session.",
   );
-  const brandList = await call(
-    `/api/workspace/campaign-applications?campaignId=${campaignId}`,
-    { cookie: fixtures.brand.cookie },
-  );
-  expect(brandList, 200);
-  assert.equal(
-    brandList.json.applications.length,
-    1,
-    "Brand must see the persisted application.",
-  );
-  assert.match(
-    brandList.json.applications[0].agencyLabel,
-    /^Partner /,
-    "Brand must receive an opaque agency label.",
-  );
-  for (const key of [
-    "agencyOrganizationId",
-    "agencyOrganization",
-    "submittedById",
-    "email",
-  ])
-    assert.ok(
-      !Object.hasOwn(brandList.json.applications[0], key),
-      "Application response must not expose direct identity/contact data.",
-    );
-  expect(
-    await call(
+  phase = "retired brand application boundaries";
+  const beforeDeniedReviews = await findOwnApplication(campaignId);
+  const beforeDeniedAuditCount = await db.auditLog.count({
+    where: { entityId: firstApplication.id },
+  });
+  const beforeDeniedSettlements = await db.settlement.count({
+    where: { applicationId: firstApplication.id },
+  });
+  for (const brand of [fixtures.brand, fixtures.otherBrand]) {
+    const brandList = await call(
       `/api/workspace/campaign-applications?campaignId=${campaignId}`,
-      { cookie: fixtures.otherBrand.cookie },
-    ),
-    404,
+      { cookie: brand.cookie },
+    );
+    expect(brandList, 404);
+    assert.equal(brandList.json?.code, "NOT_FOUND");
+    assert.ok(
+      !Object.hasOwn(brandList.json, "applications") &&
+        !JSON.stringify(brandList.json).includes(proposal.proposal),
+      "Retired reads must not expose supplier applications, proposal text, or bids.",
+    );
+    for (const action of ["shortlist", "accept", "reject"])
+      expect(
+        await call("/api/workspace/campaign-applications", {
+          cookie: brand.cookie,
+          body: { action, applicationId: firstApplication.id },
+        }),
+        404,
+      );
+  }
+  assert.deepEqual(
+    await findOwnApplication(campaignId),
+    beforeDeniedReviews,
+    "Denied brand reviews must not change the application or its timestamps.",
   );
-  expect(
-    await call("/api/workspace/campaign-applications", {
-      cookie: fixtures.otherBrand.cookie,
-      body: { action: "accept", applicationId: firstApplication.id },
+  assert.equal(
+    await db.auditLog.count({ where: { entityId: firstApplication.id } }),
+    beforeDeniedAuditCount,
+    "Retired brand review attempts must not write decision audit records.",
+  );
+  assert.equal(
+    await db.settlement.count({
+      where: { applicationId: firstApplication.id },
     }),
-    409,
+    beforeDeniedSettlements,
+    "Retired brand review attempts must not create settlements.",
   );
   expect(
     await call("/api/agency/applications", {
@@ -713,24 +744,17 @@ try {
     409,
   );
   pass(
-    "real proposals persist once, including simultaneous duplicate protection and tenant isolation",
+    "supplier proposals persist once; brands cannot read or decide applications and denial leaves DB state unchanged",
   );
 
-  phase = "shortlist and withdrawal";
-  expect(
-    await call("/api/workspace/campaign-applications", {
-      cookie: fixtures.brand.cookie,
-      body: { action: "shortlist", applicationId: firstApplication.id },
-    }),
-    200,
-  );
+  phase = "agency withdrawal";
   listing = await listFor(fixtures.agency);
   assert.equal(
     listing.applications.find(
       (application) => application.id === firstApplication.id,
     )?.status,
-    "SHORTLISTED",
-    "Agency must see the shortlist decision.",
+    "SUBMITTED",
+    "Agency must see its own application without a brand selection decision.",
   );
   expect(
     await call("/api/agency/applications", {
@@ -756,13 +780,18 @@ try {
       cookie: fixtures.brand.cookie,
       body: { action: "accept", applicationId: firstApplication.id },
     }),
-    409,
+    404,
+  );
+  assert.equal(
+    (await findOwnApplication(campaignId)).status,
+    "WITHDRAWN",
+    "A retired brand decision attempt must not revive a withdrawn application.",
   );
   pass(
-    "shortlist and withdrawal synchronize across roles; withdrawn applications cannot reapply",
+    "agency withdrawal persists; withdrawn applications cannot reapply or receive direct brand decisions",
   );
 
-  phase = "selection and closed recruitment";
+  phase = "accepted application fixture and closed recruitment";
   const selectedCampaignId = await createCampaign("selected");
   await publish(selectedCampaignId);
   expect(
@@ -773,13 +802,12 @@ try {
     200,
   );
   const selected = await findOwnApplication(selectedCampaignId);
-  expect(
-    await call("/api/workspace/campaign-applications", {
-      cookie: fixtures.brand.cookie,
-      body: { action: "accept", applicationId: selected.id },
-    }),
-    200,
-  );
+  // Accepted state is explicit setup for the agency/admin regression below.
+  // There is no brand selection API, and this does not test operator publication.
+  await db.campaignApplication.update({
+    where: { id: selected.id },
+    data: { status: "ACCEPTED" },
+  });
   expect(
     await call("/api/agency/applications", {
       cookie: fixtures.agency.cookie,
@@ -790,12 +818,12 @@ try {
   assert.equal(
     (await findOwnApplication(selectedCampaignId)).status,
     "ACCEPTED",
-    "Selection must persist without being withdrawable.",
+    "An accepted application fixture must remain non-withdrawable.",
   );
   assert.equal(
     await db.settlement.count({ where: { applicationId: selected.id } }),
     0,
-    "Selection must not create a payment or settlement.",
+    "Accepted fixture setup must not create a payment or settlement.",
   );
   expect(await adminAction("closeCampaign", selectedCampaignId), 200);
   expect(
@@ -817,7 +845,7 @@ try {
     "Own applications remain visible after recruitment closes.",
   );
   pass(
-    "selection persists without money movement and closed recruitment rejects new applications",
+    "accepted applications reject withdrawal without money movement; admin closure rejects new applications",
   );
 
   phase = "elapsed deadline and suspension";
@@ -875,15 +903,22 @@ try {
     "campaign.submit",
     "admin.publishCampaign",
     "application.submitted",
-    "application.shortlist",
     "application.withdrawn",
-    "application.accept",
     "admin.closeCampaign",
     "admin.suspendOrganization",
   ])
     assert.ok(
       auditActions.has(action),
       "Critical state changes must have audit records.",
+    );
+  for (const action of [
+    "application.shortlist",
+    "application.accept",
+    "application.reject",
+  ])
+    assert.ok(
+      !auditActions.has(action),
+      "Retired direct brand decisions must not produce audit events.",
     );
   pass(
     "deadline/suspension gates update immediately and state changes are audited",

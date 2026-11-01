@@ -142,6 +142,7 @@ export async function agencyCampaigns(request: Request) {
           tx.campaign.findMany({
             where: {
               ...demoScope,
+              type: "OPEN_BIDDING",
               status: "RECRUITING",
               publishedAt: { not: null },
               applicationDeadline: { gt: new Date() },
@@ -269,6 +270,7 @@ export async function agencyApplications(request: Request) {
         const campaign = await tx.campaign.findFirst({
           where: {
             id: input.campaignId,
+            type: "OPEN_BIDDING",
             status: "RECRUITING",
             publishedAt: { not: null },
             applicationDeadline: { gt: new Date() },

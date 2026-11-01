@@ -135,7 +135,7 @@ try {
   });
   redirected(
     await call("/auth/continue?lang=ko", { cookie }),
-    "/storage/search",
+    "/advertiser",
   );
   assert.equal(
     (await call("/api/workspace/bootstrap", { cookie })).response.status,
