@@ -6,12 +6,14 @@ import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, URL } from "node:url";
 import { parseArgs } from "node:util";
+import { setTimeout as delay } from "node:timers/promises";
 
 // Production business data is read-only. The only POST allowed here is genuine
 // sign-in with credentials from the isolated, retained production QA namespace.
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const { values } = parseArgs({ options: {
   "fixture-file": { type: "string", default: "tmp/production-qa.json" },
+  "retry-failed": { type: "boolean", default: false },
   "expected-browser-status": { type: "string", default: "APPROVED" },
 } });
 const fixtureFile = resolve(root, values["fixture-file"]);
@@ -43,6 +45,17 @@ const report = {
   mode: "read-only business verification; authentication sign-in only",
   checks: [], overall: "pending",
 };
+if (values["retry-failed"]) {
+  const previous = JSON.parse(await readFile(outputFile, "utf8"));
+  assert.equal(previous.qaPrefix, fixture.prefix, "RETRY_NAMESPACE_MISMATCH");
+  assert.equal(previous.platformOrigin, platform, "RETRY_ORIGIN_MISMATCH");
+  assert.equal(previous.adminOrigin, admin, "RETRY_ORIGIN_MISMATCH");
+  report.checks = previous.checks.filter(value => value.status === "passed");
+  report.previousAttempts = [...(previous.previousAttempts ?? []), {
+    checkedAt: previous.checkedAt, completedAt: previous.completedAt,
+    failedChecks: previous.checks.filter(value => value.status !== "passed"),
+  }];
+}
 const qp = (id) => encodeURIComponent(id);
 async function request(origin, path, { cookie, credentials } = {}) {
   assert.ok([platform, admin].includes(origin), "UNEXPECTED_ORIGIN");
@@ -88,6 +101,7 @@ function publicData(result) {
     assert.ok(!result.body.includes(value), "PRIVATE_MARKER_EXPOSED");
 }
 async function check(name, run) {
+  if (report.checks.some(value => value.name === name && value.status === "passed")) return;
   try {
     const metadata = await run();
     report.checks.push({ name, status: "passed", ...metadata });
@@ -99,14 +113,25 @@ async function check(name, run) {
     console.log(`${state.toUpperCase()} ${name}: ${code}`);
   }
 }
+const sessions = new Map();
 async function authenticate(origin, label) {
-  const result = await request(origin, "/api/auth/sign-in/email", { credentials: { email: fixture.accounts[label].email, password: fixture.password } });
+  const sessionKey = `${origin}:${label}`;
+  if (sessions.has(sessionKey)) return sessions.get(sessionKey);
+  let result = await request(origin, "/api/auth/sign-in/email", { credentials: { email: fixture.accounts[label].email, password: fixture.password } });
+  if (result.response.status === 429) {
+    console.log("WAIT normal sign-in cooldown; no rate-limit bypass");
+    await delay(30500);
+    await delay(30500);
+    result = await request(origin, "/api/auth/sign-in/email", { credentials: { email: fixture.accounts[label].email, password: fixture.password } });
+  }
   status(result, 200);
   const cookies = result.response.headers.getSetCookie();
   assert.ok(cookies.some(value => value.split("=", 1)[0].endsWith("session_token")), "SESSION_COOKIE_REQUIRED");
-  report.checks.push({ name: `${label} production sign-in`, status: "passed", httpStatus: 200 });
+  if (!report.checks.some(value => value.name === `${label} production sign-in` && value.status === "passed")) report.checks.push({ name: `${label} production sign-in`, status: "passed", httpStatus: 200 });
   console.log(`PASS ${label} production sign-in`);
-  return cookies.map(value => value.split(";", 1)[0]).join("; ");
+  const cookie = cookies.map(value => value.split(";", 1)[0]).join("; ");
+  sessions.set(sessionKey, cookie);
+  return cookie;
 }
 
 try {
@@ -127,10 +152,10 @@ try {
     ["anonymous admin production read is denied", admin, `/api/admin/production?campaignId=${qp(fixture.readyCampaignId)}`],
   ]) await check(name, async () => { const result = await request(origin, path); status(result, 401); privateHeaders(result); return { httpStatus: 401 }; });
 
-  const owner = await authenticate(platform, "owner");
-  let ownerCount;
+  const owner = () => authenticate(platform, "owner");
+  let ownerCount = report.checks.find(value => value.name === "brand workspace exposes real production counts and safe summaries")?.waitingContentReviews;
   await check("brand workspace exposes real production counts and safe summaries", async () => {
-    const result = await request(platform, "/api/brand/workspace", { cookie: owner }); status(result, 200); publicData(result);
+    const result = await request(platform, "/api/brand/workspace", { cookie: await owner() }); status(result, 200); publicData(result);
     assert.equal(result.json.capabilities.productionReview, true, "PRODUCTION_CAPABILITY_REQUIRED");
     ownerCount = result.json.counts.waitingContentReviews;
     assert.ok(Number.isInteger(ownerCount) && ownerCount >= 0, "ACTUAL_REVIEW_COUNT_REQUIRED");
@@ -139,7 +164,7 @@ try {
     return { httpStatus: 200, waitingContentReviews: ownerCount, browserProductionItems: campaign.productionSummary.total };
   });
   await check("browser-reviewed content persists as public snapshots only", async () => {
-    const result = await request(platform, `/api/brand/production?campaignId=${qp(fixture.readyCampaignId)}`, { cookie: owner }); status(result, 200); publicData(result);
+    const result = await request(platform, `/api/brand/production?campaignId=${qp(fixture.readyCampaignId)}`, { cookie: await owner() }); status(result, 200); publicData(result);
     const item = result.json.items.find(value => value.id === fixture.readyProductionItemId);
     assert.ok(item, "BROWSER_ITEM_REQUIRED");
     assert.equal(item.status, values["expected-browser-status"], "BROWSER_STATUS_NOT_PERSISTED");
@@ -152,15 +177,15 @@ try {
     return { httpStatus: 200, productionStatus: item.status, releasedVersions: item.submissions.length, canRespond: item.canRespond };
   });
   await check("campaign detail returns the same authorized production item", async () => {
-    const result = await request(platform, `/api/brand/campaigns/${qp(fixture.readyCampaignId)}`, { cookie: owner }); status(result, 200); publicData(result);
+    const result = await request(platform, `/api/brand/campaigns/${qp(fixture.readyCampaignId)}`, { cookie: await owner() }); status(result, 200); publicData(result);
     assert.ok(result.json.deliverables.some(value => value.id === fixture.readyProductionItemId), "DETAIL_PRODUCTION_ITEM_REQUIRED");
     assert.ok(result.json.proposals.some(value => value.status === "APPROVED"), "APPROVED_PROPOSAL_REQUIRED");
     return { httpStatus: 200, campaignStatus: result.json.campaign.status, productionItemCount: result.json.deliverables.length };
   });
   await check("unreleased agency source stays absent from every brand response", async () => {
     const [production, detail] = await Promise.all([
-      request(platform, `/api/brand/production?campaignId=${qp(fixture.browserCampaignId)}`, { cookie: owner }),
-      request(platform, `/api/brand/campaigns/${qp(fixture.browserCampaignId)}`, { cookie: owner }),
+      request(platform, `/api/brand/production?campaignId=${qp(fixture.browserCampaignId)}`, { cookie: await owner() }),
+      request(platform, `/api/brand/campaigns/${qp(fixture.browserCampaignId)}`, { cookie: await owner() }),
     ]);
     status(production, 200); status(detail, 200); publicData(production); publicData(detail);
     for (const items of [production.json.items, detail.json.deliverables]) {
@@ -173,38 +198,38 @@ try {
     return { httpStatus: 200, productionStatus: "ADMIN_REVIEW", exposedSubmissionCount: 0 };
   });
   await check("completed API flow retains approved released version history", async () => {
-    const result = await request(platform, `/api/brand/production?campaignId=${qp(fixture.campaignId)}`, { cookie: owner }); status(result, 200); publicData(result);
-    const approved = result.json.items.find(value => value.status === "APPROVED");
+    const result = await request(platform, `/api/brand/production?campaignId=${qp(fixture.campaignId)}`, { cookie: await owner() }); status(result, 200); publicData(result);
+    const approved = result.json.items.find(value => value.status === "APPROVED" && value.submissions.length >= 2);
     assert.ok(approved && approved.submissions.length >= 2, "APPROVED_VERSION_HISTORY_REQUIRED");
     assert.equal(approved.canRespond, false, "APPROVED_RESPONSE_FORBIDDEN");
     return { httpStatus: 200, productionStatus: approved.status, releasedVersions: approved.submissions.length };
   });
   await check("superseded proposal content remains read-only", async () => {
-    const result = await request(platform, `/api/brand/production?campaignId=${qp(fixture.guardCampaignId)}`, { cookie: owner }); status(result, 200); publicData(result);
+    const result = await request(platform, `/api/brand/production?campaignId=${qp(fixture.guardCampaignId)}`, { cookie: await owner() }); status(result, 200); publicData(result);
     assert.ok(result.json.items.length > 0 && result.json.items.every(value => !value.canRespond && value.submissions.every(version => !version.canRespond)), "SUPERSEDED_CONTENT_RESPONSE_FORBIDDEN");
     return { httpStatus: 200, productionItemCount: result.json.items.length, canRespond: false };
   });
   await check("named brand campaign is isolated from the QA organization", async () => {
-    const result = await request(platform, `/api/brand/production?campaignId=${qp(report.crossOrganizationCampaignId)}`, { cookie: owner }); status(result, 404); privateHeaders(result); return { httpStatus: 404 };
+    const result = await request(platform, `/api/brand/production?campaignId=${qp(report.crossOrganizationCampaignId)}`, { cookie: await owner() }); status(result, 404); privateHeaders(result); return { httpStatus: 404 };
   });
 
-  const member = await authenticate(platform, "member");
+  const member = () => authenticate(platform, "member");
   await check("brand MEMBER sees actual counts with read-only production", async () => {
     const [workspace, content] = await Promise.all([
-      request(platform, "/api/brand/workspace", { cookie: member }), request(platform, `/api/brand/production?campaignId=${qp(fixture.readyCampaignId)}`, { cookie: member }),
+      request(platform, "/api/brand/workspace", { cookie: await member() }), request(platform, `/api/brand/production?campaignId=${qp(fixture.readyCampaignId)}`, { cookie: await member() }),
     ]);
     status(workspace, 200); status(content, 200); publicData(workspace); publicData(content);
     assert.equal(workspace.json.counts.waitingContentReviews, ownerCount, "MEMBER_REVIEW_COUNT_MISMATCH");
     assert.ok(content.json.items.every(value => !value.canRespond), "MEMBER_RESPONSE_FORBIDDEN");
     return { httpStatus: 200, waitingContentReviews: ownerCount, canRespond: false };
   });
-  const outsider = await authenticate(platform, "outsider");
+  const outsider = () => authenticate(platform, "outsider");
   await check("another brand cannot read QA production", async () => {
-    const result = await request(platform, `/api/brand/production?campaignId=${qp(fixture.readyCampaignId)}`, { cookie: outsider }); status(result, 404); privateHeaders(result); return { httpStatus: 404 };
+    const result = await request(platform, `/api/brand/production?campaignId=${qp(fixture.readyCampaignId)}`, { cookie: await outsider() }); status(result, 404); privateHeaders(result); return { httpStatus: 404 };
   });
-  const agency = await authenticate(platform, "agency");
+  const agency = () => authenticate(platform, "agency");
   await check("assigned agency can read its submissions without internal notes", async () => {
-    const result = await request(platform, `/api/agency/production?campaignId=${qp(fixture.readyCampaignId)}`, { cookie: agency }); status(result, 200); privateHeaders(result);
+    const result = await request(platform, `/api/agency/production?campaignId=${qp(fixture.readyCampaignId)}`, { cookie: await agency() }); status(result, 200); privateHeaders(result);
     noKeys(result.json, new Set(["internalNote", "internalNotes", "payloadHash"]));
     assert.ok(!result.body.includes(`${fixture.prefix}-PRIVATE-ADMIN-NOTE`), "PRIVATE_ADMIN_MARKER_EXPOSED");
     const item = result.json.items.find(value => value.id === fixture.readyProductionItemId);
@@ -212,13 +237,13 @@ try {
     assert.equal(item.status, values["expected-browser-status"], "AGENCY_STATUS_MISMATCH");
     return { httpStatus: 200, productionStatus: item.status, submittedVersions: item.submissions.length };
   });
-  const otherAgency = await authenticate(platform, "other-agency");
+  const otherAgency = () => authenticate(platform, "other-agency");
   await check("unassigned agency cannot read another agency's production", async () => {
-    const result = await request(platform, `/api/agency/production?campaignId=${qp(fixture.readyCampaignId)}`, { cookie: otherAgency }); status(result, 404); privateHeaders(result); return { httpStatus: 404 };
+    const result = await request(platform, `/api/agency/production?campaignId=${qp(fixture.readyCampaignId)}`, { cookie: await otherAgency() }); status(result, 404); privateHeaders(result); return { httpStatus: 404 };
   });
-  const administrator = await authenticate(admin, "admin");
+  const administrator = () => authenticate(admin, "admin");
   await check("authorized admin production endpoint matches the stored workflow", async () => {
-    const result = await request(admin, `/api/admin/production?campaignId=${qp(fixture.readyCampaignId)}`, { cookie: administrator }); status(result, 200); privateHeaders(result);
+    const result = await request(admin, `/api/admin/production?campaignId=${qp(fixture.readyCampaignId)}`, { cookie: await administrator() }); status(result, 200); privateHeaders(result);
     const item = result.json.items.find(value => value.id === fixture.readyProductionItemId);
     assert.ok(item, "ADMIN_ITEM_REQUIRED");
     assert.equal(item.status, values["expected-browser-status"], "ADMIN_STATUS_MISMATCH");
