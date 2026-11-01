@@ -4,8 +4,10 @@
 .heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
 .heading > div:first-child { display: flex; flex-direction: column; gap: 8px; }
 .layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 24px; align-items: start; }
-.tasks { display: flex; flex-direction: column; gap: 12px; }
-.task { width: 100%; padding: 20px; border: 1px solid var(--semantic-line-neutral-secondaryOpaque); border-radius: 14px; background: var(--semantic-surface-neutral-primary); color: var(--semantic-foreground-neutral-primary); text-align: left; cursor: pointer; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; font: inherit; }
+.tasks { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.task { width: 100%; min-width: 0; max-width: 100%; padding: 20px; border: 1px solid var(--semantic-line-neutral-secondaryOpaque); border-radius: 14px; background: var(--semantic-surface-neutral-primary); color: var(--semantic-foreground-neutral-primary); text-align: left; cursor: pointer; white-space: normal; font: inherit; }
+.taskContent { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: start; gap: 10px; width: 100%; min-width: 0; max-width: 100%; text-align: left; white-space: normal; }
+.taskContent > * { min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 .task:hover { background: var(--semantic-surface-neutral-secondary); }
 .taskActive { border-color: var(--semantic-foreground-brand-primary); background: var(--semantic-surface-brand-subtle); }
 .task strong, .task span { overflow-wrap: anywhere; }
