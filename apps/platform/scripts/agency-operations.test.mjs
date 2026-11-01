@@ -35,6 +35,7 @@ const decimal = (value) => ({ toFixed: () => value });
 const campaign = {
   title: "Own campaign", status: "IN_PROGRESS", platforms: ["youtube"], contentDeadline: new Date("2026-11-01T00:00:00Z"),
   requirements: { internalSecret: "private-campaign-metadata" }, brandOrganizationId: "private-brand-id",
+  _count: { proposals: 0 },
 };
 const application = {
   id: "app-own", campaignId: "campaign-own", agencyOrganizationId: "agency-own", status: "ACCEPTED",
@@ -135,6 +136,7 @@ test("queries and returned records are scoped to the session organization; ident
   assert.deepEqual(body.projects[0].creators.map((item) => item.id), ["creator-own"]);
   assert.equal(body.projects[0].submissions[0].draftUrl, null);
   assert.equal(body.projects[0].submissions[0].publishedUrl, null);
+  assert.equal(body.projects[0].officialProduction, false);
   assert.deepEqual(body.settlements.map((item) => item.id), ["settlement-own"]);
   assert.equal(body.settlements[0].netAmount, "80.00");
   assert.equal(body.settlements[0].paidAt, null);
@@ -162,6 +164,13 @@ test("ordinary organizations cannot read demo projects, submissions, settlements
   assert.deepEqual(body.projects, []);
   assert.deepEqual(body.settlements, []);
   assert.deepEqual(body.activity, []);
+});
+
+test("official proposal projects are marked for the separate production workflow", async () => {
+  const state = fixture({ projects: [{ ...application, campaign: { ...campaign, _count: { proposals: 1 } } }] });
+  const body = await (await state.run()).json();
+  assert.equal(body.projects[0].officialProduction, true);
+  assert.equal(body.projects[0].id, application.id);
 });
 
 test("approved test access does not fabricate profile proof, review activity, settlements or supported mutations", async () => {

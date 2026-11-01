@@ -8,6 +8,7 @@ import { AdminButton } from "./_components/admin-button";
 import { RequestConsole } from "./request-console";
 import CampaignOperations from "./campaign-operations";
 import { OfficialProposals } from "./official-proposals";
+import { ProductionReview } from "./production-review";
 import {
   useCallback,
   useEffect,
@@ -983,6 +984,10 @@ export function AdminConsole({
                           campaignStatus={campaign.status}
                           brandActive={campaign.brandStatus === "ACTIVE"}
                           onCommitted={() => void refresh()}
+                        />
+                        <ProductionReview
+                          key={`production:${campaign.id}`}
+                          campaignId={campaign.id}
                         />
                         <h3>
                           내부 소싱 · 신청 에이전시 ({campaignDetail.total})

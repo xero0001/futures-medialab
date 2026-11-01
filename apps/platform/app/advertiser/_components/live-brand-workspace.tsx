@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import {
@@ -15,11 +16,13 @@ import {
 import type { Locale } from "../../_components/landing-copy";
 import { WorkspaceProvider } from "../../_components/workspace/workspace-provider";
 import { WorkspaceShell } from "../../_components/workspace/workspace-shell";
+import { StatusBadge, type StatusTone } from "../../_components/workspace/status-badge";
 import shellStyles from "../../_components/workspace/workspace-shell.module.css";
 import { authClient } from "../../../lib/auth-client";
 import type { BrandCampaign, BrandCampaignDetail, BrandCampaignRoute, BrandWorkspace } from "../../../lib/brand-workspace-types";
 import { LiveRequestWizard } from "./live-request-wizard";
 import { OfficialProposalPanel, proposalMoney } from "./official-proposal-panel";
+import { BrandProductionPanel } from "./brand-production-panel";
 import styles from "./live-brand-workspace.module.css";
 
 export type LiveBrandWorkspaceMode = "home" | "campaigns" | "detail" | "library" | "new";
@@ -63,9 +66,18 @@ function hasReviewableProposal(campaign: BrandCampaign, now: number) {
 
 function Status({ campaign, t }: { campaign: BrandCampaign; t: Copy }) {
   const [now] = useState(() => Date.now());
-  if (hasReviewableProposal(campaign, now)) return <ContentBadge size="small" color="accent">{t("제안 확인 필요", "Proposal to review", "待确认方案")}</ContentBadge>;
-  const active = !["DRAFT", "COMPLETED", "CANCELED"].includes(campaign.status);
-  return <ContentBadge size="small" color={active ? "accent" : "neutral"}>{statusLabel(campaign.status, t)}</ContentBadge>;
+  if (campaign.status === "CANCELED") return <StatusBadge tone="red">{statusLabel(campaign.status, t)}</StatusBadge>;
+  if (campaign.status === "COMPLETED") return <StatusBadge tone="green">{statusLabel(campaign.status, t)}</StatusBadge>;
+  if (campaign.productionSummary.awaitingBrand > 0) return <StatusBadge tone="amber">{t("콘텐츠 검수 대기", "Content to review", "待审核内容")}</StatusBadge>;
+  if (campaign.productionSummary.changesRequested > 0) return <StatusBadge tone="amber">{t("콘텐츠 수정 중", "Content revision", "内容修改中")}</StatusBadge>;
+  if (campaign.productionSummary.total > 0 && campaign.productionSummary.approved === campaign.productionSummary.total) return <StatusBadge tone="green">{t("콘텐츠 승인 완료", "Content approved", "内容已批准")}</StatusBadge>;
+  if (campaign.productionSummary.underReview > 0) return <StatusBadge tone="blue">{t("퓨쳐스 검토 중", "Futures review", "Futures 审核中")}</StatusBadge>;
+  if (campaign.productionSummary.awaitingSubmission > 0) return <StatusBadge tone="neutral">{t("콘텐츠 제작 대기", "Awaiting production", "等待制作")}</StatusBadge>;
+  if (campaign.latestProposal?.status === "CHANGES_REQUESTED") return <StatusBadge tone="amber">{t("제안 수정 중", "Proposal revision", "方案修改中")}</StatusBadge>;
+  if (campaign.latestProposal?.status === "REJECTED") return <StatusBadge tone="red">{t("재제안 요청", "Replacement requested", "已请求重新提案")}</StatusBadge>;
+  if (hasReviewableProposal(campaign, now)) return <StatusBadge tone="amber">{t("제안 승인 대기", "Proposal to approve", "待审批方案")}</StatusBadge>;
+  const tones: Record<BrandCampaign["status"], StatusTone> = { DRAFT: "neutral", REVIEW: "blue", RECRUITING: "blue", IN_PROGRESS: "blue", VERIFYING: "amber", SETTLING: "amber", COMPLETED: "green", CANCELED: "red" };
+  return <StatusBadge tone={tones[campaign.status]}>{statusLabel(campaign.status, t)}</StatusBadge>;
 }
 
 export function BrandWorkspaceFrame({ locale, account, children }: { locale: Locale; account: Account; children: ReactNode }) {
@@ -195,7 +207,7 @@ function Home({ data, locale }: { data: BrandWorkspace; locale: Locale }) {
   const stats = [
     { label: t("진행 중인 캠페인", "Active campaigns", "进行中的活动"), count: data.counts.activeCampaigns, icon: <IconMegaphone />, path: "/advertiser/campaign" },
     { label: t("승인 대기 제안", "Proposals to review", "待审批方案"), count: data.counts.pendingProposals, icon: <IconCheck />, path: "/advertiser/campaign?status=approval" },
-    { label: t("브랜드 확인 필요", "Awaiting your reply", "等待品牌回复"), count: data.counts.waitingBrandRequests, icon: <IconInbox />, path: "/advertiser/requests" },
+    { label: t("콘텐츠 검수 대기", "Content to review", "待审核内容"), count: data.counts.waitingContentReviews, icon: <IconInbox />, path: "/advertiser/campaign?status=content-review" },
     { label: t("완료한 캠페인", "Completed campaigns", "已完成活动"), count: data.counts.completedCampaigns, icon: <IconCheck />, path: "/advertiser/campaign" },
   ];
   return <>
@@ -215,6 +227,7 @@ function Home({ data, locale }: { data: BrandWorkspace; locale: Locale }) {
       </section>
     </div>
     <div className={styles.stats}>{stats.map(stat => <Link className={styles.stat} key={stat.label} href={href(stat.path)}><span className={styles.statIcon}>{stat.icon}</span><div><Typography as="span" variant="label2" className={styles.muted}>{stat.label}</Typography><Typography as="strong" variant="title2" weight="bold">{stat.count.toLocaleString(locale)}</Typography></div><IconArrowRight className={styles.statArrow} aria-hidden="true" /></Link>)}</div>
+    {data.counts.waitingContentReviews > 0 && <Panel title={t("확인할 콘텐츠", "Content awaiting your review", "待审核内容")} action={<Link className={styles.textLink} href={href("/advertiser/campaign?status=content-review")}>{t("전체 보기", "View all", "查看全部")}<IconArrowRight /></Link>}><div className={styles.approvalList}>{data.campaigns.filter(campaign => campaign.productionSummary.awaitingBrand > 0 && !["COMPLETED", "CANCELED"].includes(campaign.status)).slice(0, 6).map(campaign => <article className={styles.approvalRow} key={campaign.id}><div><StatusBadge tone="amber" size="small">{t(`${campaign.productionSummary.awaitingBrand}건 검수 대기`, `${campaign.productionSummary.awaitingBrand} items to review`, `${campaign.productionSummary.awaitingBrand} 项待审核`)}</StatusBadge><Typography as="strong" variant="label1" weight="bold">{campaign.title}</Typography><Typography variant="caption1" className={styles.muted}>{t("퓨쳐스가 공유한 버전을 확인해 주세요.", "Review the version shared by Futures.", "请查看 Futures 共享的版本。")}</Typography></div><Button as={Link} href={href(`${campaignPath(campaign.id)}?tab=production`)} size="small">{t("콘텐츠 검수", "Review content", "审核内容")}</Button></article>)}</div></Panel>}
     {data.pendingProposals.length > 0 && <Panel title={t("확인할 공식 제안", "Official proposals to review", "待确认的正式方案")} action={<Link className={styles.textLink} href={href("/advertiser/campaign?status=approval")}>{t("전체 보기", "View all", "查看全部")}<IconArrowRight /></Link>}><div className={styles.approvalList}>{data.pendingProposals.slice(0, 6).map(proposal => <article className={styles.approvalRow} key={proposal.id}><div><ContentBadge color="accent" size="small">v{proposal.version} · {t(`${proposal.pendingItemCount}개 구성 확인`, `${proposal.pendingItemCount} items to review`, `${proposal.pendingItemCount} 项待确认`)}</ContentBadge><Typography as="strong" variant="label1" weight="bold">{proposal.campaignTitle}</Typography><Typography as="span" variant="caption1" className={styles.muted}>{proposal.title} · {t("유효 기한", "Valid until", "有效期至")} {dateLabel(proposal.expiresAt, locale)}</Typography></div><Typography as="strong" variant="label1" weight="bold" className={styles.money}>{proposalMoney(proposal.totalAmount, proposal.currency, locale)}</Typography><Button as={Link} href={href(`${campaignPath(proposal.campaignId)}?tab=proposal`)} size="small">{t("제안 확인", "Review proposal", "查看方案")}</Button></article>)}</div></Panel>}
     <div className={styles.homeColumns}>
       <Panel title={t("진행 중인 캠페인", "Active campaigns", "进行中的活动")} action={<Link className={styles.textLink} href={href("/advertiser/campaign")}>{t("전체 보기", "View all", "查看全部")}<IconArrowRight /></Link>}>
@@ -222,7 +235,7 @@ function Home({ data, locale }: { data: BrandWorkspace; locale: Locale }) {
       </Panel>
       <Panel title={t("예정된 일정", "Upcoming dates", "即将到来的日程")}>
         {upcoming.length ? <div className={styles.schedule}>{upcoming.map(({ campaign, value, label }) => <Link key={`${campaign.id}-${label}`} href={href(campaignPath(campaign.id))} className={styles.scheduleItem}><IconCalendar /><div><Typography as="span" variant="caption1" className={styles.muted}>{label}</Typography><Typography as="strong" variant="label1" weight="bold">{campaign.title}</Typography><Typography as="time" variant="caption1">{dateLabel(value, locale)}</Typography></div></Link>)}</div> : <div className={styles.noSchedule}><IconCalendar /><Typography as="p" variant="body2" className={styles.muted}>{t("등록된 일정이 없습니다.", "No scheduled dates yet.", "暂无已登记日程。")}</Typography></div>}
-        <div className={styles.support}><Typography as="strong" variant="label1" weight="bold">{t("퓨쳐스에 요청하기", "Contact Futures", "联系 Futures")}</Typography><Typography as="p" variant="caption1" className={styles.muted}>{t("일정, 제안, 결과에 관한 요청을 남겨주세요.", "Send a request about schedules, proposals, or results.", "提交日程、方案或结果相关请求。")}</Typography><Link className={styles.textLink} href={href("/advertiser/requests")}>{t("요청함 열기", "Open inbox", "打开请求中心")}<IconArrowRight /></Link></div>
+        <div className={styles.support}><Typography as="strong" variant="label1" weight="bold">{t("퓨쳐스에 요청하기", "Contact Futures", "联系 Futures")}</Typography><Typography as="p" variant="caption1" className={styles.muted}>{t("일정, 제안, 결과에 관한 요청을 남겨주세요.", "Send a request about schedules, proposals, or results.", "提交日程、方案或结果相关请求。")}</Typography><Link className={styles.textLink} href={href("/advertiser/requests")}>{t(`요청함 열기${data.counts.waitingBrandRequests ? ` · 확인 필요 ${data.counts.waitingBrandRequests}건` : ""}`, `Open inbox${data.counts.waitingBrandRequests ? ` · ${data.counts.waitingBrandRequests} awaiting reply` : ""}`, `打开请求中心${data.counts.waitingBrandRequests ? ` · ${data.counts.waitingBrandRequests} 项待回复` : ""}`)}<IconArrowRight /></Link></div>
       </Panel>
     </div>
     <div className={styles.privacyNote}><IconLock /><Typography variant="caption1">{t("프리뷰에서는 익명 정보만 안내하며, 캠페인 진행에 필요한 크리에이터 정보는 공식 제안에서 공개됩니다.", "Previews remain anonymous. Relevant creator details are shared only in an official campaign proposal.", "预览仅显示匿名信息；活动所需的达人信息将在正式方案中公开。")}</Typography></div>
@@ -232,10 +245,17 @@ function Home({ data, locale }: { data: BrandWorkspace; locale: Locale }) {
 function CampaignTable({ campaigns, locale, compact = false }: { campaigns: BrandCampaign[]; locale: Locale; compact?: boolean }) {
   const t = copyFor(locale);
   const [now] = useState(() => Date.now());
-  return <div className={styles.tableWrap}><Table className={styles.table} aria-label={t("캠페인 목록", "Campaign list", "活动列表")}><TableHead><TableRow><TableHeadCell>{t("캠페인", "Campaign", "活动")}</TableHeadCell><TableHeadCell>{t("진행 상태", "Status", "状态")}</TableHeadCell>{!compact && <TableHeadCell>{t("요청 예산", "Requested budget", "预算")}</TableHeadCell>}<TableHeadCell>{t("다음 단계", "Next step", "下一步")}</TableHeadCell></TableRow></TableHead><TableBody>{campaigns.map(campaign => <TableRow key={campaign.id}><TableCell><Link href={hrefFor(`${campaignPath(campaign.id)}${hasReviewableProposal(campaign, now) ? "?tab=proposal" : ""}`, locale)} className={styles.campaignName}><span className={styles.campaignIcon}><IconMegaphone /></span><span><Typography as="strong" variant="label1" weight="bold">{campaign.title}</Typography><Typography as="span" variant="caption1" className={styles.muted}>{campaign.type === "MANAGED" ? "Managed" : "Open"}{campaign.platforms.length ? ` · ${campaign.platforms.join(" · ")}` : ""}</Typography></span></Link></TableCell><TableCell><Status campaign={campaign} t={t} /></TableCell>{!compact && <TableCell><span className={styles.money}>{amountLabel(campaign, locale)}</span></TableCell>}<TableCell><Typography as="span" variant="caption1" className={styles.nextStep}>{nextStep(campaign, t, now)}</Typography><Typography as="span" variant="caption1" className={styles.muted}>{dateLabel(campaign.updatedAt, locale)}</Typography></TableCell></TableRow>)}</TableBody></Table></div>;
+  return <div className={styles.tableWrap}><Table className={styles.table} aria-label={t("캠페인 목록", "Campaign list", "活动列表")}><TableHead><TableRow><TableHeadCell>{t("캠페인", "Campaign", "活动")}</TableHeadCell><TableHeadCell>{t("진행 상태", "Status", "状态")}</TableHeadCell>{!compact && <TableHeadCell>{t("요청 예산", "Requested budget", "预算")}</TableHeadCell>}<TableHeadCell>{t("다음 단계", "Next step", "下一步")}</TableHeadCell></TableRow></TableHead><TableBody>{campaigns.map(campaign => <TableRow key={campaign.id}><TableCell><Link href={hrefFor(`${campaignPath(campaign.id)}${campaign.productionSummary.total > 0 ? "?tab=production" : hasReviewableProposal(campaign, now) ? "?tab=proposal" : ""}`, locale)} className={styles.campaignName}><span className={styles.campaignIcon}>{campaign.gameIconUrl ? <Image src={campaign.gameIconUrl} alt={campaign.gameName ?? t("게임", "Game", "游戏")} width={40} height={40} /> : <IconMegaphone />}</span><span><Typography as="strong" variant="label1" weight="bold">{campaign.title}</Typography><Typography as="span" variant="caption1" className={styles.muted}>{campaign.type === "MANAGED" ? "Managed" : "Open"}{campaign.platforms.length ? ` · ${campaign.platforms.join(" · ")}` : ""}</Typography></span></Link></TableCell><TableCell><Status campaign={campaign} t={t} /></TableCell>{!compact && <TableCell><span className={styles.money}>{amountLabel(campaign, locale)}</span></TableCell>}<TableCell><Typography as="span" variant="caption1" className={styles.nextStep}>{nextStep(campaign, t, now)}</Typography><Typography as="span" variant="caption1" className={styles.muted}>{dateLabel(campaign.updatedAt, locale)}</Typography></TableCell></TableRow>)}</TableBody></Table></div>;
 }
 
 function nextStep(campaign: BrandCampaign, t: Copy, now: number) {
+  if (!["COMPLETED", "CANCELED"].includes(campaign.status)) {
+    if (campaign.productionSummary.awaitingBrand > 0) return t(`공유 콘텐츠 ${campaign.productionSummary.awaitingBrand}건 검수`, `Review ${campaign.productionSummary.awaitingBrand} shared items`, `审核 ${campaign.productionSummary.awaitingBrand} 项共享内容`);
+    if (campaign.productionSummary.changesRequested > 0) return t("수정본 준비 중", "Revision in preparation", "修改版本准备中");
+    if (campaign.productionSummary.total > 0 && campaign.productionSummary.approved === campaign.productionSummary.total) return t("콘텐츠 승인 내역 확인", "View content approvals", "查看内容批准记录");
+    if (campaign.productionSummary.underReview > 0) return t("퓨쳐스 검토 후 공유 예정", "Sharing after Futures review", "Futures 审核后共享");
+    if (campaign.productionSummary.awaitingSubmission > 0) return t("승인된 구성으로 제작 준비", "Preparing approved deliverables", "准备已批准内容");
+  }
   if (hasReviewableProposal(campaign, now)) return t("공식 제안 검토·승인", "Review the official proposal", "审核正式方案");
   const steps: Record<BrandCampaign["status"], string> = {
     DRAFT: t("브리프 작성 완료", "Complete your brief", "完成简报"), REVIEW: t("퓨쳐스 접수 확인", "Futures intake review", "Futures 确认受理"),
@@ -251,13 +271,14 @@ function Campaigns({ data, locale }: { data: BrandWorkspace; locale: Locale }) {
   const searchParams = useSearchParams();
   const initialFilter = searchParams.get("status") ?? "all";
   const [now] = useState(() => Date.now());
-  const [filter, setFilter] = useState(["all", "active", "approval", "draft", "completed", "canceled"].includes(initialFilter) ? initialFilter : "all");
+  const [filter, setFilter] = useState(["all", "active", "approval", "content-review", "draft", "completed", "canceled"].includes(initialFilter) ? initialFilter : "all");
   const [search, setSearch] = useState("");
   const filters = [
     { value: "all", label: t("전체", "All", "全部") }, { value: "approval", label: t("승인 대기", "To approve", "待审批") }, { value: "active", label: t("진행 중", "Active", "进行中") },
+    { value: "content-review", label: t("콘텐츠 검수", "Content review", "内容审核") },
     { value: "draft", label: t("작성 중", "Draft", "草稿") }, { value: "completed", label: t("완료", "Completed", "已完成") }, { value: "canceled", label: t("취소", "Canceled", "已取消") },
   ];
-  const campaigns = data.campaigns.filter(campaign => (filter === "all" || (filter === "approval" ? hasReviewableProposal(campaign, now) : filter === "active" ? !["DRAFT", "COMPLETED", "CANCELED"].includes(campaign.status) : campaign.status === { draft: "DRAFT", completed: "COMPLETED", canceled: "CANCELED" }[filter])) && `${campaign.title} ${campaign.summary}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
+  const campaigns = data.campaigns.filter(campaign => (filter === "all" || (filter === "content-review" ? campaign.productionSummary.awaitingBrand > 0 && !["COMPLETED", "CANCELED"].includes(campaign.status) : filter === "approval" ? hasReviewableProposal(campaign, now) : filter === "active" ? !["DRAFT", "COMPLETED", "CANCELED"].includes(campaign.status) : campaign.status === { draft: "DRAFT", completed: "COMPLETED", canceled: "CANCELED" }[filter])) && `${campaign.title} ${campaign.summary}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
   return <>
     <PageHeading title={t("캠페인", "Campaigns", "活动")} description={t("요청부터 결과 확인까지, 우리 조직의 캠페인을 관리하세요.", "Manage your organization's campaigns from brief to results.", "从需求到结果，管理本组织的活动。")} action={<NewCampaignLink locale={locale} canManage={data.permissions.canManageCampaigns} />} />
     <section className={styles.panel}><div className={styles.listSearch}><Typography variant="label1" weight="bold">{t(`전체 ${data.counts.campaigns}개 캠페인`, `${data.counts.campaigns} campaigns`, `共 ${data.counts.campaigns} 个活动`)}</Typography><SearchField aria-label={t("캠페인 검색", "Search campaigns", "搜索活动")} placeholder={t("캠페인 이름이나 브리프 검색", "Search name or brief", "搜索活动名称或简报")} value={search} onChange={event => setSearch(event.target.value)} onReset={() => setSearch("")} size="medium" width="100%" /></div>
@@ -301,6 +322,7 @@ function CampaignDetail({ detail, locale, canManage, onRefresh }: { detail: Bran
   ];
   return <>
     <Link href={href("/advertiser/campaign")} className={styles.back}><IconArrowLeft />{t("캠페인 목록", "All campaigns", "活动列表")}</Link>
+    {campaign.coverImageUrl && <figure className={styles.gameArtwork}><Image src={campaign.coverImageUrl} alt={campaign.gameName ? `${campaign.gameName} · ${t("공식 아트워크", "official artwork", "官方美术")}` : t("캠페인 게임 아트워크", "Campaign game artwork", "活动游戏美术")} width={2048} height={946} priority /><figcaption><span>{campaign.gameName} · © Hotta Studio / Perfect World</span>{campaign.gameSourceUrl && <a href={campaign.gameSourceUrl} target="_blank" rel="noopener noreferrer">{t("공식 사이트", "Official website", "官方网站")}</a>}</figcaption></figure>}
     <PageHeading title={campaign.title} description={`${campaign.type === "MANAGED" ? "Managed" : "Open"} · ${t("최종 업데이트", "Last updated", "最后更新")} ${dateLabel(campaign.updatedAt, locale)}`} action={<div className={styles.actions}><Status campaign={campaign} t={t} />{campaign.status === "DRAFT" && canManage ? <Button as={Link} href={href(`/advertiser/campaign/new?draft=${encodeURIComponent(campaign.id)}`)}>{t("브리프 이어 쓰기", "Continue brief", "继续填写简报")}</Button> : <Button as={Link} href={requestHref} variant="outlined" color="assistive">{t("관련 요청하기", "Send a request", "提交相关请求")}</Button>}</div>} />
     {campaign.status === "DRAFT" && <SectionMessage variant="info" description={t("브리프를 완성하고 접수하면 퓨쳐스가 검토를 시작합니다.", "Complete and submit your brief for Futures to start its review.", "完成并提交简报后，Futures 将开始审核。")}>{t("아직 접수하지 않은 캠페인입니다.", "This campaign has not been submitted yet.", "此活动尚未提交。")}</SectionMessage>}
     {campaign.reviewNote && <SectionMessage variant="cautionary" description={campaign.reviewNote}>{t("퓨쳐스 검토 안내", "Futures review note", "Futures 审核说明")}</SectionMessage>}
@@ -324,7 +346,7 @@ function CampaignDetail({ detail, locale, canManage, onRefresh }: { detail: Bran
         <div className={styles.sideStack}><Panel title={t("진행 정보", "Progress", "进度信息")}><dl className={styles.facts}><BriefItem label={t("진행 상태", "Status", "状态")} value={statusLabel(campaign.status, t)} /><BriefItem label={t("접수일", "Submitted", "提交日期")} value={dateLabel(campaign.submittedAt, locale, true)} /><BriefItem label={t("제안 예정", "Proposal due", "预计方案日期")} value={dateLabel(campaign.proposalDueAt, locale, true)} />{campaign.type === "OPEN_BIDDING" && <BriefItem label={t("모집 마감", "Recruitment closes", "招募截止")} value={dateLabel(campaign.applicationDeadline, locale, true)} />}</dl>{campaign.type === "OPEN_BIDDING" && <Typography as="p" variant="caption1" className={styles.limitNote}>{t("모집형 캠페인은 모집 일정에 따라 제안이 준비됩니다.", "Open campaign proposals follow the recruitment schedule.", "公开招募活动方案按招募日程准备。")}</Typography>}</Panel>
           <Panel title={t("연결된 요청", "Related requests", "相关请求")} action={<Link className={styles.textLink} href={requestHref}>{t("요청함", "Inbox", "请求中心")}<IconArrowRight /></Link>}><div className={styles.relatedRequests}>{detail.requests.length ? detail.requests.map(request => <Link key={request.id} href={href(`/advertiser/requests?request=${encodeURIComponent(request.id)}`)}><Typography as="strong" variant="label1" weight="medium">{request.title}</Typography><Typography as="span" variant="caption1" className={styles.muted}>{dateLabel(request.updatedAt, locale)}</Typography></Link>) : <Typography as="p" variant="body2" className={styles.muted}>{t("연결된 요청이 없습니다.", "No related requests yet.", "暂无相关请求。")}</Typography>}</div></Panel>
         </div>
-      </div> : tab === "proposal" ? <OfficialProposalPanel proposals={detail.proposals} locale={locale} canManage={canManage} requestHref={requestHref} onRefresh={onRefresh} /> : <section className={styles.panel}><PendingCampaignSection tab={tab} locale={locale} requestHref={requestHref} inboxHref={inboxHref} /></section>}
+      </div> : tab === "proposal" ? <OfficialProposalPanel proposals={detail.proposals} locale={locale} canManage={canManage} requestHref={requestHref} onRefresh={onRefresh} /> : tab === "production" ? <BrandProductionPanel items={detail.deliverables} locale={locale} canManage={canManage} requestHref={requestHref} artwork={campaign} onRefresh={onRefresh} /> : <section className={styles.panel}><PendingCampaignSection tab={tab} locale={locale} requestHref={requestHref} inboxHref={inboxHref} /></section>}
     </TabPanel></Tab>
     {canManage && ["DRAFT", "REVIEW"].includes(campaign.status) && <div className={styles.cancelArea}>{confirmCancel ? <SectionMessage variant="cautionary" description={t("취소하면 이 캠페인의 접수와 진행이 종료됩니다. 계속 진행하려면 취소하지 마세요.", "Canceling ends this campaign's intake. Keep it if you intend to continue.", "取消后此活动的受理将结束；如需继续，请保留活动。")}>{t("이 캠페인을 취소할까요?", "Cancel this campaign?", "取消此活动？")}<div className={styles.confirmActions}><Button variant="outlined" color="assistive" size="small" disabled={busy} onClick={() => setConfirmCancel(false)}>{t("유지하기", "Keep campaign", "保留活动")}</Button><Button color="negative" size="small" loading={busy} onClick={() => void cancelCampaign()}>{t("캠페인 취소", "Cancel campaign", "取消活动")}</Button></div></SectionMessage> : <Button variant="outlined" color="assistive" size="small" onClick={() => setConfirmCancel(true)}>{t("캠페인 취소", "Cancel campaign", "取消活动")}</Button>}{error && <SectionMessage variant="negative" role="alert" bottomButton={cancelNeedsRequest ? <Button as={Link} href={requestHref} size="small" variant="outlined" color="assistive">{t("취소 요청 남기기", "Request cancellation", "请求取消")}</Button> : <Button onClick={onRefresh} size="small" variant="outlined" color="assistive">{t("최신 상태 확인", "Refresh status", "刷新状态")}</Button>}>{error}</SectionMessage>}</div>}
   </>;

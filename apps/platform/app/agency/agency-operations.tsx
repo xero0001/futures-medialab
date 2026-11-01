@@ -845,7 +845,8 @@ function ProjectDetails({
             )}
           </p>
         )}
-        {canSubmit &&
+        {project.officialProduction && <p className="aop-muted">{t("Submit content for this approved proposal in the production panel above.", "이 캠페인의 공식 제안 콘텐츠는 위의 제작·제출 패널에서 제출해 주세요.", "请在上方制作与提交面板中提交此正式方案的内容。")}</p>}
+        {canSubmit && !project.officialProduction &&
         ["RECRUITING", "IN_PROGRESS", "VERIFYING", "SETTLING"].includes(
           project.campaignStatus,
         ) ? (

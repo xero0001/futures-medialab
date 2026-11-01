@@ -102,6 +102,7 @@ export type CampaignDetail = {
 };
 export type CampaignOperationsData = {
   campaignId: string;
+  officialProduction: boolean;
   status: string;
   regions: string[];
   categories: string[];

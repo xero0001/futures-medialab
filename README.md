@@ -299,8 +299,21 @@ also update the campaign-linked intake thread without sending external messages.
 and campaign APIs include published proposal summaries and details. Apply
 `20261102000000_add_official_proposals` before deploying either app.
 
-Brand production reviews, campaign performance and published brand documents
-still have no dedicated publication models, and their capabilities remain false.
+Brand production reviews use `ProductionItem`, `ProductionSubmission` and
+`ProductionMutation`. Full approval of the current official proposal creates
+production assignments without accepting a supplier application or signing a
+contract. Agencies submit versioned HTTPS references and notes; operators review
+the private source and either request revisions or explicitly release a separate
+brand-visible snapshot. Brand owners/admins approve that exact released version
+or request changes. Every resubmission goes through operator review again.
+Unreleased sources, supplier details and internal notes never enter brand DTOs.
+`GET/POST /api/{agency,admin,brand}/production` enforce session/tenant/role checks,
+optimistic revisions and idempotency. Legacy content submission/review writes are
+blocked for campaigns using official proposals. Apply
+`20261102010000_add_production_review` before deploying the updated apps.
+
+Campaign performance and published brand documents still have no dedicated
+publication models, and their capabilities remain false.
 The three composition cards save a preference; they do not calculate an anonymous
 lineup, price or projected reach. Supplier applications, submissions, contracts and
 settlements are never substituted for brand-facing artifacts. Proposal approval
@@ -314,6 +327,15 @@ resetting existing credentials, roles or subsequent demo decisions:
 ```bash
 node --experimental-strip-types apps/platform/scripts/seed-nte-proposals.mjs
 node --experimental-strip-types apps/platform/scripts/seed-nte-proposals.mjs --apply
+```
+
+The [NTE production walkthrough](docs/design/nte-production-demo.md) extends these
+accounts with six persisted production scenarios and official game artwork. It
+preserves existing proposal decisions and reuses the three fictional creators:
+
+```bash
+node --experimental-strip-types apps/platform/scripts/seed-nte-production.mjs
+node --experimental-strip-types apps/platform/scripts/seed-nte-production.mjs --apply
 ```
 
 ### Request handling and campaign operations

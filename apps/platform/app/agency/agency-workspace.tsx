@@ -7,6 +7,7 @@ import type { Locale } from "../_components/landing-copy";
 import { authClient } from "../../lib/auth-client";
 import { AgencyMarketplace } from "./agency-marketplace";
 import { AgencyOperations } from "./agency-operations";
+import { AgencyProductionWorkspace } from "./agency-production-workspace";
 import {
   agencyCopy,
   agencySections,
@@ -174,6 +175,8 @@ export function AgencyWorkspace({
                   onProjects={() => navigate("applications")}
                 />
               ) : !pending ? (
+                <>
+                {section === "projects" && <AgencyProductionWorkspace locale={locale} />}
                 <AgencyOperations
                   key={section}
                   locale={locale}
@@ -181,6 +184,7 @@ export function AgencyWorkspace({
                   onExplore={() => navigate("offers")}
                   onApplications={() => navigate("applications")}
                 />
+                </>
               ) : (
                 <section className="cwa-empty">
                   <ShieldCheck size={34} aria-hidden="true" />

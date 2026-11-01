@@ -59,6 +59,11 @@
 .campaignName:hover strong { color: var(--brand-blue); }
 .campaignIcon { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; background: var(--brand-blue-soft); color: var(--brand-blue); }
 .campaignIcon svg { width: 20px; height: 20px; }
+.campaignIcon img { display: block; border-radius: 10px; }
+.gameArtwork { margin: 0; overflow: hidden; border: 1px solid var(--brand-line); border-radius: 16px; background: var(--brand-soft); }
+.gameArtwork > img { display: block; width: 100%; height: clamp(180px, 25vw, 300px); object-fit: cover; object-position: center 45%; }
+.gameArtwork figcaption { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 10px 16px; font-size: 11px; line-height: 16px; color: var(--brand-muted); }
+.gameArtwork figcaption a { color: var(--brand-blue); }
 .money { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .nextStep { display: block; min-width: 105px; margin-bottom: 4px; }
 .schedule { display: flex; flex-direction: column; }

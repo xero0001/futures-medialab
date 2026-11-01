@@ -197,6 +197,7 @@ export default function CampaignOperations({
               <ApplicationOperations
                 key={`${application.id}:${application.contract?.version}:${application.settlement?.version}:${application.submissions[0]?.updatedAt}`}
                 application={application}
+                officialProduction={current.officialProduction}
                 editable={
                   [
                     "RECRUITING",
@@ -227,11 +228,13 @@ export default function CampaignOperations({
 
 function ApplicationOperations({
   application,
+  officialProduction,
   editable,
   busy,
   mutate,
 }: {
   application: Application;
+  officialProduction: boolean;
   editable: boolean;
   busy: boolean;
   mutate: Mutation;
@@ -333,7 +336,14 @@ function ApplicationOperations({
             {validation}
           </p>
         ) : null}
-        <h4>콘텐츠 검토</h4>
+        <h4>{officialProduction ? "기존 콘텐츠 기록" : "콘텐츠 검토"}</h4>
+        {officialProduction ? (
+          <p className="cop-notice">
+            공식 제안 기반 캠페인의 제작물 검토는 위의{" "}
+            <a href="#admin-production-review">제작·검수</a>에서 진행합니다.
+            아래 기록의 직접 승인 기능은 사용하지 않습니다.
+          </p>
+        ) : null}
         {application.submissions.length ? (
           application.submissions.map((submission, index) => (
             <div className="cop-submission" key={submission.id}>
@@ -360,6 +370,7 @@ function ApplicationOperations({
               ) : null}
               {index === 0 &&
               editable &&
+              !officialProduction &&
               !locked &&
               ["SUBMITTED", "PUBLISHED"].includes(submission.status) ? (
                 <div className="cop-actions">

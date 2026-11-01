@@ -9,6 +9,9 @@ import {
 import type { BrandProposalSummary } from "@futures-medialab/database/proposal-types";
 import { getAuth } from "./auth";
 import { campaignIdSchema } from "./campaign-validation";
+import { campaignArtwork } from "./campaign-artwork";
+import { listBrandProductionItems } from "@futures-medialab/database/production";
+import type { BrandProductionItem } from "@futures-medialab/database/production-types";
 import {
   brandBriefSchema,
   brandDraftBriefSchema,
@@ -50,7 +53,7 @@ const iso = (value: unknown) =>
 const capabilities: BrandWorkspaceCapabilities = {
   anonymousPreview: false,
   officialProposals: true,
-  productionReview: false,
+  productionReview: true,
   campaignPerformance: false,
   campaignDocuments: false,
 };
@@ -58,6 +61,7 @@ const campaignSelect = {
   id: true,
   title: true,
   summary: true,
+  coverImageUrl: true,
   type: true,
   status: true,
   budgetAmount: true,
@@ -105,7 +109,11 @@ function campaignDto(
   row: CampaignRow,
   requests: RequestRow[],
   latestProposal: BrandProposalSummary | null = null,
+  production: BrandProductionItem[] = [],
 ): BrandCampaign {
+  const currentProduction = latestProposal?.status === "APPROVED"
+    ? production.filter((item) => item.proposalId === latestProposal.id)
+    : [];
   const requirements = object(row.requirements);
   const brief = brandDraftBriefSchema.safeParse(requirements.brandBrief);
   const intake = object(requirements.brandIntake);
@@ -117,6 +125,7 @@ function campaignDto(
     id: row.id,
     title: row.title,
     summary: row.summary,
+    ...campaignArtwork(row.coverImageUrl, row.requirements),
     type: row.type,
     status: row.status,
     budgetAmount: row.budgetAmount?.toFixed(2) ?? null,
@@ -138,6 +147,14 @@ function campaignDto(
     requestId: row.status === "DRAFT" ? null : (intakeRequest?.id ?? null),
     reviewNote: string(object(requirements.adminReview).reason) || null,
     latestProposal,
+    productionSummary: {
+      total: currentProduction.length,
+      awaitingSubmission: currentProduction.filter((item) => item.status === "AWAITING_SUBMISSION").length,
+      underReview: currentProduction.filter((item) => item.status === "ADMIN_REVIEW").length,
+      awaitingBrand: currentProduction.filter((item) => item.status === "BRAND_REVIEW").length,
+      changesRequested: currentProduction.filter((item) => ["BRAND_REVISION", "AGENCY_REVISION"].includes(item.status)).length,
+      approved: currentProduction.filter((item) => item.status === "APPROVED").length,
+    },
   };
 }
 async function authenticated(request: Request) {
@@ -169,7 +186,7 @@ export function brandWorkspace(request: Request) {
       async (tx): Promise<BrandWorkspace> => {
         const member = await authorize(tx, session);
         const organizationId = member.organizationId;
-        const [campaigns, requests, links, groupedCampaigns, groupedRequests] =
+        const [campaigns, requests, links, groupedCampaigns, groupedRequests, waitingContentReviews] =
           await Promise.all([
             tx.campaign.findMany({
               where: { brandOrganizationId: organizationId },
@@ -207,6 +224,13 @@ export function brandWorkspace(request: Request) {
               where: { organizationId },
               _count: { _all: true },
             }),
+            tx.productionItem.count({
+              where: {
+                status: "BRAND_REVIEW",
+                campaign: { brandOrganizationId: organizationId, status: { in: ["IN_PROGRESS", "VERIFYING"] } },
+                proposalItem: { status: "APPROVED", proposal: { status: "APPROVED", publishedAt: { not: null }, supersededAt: null } },
+              },
+            }),
           ]);
         // Intake threads can be older than the inbox's latest 100 requests.
         const intakeIds = campaigns
@@ -221,12 +245,10 @@ export function brandWorkspace(request: Request) {
               select: requestSelect,
             })
           : [];
-        const proposals = await listBrandLatestProposals(
-          tx,
-          organizationId,
-          campaigns.slice(0, 100).map((campaign) => campaign.id),
-          member.role !== "MEMBER",
-        );
+        const [proposals, production] = await Promise.all([
+          listBrandLatestProposals(tx, organizationId, campaigns.slice(0, 100).map((campaign) => campaign.id), member.role !== "MEMBER"),
+          listBrandProductionItems(tx, organizationId, undefined, member.role !== "MEMBER"),
+        ]);
         const proposalSummaries = new Map(
           proposals.map((proposal) => [
             proposal.campaignId,
@@ -288,6 +310,7 @@ export function brandWorkspace(request: Request) {
                 campaign,
                 intakeRequests,
                 proposalSummaries.get(campaign.id) ?? null,
+                production.filter((item) => item.campaignId === campaign.id),
               ),
             ),
           requests: requests.slice(0, 100).map(requestDto),
@@ -297,6 +320,7 @@ export function brandWorkspace(request: Request) {
             createdAt: link.createdAt.toISOString(),
           })),
           counts: {
+            waitingContentReviews,
             pendingProposals: pendingProposalCount,
             campaigns: groupedCampaigns.reduce(
               (sum, group) => sum + group._count._all,
@@ -362,21 +386,20 @@ export function brandCampaignDetail(request: Request, id: string) {
           take: 1000,
           select: requestSelect,
         });
-        const proposals = await listBrandCampaignProposals(
-          tx,
-          member.organizationId,
-          campaign.id,
-          member.role !== "MEMBER",
-        );
+        const [proposals, production] = await Promise.all([
+          listBrandCampaignProposals(tx, member.organizationId, campaign.id, member.role !== "MEMBER"),
+          listBrandProductionItems(tx, member.organizationId, campaign.id, member.role !== "MEMBER"),
+        ]);
         return {
           campaign: campaignDto(
             campaign,
             requests,
             proposals[0] ? summarizeBrandProposal(proposals[0]) : null,
+            production,
           ),
           requests: requests.map(requestDto),
           proposals,
-          deliverables: [],
+          deliverables: production,
           performance: { status: "not_published", metrics: [] },
           documents: [],
           capabilities,

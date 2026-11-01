@@ -79,6 +79,8 @@ function fixture(options = {}) {
     events: [],
     writes: 0,
     reads: 0,
+    production: options.production ?? [],
+    proposals: options.proposals ?? [],
   };
   let memberCalls = 0;
   const forbidden = new Proxy(
@@ -151,6 +153,13 @@ function fixture(options = {}) {
       },
     },
     campaignProposal: { count: async () => 0 },
+    productionItem: { count: async ({ where }) => {
+      assert.equal(where.campaign.brandOrganizationId, "brand-own");
+      assert.equal(where.status, "BRAND_REVIEW");
+      assert.equal(where.proposalItem.proposal.status, "APPROVED");
+      assert.equal(where.proposalItem.proposal.supersededAt, null);
+      return store.production.filter(item => item.status === "BRAND_REVIEW" && store.campaigns.some(campaign => campaign.id === item.campaignId && where.campaign.status.in.includes(campaign.status)) && store.proposals.some(proposal => proposal.id === item.proposalId && proposal.status === "APPROVED" && !proposal.supersededAt)).length;
+    } },
     creatorDirectoryEntry: forbidden,
     creatorProfile: forbidden,
     campaignApplication: forbidden,
@@ -282,9 +291,19 @@ function fixture(options = {}) {
   const api = compile("lib/brand-workspace.ts", {
     "server-only": {},
     "@futures-medialab/database/proposals": {
-      listBrandLatestProposals: async () => [],
-      listBrandCampaignProposals: async () => [],
+      listBrandLatestProposals: async () => store.proposals.filter(proposal => !proposal.supersededAt),
+      listBrandCampaignProposals: async (_tx, organizationId, campaignId) => {
+        assert.equal(organizationId, "brand-own");
+        return store.proposals.filter(proposal => proposal.campaignId === campaignId);
+      },
       summarizeBrandProposal: (proposal) => proposal,
+    },
+    "@futures-medialab/database/production": {
+      listBrandProductionItems: async (_tx, organizationId, campaignId, canManage) => {
+        assert.equal(organizationId, "brand-own");
+        assert.equal(canManage, member.role !== "MEMBER");
+        return store.production.filter(item => !campaignId || item.campaignId === campaignId);
+      },
     },
     "@futures-medialab/database": {
       getDatabase: () => database,
@@ -518,6 +537,54 @@ test("strict input rejects extra identity fields, impossible dates and stale dea
     );
     assert.equal(store.writes, 0);
   }
+});
+
+test("production summaries count current approved work without making MEMBER review counts disappear", async () => {
+  const { api, store, member } = fixture();
+  const created = await (await api.mutateBrandCampaign(request(input()))).json();
+  store.campaigns[0].status = "IN_PROGRESS";
+  store.proposals.push({ id: "proposal-current", campaignId: created.id, status: "APPROVED", items: [], expiresAt: null }, { id: "proposal-old", campaignId: created.id, status: "APPROVED", items: [], supersededAt: new Date() });
+  store.production.push(
+    { id: "review-current", campaignId: created.id, proposalId: "proposal-current", status: "BRAND_REVIEW" },
+    { id: "approved-current", campaignId: created.id, proposalId: "proposal-current", status: "APPROVED" },
+    { id: "review-old", campaignId: created.id, proposalId: "proposal-old", status: "BRAND_REVIEW" },
+  );
+  for (const role of ["OWNER", "MEMBER"]) {
+    member.role = role;
+    const response = await api.brandWorkspace(request());
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.counts.waitingContentReviews, 1);
+    assert.deepEqual(body.campaigns[0].productionSummary, { total: 2, awaitingSubmission: 0, underReview: 0, awaitingBrand: 1, changesRequested: 0, approved: 1 });
+    assert.equal(body.capabilities.productionReview, true);
+    assert.equal(body.permissions.canManageCampaigns, role !== "MEMBER");
+  }
+  store.campaigns[0].status = "COMPLETED";
+  assert.equal((await (await api.brandWorkspace(request())).json()).counts.waitingContentReviews, 0);
+});
+
+test("campaign artwork exposes only approved local demo assets, never arbitrary image or source URLs", async () => {
+  const { api, store } = fixture();
+  const created = await (await api.mutateBrandCampaign(request(input()))).json();
+  const campaign = store.campaigns[0];
+  campaign.coverImageUrl = "https://attacker.example/collect";
+  campaign.requirements.game = { name: "Game", iconUrl: "https://attacker.example/icon", sourceUrl: "javascript:alert(1)" };
+  const read = async () => (await (await api.brandCampaignDetail(request(), created.id)).json()).campaign;
+  assert.equal((await read()).coverImageUrl, null);
+  Object.assign(campaign.requirements, { demo: true, seed: "official-proposals-nte-v1" });
+  const unsafe = await read();
+  assert.equal(unsafe.coverImageUrl, null);
+  assert.equal(unsafe.gameIconUrl, null);
+  assert.equal(unsafe.gameSourceUrl, null);
+  campaign.coverImageUrl = "/demo/nte/city-key-art.jpg";
+  campaign.requirements.game.iconUrl = "/demo/nte/game-icon.png";
+  campaign.requirements.game.sourceUrl = "https://nte.perfectworld.com/kr/";
+  const allowed = await read();
+  assert.equal(allowed.coverImageUrl, campaign.coverImageUrl);
+  assert.equal(allowed.gameIconUrl, "/demo/nte/game-icon.png");
+  assert.equal(allowed.gameSourceUrl, "https://nte.perfectworld.com/kr/");
+  delete campaign.requirements.seed;
+  assert.equal((await read()).coverImageUrl, null);
 });
 
 test("title-only drafts roundtrip blanks without a budget, deadline, intake or fake brief", async () => {

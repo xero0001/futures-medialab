@@ -16,6 +16,7 @@ export type AgencyProject = {
   campaignId: string;
   campaignTitle: string;
   campaignStatus: string;
+  officialProduction: boolean;
   platforms: string[];
   contentDeadline: string | null;
   proposedAmount: string | null;

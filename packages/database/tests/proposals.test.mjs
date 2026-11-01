@@ -112,6 +112,7 @@ function fixture() {
     },
   ];
   const store = {
+    productionItems: [],
     proposals: [],
     items: [],
     decisions: [],
@@ -152,6 +153,15 @@ function fixture() {
       ],
     },
   };
+  Object.defineProperty(store.campaign, "proposals", {
+    enumerable: true,
+    get: () =>
+      store.proposals
+        .filter((p) => p.publishedAt)
+        .sort((a, b) => b.version - a.version)
+        .slice(0, 1)
+        .map((p) => ({ id: p.id })),
+  });
   const match = (value, condition) => {
     if (condition === undefined) return true;
     if (
@@ -277,7 +287,30 @@ function fixture() {
         return { count: rows.length };
       },
     },
+    productionItem: {
+      create: async ({ data }) => {
+        const row = { id: `production-${++sequence}`, ...data };
+        store.productionItems.push(row);
+        return row;
+      },
+    },
     proposalItem: {
+      findMany: async ({ where }) =>
+        store.items
+          .filter(
+            (i) =>
+              i.status === where.status &&
+              store.proposals.some(
+                (p) => p.id === i.proposalId && matches(p, where.proposal),
+              ),
+          )
+          .map((i) => ({
+            ...i,
+            productionItem:
+              store.productionItems.find((p) => p.proposalItemId === i.id) ??
+              null,
+            supplierOrganization: null,
+          })),
       deleteMany: async ({ where }) => {
         store.items = store.items.filter(
           (i) => i.proposalId !== where.proposalId,
@@ -614,6 +647,11 @@ test("partial and all-item approval persist decisions, only full approval advanc
   assert.equal(final.status, "APPROVED");
   assert.equal(final.canRespond, false);
   assert.equal(f.store.campaign.status, "IN_PROGRESS");
+  assert.equal(
+    f.store.productionItems.length,
+    2,
+    "Full proposal approval creates one production item per approved item",
+  );
   assert.equal(f.store.request.status, "RESOLVED");
   assert.equal(f.store.decisions.length, 2);
 });

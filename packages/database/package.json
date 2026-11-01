@@ -10,7 +10,11 @@
     "./proposal-types": "./src/proposal-types.ts",
     "./proposal-validation": "./src/proposal-validation.ts",
     "./proposals": "./src/proposals.ts",
-    "./proposal-http": "./src/proposal-http.ts"
+    "./proposal-http": "./src/proposal-http.ts",
+    "./production-types": "./src/production-types.ts",
+    "./production-validation": "./src/production-validation.ts",
+    "./production": "./src/production.ts",
+    "./production-http": "./src/production-http.ts"
   },
   "scripts": {
     "build": "prisma generate && tsup src/client.ts --format esm --dts",

@@ -15,6 +15,7 @@ const campaignSelect = {
   contentDeadline: true,
   requirements: true,
   brandOrganizationId: true,
+  _count: { select: { proposals: true } },
 } satisfies Prisma.CampaignSelect;
 const submissionSelect = {
   id: true,
@@ -178,7 +179,7 @@ export async function agencyOperations(request: Request) {
         },
         projects: ownProjects.map((row) => ({
           id: row.id, campaignId: row.campaignId, campaignTitle: text(row.campaign.title, 160),
-          campaignStatus: row.campaign.status, platforms: row.campaign.platforms.slice(0, 6), contentDeadline: date(row.campaign.contentDeadline),
+          campaignStatus: row.campaign.status, officialProduction: row.campaign._count.proposals > 0, platforms: row.campaign.platforms.slice(0, 6), contentDeadline: date(row.campaign.contentDeadline),
           proposedAmount: row.proposedAmount?.toFixed(2) ?? null, currency: row.currency,
           createdAt: row.createdAt.toISOString(), updatedAt: row.updatedAt.toISOString(), isDemo: isDemoCampaign(row.campaign),
           creators: row.creators.filter(({ creator }) => creator.agencyOrganizationId === organizationId).map(({ creator }) => ({

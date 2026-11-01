@@ -30,6 +30,7 @@ function fixture(options = {}) {
     session: { findFirst: async () => options.revoked ? null : { id: "session-own" } },
     organizationMember: { findFirst: async (query) => { calls.push(["member", query]); return options.noMember ? null : { organizationId: "agency-own", role: options.role ?? "OWNER", organization: { status: options.orgStatus ?? "ACTIVE", metadata: options.incomplete ? {} : { testWorkspaceAccess: true } } }; } },
     campaignApplication: { findFirst: async (query) => { calls.push(["application", query]); return options.foreign ? null : app; } },
+    campaignProposal: { count: async ({ where }) => { assert.equal(where.campaignId, app.campaignId); return options.officialProposal ? 1 : 0; } },
     contentSubmission: { create: async (query) => { calls.push(["create", query]); return { id: "new-content", ...query.data }; }, update: async (query) => { calls.push(["update", query]); return { ...latest, ...query.data }; } },
     auditLog: { create: async (query) => { calls.push(["audit", query]); return query.data; } },
   };
@@ -73,6 +74,15 @@ test("first draft is persisted as SUBMITTED, versioned and audited; organization
   const row = f.calls.find(([name]) => name === "create")[1].data;
   assert.equal(row.status, "SUBMITTED"); assert.equal(row.version, 1); assert.equal(row.draftUrl, input.url); assert.equal("publishedUrl" in row, false);
   assert.equal(f.calls.find(([name]) => name === "audit")[1].data.action, "content.submitDraft");
+});
+test("official proposal content cannot bypass the production release and brand-review workflow", async () => {
+  for (const action of ["submitDraft", "publishContent"]) {
+    const f = fixture({ officialProposal: true, application: { submissions: action === "publishContent" ? [latest] : [] } });
+    const response = await f.run({ ...input, action, ...(action === "publishContent" ? { expectedSubmissionId: latest.id, expectedUpdatedAt: stamp } : {}) });
+    assert.equal(response.status, 409);
+    assert.equal((await response.json()).code, "OFFICIAL_PRODUCTION_REQUIRED");
+    assert.equal(f.calls.some(([name]) => ["create", "update", "audit"].includes(name)), false);
+  }
 });
 test("stale versions and duplicate review-pending drafts conflict without writes", async () => {
   const prior = { ...latest, status: "SUBMITTED" };

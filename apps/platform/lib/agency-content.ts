@@ -30,6 +30,8 @@ export function submitAgencyContent(request: Request) {
         select: { id: true, status: true, campaignId: true, campaign: { select: { status: true, requirements: true, brandOrganizationId: true, brandOrganization: { select: { status: true } } } },
           submissions: { orderBy: { version: "desc" }, take: 1 }, settlement: { select: { status: true } } } });
       if (!application || !canAccessCampaign(application.campaign, testAccess)) fail(404, "NOT_FOUND", "Project not found.");
+      if (await tx.campaignProposal.count({ where: { campaignId: application.campaignId } }))
+        fail(409, "OFFICIAL_PRODUCTION_REQUIRED", "공식 제안 캠페인은 제작·검수에서 콘텐츠를 제출해 주세요.");
       if (application.status !== "ACCEPTED" || !["RECRUITING", "IN_PROGRESS", "VERIFYING", "SETTLING"].includes(application.campaign.status) || application.campaign.brandOrganization.status !== "ACTIVE")
         fail(409, "INVALID_STATE", "Content can only be submitted to active selected projects.");
       if (application.settlement && ["APPROVED", "PROCESSING", "PAID"].includes(application.settlement.status))

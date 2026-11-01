@@ -33,7 +33,7 @@ export function campaignOperations(request: Request) {
       const campaign = await tx.campaign.findUnique({ where: { id: campaignId }, select: {
         id: true, status: true, regions: true, categories: true, followerMin: true, followerMax: true,
         briefUrl: true, contentDeadline: true, requirements: true, settlementPolicy: true, managedRequest: true,
-        _count: { select: { applications: true } },
+        _count: { select: { applications: true, proposals: true } },
         applications: { orderBy: [{ createdAt: "desc" }, { id: "asc" }], take: 100, select: {
           id: true, status: true, agencyOrganizationId: true, proposal: true, proposedAmount: true, currency: true,
           agencyOrganization: { select: { name: true } }, rosterSnapshot: true,
@@ -44,7 +44,7 @@ export function campaignOperations(request: Request) {
       } });
       if (!campaign) fail(404, "NOT_FOUND", "캠페인을 찾을 수 없습니다.");
       return {
-        campaignId, status: campaign.status, regions: campaign.regions, categories: campaign.categories,
+        campaignId, officialProduction: campaign._count.proposals > 0, status: campaign.status, regions: campaign.regions, categories: campaign.categories,
         followerMin: campaign.followerMin, followerMax: campaign.followerMax,
         briefUrl: safeOperationUrl(campaign.briefUrl), contentDeadline: date(campaign.contentDeadline),
         requirements: campaign.requirements, settlementPolicy: campaign.settlementPolicy, managedRequest: campaign.managedRequest,
@@ -99,6 +99,8 @@ export function mutateCampaignOperations(request: Request) {
       let entityType = "CampaignApplication", entityId = application.id;
       let before: Prisma.InputJsonValue = {}, after: Prisma.InputJsonValue = {};
       if (input.action === "reviewContent") {
+        if (await tx.campaignProposal.count({ where: { campaignId: application.campaignId } }))
+          fail(409, "OFFICIAL_PRODUCTION_REQUIRED", "공식 제안 캠페인은 제작·검수에서 브랜드 승인 절차를 진행해 주세요.");
         const current = application.submissions[0];
         if (!current || current.id !== input.submissionId || current.updatedAt.toISOString() !== input.expectedUpdatedAt)
           fail(409, "CONFLICT", "최신 제출 내역을 새로고침한 후 검토하세요.");

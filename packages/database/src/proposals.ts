@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { ensureCampaignProductionItems } from "@futures-medialab/database/production";
 import { getDatabase, Prisma } from "@futures-medialab/database";
 import {
   adminProposalMutationSchema,
@@ -1068,11 +1069,13 @@ export async function applyBrandProposalDecision(
     select: { id: true, brandOrganizationId: true, requirements: true },
   });
   if (!campaign) proposalFail(404, "NOT_FOUND", "캠페인을 찾을 수 없습니다.");
-  if (aggregate === "APPROVED")
+  if (aggregate === "APPROVED") {
     await tx.campaign.update({
       where: { id: campaign.id },
       data: { status: "IN_PROGRESS" },
     });
+    await ensureCampaignProductionItems(tx, campaign.id, actor.userId);
+  }
   const label =
     input.decision === "APPROVE"
       ? "승인"
