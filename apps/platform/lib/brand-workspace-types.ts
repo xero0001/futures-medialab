@@ -1,6 +1,7 @@
 import type { WorkspaceAccount, WorkspaceLink } from "./workspace-types";
 import type { CampaignArtwork } from "./campaign-artwork";
 import type { BrandProductionItem } from "@futures-medialab/database/production-types";
+import type { BrandReportingItem } from "@futures-medialab/database/reporting-types";
 import type {
   BrandProposal,
   BrandProposalSummary,
@@ -47,6 +48,7 @@ export type BrandCampaign = CampaignArtwork & {
   reviewNote: string | null;
   latestProposal: BrandProposalSummary | null;
   productionSummary: { total: number; awaitingSubmission: number; underReview: number; awaitingBrand: number; changesRequested: number; approved: number };
+  reportingSummary: { total: number; published: number; pending: number; allMetricsPending: number };
 };
 export type BrandRequestSummary = {
   id: string;
@@ -64,7 +66,7 @@ export type BrandWorkspaceCapabilities = {
   anonymousPreview: false;
   officialProposals: boolean;
   productionReview: boolean;
-  campaignPerformance: false;
+  campaignPerformance: boolean;
   campaignDocuments: false;
 };
 export type BrandWorkspace = {
@@ -92,7 +94,7 @@ export type BrandCampaignDetail = {
   requests: BrandRequestSummary[];
   proposals: BrandProposal[];
   deliverables: BrandProductionItem[];
-  performance: { status: "not_published"; metrics: never[] };
+  performance: { items: BrandReportingItem[] };
   documents: never[];
   capabilities: BrandWorkspaceCapabilities;
 };

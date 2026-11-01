@@ -32,6 +32,7 @@
 .actionBar { padding: 20px 24px; border-top: 1px solid var(--semantic-line-neutral-secondaryOpaque); display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; }
 .actionBar > p { margin-right: auto; align-self: center; }
 .feedback { margin: 0 24px 24px; }
+.pendingNotice { padding: 20px 24px; }
 .empty { display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; padding: 44px 24px; border: 1px solid var(--semantic-line-neutral-secondaryOpaque); border-radius: 16px; }
 .empty > svg { color: var(--semantic-foreground-neutral-tertiary); width: 32px; height: 32px; }
 .empty p { max-width: 520px; }
@@ -49,7 +50,7 @@
 .artwork figcaption a { color: var(--semantic-foreground-brand-primary); }
 .loading { display: flex; flex-direction: column; gap: 16px; }
 .toolbar { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 16px; }
-.formActions { display: flex; justify-content: flex-end; }
+.formActions { display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
 .released { border-top: 1px solid var(--semantic-line-neutral-secondaryOpaque); background: var(--semantic-surface-neutral-secondary); }
 .agencyWorkspace { margin-bottom: 32px; }
 @media (max-width: 600px) { .toolbar { grid-template-columns: minmax(0, 1fr); } }

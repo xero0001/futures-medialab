@@ -1,0 +1,31 @@
+.muted { color: var(--semantic-foreground-neutral-secondary); }
+.snapshot { display: flex; flex-direction: column; align-items: stretch; gap: 18px; padding: 24px; min-width: 0; }
+.snapshot h3, .snapshot p, .totals p, .totals h2 { margin: 0; }
+.snapshot h3, .note { overflow-wrap: anywhere; }
+.note { white-space: pre-wrap; line-height: 1.75; }
+.link { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--semantic-foreground-brand-primary) !important; text-decoration: none; }
+.link svg { width: 16px; height: 16px; }
+.link:hover { text-decoration: underline; }
+.links { display: flex; gap: 18px; flex-wrap: wrap; }
+.dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 0; }
+.dates dt, .metrics dt { font-size: 12px; line-height: 18px; color: var(--semantic-foreground-neutral-secondary); }
+.dates dd { margin: 5px 0 0; font-size: 13px; line-height: 20px; }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 12px; margin: 0; padding: 20px 0; border-block: 1px solid var(--semantic-line-neutral-secondaryOpaque); }
+.metrics > div { min-width: 0; }
+.metrics dd { margin: 6px 0 0; font-size: 18px; font-weight: 600; line-height: 26px; overflow-wrap: anywhere; }
+.unknown { font-size: 13px; font-weight: 400; color: var(--semantic-foreground-neutral-secondary); }
+.totals { border: 1px solid var(--semantic-line-neutral-secondaryOpaque); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+.summaryHeading { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.totalGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+.totalGrid > div { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.totalGrid strong { overflow-wrap: anywhere; }
+.fieldGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.metricInputs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.metricFieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.metricFieldset legend { margin-bottom: 10px; font-size: 14px; font-weight: 600; }
+.metricFieldset > p { margin-bottom: 16px; }
+.compare .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.compare .dates { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 1100px) { .metricInputs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .snapshot, .totals { padding: 20px; } .totalGrid, .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .fieldGrid, .dates { grid-template-columns: minmax(0, 1fr); } }

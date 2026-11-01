@@ -14,7 +14,11 @@
     "./production-types": "./src/production-types.ts",
     "./production-validation": "./src/production-validation.ts",
     "./production": "./src/production.ts",
-    "./production-http": "./src/production-http.ts"
+    "./production-http": "./src/production-http.ts",
+    "./reporting-types": "./src/reporting-types.ts",
+    "./reporting-validation": "./src/reporting-validation.ts",
+    "./reporting": "./src/reporting.ts",
+    "./reporting-http": "./src/reporting-http.ts"
   },
   "scripts": {
     "build": "prisma generate && tsup src/client.ts --format esm --dts",

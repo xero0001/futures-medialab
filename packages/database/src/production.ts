@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { ensureCampaignReportingItems } from "@futures-medialab/database/reporting";
 import { getDatabase, Prisma } from "@futures-medialab/database";
 import {
   adminProductionMutationSchema,
@@ -883,6 +884,8 @@ export async function applyBrandProductionMutation(
   });
   if (changed.count !== 1)
     productionFail(409, "STALE_PRODUCTION", "이미 검수 결과가 기록되었습니다.");
+  if (input.action === "approve")
+    await ensureCampaignReportingItems(tx, row.campaignId, actor.userId);
   await audit(tx, actor.userId, `production.brand_${input.action}`, row.id, {
     campaignId: row.campaignId,
     submissionId: latest.id,

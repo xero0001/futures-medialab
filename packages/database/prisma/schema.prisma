@@ -137,9 +137,12 @@ model User {
   proposalDecisions     ProposalDecision[]
   productionAssignments ProductionItem[] @relation("ProductionAssigner")
   productionSubmissions ProductionSubmission[] @relation("ProductionSubmitter")
+  reportingSubmissions ReportingSubmission[] @relation("ReportingSubmitter")
+  reviewedReporting ReportingSubmission[] @relation("ReportingReviewer")
   reviewedProduction ProductionSubmission[] @relation("ProductionReviewer")
   decidedProduction ProductionSubmission[] @relation("ProductionBrandReviewer")
   productionMutations ProductionMutation[]
+  reportingMutations ReportingMutation[]
   proposalMutations     ProposalMutation[]
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
@@ -296,6 +299,8 @@ model Campaign {
   proposals           CampaignProposal[]
   productionItems ProductionItem[]
   productionMutations ProductionMutation[]
+  reportingItems ReportingItem[]
+  reportingMutations ReportingMutation[]
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
 
@@ -700,6 +705,7 @@ model ProductionItem {
   assignedBy User? @relation("ProductionAssigner", fields: [assignedById], references: [id], onDelete: Restrict)
   submissions ProductionSubmission[]
   mutations ProductionMutation[]
+  reportingItem ReportingItem?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([campaignId, status])
@@ -747,6 +753,78 @@ model ProductionMutation {
   actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   productionItem ProductionItem? @relation(fields: [productionItemId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([actorId, clientRequestId])
+  @@index([campaignId])
+}
+
+
+// Posted links and performance are reviewed before brand publication.
+enum ReportingStatus {
+  AWAITING_SUBMISSION
+  ADMIN_REVIEW
+  AGENCY_REVISION
+  PUBLISHED
+}
+model ReportingItem {
+  id String @id @default(cuid())
+  campaignId String
+  productionItemId String @unique
+  status ReportingStatus @default(AWAITING_SUBMISSION)
+  revision Int @default(0)
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  productionItem ProductionItem @relation(fields: [productionItemId], references: [id], onDelete: Cascade)
+  submissions ReportingSubmission[]
+  mutations ReportingMutation[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([campaignId, status])
+}
+model ReportingSubmission {
+  id String @id @default(cuid())
+  reportingItemId String
+  version Int
+  status ReportingStatus @default(ADMIN_REVIEW)
+  sourceTitle String
+  sourcePostUrl String @db.Text
+  sourcePublishedAt DateTime
+  sourceMetricsAsOf DateTime?
+  sourceMetrics Json
+  sourceEvidenceUrl String? @db.Text
+  sourceNote String @default("") @db.Text
+  submittedById String
+  submittedAt DateTime @default(now())
+  adminReviewedById String?
+  adminReviewedAt DateTime?
+  agencyFeedback String @default("") @db.Text
+  internalNote String @default("") @db.Text
+  releasedTitle String?
+  releasedPostUrl String? @db.Text
+  releasedPublishedAt DateTime?
+  releasedMetricsAsOf DateTime?
+  releasedMetrics Json?
+  releasedEvidenceUrl String? @db.Text
+  releasedNote String? @db.Text
+  releasedAt DateTime?
+  reportingItem ReportingItem @relation(fields: [reportingItemId], references: [id], onDelete: Cascade)
+  submittedBy User @relation("ReportingSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
+  adminReviewedBy User? @relation("ReportingReviewer", fields: [adminReviewedById], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([reportingItemId, version])
+  @@index([reportingItemId, releasedAt])
+}
+model ReportingMutation {
+  id String @id @default(cuid())
+  actorId String
+  clientRequestId String
+  action String
+  payloadHash String
+  campaignId String
+  reportingItemId String?
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  reportingItem ReportingItem? @relation(fields: [reportingItemId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   @@unique([actorId, clientRequestId])
   @@index([campaignId])

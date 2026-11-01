@@ -245,7 +245,7 @@ cannot enter the workspace or mutate its data.
 | `/advertiser` | Organization campaign totals, active campaigns, request status and managed/open intake entry points |
 | `/advertiser/campaign` | Real campaign list, status filters and title/brief search |
 | `/advertiser/campaign/new` | Brief, composition preference and managed/open request; partial drafts and versioned draft editing |
-| `/advertiser/campaign/[id]` | Saved brief, dates, budget, status, related requests and published official proposals with item decisions; production/performance/documents remain pending |
+| `/advertiser/campaign/[id]` | Saved brief, published official proposals, versioned production review, and operator-published posting/performance reports; documents remain pending |
 | `/advertiser/library` | Campaign document entry points; empty until brand-facing documents are published |
 | `/storage/search` and all variants | Retired; approved brands redirect to campaign management |
 | `/storage/similar-search` and `/storage/similar-brands` | Retired recommendations; same redirect |
@@ -312,8 +312,20 @@ optimistic revisions and idempotency. Legacy content submission/review writes ar
 blocked for campaigns using official proposals. Apply
 `20261102010000_add_production_review` before deploying the updated apps.
 
-Campaign performance and published brand documents still have no dedicated
-publication models, and their capabilities remain false.
+Posting and performance reports use `ReportingItem`, `ReportingSubmission` and
+`ReportingMutation`. Brand content approval prepares the reporting task; agencies
+register a posted HTTPS link, publication/measurement times and nullable metrics.
+Operators request revisions or explicitly release a separate public snapshot.
+Updates require review again and preserve the previous brand-visible version.
+`GET/POST /api/{agency,admin}/reporting` and read-only `GET /api/brand/reporting`
+enforce the same organization, session, revision and idempotency boundaries.
+Zero and unknown metrics remain distinct; totals use each item's latest public
+snapshot once, and reach is not summed. Apply `20261102020000_add_post_reporting`
+before deployment. The [NTE reporting demo](docs/design/nte-reporting-demo.md)
+adds six marked scenarios with official reference links and fictional metrics.
+
+`campaignPerformance` is enabled. Published brand documents still have no
+dedicated publication model and their capability remains false.
 The three composition cards save a preference; they do not calculate an anonymous
 lineup, price or projected reach. Supplier applications, submissions, contracts and
 settlements are never substituted for brand-facing artifacts. Proposal approval

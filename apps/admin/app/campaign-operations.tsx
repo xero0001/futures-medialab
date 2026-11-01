@@ -1,5 +1,6 @@
 "use client";
 import { AdminButton } from "./_components/admin-button";
+import { ReportingReview } from "./reporting-review";
 
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { ExternalLink, RefreshCw } from "lucide-react";
@@ -115,114 +116,120 @@ export default function CampaignOperations({
   }
   const current = data?.campaignId === campaignId ? data : null;
   return (
-    <section
-      className="cop"
-      aria-label="캠페인 상세 운영"
-      aria-busy={loading || busy}
-    >
-      <div className="cop-heading">
-        <div>
-          <h3>심사 자료 · 프로젝트 운영</h3>
-          <p>공급 파트너의 신청 자료와 콘텐츠·정산 운영 기록을 확인합니다.</p>
-        </div>
-        <AdminButton
-          type="button"
-          disabled={loading || busy}
-          onClick={() => {
-            setLoading(true);
-            setRefresh((value) => value + 1);
-          }}
-        >
-          <RefreshCw size={16} aria-hidden="true" /> 새로고침
-        </AdminButton>
-      </div>
-      {error ? (
-        <p className="cop-error" role="alert">
-          {error}
-        </p>
-      ) : null}
-      {message ? (
-        <p className="cop-message" role="status">
-          {message}
-        </p>
-      ) : null}
-      {loading ? <p role="status">운영 내역을 불러오는 중입니다…</p> : null}
-      {current ? (
-        <>
-          <dl className="cop-context">
-            <div>
-              <dt>대상 지역</dt>
-              <dd>{current.regions.join(", ") || "미지정"}</dd>
-            </div>
-            <div>
-              <dt>카테고리</dt>
-              <dd>{current.categories.join(", ") || "미지정"}</dd>
-            </div>
-            <div>
-              <dt>팔로워 조건</dt>
-              <dd>
-                {current.followerMin?.toLocaleString() ?? "제한 없음"} ~{" "}
-                {current.followerMax?.toLocaleString() ?? "제한 없음"}
-              </dd>
-            </div>
-            <div>
-              <dt>콘텐츠 마감</dt>
-              <dd>{date(current.contentDeadline)}</dd>
-            </div>
-          </dl>
-          <div className="cop-links">
-            <Reference href={current.briefUrl}>캠페인 브리프 열기</Reference>
+    <>
+      <ReportingReview
+        key={`reporting:${campaignId}`}
+        campaignId={campaignId}
+      />
+      <section
+        className="cop"
+        aria-label="캠페인 상세 운영"
+        aria-busy={loading || busy}
+      >
+        <div className="cop-heading">
+          <div>
+            <h3>심사 자료 · 프로젝트 운영</h3>
+            <p>공급 파트너의 신청 자료와 콘텐츠·정산 운영 기록을 확인합니다.</p>
           </div>
-          <details className="cop-source">
-            <summary>세부 요구사항 · 정산 조건 · 운영 요청</summary>
-            <div className="cop-source-grid">
-              {[
-                ["요구사항", current.requirements],
-                ["정산 조건", current.settlementPolicy],
-                ["운영 요청", current.managedRequest],
-              ].map(([label, value]) => (
-                <div key={String(label)}>
-                  <h4>{String(label)}</h4>
-                  <pre>{stringify(value)}</pre>
-                </div>
-              ))}
-            </div>
-          </details>
-          <p className="cop-notice">
-            계약은 외부에서 합의한 문서의 참고 기록입니다. 정산은 내부 검토
-            기록이며 전자서명·송금·지급 완료 처리는 제공하지 않습니다.
+          <AdminButton
+            type="button"
+            disabled={loading || busy}
+            onClick={() => {
+              setLoading(true);
+              setRefresh((value) => value + 1);
+            }}
+          >
+            <RefreshCw size={16} aria-hidden="true" /> 새로고침
+          </AdminButton>
+        </div>
+        {error ? (
+          <p className="cop-error" role="alert">
+            {error}
           </p>
-          {current.applications.length ? (
-            current.applications.map((application) => (
-              <ApplicationOperations
-                key={`${application.id}:${application.contract?.version}:${application.settlement?.version}:${application.submissions[0]?.updatedAt}`}
-                application={application}
-                officialProduction={current.officialProduction}
-                editable={
-                  [
-                    "RECRUITING",
-                    "IN_PROGRESS",
-                    "VERIFYING",
-                    "SETTLING",
-                  ].includes(current.status) &&
-                  application.status === "ACCEPTED"
-                }
-                busy={busy || loading}
-                mutate={mutate}
-              />
-            ))
-          ) : (
-            <p className="cop-empty">아직 접수된 신청이 없습니다.</p>
-          )}
-          {current.totalApplications > current.applications.length ? (
-            <p>
-              최근 {current.applications.length}건 / 전체{" "}
-              {current.totalApplications}건을 표시합니다.
+        ) : null}
+        {message ? (
+          <p className="cop-message" role="status">
+            {message}
+          </p>
+        ) : null}
+        {loading ? <p role="status">운영 내역을 불러오는 중입니다…</p> : null}
+        {current ? (
+          <>
+            <dl className="cop-context">
+              <div>
+                <dt>대상 지역</dt>
+                <dd>{current.regions.join(", ") || "미지정"}</dd>
+              </div>
+              <div>
+                <dt>카테고리</dt>
+                <dd>{current.categories.join(", ") || "미지정"}</dd>
+              </div>
+              <div>
+                <dt>팔로워 조건</dt>
+                <dd>
+                  {current.followerMin?.toLocaleString() ?? "제한 없음"} ~{" "}
+                  {current.followerMax?.toLocaleString() ?? "제한 없음"}
+                </dd>
+              </div>
+              <div>
+                <dt>콘텐츠 마감</dt>
+                <dd>{date(current.contentDeadline)}</dd>
+              </div>
+            </dl>
+            <div className="cop-links">
+              <Reference href={current.briefUrl}>캠페인 브리프 열기</Reference>
+            </div>
+            <details className="cop-source">
+              <summary>세부 요구사항 · 정산 조건 · 운영 요청</summary>
+              <div className="cop-source-grid">
+                {[
+                  ["요구사항", current.requirements],
+                  ["정산 조건", current.settlementPolicy],
+                  ["운영 요청", current.managedRequest],
+                ].map(([label, value]) => (
+                  <div key={String(label)}>
+                    <h4>{String(label)}</h4>
+                    <pre>{stringify(value)}</pre>
+                  </div>
+                ))}
+              </div>
+            </details>
+            <p className="cop-notice">
+              계약은 외부에서 합의한 문서의 참고 기록입니다. 정산은 내부 검토
+              기록이며 전자서명·송금·지급 완료 처리는 제공하지 않습니다.
             </p>
-          ) : null}
-        </>
-      ) : null}
-    </section>
+            {current.applications.length ? (
+              current.applications.map((application) => (
+                <ApplicationOperations
+                  key={`${application.id}:${application.contract?.version}:${application.settlement?.version}:${application.submissions[0]?.updatedAt}`}
+                  application={application}
+                  officialProduction={current.officialProduction}
+                  editable={
+                    [
+                      "RECRUITING",
+                      "IN_PROGRESS",
+                      "VERIFYING",
+                      "SETTLING",
+                    ].includes(current.status) &&
+                    application.status === "ACCEPTED"
+                  }
+                  busy={busy || loading}
+                  mutate={mutate}
+                />
+              ))
+            ) : (
+              <p className="cop-empty">아직 접수된 신청이 없습니다.</p>
+            )}
+            {current.totalApplications > current.applications.length ? (
+              <p>
+                최근 {current.applications.length}건 / 전체{" "}
+                {current.totalApplications}건을 표시합니다.
+              </p>
+            ) : null}
+          </>
+        ) : null}
+      </section>
+    </>
   );
 }
 

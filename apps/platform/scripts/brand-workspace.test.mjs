@@ -81,6 +81,7 @@ function fixture(options = {}) {
     reads: 0,
     production: options.production ?? [],
     proposals: options.proposals ?? [],
+    reporting: options.reporting ?? [],
   };
   let memberCalls = 0;
   const forbidden = new Proxy(
@@ -305,6 +306,12 @@ function fixture(options = {}) {
         return store.production.filter(item => !campaignId || item.campaignId === campaignId);
       },
     },
+    "@futures-medialab/database/reporting": {
+      listBrandReportingItems: async (_tx, organizationId, campaignId) => {
+        assert.equal(organizationId, "brand-own");
+        return store.reporting.filter(item => !campaignId || item.campaignId === campaignId);
+      },
+    },
     "@futures-medialab/database": {
       getDatabase: () => database,
       Prisma: {
@@ -509,10 +516,7 @@ test("brand read allowlists omit internal metadata and never query supplier mate
   assert.deepEqual(detail.proposals, []);
   assert.deepEqual(detail.deliverables, []);
   assert.deepEqual(detail.documents, []);
-  assert.deepEqual(detail.performance, {
-    status: "not_published",
-    metrics: [],
-  });
+  assert.deepEqual(detail.performance, { items: [] });
   assert.equal(detail.capabilities.officialProposals, true);
   assert.equal(
     (await api.brandCampaignDetail(request(), "foreign-campaign")).status,
@@ -585,6 +589,24 @@ test("campaign artwork exposes only approved local demo assets, never arbitrary 
   assert.equal(allowed.gameSourceUrl, "https://nte.perfectworld.com/kr/");
   delete campaign.requirements.seed;
   assert.equal((await read()).coverImageUrl, null);
+});
+
+test("reporting summary retains the last public snapshot while an update is reviewed and excludes previous proposal work", async () => {
+  const { api, store } = fixture();
+  const created = await (await api.mutateBrandCampaign(request(input()))).json();
+  store.campaigns[0].status = "IN_PROGRESS";
+  store.proposals.push({ id: "current", campaignId: created.id, status: "APPROVED", items: [], expiresAt: null });
+  store.reporting.push(
+    { id: "report-current", campaignId: created.id, proposalId: "current", isCurrent: true, status: "ADMIN_REVIEW", latestSubmission: { id: "released-v1", metrics: { views: 0, likes: null } }, submissions: [{ id: "released-v1", metrics: { views: 0, likes: null } }] },
+    { id: "report-collecting", campaignId: created.id, proposalId: "current", isCurrent: true, status: "PUBLISHED", latestSubmission: { metrics: { views: null, likes: null } } },
+    { id: "report-old", campaignId: created.id, proposalId: "old", isCurrent: false, status: "PUBLISHED", latestSubmission: { metrics: { views: 999999 } } },
+  );
+  const workspace = await (await api.brandWorkspace(request())).json();
+  assert.deepEqual(workspace.campaigns[0].reportingSummary, { total: 2, published: 2, pending: 1, allMetricsPending: 1 });
+  const detail = await (await api.brandCampaignDetail(request(), created.id)).json();
+  assert.equal(detail.capabilities.campaignPerformance, true);
+  assert.deepEqual(detail.performance.items[0].submissions.map(value => value.id), ["released-v1"]);
+  assert.equal(detail.performance.items[0].latestSubmission.metrics.views, 0);
 });
 
 test("title-only drafts roundtrip blanks without a budget, deadline, intake or fake brief", async () => {

@@ -12,6 +12,8 @@ import { campaignIdSchema } from "./campaign-validation";
 import { campaignArtwork } from "./campaign-artwork";
 import { listBrandProductionItems } from "@futures-medialab/database/production";
 import type { BrandProductionItem } from "@futures-medialab/database/production-types";
+import { listBrandReportingItems } from "@futures-medialab/database/reporting";
+import type { BrandReportingItem } from "@futures-medialab/database/reporting-types";
 import {
   brandBriefSchema,
   brandDraftBriefSchema,
@@ -54,7 +56,7 @@ const capabilities: BrandWorkspaceCapabilities = {
   anonymousPreview: false,
   officialProposals: true,
   productionReview: true,
-  campaignPerformance: false,
+  campaignPerformance: true,
   campaignDocuments: false,
 };
 const campaignSelect = {
@@ -110,10 +112,12 @@ function campaignDto(
   requests: RequestRow[],
   latestProposal: BrandProposalSummary | null = null,
   production: BrandProductionItem[] = [],
+  reporting: BrandReportingItem[] = [],
 ): BrandCampaign {
   const currentProduction = latestProposal?.status === "APPROVED"
     ? production.filter((item) => item.proposalId === latestProposal.id)
     : [];
+  const currentReports = reporting.filter((item) => item.isCurrent && item.proposalId === latestProposal?.id);
   const requirements = object(row.requirements);
   const brief = brandDraftBriefSchema.safeParse(requirements.brandBrief);
   const intake = object(requirements.brandIntake);
@@ -154,6 +158,12 @@ function campaignDto(
       awaitingBrand: currentProduction.filter((item) => item.status === "BRAND_REVIEW").length,
       changesRequested: currentProduction.filter((item) => ["BRAND_REVISION", "AGENCY_REVISION"].includes(item.status)).length,
       approved: currentProduction.filter((item) => item.status === "APPROVED").length,
+    },
+    reportingSummary: {
+      total: currentReports.length,
+      published: currentReports.filter((item) => item.latestSubmission).length,
+      pending: currentReports.filter((item) => item.status !== "PUBLISHED").length,
+      allMetricsPending: currentReports.filter((item) => item.latestSubmission && Object.values(item.latestSubmission.metrics).every((value) => value === null)).length,
     },
   };
 }
@@ -245,9 +255,10 @@ export function brandWorkspace(request: Request) {
               select: requestSelect,
             })
           : [];
-        const [proposals, production] = await Promise.all([
+        const [proposals, production, reporting] = await Promise.all([
           listBrandLatestProposals(tx, organizationId, campaigns.slice(0, 100).map((campaign) => campaign.id), member.role !== "MEMBER"),
           listBrandProductionItems(tx, organizationId, undefined, member.role !== "MEMBER"),
+          listBrandReportingItems(tx, organizationId),
         ]);
         const proposalSummaries = new Map(
           proposals.map((proposal) => [
@@ -311,6 +322,7 @@ export function brandWorkspace(request: Request) {
                 intakeRequests,
                 proposalSummaries.get(campaign.id) ?? null,
                 production.filter((item) => item.campaignId === campaign.id),
+                reporting.filter((item) => item.campaignId === campaign.id),
               ),
             ),
           requests: requests.slice(0, 100).map(requestDto),
@@ -386,9 +398,10 @@ export function brandCampaignDetail(request: Request, id: string) {
           take: 1000,
           select: requestSelect,
         });
-        const [proposals, production] = await Promise.all([
+        const [proposals, production, reporting] = await Promise.all([
           listBrandCampaignProposals(tx, member.organizationId, campaign.id, member.role !== "MEMBER"),
           listBrandProductionItems(tx, member.organizationId, campaign.id, member.role !== "MEMBER"),
+          listBrandReportingItems(tx, member.organizationId, campaign.id),
         ]);
         return {
           campaign: campaignDto(
@@ -396,11 +409,12 @@ export function brandCampaignDetail(request: Request, id: string) {
             requests,
             proposals[0] ? summarizeBrandProposal(proposals[0]) : null,
             production,
+            reporting,
           ),
           requests: requests.map(requestDto),
           proposals,
           deliverables: production,
-          performance: { status: "not_published", metrics: [] },
+          performance: { items: reporting },
           documents: [],
           capabilities,
         };
