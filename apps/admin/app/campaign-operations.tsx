@@ -123,7 +123,7 @@ export default function CampaignOperations({
       <div className="cop-heading">
         <div>
           <h3>심사 자료 · 프로젝트 운영</h3>
-          <p>제안서에서 콘텐츠 검토와 정산 승인까지 한곳에서 확인합니다.</p>
+          <p>공급 파트너의 신청 자료와 콘텐츠·정산 운영 기록을 확인합니다.</p>
         </div>
         <AdminButton
           type="button"
@@ -288,7 +288,7 @@ function ApplicationOperations({
         </span>
       </summary>
       <div className="cop-body">
-        <h4>신청 제안서</h4>
+        <h4>공급 파트너 신청 제안서 · 내부 자료</h4>
         <p className="cop-preline">
           {application.proposal || "제안 내용 없음"}
         </p>

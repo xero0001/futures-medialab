@@ -252,7 +252,7 @@
 | 홈 `/advertiser` | 조직별 캠페인 집계, 진행 중 캠페인, 요청 상태, 맞춤 제안·오픈 캠페인 진입 |
 | 캠페인 `/advertiser/campaign` | 실제 캠페인 목록, 제목·요약 검색, 상태 필터, 상세 이동 |
 | 새 요청 `/advertiser/campaign/new` | 브리프 → 구성 방향 → 진행 방식·확인. `?route=open`으로 초기 경로 선택, `?draft=<id>`로 초안 이어 쓰기 |
-| 상세 `/advertiser/campaign/[id]` | 실제 예산·통화·매체·브리프·일정·접수 상태·관련 요청. 제안·제작·성과·문서 탭은 발행 자료가 없어 대기 상태 |
+| 상세 `/advertiser/campaign/[id]` | 실제 예산·통화·매체·브리프·일정·접수 상태·관련 요청. 공식 제안 버전·공개 크리에이터·견적·항목 승인·수정 요청. 제작·성과·문서는 발행 자료가 없어 대기 상태 |
 | 요청함 `/advertiser/requests` | 기존 실제 요청·회신·첨부 흐름 유지. `?campaign=<id>`로 해당 캠페인을 지정한 요청 작성 |
 | 자료실 `/advertiser/library` | 캠페인별 자료 확인 진입. 브랜드용으로 발행된 문서 모델이 없어 문서 목록은 빈 상태 |
 | 계정 `/advertiser/accountManagement` | 기존 조직·담당자 정보 조회·수정 유지 |
@@ -268,6 +268,10 @@
 
 디자인은 설치된 `@montage-ui/core`, `@montage-ui/icon`, `@montage-ui/nextjs` **4.1.5**를 사용한다. 자체 시안의 보라색 스타일 대신 기존 Montage의 버튼·텍스트 입력·선택·체크박스·라디오·단계 표시·탭·상태 메시지·타이포그래피를 재사용하고, 레이아웃에는 semantic 색상·간격·모서리 토큰을 적용한다. 요청된 Figma 파일 `vgiiheMESF69E3W1rBMRJN`의 페이지 노드에서 실제 컴포넌트 하위 노드를 찾아 확인했다: [TextField 16274:133897](https://www.figma.com/design/vgiiheMESF69E3W1rBMRJN/Wanted-Design-System--Community-?node-id=16274-133897), [Button 16701:138393](https://www.figma.com/design/vgiiheMESF69E3W1rBMRJN/Wanted-Design-System--Community-?node-id=16701-138393), [Typography 16246:4226050](https://www.figma.com/design/vgiiheMESF69E3W1rBMRJN/Wanted-Design-System--Community-?node-id=16246-4226050). 주요 입력·행동 버튼은 높이 48px·모서리 12px, 기본 색상은 Montage 파랑 `#0066FF`, 글꼴은 기존 Pretendard 계열을 따른다.
 
-**아직 제공하지 않는 기능:** 실제 DB 기반 익명 구성안·추정 견적·성과 예측, 운영팀의 공식 제안 버전 발행과 브랜드 승인, 브랜드용 제작물 검수, 캠페인 성과 집계, 브랜드 문서 발행·다운로드다. 요청 단계의 세 가지 카드는 검토할 **구성 방향**을 저장하며 AI 산출물이나 확정 견적을 뜻하지 않는다. 이 기능들은 응답의 `anonymousPreview`, `officialProposals`, `productionReview`, `campaignPerformance`, `campaignDocuments`를 `false`로 명시하고, 화면에서도 실제 발행 전 상태로 안내한다.
+공식 제안은 `CampaignProposal`·`ProposalItem`·`ProposalDecision`·`ProposalMutation`으로 공급자 신청과 분리했다. 관리자는 캠페인 상세에서 비공개 초안을 작성·저장하고 공개 미리보기를 확인한 뒤 발행한다. 브랜드는 자기 캠페인의 발행본만 조회하며, 인물·채널·제안가·제작 범위·일정·사용권을 확인하고 대기 항목을 선택해 승인하거나 수정을 요청한다. 모든 항목이 승인되면 캠페인을 `IN_PROGRESS`로 전환하고 연결 의뢰를 해결 상태로 변경한다. 일부 항목의 수정 요청은 나머지 항목을 자동 승인하지 않는다.
 
-다음 구현은 공급자 신청과 분리된 공식 제안·항목·결정 이력 및 브랜드 공개용 제작물·문서 모델이다. 운영팀이 발행한 캠페인 범위에만 실명과 채널을 공개한다는 기획 원칙을 유지하면서 이 모델을 연결해야 P0의 제안 발송·승인·검수 흐름이 완결된다.
+발행본은 수정할 수 없으며 새 버전으로 대체한다. 만료·대체된 버전, 취소·완료된 캠페인, 이미 결정된 항목에 새 결정을 저장하지 않는다. 동일 요청 재시도는 중복 기록하지 않으며 변경된 버전에 대한 요청은 충돌로 돌려준다. 공개 응답에는 공급사·원신청·공급가·내부 메모·내부 크리에이터 ID를 넣지 않는다. `officialProposals`는 제공 상태로 전환했다. 실제 게시물 검수·지급·계약은 제안 승인에 따라 자동 실행되지 않는다.
+
+관리 API는 `GET/POST /api/admin/proposals`, 브랜드 결정 API는 `POST /api/brand/proposals`다. `20261102000000_add_official_proposals`는 기존 데이터를 변경하지 않는 추가 테이블 마이그레이션이다. [이환 내부 시연](nte-proposal-demo.md)은 지정된 세 테스트 계정의 DB에 네 가지 상태를 저장하며 기존 계정·비밀번호·조직 권한을 유지한다.
+
+**아직 제공하지 않는 기능:** 실제 DB 기반 익명 구성안·추정 견적·성과 예측, 브랜드용 제작물 검수, 캠페인 성과 집계, 브랜드 문서 발행·다운로드다. 요청 단계의 세 가지 카드는 검토할 **구성 방향**을 저장하며 AI 산출물이나 확정 견적을 뜻하지 않는다. 해당 응답의 `anonymousPreview`, `productionReview`, `campaignPerformance`, `campaignDocuments`는 계속 `false`다. 다음 구현은 공식 제안에서 승인된 구성을 브랜드 공개용 제작물·검수·문서 모델과 연결하는 흐름이다.

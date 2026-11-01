@@ -89,6 +89,28 @@ enum Currency {
   CNY
 }
 
+enum ProposalStatus {
+  DRAFT
+  PUBLISHED
+  APPROVED
+  CHANGES_REQUESTED
+  REJECTED
+  SUPERSEDED
+}
+
+enum ProposalItemStatus {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+  REJECTED
+}
+
+enum ProposalDecisionKind {
+  APPROVE
+  REQUEST_CHANGES
+  REJECT
+}
+
 model User {
   id                    String                 @id @default(cuid())
   email                 String                 @unique
@@ -110,6 +132,10 @@ model User {
   requestMessages       RequestMessage[]
   requestAttachments    RequestAttachment[]
   agencyDocuments       AgencyDocument[]
+  createdProposals      CampaignProposal[] @relation("ProposalCreator")
+  publishedProposals    CampaignProposal[] @relation("ProposalPublisher")
+  proposalDecisions     ProposalDecision[]
+  proposalMutations     ProposalMutation[]
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
 }
@@ -191,6 +217,7 @@ model Organization {
   shortLinks            ShortLink[]
   workspaceToolRequests WorkspaceToolRequest[]
   agencyDocuments       AgencyDocument[]
+  suppliedProposalItems ProposalItem[]
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
 
@@ -260,6 +287,7 @@ model Campaign {
   applications        CampaignApplication[]
   questions           CampaignQuestion[]
   requests            WorkspaceToolRequest[]
+  proposals           CampaignProposal[]
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
 
@@ -411,6 +439,7 @@ model CreatorProfile {
   isActive             Boolean              @default(true)
   agencyOrganization   Organization         @relation(fields: [agencyOrganizationId], references: [id], onDelete: Cascade)
   applications         ApplicationCreator[]
+  proposalItems        ProposalItem[]
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
 
@@ -541,4 +570,95 @@ model AuditLog {
 
   @@index([entityType, entityId, createdAt])
   @@index([actorId, createdAt])
+}
+
+// Only a published operator-curated snapshot can be serialized to a brand.
+model CampaignProposal {
+  id              String @id @default(cuid())
+  campaignId      String
+  version         Int
+  revision        Int @default(0)
+  status          ProposalStatus @default(DRAFT)
+  title           String @default("")
+  summary         String @default("") @db.Text
+  changeSummary   String @default("") @db.Text
+  terms           String @default("") @db.Text
+  currency        Currency
+  expiresAt       DateTime?
+  publishedAt     DateTime?
+  supersededAt    DateTime?
+  createdById     String
+  publishedById   String?
+  campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  createdBy       User @relation("ProposalCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  publishedBy     User? @relation("ProposalPublisher", fields: [publishedById], references: [id], onDelete: Restrict)
+  items           ProposalItem[]
+  decisions       ProposalDecision[]
+  mutations       ProposalMutation[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([campaignId, version])
+  @@index([campaignId, status])
+  @@index([status, expiresAt])
+}
+
+model ProposalItem {
+  id                       String @id @default(cuid())
+  proposalId               String
+  position                 Int
+  creatorName              String @default("")
+  platform                 String @default("")
+  channelLabel             String @default("")
+  channelUrl               String @default("")
+  followers                Int?
+  averageViews             Int?
+  deliverables             String @default("") @db.Text
+  quantity                 Int @default(0)
+  unitAmount               Decimal? @db.Decimal(18, 2)
+  scheduledAt              DateTime?
+  rights                   String @default("") @db.Text
+  status                   ProposalItemStatus @default(PENDING)
+  // Private provenance and economics never belong to a brand DTO.
+  creatorId                String?
+  supplierOrganizationId   String?
+  supplierCost             Decimal? @db.Decimal(18, 2)
+  internalNotes            String @default("") @db.Text
+  proposal                 CampaignProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  creator                  CreatorProfile? @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+  supplierOrganization     Organization? @relation(fields: [supplierOrganizationId], references: [id], onDelete: SetNull)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@unique([proposalId, position])
+  @@index([creatorId])
+}
+
+model ProposalDecision {
+  id              String @id @default(cuid())
+  proposalId      String
+  actorId         String
+  decision        ProposalDecisionKind
+  itemIds         String[]
+  message         String @default("") @db.Text
+  proposal        CampaignProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  actor           User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  createdAt       DateTime @default(now())
+
+  @@index([proposalId, createdAt])
+}
+
+model ProposalMutation {
+  id              String @id @default(cuid())
+  actorId         String
+  clientRequestId String
+  action          String
+  payloadHash     String
+  proposalId      String
+  actor           User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  proposal        CampaignProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+
+  @@unique([actorId, clientRequestId])
+  @@index([proposalId])
 }

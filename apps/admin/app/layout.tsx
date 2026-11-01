@@ -12,8 +12,9 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Montage forces light mode before hydration; emit the same attributes on the server.
   return (
-    <html lang="ko">
+    <html lang="ko" data-theme="light" style={{ colorScheme: "light" }}>
       <head>
         <PretendardFont />
       </head>

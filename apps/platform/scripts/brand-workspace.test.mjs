@@ -150,6 +150,7 @@ function fixture(options = {}) {
             };
       },
     },
+    campaignProposal: { count: async () => 0 },
     creatorDirectoryEntry: forbidden,
     creatorProfile: forbidden,
     campaignApplication: forbidden,
@@ -280,6 +281,11 @@ function fixture(options = {}) {
   };
   const api = compile("lib/brand-workspace.ts", {
     "server-only": {},
+    "@futures-medialab/database/proposals": {
+      listBrandLatestProposals: async () => [],
+      listBrandCampaignProposals: async () => [],
+      summarizeBrandProposal: (proposal) => proposal,
+    },
     "@futures-medialab/database": {
       getDatabase: () => database,
       Prisma: {
@@ -488,7 +494,7 @@ test("brand read allowlists omit internal metadata and never query supplier mate
     status: "not_published",
     metrics: [],
   });
-  assert.equal(detail.capabilities.officialProposals, false);
+  assert.equal(detail.capabilities.officialProposals, true);
   assert.equal(
     (await api.brandCampaignDetail(request(), "foreign-campaign")).status,
     404,

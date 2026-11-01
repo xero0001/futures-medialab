@@ -8,7 +8,9 @@ import "@montage-ui/core/theme.css";
 export function AdminProvider({ children }: { children: ReactNode }) {
   return (
     <AppRouterCacheProvider options={{ key: "fm-admin" }}>
-      <ThemeProvider disableDefaultGlobalStyle>{children}</ThemeProvider>
+      <ThemeProvider enableDarkMode={false} disableDefaultGlobalStyle>
+        {children}
+      </ThemeProvider>
     </AppRouterCacheProvider>
   );
 }

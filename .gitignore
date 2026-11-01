@@ -10,3 +10,8 @@ dist
 packages/database/generated
 
 .vercel
+
+# Local caches, verification artifacts, and temporary QA credentials
+.pnpm-store/
+tmp/
+output/

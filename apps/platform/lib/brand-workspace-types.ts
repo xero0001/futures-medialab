@@ -1,4 +1,8 @@
 import type { WorkspaceAccount, WorkspaceLink } from "./workspace-types";
+import type {
+  BrandProposal,
+  BrandProposalSummary,
+} from "@futures-medialab/database/proposal-types";
 
 export type BrandCampaignRoute = "managed" | "open";
 export type BrandCompositionPreference = "balanced" | "reach" | "efficient";
@@ -39,6 +43,7 @@ export type BrandCampaign = {
   proposalDueAt: string | null;
   requestId: string | null;
   reviewNote: string | null;
+  latestProposal: BrandProposalSummary | null;
 };
 export type BrandRequestSummary = {
   id: string;
@@ -54,7 +59,7 @@ export type BrandRequestSummary = {
 };
 export type BrandWorkspaceCapabilities = {
   anonymousPreview: false;
-  officialProposals: false;
+  officialProposals: boolean;
   productionReview: false;
   campaignPerformance: false;
   campaignDocuments: false;
@@ -65,12 +70,14 @@ export type BrandWorkspace = {
   campaigns: BrandCampaign[];
   requests: BrandRequestSummary[];
   links: WorkspaceLink[];
+  pendingProposals: BrandProposalSummary[];
   counts: {
     campaigns: number;
     activeCampaigns: number;
     completedCampaigns: number;
     openRequests: number;
     waitingBrandRequests: number;
+    pendingProposals: number;
   };
   hasMoreCampaigns: boolean;
   hasMoreRequests: boolean;
@@ -79,7 +86,7 @@ export type BrandWorkspace = {
 export type BrandCampaignDetail = {
   campaign: BrandCampaign;
   requests: BrandRequestSummary[];
-  proposals: never[];
+  proposals: BrandProposal[];
   deliverables: never[];
   performance: { status: "not_published"; metrics: never[] };
   documents: never[];

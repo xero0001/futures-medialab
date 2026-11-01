@@ -245,7 +245,7 @@ cannot enter the workspace or mutate its data.
 | `/advertiser` | Organization campaign totals, active campaigns, request status and managed/open intake entry points |
 | `/advertiser/campaign` | Real campaign list, status filters and title/brief search |
 | `/advertiser/campaign/new` | Brief, composition preference and managed/open request; partial drafts and versioned draft editing |
-| `/advertiser/campaign/[id]` | Saved brief, dates, budget, status and related requests; pending proposal/production/performance/document views |
+| `/advertiser/campaign/[id]` | Saved brief, dates, budget, status, related requests and published official proposals with item decisions; production/performance/documents remain pending |
 | `/advertiser/library` | Campaign document entry points; empty until brand-facing documents are published |
 | `/storage/search` and all variants | Retired; approved brands redirect to campaign management |
 | `/storage/similar-search` and `/storage/similar-brands` | Retired recommendations; same redirect |
@@ -281,16 +281,40 @@ If an operator returns a request for changes, explicit resubmission updates the
 existing intake with version/audit history and restarts the managed deadline from
 that resubmission; it does not create a second campaign or duplicate intake.
 
-Official proposal versions/decisions, brand production reviews, campaign performance
-and published brand documents do not yet have their own publication models. Their
-capabilities are explicitly false and their screens remain pending. The three
-composition cards save a preference; they do not calculate an anonymous lineup,
-price or projected reach. Existing supplier applications, submissions, contracts
-and settlements are never substituted for brand-facing artifacts. Operators can
-use the campaign-linked request thread for manual communication and attachments;
-that is not a versioned official-proposal or approval workflow. Future identity
-disclosure is limited to selected creators in an operator-published proposal for
-that campaign; private contacts, supplier identity, costs and margins stay hidden.
+Official proposals now use separate `CampaignProposal`, `ProposalItem`,
+`ProposalDecision` and `ProposalMutation` models. Operators create a private draft,
+save its creator snapshots and commercial terms, preview the brand-visible fields,
+then explicitly publish an immutable version. Brands receive only published
+versions belonging to their organization; draft identities, private creator IDs,
+supplier identities/costs and internal notes never appear in the public DTO.
+Brand owners/admins approve selected pending items or request changes with a reason.
+All-item approval moves the campaign to `IN_PROGRESS`; a new published version
+supersedes the previous one. Expired/replaced versions and ended campaigns reject
+new decisions. Live session/role rechecks, optimistic revisions, idempotency keys
+and transaction-scoped audit records protect each write. Publication and decisions
+also update the campaign-linked intake thread without sending external messages.
+
+`GET/POST /api/admin/proposals` handles the operator workflow;
+`POST /api/brand/proposals` records item decisions. The existing brand workspace
+and campaign APIs include published proposal summaries and details. Apply
+`20261102000000_add_official_proposals` before deploying either app.
+
+Brand production reviews, campaign performance and published brand documents
+still have no dedicated publication models, and their capabilities remain false.
+The three composition cards save a preference; they do not calculate an anonymous
+lineup, price or projected reach. Supplier applications, submissions, contracts and
+settlements are never substituted for brand-facing artifacts. Proposal approval
+does not sign a supplier contract or execute payment.
+
+The optional [NTE demo walkthrough](docs/design/nte-proposal-demo.md) uses the
+three explicitly authorized existing test accounts and four marked campaigns.
+Run the seed in read-only mode first; `--apply` adds the exact fixture set without
+resetting existing credentials, roles or subsequent demo decisions:
+
+```bash
+node --experimental-strip-types apps/platform/scripts/seed-nte-proposals.mjs
+node --experimental-strip-types apps/platform/scripts/seed-nte-proposals.mjs --apply
+```
 
 ### Request handling and campaign operations
 

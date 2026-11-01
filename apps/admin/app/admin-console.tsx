@@ -7,6 +7,7 @@ import {
 import { AdminButton } from "./_components/admin-button";
 import { RequestConsole } from "./request-console";
 import CampaignOperations from "./campaign-operations";
+import { OfficialProposals } from "./official-proposals";
 import {
   useCallback,
   useEffect,
@@ -63,7 +64,7 @@ const labels: Record<string, string> = {
   DRAFT: "초안",
   REVIEW: "공개 검토",
   RECRUITING: "모집 중",
-  IN_PROGRESS: "모집 마감",
+  IN_PROGRESS: "진행 중",
   VERIFYING: "콘텐츠 검수",
   SETTLING: "정산",
   COMPLETED: "완료",
@@ -974,7 +975,18 @@ export function AdminConsole({
                             </AdminButton>
                           )}
                         </div>
-                        <h3>신청 에이전시 ({campaignDetail.total})</h3>
+                        <OfficialProposals
+                          key={campaign.id}
+                          campaignId={campaign.id}
+                          campaignTitle={campaign.title}
+                          campaignCurrency={campaign.currency}
+                          campaignStatus={campaign.status}
+                          brandActive={campaign.brandStatus === "ACTIVE"}
+                          onCommitted={() => void refresh()}
+                        />
+                        <h3>
+                          내부 소싱 · 신청 에이전시 ({campaignDetail.total})
+                        </h3>
                         {campaignDetail.applications.length ? (
                           <div className="admin-applications">
                             {campaignDetail.applications.map((application) => (
@@ -1008,8 +1020,9 @@ export function AdminConsole({
                           </p>
                         )}
                         <p className="admin-small">
-                          최근 100건까지 표시합니다. 선정과 미선정 처리는
-                          브랜드의 캠페인 관리에서 진행합니다.
+                          최근 100건까지 표시합니다. 신청 원문과 공급 조건은
+                          내부 자료이며, 브랜드에는 운영팀이 발행한 공식
+                          제안서만 전달됩니다.
                         </p>
                         <CampaignOperations campaignId={campaign.id} />
                       </>

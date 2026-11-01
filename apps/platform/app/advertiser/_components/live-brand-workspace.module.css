@@ -105,6 +105,11 @@
 .loading { display: flex; flex-direction: column; gap: 16px; padding-top: 12px; }
 .loading .stats { margin: 16px 0 8px; }
 .loadError { display: flex; flex-direction: column; align-items: flex-start; gap: 20px; }
+.approvalList { display: flex; flex-direction: column; }
+.approvalRow { display: flex; align-items: center; gap: 24px; padding: 20px 24px; border-top: 1px solid var(--brand-line); }
+.approvalRow > div { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; flex: 1; }
+.approvalRow > div strong { overflow-wrap: anywhere; }
+.approvalRow > a { flex-shrink: 0; }
 @media (max-width: 1250px) {
   .homeColumns { grid-template-columns: minmax(0, 1fr); }
   .homeColumns > .panel:last-child .schedule { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -145,6 +150,9 @@
   .libraryCampaigns { padding: 0 20px 8px; }
   .libraryCampaigns > a { gap: 12px; }
   .libraryCampaigns > a > span:nth-last-child(2) { display: none; }
+  .approvalRow { padding: 20px; flex-wrap: wrap; gap: 16px; }
+  .approvalRow > div { width: 100%; flex: auto; }
+  .approvalRow > a { margin-left: auto; }
 }
 @media (max-width: 400px) {
   .stat { align-items: flex-start; flex-direction: column; }

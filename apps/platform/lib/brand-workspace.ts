@@ -1,6 +1,12 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { getDatabase, Prisma } from "@futures-medialab/database";
+import {
+  listBrandCampaignProposals,
+  listBrandLatestProposals,
+  summarizeBrandProposal,
+} from "@futures-medialab/database/proposals";
+import type { BrandProposalSummary } from "@futures-medialab/database/proposal-types";
 import { getAuth } from "./auth";
 import { campaignIdSchema } from "./campaign-validation";
 import {
@@ -43,7 +49,7 @@ const iso = (value: unknown) =>
 // contracts, submissions and settlements are never substituted for those artifacts.
 const capabilities: BrandWorkspaceCapabilities = {
   anonymousPreview: false,
-  officialProposals: false,
+  officialProposals: true,
   productionReview: false,
   campaignPerformance: false,
   campaignDocuments: false,
@@ -95,7 +101,11 @@ function requestDto(row: RequestRow): BrandRequestSummary {
     version: row.version,
   };
 }
-function campaignDto(row: CampaignRow, requests: RequestRow[]): BrandCampaign {
+function campaignDto(
+  row: CampaignRow,
+  requests: RequestRow[],
+  latestProposal: BrandProposalSummary | null = null,
+): BrandCampaign {
   const requirements = object(row.requirements);
   const brief = brandDraftBriefSchema.safeParse(requirements.brandBrief);
   const intake = object(requirements.brandIntake);
@@ -127,6 +137,7 @@ function campaignDto(row: CampaignRow, requests: RequestRow[]): BrandCampaign {
         : null,
     requestId: row.status === "DRAFT" ? null : (intakeRequest?.id ?? null),
     reviewNote: string(object(requirements.adminReview).reason) || null,
+    latestProposal,
   };
 }
 async function authenticated(request: Request) {
@@ -210,6 +221,49 @@ export function brandWorkspace(request: Request) {
               select: requestSelect,
             })
           : [];
+        const proposals = await listBrandLatestProposals(
+          tx,
+          organizationId,
+          campaigns.slice(0, 100).map((campaign) => campaign.id),
+          member.role !== "MEMBER",
+        );
+        const proposalSummaries = new Map(
+          proposals.map((proposal) => [
+            proposal.campaignId,
+            summarizeBrandProposal(proposal),
+          ]),
+        );
+        const pendingProposals = proposals
+          .filter(
+            (proposal) =>
+              proposal.items.some((item) => item.status === "PENDING") &&
+              proposal.expiresAt &&
+              Date.parse(proposal.expiresAt) > Date.now() &&
+              ["PUBLISHED", "CHANGES_REQUESTED", "REJECTED"].includes(
+                proposal.status,
+              ) &&
+              campaigns.some(
+                (campaign) =>
+                  campaign.id === proposal.campaignId &&
+                  ["REVIEW", "RECRUITING", "IN_PROGRESS"].includes(
+                    campaign.status,
+                  ),
+              ),
+          )
+          .map(summarizeBrandProposal);
+        const pendingProposalCount = await tx.campaignProposal.count({
+          where: {
+            publishedAt: { not: null },
+            supersededAt: null,
+            status: { in: ["PUBLISHED", "CHANGES_REQUESTED", "REJECTED"] },
+            expiresAt: { gt: new Date() },
+            campaign: {
+              brandOrganizationId: organizationId,
+              status: { in: ["REVIEW", "RECRUITING", "IN_PROGRESS"] },
+            },
+            items: { some: { status: "PENDING" } },
+          },
+        });
         const metadata = object(member.organization.metadata);
         return {
           account: {
@@ -229,13 +283,21 @@ export function brandWorkspace(request: Request) {
           },
           campaigns: campaigns
             .slice(0, 100)
-            .map((campaign) => campaignDto(campaign, intakeRequests)),
+            .map((campaign) =>
+              campaignDto(
+                campaign,
+                intakeRequests,
+                proposalSummaries.get(campaign.id) ?? null,
+              ),
+            ),
           requests: requests.slice(0, 100).map(requestDto),
+          pendingProposals,
           links: links.map((link) => ({
             ...link,
             createdAt: link.createdAt.toISOString(),
           })),
           counts: {
+            pendingProposals: pendingProposalCount,
             campaigns: groupedCampaigns.reduce(
               (sum, group) => sum + group._count._all,
               0,
@@ -300,10 +362,20 @@ export function brandCampaignDetail(request: Request, id: string) {
           take: 1000,
           select: requestSelect,
         });
+        const proposals = await listBrandCampaignProposals(
+          tx,
+          member.organizationId,
+          campaign.id,
+          member.role !== "MEMBER",
+        );
         return {
-          campaign: campaignDto(campaign, requests),
+          campaign: campaignDto(
+            campaign,
+            requests,
+            proposals[0] ? summarizeBrandProposal(proposals[0]) : null,
+          ),
           requests: requests.map(requestDto),
-          proposals: [],
+          proposals,
           deliverables: [],
           performance: { status: "not_published", metrics: [] },
           documents: [],
