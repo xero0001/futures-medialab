@@ -186,13 +186,17 @@ try {
     "QA_BASELINE_NAMESPACE_MISMATCH",
   );
   const retainedCampaignIds = [
-    "campaignId",
-    "guardCampaignId",
-    "browserCampaignId",
-    "readyCampaignId",
-  ].flatMap((key) =>
-    typeof rawFixture[key] === "string" ? [rawFixture[key]] : [],
-  );
+    ...new Set(
+      [
+        "campaignId",
+        "guardCampaignId",
+        "browserCampaignId",
+        "readyCampaignId",
+      ].flatMap((key) =>
+        typeof rawFixture[key] === "string" ? [rawFixture[key]] : [],
+      ),
+    ),
+  ];
   check(
     retainedCampaignIds.length >= 3 &&
       retainedCampaignIds.every((id) =>
@@ -201,11 +205,12 @@ try {
     "QA_CAMPAIGN_IDS_REQUIRED",
   );
   const retainedProductionIds = [
-    "browserProductionItemId",
-    "readyProductionItemId",
-  ].flatMap((key) =>
-    typeof rawFixture[key] === "string" ? [rawFixture[key]] : [],
-  );
+    ...new Set(
+      ["browserProductionItemId", "readyProductionItemId"].flatMap((key) =>
+        typeof rawFixture[key] === "string" ? [rawFixture[key]] : [],
+      ),
+    ),
+  ];
   const result = await db.$transaction(
     async (tx) => {
       await tx.$executeRawUnsafe("SET TRANSACTION READ ONLY");
