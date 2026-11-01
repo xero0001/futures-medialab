@@ -8,6 +8,7 @@ import { authClient } from "../../lib/auth-client";
 import { AgencyMarketplace } from "./agency-marketplace";
 import { AgencyOperations } from "./agency-operations";
 import { AgencyProjectWorkspace } from "./agency-project-workspace";
+import { AgencyPaymentsWorkspace } from "./agency-payments-workspace";
 import {
   agencyCopy,
   agencySections,
@@ -176,6 +177,7 @@ export function AgencyWorkspace({
                 />
               ) : !pending ? (
                 section === "projects" ? <AgencyProjectWorkspace locale={locale} onExplore={() => navigate("offers")} onApplications={() => navigate("applications")} /> :
+                section === "payments" ? <AgencyPaymentsWorkspace locale={locale} onExplore={() => navigate("offers")} onApplications={() => navigate("applications")} /> :
                 <AgencyOperations
                   key={section}
                   locale={locale}

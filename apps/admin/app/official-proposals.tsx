@@ -836,11 +836,12 @@ function DraftEditor({
                 </summary>
                 <div className={s.grid}>
                   <label className={s.field}>
-                    내부 공급가 · {proposal.currency}
+                    항목 총공급가 · {proposal.currency}
                     <input
                       type="number"
                       min="0"
                       step="0.01"
+                      aria-describedby={`supplier-cost-hint-${item.key}`}
                       value={item.supplierCost}
                       onChange={(event) =>
                         updateItem(item.key, {
@@ -848,6 +849,9 @@ function DraftEditor({
                         })
                       }
                     />
+                    <small id={`supplier-cost-hint-${item.key}`}>
+                      수량과 관계없이 해당 항목 전체의 공급가를 입력하세요.
+                    </small>
                   </label>
                   <label className={s.field}>
                     내부 메모

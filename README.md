@@ -324,8 +324,19 @@ snapshot once, and reach is not summed. Apply `20261102020000_add_post_reporting
 before deployment. The [NTE reporting demo](docs/design/nte-reporting-demo.md)
 adds six marked scenarios with official reference links and fictional metrics.
 
-`campaignPerformance` is enabled. Published brand documents still have no
-dedicated publication model and their capability remains false.
+Campaign completion and finance use `CampaignCompletion`, `BrandInvoice`,
+`AgencyPayout` and `SettlementMutation`. Operators verify the latest approved
+proposal/content, published reports and confirmed economics before completion.
+They prepare private drafts, issue brand invoices and agency payouts separately,
+then record external payment outcomes. Amounts and issued snapshots are immutable;
+no transfer or payment is executed. Recipient APIs expose only that organization's
+issued/paid documents. Apply `20261102030000_add_official_settlement` before
+deployment. See the [NTE completion and settlement demo](docs/design/nte-settlement-demo.md)
+for four real-DB scenarios and the verified Futures Entertainment channel references.
+
+`campaignPerformance` is enabled. General brand-library documents still have no
+dedicated publication model and their capability remains false; issued invoices
+are available separately under Billing.
 The three composition cards save a preference; they do not calculate an anonymous
 lineup, price or projected reach. Supplier applications, submissions, contracts and
 settlements are never substituted for brand-facing artifacts. Proposal approval

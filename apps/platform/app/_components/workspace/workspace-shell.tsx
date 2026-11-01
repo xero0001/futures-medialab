@@ -125,6 +125,11 @@ export function WorkspaceShell({
           icon: IconInbox,
         },
         {
+          path: "/advertiser/billing",
+          label: t("Billing", "청구 내역", "账单"),
+          icon: IconCompany,
+        },
+        {
           path: "/advertiser/library",
           label: t("Library", "자료실", "资料库"),
           icon: IconFolder,

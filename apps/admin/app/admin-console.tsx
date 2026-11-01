@@ -1029,7 +1029,10 @@ export function AdminConsole({
                           내부 자료이며, 브랜드에는 운영팀이 발행한 공식
                           제안서만 전달됩니다.
                         </p>
-                        <CampaignOperations campaignId={campaign.id} />
+                        <CampaignOperations
+                          campaignId={campaign.id}
+                          onCampaignCompleted={() => void refresh()}
+                        />
                       </>
                     ) : null}
                   </section>

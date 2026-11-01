@@ -1,6 +1,7 @@
 "use client";
 import { AdminButton } from "./_components/admin-button";
 import { ReportingReview } from "./reporting-review";
+import { CampaignSettlement } from "./campaign-settlement";
 
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { ExternalLink, RefreshCw } from "lucide-react";
@@ -48,8 +49,10 @@ function Reference({
 
 export default function CampaignOperations({
   campaignId,
+  onCampaignCompleted,
 }: {
   campaignId: string;
+  onCampaignCompleted?: () => void;
 }) {
   const [data, setData] = useState<CampaignOperationsData | null>(null);
   const [refresh, setRefresh] = useState(0);
@@ -120,6 +123,11 @@ export default function CampaignOperations({
       <ReportingReview
         key={`reporting:${campaignId}`}
         campaignId={campaignId}
+      />
+      <CampaignSettlement
+        key={`settlement:${campaignId}`}
+        campaignId={campaignId}
+        onCampaignCompleted={onCampaignCompleted}
       />
       <section
         className="cop"
@@ -195,8 +203,9 @@ export default function CampaignOperations({
               </div>
             </details>
             <p className="cop-notice">
-              계약은 외부에서 합의한 문서의 참고 기록입니다. 정산은 내부 검토
-              기록이며 전자서명·송금·지급 완료 처리는 제공하지 않습니다.
+              {current.officialProduction
+                ? "공식 제안의 청구·지급 확인은 위의 완료·정산에서 처리합니다. 계약은 외부 합의 문서의 참고 기록이며 전자서명·송금은 실행하지 않습니다."
+                : "계약은 외부에서 합의한 문서의 참고 기록입니다. 정산은 내부 검토 기록이며 전자서명·송금·지급 완료 처리는 제공하지 않습니다."}
             </p>
             {current.applications.length ? (
               current.applications.map((application) => (
@@ -473,7 +482,14 @@ function ApplicationOperations({
             ) : null}
           </form>
           <form onSubmit={prepareSettlement}>
-            <h4>정산 검토 기록</h4>
+            <h4>{officialProduction ? "기존 정산 기록" : "정산 검토 기록"}</h4>
+            {officialProduction ? (
+              <p className="cop-notice">
+                공식 제안 캠페인의 청구·지급 내역은{" "}
+                <a href="#admin-campaign-settlement">완료·정산</a>에서
+                관리합니다.
+              </p>
+            ) : null}
             <p>
               통화: {application.currency} · 총액 − 수수료 − 공제액 = 예정
               지급액
@@ -484,7 +500,9 @@ function ApplicationOperations({
                 {settlement.currency} {settlement.netAmount}
               </p>
             ) : null}
-            <fieldset disabled={!editable || busy || locked}>
+            <fieldset
+              disabled={officialProduction || !editable || busy || locked}
+            >
               {[
                 [
                   "grossAmount",
@@ -528,7 +546,9 @@ function ApplicationOperations({
             {settlement?.reviewNotes ? (
               <p className="cop-preline">검토 의견: {settlement.reviewNotes}</p>
             ) : null}
-            {editable && settlement?.status === "REQUESTED" ? (
+            {!officialProduction &&
+            editable &&
+            settlement?.status === "REQUESTED" ? (
               <div className="cop-actions">
                 <AdminButton
                   type="button"

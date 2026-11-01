@@ -92,6 +92,9 @@ export function mutateCampaignOperations(request: Request) {
         submissions: { orderBy: { version: "desc" }, take: 1 }, contract: true, settlement: true,
       } });
       if (!application) fail(404, "NOT_FOUND", "신청 내역을 찾을 수 없습니다.");
+      if ((input.action === "prepareSettlement" || input.action === "reviewSettlement") &&
+        await tx.campaignProposal.count({ where: { campaignId: application.campaignId } }))
+        fail(409, "OFFICIAL_SETTLEMENT_REQUIRED", "공식 제안 캠페인은 완료·정산에서 청구와 지급 내역을 발행해 주세요.");
       if (application.status !== "ACCEPTED" || application.agencyOrganization.status !== "ACTIVE" ||
         application.campaign.brandOrganization.status !== "ACTIVE" || !activeCampaignStates.includes(application.campaign.status))
         fail(409, "INVALID_STATE", "활성 캠페인에 선정된 승인 조직만 운영할 수 있습니다.");

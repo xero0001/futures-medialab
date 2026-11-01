@@ -14,6 +14,8 @@ import { listBrandProductionItems } from "@futures-medialab/database/production"
 import type { BrandProductionItem } from "@futures-medialab/database/production-types";
 import { listBrandReportingItems } from "@futures-medialab/database/reporting";
 import type { BrandReportingItem } from "@futures-medialab/database/reporting-types";
+import { listBrandInvoices } from "@futures-medialab/database/settlement";
+import type { BrandInvoice } from "@futures-medialab/database/settlement-types";
 import {
   brandBriefSchema,
   brandDraftBriefSchema,
@@ -113,6 +115,7 @@ function campaignDto(
   latestProposal: BrandProposalSummary | null = null,
   production: BrandProductionItem[] = [],
   reporting: BrandReportingItem[] = [],
+  invoices: BrandInvoice[] = [],
 ): BrandCampaign {
   const currentProduction = latestProposal?.status === "APPROVED"
     ? production.filter((item) => item.proposalId === latestProposal.id)
@@ -164,6 +167,10 @@ function campaignDto(
       published: currentReports.filter((item) => item.latestSubmission).length,
       pending: currentReports.filter((item) => item.status !== "PUBLISHED").length,
       allMetricsPending: currentReports.filter((item) => item.latestSubmission && Object.values(item.latestSubmission.metrics).every((value) => value === null)).length,
+    },
+    invoiceSummary: {
+      issued: invoices.filter((invoice) => invoice.status === "ISSUED").length,
+      paid: invoices.filter((invoice) => invoice.status === "PAID").length,
     },
   };
 }
@@ -255,10 +262,11 @@ export function brandWorkspace(request: Request) {
               select: requestSelect,
             })
           : [];
-        const [proposals, production, reporting] = await Promise.all([
+        const [proposals, production, reporting, invoices] = await Promise.all([
           listBrandLatestProposals(tx, organizationId, campaigns.slice(0, 100).map((campaign) => campaign.id), member.role !== "MEMBER"),
           listBrandProductionItems(tx, organizationId, undefined, member.role !== "MEMBER"),
           listBrandReportingItems(tx, organizationId),
+          listBrandInvoices(tx, { userId: session.user.id, organizationId }),
         ]);
         const proposalSummaries = new Map(
           proposals.map((proposal) => [
@@ -323,9 +331,11 @@ export function brandWorkspace(request: Request) {
                 proposalSummaries.get(campaign.id) ?? null,
                 production.filter((item) => item.campaignId === campaign.id),
                 reporting.filter((item) => item.campaignId === campaign.id),
+                invoices.filter((invoice) => invoice.campaignId === campaign.id),
               ),
             ),
           requests: requests.slice(0, 100).map(requestDto),
+          invoices,
           pendingProposals,
           links: links.map((link) => ({
             ...link,
@@ -398,10 +408,11 @@ export function brandCampaignDetail(request: Request, id: string) {
           take: 1000,
           select: requestSelect,
         });
-        const [proposals, production, reporting] = await Promise.all([
+        const [proposals, production, reporting, invoices] = await Promise.all([
           listBrandCampaignProposals(tx, member.organizationId, campaign.id, member.role !== "MEMBER"),
           listBrandProductionItems(tx, member.organizationId, campaign.id, member.role !== "MEMBER"),
           listBrandReportingItems(tx, member.organizationId, campaign.id),
+          listBrandInvoices(tx, { userId: session.user.id, organizationId: member.organizationId }, campaign.id),
         ]);
         return {
           campaign: campaignDto(
@@ -410,11 +421,13 @@ export function brandCampaignDetail(request: Request, id: string) {
             proposals[0] ? summarizeBrandProposal(proposals[0]) : null,
             production,
             reporting,
+            invoices,
           ),
           requests: requests.map(requestDto),
           proposals,
           deliverables: production,
           performance: { items: reporting },
+          invoices,
           documents: [],
           capabilities,
         };

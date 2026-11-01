@@ -419,5 +419,6 @@ export function fixture() {
     submission,
     release,
     decision,
+    queryHelpers: { matches, select, find, findMany, update },
   };
 }

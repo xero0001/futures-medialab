@@ -82,6 +82,7 @@ function fixture(options = {}) {
     production: options.production ?? [],
     proposals: options.proposals ?? [],
     reporting: options.reporting ?? [],
+    invoices: options.invoices ?? [],
   };
   let memberCalls = 0;
   const forbidden = new Proxy(
@@ -304,6 +305,13 @@ function fixture(options = {}) {
         assert.equal(organizationId, "brand-own");
         assert.equal(canManage, member.role !== "MEMBER");
         return store.production.filter(item => !campaignId || item.campaignId === campaignId);
+      },
+    },
+    "@futures-medialab/database/settlement": {
+      listBrandInvoices: async (_tx, actor, campaignId) => {
+        assert.equal(actor.organizationId, "brand-own");
+        assert.equal(actor.userId, "user-own");
+        return store.invoices.filter(invoice => !campaignId || invoice.campaignId === campaignId);
       },
     },
     "@futures-medialab/database/reporting": {
@@ -881,4 +889,23 @@ test("managed campaigns cannot enter public agency discovery or direct applicati
     409,
   );
   assert.equal(queries.length, 2);
+});
+
+test("completed campaigns expose their issued invoice summary independently from campaign status", async () => {
+  const { api, store } = fixture({ role: "OWNER" });
+  const created = await (await api.mutateBrandCampaign(request(input()))).json();
+  store.campaigns[0].status = "COMPLETED";
+  const invoice = { id: "invoice-issued", campaignId: created.id, status: "ISSUED", currency: "USD", amount: "100.01", lines: [] };
+  store.invoices.push(invoice, { ...invoice, id: "another-campaign-invoice", campaignId: "campaign-other", status: "PAID" });
+  const detail = await (await api.brandCampaignDetail(request(), created.id)).json();
+  assert.equal(detail.campaign.status, "COMPLETED");
+  assert.deepEqual(detail.campaign.invoiceSummary, { issued: 1, paid: 0 });
+  assert.deepEqual(detail.invoices, [invoice]);
+  const workspace = await (await api.brandWorkspace(request())).json();
+  assert.deepEqual(workspace.campaigns[0].invoiceSummary, { issued: 1, paid: 0 });
+  assert.equal(workspace.invoices.length, 2);
+  invoice.status = "PAID";
+  const paid = await (await api.brandCampaignDetail(request(), created.id)).json();
+  assert.equal(paid.campaign.status, "COMPLETED");
+  assert.deepEqual(paid.campaign.invoiceSummary, { issued: 0, paid: 1 });
 });

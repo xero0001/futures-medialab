@@ -143,6 +143,12 @@ model User {
   decidedProduction ProductionSubmission[] @relation("ProductionBrandReviewer")
   productionMutations ProductionMutation[]
   reportingMutations ReportingMutation[]
+  campaignCompletions CampaignCompletion[]
+  issuedBrandInvoices BrandInvoice[] @relation("BrandInvoiceIssuer")
+  recordedBrandPayments BrandInvoice[] @relation("BrandInvoicePaymentRecorder")
+  issuedAgencyPayouts AgencyPayout[] @relation("AgencyPayoutIssuer")
+  recordedAgencyPayments AgencyPayout[] @relation("AgencyPayoutPaymentRecorder")
+  officialSettlementMutations SettlementMutation[]
   proposalMutations     ProposalMutation[]
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
@@ -227,6 +233,8 @@ model Organization {
   agencyDocuments       AgencyDocument[]
   productionItems ProductionItem[]
   suppliedProposalItems ProposalItem[]
+  brandInvoices BrandInvoice[]
+  agencyPayouts AgencyPayout[]
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
 
@@ -301,6 +309,10 @@ model Campaign {
   productionMutations ProductionMutation[]
   reportingItems ReportingItem[]
   reportingMutations ReportingMutation[]
+  completion CampaignCompletion?
+  brandInvoice BrandInvoice?
+  agencyPayouts AgencyPayout[]
+  officialSettlementMutations SettlementMutation[]
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
 
@@ -608,6 +620,7 @@ model CampaignProposal {
   items           ProposalItem[]
   decisions       ProposalDecision[]
   mutations       ProposalMutation[]
+  completions CampaignCompletion[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -825,6 +838,110 @@ model ReportingMutation {
   actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
   campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   reportingItem ReportingItem? @relation(fields: [reportingItemId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([actorId, clientRequestId])
+  @@index([campaignId])
+}
+
+
+// Official-proposal financial records are separate from legacy application Settlement.
+enum OfficialSettlementStatus {
+  DRAFT
+  ISSUED
+  PAID
+}
+model CampaignCompletion {
+  id String @id @default(cuid())
+  campaignId String @unique
+  proposalId String
+  proposalVersion Int
+  proposalRevision Int
+  readinessToken String
+  evidenceSnapshot Json
+  note String @db.Text
+  completedById String
+  completedAt DateTime @default(now())
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  proposal CampaignProposal @relation(fields: [proposalId], references: [id], onDelete: Restrict)
+  completedBy User @relation(fields: [completedById], references: [id], onDelete: Restrict)
+  brandInvoice BrandInvoice?
+  agencyPayouts AgencyPayout[]
+  mutations SettlementMutation[]
+}
+model BrandInvoice {
+  id String @id @default(cuid())
+  campaignId String @unique
+  completionId String @unique
+  brandOrganizationId String
+  status OfficialSettlementStatus @default(DRAFT)
+  revision Int @default(0)
+  currency Currency
+  amount Decimal @db.Decimal(18, 2)
+  lineSnapshot Json
+  title String
+  note String @default("") @db.Text
+  dueAt DateTime?
+  documentUrl String? @db.Text
+  internalNote String @default("") @db.Text
+  issuedById String?
+  issuedAt DateTime?
+  paymentRecordedById String?
+  paidAt DateTime?
+  paidAmount Decimal? @db.Decimal(18, 2)
+  externalPaymentReference String?
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  completion CampaignCompletion @relation(fields: [completionId], references: [id], onDelete: Cascade)
+  brandOrganization Organization @relation(fields: [brandOrganizationId], references: [id], onDelete: Restrict)
+  issuedBy User? @relation("BrandInvoiceIssuer", fields: [issuedById], references: [id], onDelete: Restrict)
+  paymentRecordedBy User? @relation("BrandInvoicePaymentRecorder", fields: [paymentRecordedById], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([brandOrganizationId, status])
+}
+model AgencyPayout {
+  id String @id @default(cuid())
+  campaignId String
+  completionId String
+  supplierOrganizationId String
+  status OfficialSettlementStatus @default(DRAFT)
+  revision Int @default(0)
+  currency Currency
+  amount Decimal @db.Decimal(18, 2)
+  lineSnapshot Json
+  supplierCostBasis String @default("ITEM_TOTAL")
+  title String
+  note String @default("") @db.Text
+  dueAt DateTime?
+  documentUrl String? @db.Text
+  internalNote String @default("") @db.Text
+  issuedById String?
+  issuedAt DateTime?
+  paymentRecordedById String?
+  paidAt DateTime?
+  paidAmount Decimal? @db.Decimal(18, 2)
+  externalPaymentReference String?
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  completion CampaignCompletion @relation(fields: [completionId], references: [id], onDelete: Cascade)
+  supplierOrganization Organization @relation(fields: [supplierOrganizationId], references: [id], onDelete: Restrict)
+  issuedBy User? @relation("AgencyPayoutIssuer", fields: [issuedById], references: [id], onDelete: Restrict)
+  paymentRecordedBy User? @relation("AgencyPayoutPaymentRecorder", fields: [paymentRecordedById], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([completionId, supplierOrganizationId])
+  @@index([campaignId])
+  @@index([supplierOrganizationId, status])
+}
+model SettlementMutation {
+  id String @id @default(cuid())
+  actorId String
+  clientRequestId String
+  action String
+  payloadHash String
+  campaignId String
+  completionId String
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  completion CampaignCompletion @relation(fields: [completionId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   @@unique([actorId, clientRequestId])
   @@index([campaignId])
