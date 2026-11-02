@@ -147,17 +147,17 @@ export function WorkspaceShell({
   const navigation = isAgency
     ? [
         {
-          label: t("Campaigns", "캠페인 탐색", "活动探索"),
-          items: [
-            agencyItem("offers", IconSearch),
-            agencyItem("applications", IconInbox),
-          ],
-        },
-        {
           label: t("Collaboration", "협업 관리", "合作管理"),
           items: [
             agencyItem("projects", IconFolderStar),
             agencyItem("invitations", IconMegaphone),
+          ],
+        },
+        {
+          label: t("Campaigns", "캠페인 탐색", "活动探索"),
+          items: [
+            agencyItem("offers", IconSearch),
+            agencyItem("applications", IconInbox),
           ],
         },
         {

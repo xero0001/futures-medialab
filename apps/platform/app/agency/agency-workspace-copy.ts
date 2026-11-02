@@ -8,7 +8,7 @@ export const agencyCopy = {
   en: {
     applications: "Submission History",
     workspace: "Partner workspace", agency: "Agency", studio: "Studio", language: "Language", menu: "Toggle navigation",
-    offers: "Offer Browser", projects: "My Projects", invitations: "Offer Invitations", "creator-projects": "Creator Projects", creators: "My Creators", payments: "Payment", organization: "Organization Info", notifications: "Notifications",
+    offers: "Offer Browser", projects: "Assigned campaigns", invitations: "Offer Invitations", "creator-projects": "Creator Projects", creators: "My Creators", payments: "Payment", organization: "Organization Info", notifications: "Notifications",
     officialGroup: "Official Business Collaboration", creatorsGroup: "My Creators’ Offers", accountGroup: "Account Center",
     eyebrow: "One place for your next collaboration", offersTitle: "Discover your next campaign",
     offersSubtitle: "Explore opportunities for your creators, review the brief, and find the right fit.",
@@ -37,7 +37,7 @@ export const agencyCopy = {
   ko: {
     applications: "신청 내역",
     workspace: "파트너 작업 공간", agency: "에이전시", studio: "스튜디오", language: "언어", menu: "메뉴 열기",
-    offers: "캠페인 찾기", projects: "내 프로젝트", invitations: "캠페인 초대", "creator-projects": "크리에이터 프로젝트", creators: "소속 크리에이터", payments: "정산", organization: "조직 정보", notifications: "알림",
+    offers: "캠페인 찾기", projects: "담당 캠페인", invitations: "캠페인 초대", "creator-projects": "크리에이터 프로젝트", creators: "소속 크리에이터", payments: "정산", organization: "조직 정보", notifications: "알림",
     officialGroup: "공식 비즈니스 협업", creatorsGroup: "크리에이터 캠페인", accountGroup: "계정 관리",
     eyebrow: "다음 협업을 위한 하나의 공간", offersTitle: "우리 크리에이터의 다음 캠페인",
     offersSubtitle: "캠페인 조건과 가이드를 살펴보고, 소속 크리에이터에게 맞는 기회를 찾아보세요.",
@@ -66,7 +66,7 @@ export const agencyCopy = {
   zh: {
     applications: "申请记录",
     workspace: "合作伙伴工作区", agency: "代理机构", studio: "工作室", language: "语言", menu: "切换导航",
-    offers: "活动浏览", projects: "我的项目", invitations: "活动邀请", "creator-projects": "达人项目", creators: "我的达人", payments: "结算", organization: "组织信息", notifications: "通知",
+    offers: "活动浏览", projects: "负责的活动", invitations: "活动邀请", "creator-projects": "达人项目", creators: "我的达人", payments: "结算", organization: "组织信息", notifications: "通知",
     officialGroup: "官方商务合作", creatorsGroup: "达人活动", accountGroup: "账户中心",
     eyebrow: "在这里开启下一次合作", offersTitle: "为达人寻找下一次合作",
     offersSubtitle: "浏览活动要求与内容指南，找到适合旗下达人的合作机会。",

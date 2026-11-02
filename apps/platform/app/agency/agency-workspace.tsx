@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import type { Locale } from "../_components/landing-copy";
 import { authClient } from "../../lib/auth-client";
@@ -33,7 +34,7 @@ type AgencyAccount = {
 
 export function AgencyWorkspace({
   initialLocale: locale,
-  initialSection = "offers",
+  initialSection = "projects",
   organizationName,
   status,
   role,
@@ -42,34 +43,19 @@ export function AgencyWorkspace({
   const copy = agencyCopy[locale];
   const t = (en: string, ko: string, zh: string) =>
     agencyText(locale, en, ko, zh);
-  const [section, setSection] = useState(initialSection);
+  const params = useSearchParams();
+  const requestedSection = params.get("section");
+  const section = agencySections.includes(requestedSection as AgencySection) ? requestedSection as AgencySection : initialSection;
   const [signingOut, setSigningOut] = useState(false);
   const [logoutError, setLogoutError] = useState(false);
   const mainHeading = useRef<HTMLHeadingElement>(null);
   const pending = status === "PENDING";
 
-  useEffect(() => {
-    function syncSection() {
-      const requested = new URL(window.location.href).searchParams.get(
-        "section",
-      );
-      setSection(
-        agencySections.includes(requested as AgencySection)
-          ? (requested as AgencySection)
-          : "offers",
-      );
-      requestAnimationFrame(() =>
-        mainHeading.current?.focus({ preventScroll: true }),
-      );
-    }
-    window.addEventListener("popstate", syncSection);
-    return () => window.removeEventListener("popstate", syncSection);
-  }, []);
-
   function navigate(next: AgencySection) {
-    setSection(next);
     const url = new URL(window.location.href);
     url.searchParams.set("section", next);
+    url.searchParams.delete("stage");
+    url.searchParams.delete("campaign");
     window.history.pushState(null, "", url);
     requestAnimationFrame(() => {
       mainHeading.current?.focus({ preventScroll: true });

@@ -19,6 +19,6 @@ export default async function AgencyPage({
   const [query, jar, requestHeaders] = await Promise.all([searchParams, cookies(), headers()]);
   const locale = resolveLocale(query.lang, jar.get("fm-locale")?.value, requestHeaders.get("accept-language"));
   const account = await requireAgencyWorkspace(locale);
-  const section = agencySections.includes(query.section as AgencySection) ? query.section as AgencySection : "offers";
+  const section = agencySections.includes(query.section as AgencySection) ? query.section as AgencySection : account.status === "ACTIVE" ? "projects" : "offers";
   return <AgencyWorkspace initialLocale={locale} initialSection={section} {...account} />;
 }

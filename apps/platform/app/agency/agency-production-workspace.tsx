@@ -8,7 +8,7 @@ import type { Locale } from "../_components/landing-copy";
 import { ProductionArtwork, ProductionBadge, productionDate, productionText, VersionContent } from "../_components/workspace/production-shared";
 import styles from "../_components/workspace/production-workspace.module.css";
 
-export function AgencyProductionWorkspace({ locale }: { locale: Locale }) {
+export function AgencyProductionWorkspace({ locale, campaignId, onChanged }: { locale: Locale; campaignId?: string; onChanged?: () => void }) {
   const t = productionText(locale);
   const [data, setData] = useState<AgencyProductionResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -23,22 +23,23 @@ export function AgencyProductionWorkspace({ locale }: { locale: Locale }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError("");
-    fetch("/api/agency/production", { cache: "no-store", signal: controller.signal })
+    const path = `/api/agency/production${campaignId ? `?campaignId=${encodeURIComponent(campaignId)}` : ""}`;
+    fetch(path, { cache: "no-store", signal: controller.signal })
       .then(async response => {
         const result = await response.json();
         if (!response.ok) throw new Error(result.message ?? "제작 업무를 불러오지 못했습니다.");
         return result as AgencyProductionResponse;
       })
-      .then(result => { setData(result); setLoading(false); })
+      .then(result => { if (!controller.signal.aborted) { setData(result); setLoading(false); } })
       .catch(reason => { if (!controller.signal.aborted) { setError(reason instanceof Error ? reason.message : "제작 업무를 불러오지 못했습니다."); setLoading(false); } });
     return () => controller.abort();
-  }, [refresh]);
+  }, [campaignId, refresh]);
   const items = data?.items.filter(item =>
     (filter === "all" || (filter === "action" ? item.canSubmit : item.status === filter)) &&
     `${item.campaignTitle} ${item.creatorName} ${item.deliverables}`.toLowerCase().includes(search.trim().toLowerCase()),
   ) ?? [];
   const item = items.find(value => value.id === selectedId) ?? items.find(value => value.canSubmit) ?? items[0];
-  function reload() { setRefresh(value => value + 1); }
+  function reload() { setRefresh(value => value + 1); onChanged?.(); }
   return <section className={`${styles.workspace} ${styles.agencyWorkspace}`} aria-label={t("공식 제안 제작 업무", "Official proposal production", "正式方案制作任务")}>
     <div className={styles.heading}><div><Typography as="h2" variant="title3" weight="bold">{t("콘텐츠 제작·제출", "Content production & delivery", "内容制作与提交")}</Typography><Typography as="p" variant="body2" className={styles.muted}>{t("승인된 제안의 담당 콘텐츠를 제출하세요. 퓨쳐스 검토를 거친 버전이 브랜드에 공유됩니다.", "Submit your assigned content from approved proposals. Futures reviews each version before sharing it with the brand.", "提交已批准方案中分配的内容，每个版本由 Futures 审核后向品牌共享。")}</Typography></div>{data && <Typography variant="label1">{t(`담당 ${data.items.length}건 · 제출 가능 ${data.items.filter(value => value.canSubmit).length}건`, `${data.items.length} assigned · ${data.items.filter(value => value.canSubmit).length} ready to submit`, `已分配 ${data.items.length} 项 · 可提交 ${data.items.filter(value => value.canSubmit).length} 项`)}</Typography>}</div>
     {loading ? <div className={styles.loading} aria-label={t("제작 업무 불러오는 중", "Loading production", "正在加载制作任务")}><Skeleton width="100%" height={80} /><Skeleton width="100%" height={240} /></div> : error ? <SectionMessage variant="negative" role="alert" bottomButton={<Button variant="outlined" color="assistive" size="small" onClick={reload}>{t("다시 불러오기", "Try again", "重试")}</Button>}>{error}</SectionMessage> : !data?.items.length ? <div className={styles.empty}><IconClock /><Typography as="h3" variant="heading2" weight="bold">{t("배정된 제작 업무가 없습니다", "No production tasks assigned", "暂无分配的制作任务")}</Typography><Typography as="p" variant="body2" className={styles.muted}>{t("공식 제안의 승인이 완료되고 담당 구성이 배정되면 이곳에서 콘텐츠를 제출할 수 있습니다.", "Once a proposal is approved and items are assigned to your team, you can submit content here.", "正式方案批准并分配给贵团队后，即可在此提交内容。")}</Typography></div> : <>

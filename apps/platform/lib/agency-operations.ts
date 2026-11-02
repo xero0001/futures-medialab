@@ -51,6 +51,10 @@ export async function agencyOperations(request: Request) {
   return workspaceBoundary(async () => {
     const session = await getAuth().api.getSession({ headers: request.headers });
     if (!session) fail(401, "UNAUTHORIZED", "Log in to continue.");
+    const params = new URL(request.url).searchParams;
+    const campaignId = params.get("campaignId") ?? undefined;
+    if (campaignId !== undefined && (!/^[A-Za-z0-9_-]{1,120}$/.test(campaignId) || params.getAll("campaignId").length > 1))
+      fail(400, "INVALID_INPUT", "캠페인을 확인해 주세요.");
     await rateLimit(session.user.id, "agency-operations-read", 120);
     const result = await getDatabase().$transaction(async (tx): Promise<AgencyOperationsBootstrap> => {
       if (!await tx.session.findFirst({
@@ -77,7 +81,7 @@ export async function agencyOperations(request: Request) {
         fail(403, "APPROVAL_REQUIRED", "Your organization must be approved before viewing live records.");
       const organizationId = member.organizationId;
       const demoScope = testAccess ? {} : { brandOrganizationId: { not: DEMO_CAMPAIGN_BRAND_ID } };
-      const applicationScope = { agencyOrganizationId: organizationId, campaign: demoScope };
+      const applicationScope = { agencyOrganizationId: organizationId, campaign: demoScope, ...(campaignId ? { campaignId } : {}) };
       // An interactive transaction shares one PostgreSQL connection. Read in
       // sequence while retaining the same repeatable-read snapshot.
       const projects = await tx.campaignApplication.findMany({
@@ -122,6 +126,8 @@ export async function agencyOperations(request: Request) {
       const accessible = (row: { agencyOrganizationId: string; campaign: { brandOrganizationId: string; requirements: unknown } }) =>
         row.agencyOrganizationId === organizationId && canAccessCampaign(row.campaign, testAccess);
       const ownProjects = projects.filter((row) => row.status === "ACCEPTED" && accessible(row));
+      if (campaignId && !ownProjects.some(row => row.campaignId === campaignId))
+        fail(404, "NOT_FOUND", "담당 캠페인 기록을 찾을 수 없습니다.");
       const ownApplications = applications.filter(accessible);
       const ownSubmissions = submissions.filter((row) => accessible(row.application));
       const ownSettlements = settlements.filter((row) => row.agencyOrganizationId === organizationId && accessible(row.application));

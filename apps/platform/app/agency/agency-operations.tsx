@@ -44,6 +44,7 @@ type Section =
 type Props = {
   locale: Locale;
   section: Section;
+  campaignId?: string;
   onExplore: () => void;
   onApplications: () => void;
 };
@@ -144,6 +145,7 @@ function safeUrl(value: string | null) {
 export function AgencyOperations({
   locale,
   section,
+  campaignId,
   onExplore,
   onApplications,
 }: Props) {
@@ -154,7 +156,8 @@ export function AgencyOperations({
   const [request, setRequest] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/agency/operations", {
+    const path = `/api/agency/operations${campaignId ? `?campaignId=${encodeURIComponent(campaignId)}` : ""}`;
+    fetch(path, {
       cache: "no-store",
       signal: controller.signal,
     })
@@ -190,7 +193,7 @@ export function AgencyOperations({
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [request]);
+  }, [campaignId, request]);
   function reload() {
     setLoading(true);
     setError("");
@@ -268,6 +271,7 @@ export function AgencyOperations({
           <OperationSection
             key={section}
             section={section}
+            campaignId={campaignId}
             data={data}
             locale={locale}
             onExplore={onExplore}
@@ -282,6 +286,7 @@ export function AgencyOperations({
 
 function OperationSection({
   section,
+  campaignId,
   data,
   locale,
   onExplore,
@@ -297,7 +302,7 @@ function OperationSection({
     return <Activity data={data} locale={locale} />;
   return (
     <Projects
-      data={data}
+      data={campaignId ? { ...data, projects: data.projects.filter(project => project.campaignId === campaignId) } : data}
       locale={locale}
       creatorView={section === "creator-projects"}
       onExplore={onExplore}
@@ -530,7 +535,7 @@ function Projects({
   onRefresh: () => void;
 }) {
   const t = useText(locale);
-  const [tab, setTab] = useState("active");
+  const [tab, setTab] = useState(data.projects.length > 0 && data.projects.every(project => closedStatuses.includes(project.campaignStatus)) ? "closed" : "active");
   const [query, setQuery] = useState("");
   const [platform, setPlatform] = useState("");
   const [progress, setProgress] = useState("");

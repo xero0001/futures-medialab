@@ -91,7 +91,7 @@ function fixture(options = {}) {
       },
     },
   }).agencyOperations;
-  return { calls, run: () => handler(new globalThis.Request("https://example.com/api/agency/operations?organizationId=agency-other")) };
+  return { calls, run: (query = "?organizationId=agency-other") => handler(new globalThis.Request(`https://example.com/api/agency/operations${query}`)) };
 }
 
 test("anonymous and revoked sessions never reach organization or domain queries", async () => {
@@ -224,4 +224,20 @@ test("endpoint exposes GET only and delegates to the guarded handler", () => {
   assert.match(source, /export const GET = agencyOperations/);
   assert.match(source, /dynamic = "force-dynamic"/);
   assert.doesNotMatch(source, /export (?:const|function|async function) (?:POST|PUT|PATCH|DELETE)/);
+});
+
+test("campaign deep links scope every related database query before limits, and never fall back", async () => {
+  const state = fixture({ projects: [application] });
+  const response = await state.run("?campaignId=campaign-own");
+  assert.equal(response.status, 200);
+  for (const [name, query] of state.calls) {
+    if (name === "applications") assert.equal(query.where.campaignId, "campaign-own");
+    if (name === "submissions" || name === "settlements") assert.equal(query.where.application.campaignId, "campaign-own");
+  }
+  assert.equal((await fixture({ projects: [] }).run("?campaignId=campaign-other")).status, 404);
+  for (const query of ["?campaignId=", "?campaignId=invalid%2Fid", "?campaignId=campaign-own&campaignId=other"]) {
+    const invalid = fixture();
+    assert.equal((await invalid.run(query)).status, 400);
+    assert.equal(invalid.calls.some(([name]) => name === "applications"), false);
+  }
 });

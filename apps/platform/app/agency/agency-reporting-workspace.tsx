@@ -11,7 +11,7 @@ import { metricLabel, ReportingBadge, reportingDate, reportingIsoDate, reporting
 import styles from "../_components/workspace/production-workspace.module.css";
 import reportStyles from "../_components/workspace/reporting-workspace.module.css";
 
-export function AgencyReportingWorkspace({ locale }: { locale: Locale }) {
+export function AgencyReportingWorkspace({ locale, campaignId, onChanged }: { locale: Locale; campaignId?: string; onChanged?: () => void }) {
   const t = productionText(locale);
   const [data, setData] = useState<AgencyReportingResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,7 +26,8 @@ export function AgencyReportingWorkspace({ locale }: { locale: Locale }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError("");
-    fetch("/api/agency/reporting", { cache: "no-store", signal: controller.signal }).then(async response => {
+    const path = `/api/agency/reporting${campaignId ? `?campaignId=${encodeURIComponent(campaignId)}` : ""}`;
+    fetch(path, { cache: "no-store", signal: controller.signal }).then(async response => {
       const result = await response.json();
       if (!response.ok) throw new Error(result.message ?? "게시·성과 업무를 불러오지 못했습니다.");
       return result as AgencyReportingResponse;
@@ -34,10 +35,10 @@ export function AgencyReportingWorkspace({ locale }: { locale: Locale }) {
       if (!controller.signal.aborted) { setError(reason instanceof Error ? reason.message : "게시·성과 업무를 불러오지 못했습니다."); setLoading(false); }
     });
     return () => controller.abort();
-  }, [revision]);
+  }, [campaignId, revision]);
   const items = data?.items.filter(item => (filter === "all" || (filter === "action" ? item.canSubmit : item.status === filter)) && `${item.campaignTitle} ${item.creatorName} ${item.deliverables}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())) ?? [];
   const item = items.find(value => value.id === selectedId) ?? items.find(value => value.canSubmit && !value.latestSubmission) ?? items[0];
-  const reload = () => setRevision(value => value + 1);
+  const reload = () => { setRevision(value => value + 1); onChanged?.(); };
   return <section className={styles.workspace} aria-label={t("게시·성과 제출", "Publication reporting", "发布与成效提交")}>
     <div className={styles.heading}><div><Typography as="h2" variant="title3" weight="bold">{t("게시·성과 등록", "Publication & performance reporting", "发布与成效登记")}</Typography><Typography as="p" variant="body2" className={styles.muted}>{t("승인된 콘텐츠의 게시 링크와 확인된 지표를 등록하세요. 퓨쳐스가 검토한 내용만 브랜드에 공개됩니다.", "Register published links and measured figures for approved content. Only reports reviewed by Futures are shared with the brand.", "登记已批准内容的发布链接及已确认指标，只有经 Futures 审核的内容会向品牌公开。")}</Typography></div>{data && <Typography variant="label1">{t(`담당 ${data.items.length}건`, `${data.items.length} assigned`, `已分配 ${data.items.length} 项`)}</Typography>}</div>
     {loading ? <div className={styles.loading} role="status" aria-label={t("성과 업무 불러오는 중", "Loading reports", "正在加载报告")}><Skeleton width="100%" height={80} /><Skeleton width="100%" height={240} /></div> : error ? <SectionMessage variant="negative" role="alert" bottomButton={<Button size="small" variant="outlined" color="assistive" onClick={reload}>{t("다시 불러오기", "Try again", "重试")}</Button>}>{error}</SectionMessage> : !data?.items.length ? <div className={styles.empty}><IconClock /><Typography as="h3" variant="heading2" weight="bold">{t("등록할 게시·성과 업무가 없습니다", "No publication reports to submit", "暂无待提交的发布报告")}</Typography><Typography as="p" variant="body2" className={styles.muted}>{t("담당 콘텐츠의 브랜드 승인이 완료되면 게시·성과 업무가 준비됩니다.", "Reporting tasks become available once the brand approves your assigned content.", "品牌批准所分配的内容后，将准备发布与成效任务。")}</Typography></div> : <>
