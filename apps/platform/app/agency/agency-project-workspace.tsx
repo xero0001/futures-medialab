@@ -50,7 +50,7 @@ export function AgencyProjectWorkspace({ locale, onExplore, onApplications }: { 
   function reload() { setResult(null); setRevision(value => value + 1); }
   function refreshSummary() { setRevision(value => value + 1); }
   function open(project: AgencyAssignedCampaign, next: AgencyProjectStage) { navigate(next, project.campaignId); window.scrollTo({ top: 0, behavior: "auto" }); }
-  const back = <Button size="small" variant="outlined" color="assistive" onClick={() => navigate("overview")}><IconArrowLeft />{t("전체 담당 캠페인", "All assigned campaigns", "全部负责活动")}</Button>;
+  const back = <Button size="small" variant="outlined" color="assistive" onClick={() => navigate("overview")} leadingContent={<IconArrowLeft />}>{t("전체 담당 캠페인", "All assigned campaigns", "全部负责活动")}</Button>;
   if (!validId) return <SectionMessage variant="negative" role="alert" bottomButton={back}>{t("캠페인 주소를 확인해 주세요.", "Check the campaign address.", "请检查活动地址。")}</SectionMessage>;
   if (!current) return <div className={styles.workspace} role="status" aria-label={t("담당 캠페인 불러오는 중", "Loading assigned campaigns", "正在加载负责的活动")}><Skeleton width="100%" height={120} /><Skeleton width="100%" height={260} /></div>;
   if (current.error || !data || (campaignId !== null && !selected)) return <SectionMessage variant="negative" role="alert" bottomButton={<div className={styles.actions}>{back}<Button size="small" variant="outlined" color="assistive" onClick={reload}>{t("다시 불러오기", "Try again", "重试")}</Button></div>}>{current.error || t("이 캠페인의 배정 내역을 확인할 수 없습니다.", "This campaign assignment is unavailable.", "无法查看此活动的分配记录。")}</SectionMessage>;
