@@ -46,6 +46,9 @@ export type BrandCampaign = CampaignArtwork & {
   submittedAt: string | null;
   proposalDueAt: string | null;
   requestId: string | null;
+  intakeStatus: string | null;
+  intakeAssigneeName: string | null;
+  intakeDueAt: string | null;
   reviewNote: string | null;
   latestProposal: BrandProposalSummary | null;
   productionSummary: { total: number; awaitingSubmission: number; underReview: number; awaitingBrand: number; changesRequested: number; approved: number };
@@ -59,6 +62,7 @@ export type BrandRequestSummary = {
   status: string;
   campaignId: string | null;
   campaignTitle: string | null;
+  assigneeName: string | null;
   dueAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -69,7 +73,7 @@ export type BrandWorkspaceCapabilities = {
   officialProposals: boolean;
   productionReview: boolean;
   campaignPerformance: boolean;
-  campaignDocuments: false;
+  campaignDocuments: boolean;
 };
 export type BrandWorkspace = {
   account: WorkspaceAccount;
@@ -99,7 +103,6 @@ export type BrandCampaignDetail = {
   deliverables: BrandProductionItem[];
   performance: { items: BrandReportingItem[] };
   invoices: BrandInvoice[];
-  documents: never[];
   capabilities: BrandWorkspaceCapabilities;
 };
 export type BrandCampaignCreateInput = BrandCampaignBrief & {

@@ -17,6 +17,7 @@ import type {
   AgencyReportingMutation,
   AgencyReportingResponse,
   BrandReportingItem,
+  BrandReportingSubmission,
   ReportingMetrics,
   ReportingSnapshot,
   ReportingStatus,
@@ -368,6 +369,66 @@ export async function listBrandReportingItems(
   });
   return rows.map(brandDto);
 }
+/** Sort by publication time, including older versions already released to this brand. */
+export async function listBrandDocumentReports(
+  tx: Tx,
+  organizationId: string,
+  campaignId?: string,
+  limit = 101,
+): Promise<Array<{
+  campaignId: string;
+  campaignTitle: string;
+  creatorName: string;
+  platform: string;
+  submission: BrandReportingSubmission;
+}>> {
+  const published = {
+    releasedAt: { not: null },
+    releasedPublishedAt: { not: null },
+    releasedPostUrl: { not: null },
+  } satisfies Prisma.ReportingSubmissionWhereInput;
+  const rows = await tx.reportingSubmission.findMany({
+    where: {
+      ...published,
+      reportingItem: {
+        ...(campaignId ? { campaignId } : {}),
+        campaign: { brandOrganizationId: organizationId },
+        productionItem: { proposalItem: { proposal: { publishedAt: { not: null }, status: { not: "DRAFT" } } } },
+      },
+    },
+    orderBy: [{ releasedAt: "desc" }, { id: "asc" }],
+    take: Math.min(501, Math.max(1, limit)),
+    select: {
+      ...releasedSelect,
+      reportingItem: {
+        select: {
+          ...baseSelect,
+          submissions: { where: published, orderBy: { version: "desc" }, take: 1, select: { id: true } },
+        },
+      },
+    },
+  });
+  return rows.flatMap((row) => {
+    const snapshot = releasedSnapshot(row);
+    const production = row.reportingItem.productionItem;
+    if (!snapshot || production.campaignId !== row.reportingItem.campaignId || production.proposalItem.proposal.campaignId !== row.reportingItem.campaignId) return [];
+    const item = baseDto(row.reportingItem);
+    return [{
+      campaignId: item.campaignId,
+      campaignTitle: item.campaignTitle,
+      creatorName: item.creatorName,
+      platform: item.platform,
+      submission: {
+        ...snapshot,
+        id: row.id,
+        version: row.version,
+        releasedAt: row.releasedAt!.toISOString(),
+        isLatest: row.reportingItem.submissions[0]?.id === row.id,
+      },
+    }];
+  });
+}
+
 export async function listAgencyReporting(
   tx: Tx,
   actor: Actor,

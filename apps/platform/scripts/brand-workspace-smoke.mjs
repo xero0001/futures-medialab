@@ -481,7 +481,8 @@ if (values["cleanup-fixture-file"]) {
         assert.deepEqual(detail.json.proposals, []);
         assert.deepEqual(detail.json.deliverables, []);
         assert.deepEqual(detail.json.performance.metrics, []);
-        assert.deepEqual(detail.json.documents, []);
+        assert.equal(detail.json.documents, undefined);
+        assert.equal(detail.json.capabilities.campaignDocuments, true);
       },
     );
     await check(

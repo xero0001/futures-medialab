@@ -59,7 +59,7 @@ const capabilities: BrandWorkspaceCapabilities = {
   officialProposals: true,
   productionReview: true,
   campaignPerformance: true,
-  campaignDocuments: false,
+  campaignDocuments: true,
 };
 const campaignSelect = {
   id: true,
@@ -87,6 +87,7 @@ const requestSelect = {
   status: true,
   campaignId: true,
   campaign: { select: { title: true } },
+  assignedTo: { select: { name: true } },
   dueAt: true,
   createdAt: true,
   updatedAt: true,
@@ -103,6 +104,7 @@ function requestDto(row: RequestRow): BrandRequestSummary {
     status: row.status,
     campaignId: row.campaignId,
     campaignTitle: row.campaign?.title ?? null,
+    assigneeName: row.assignedTo ? row.assignedTo.name?.trim() || "운영팀" : null,
     dueAt: row.dueAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -152,6 +154,13 @@ function campaignDto(
         ? (intakeRequest?.dueAt?.toISOString() ?? null)
         : null,
     requestId: row.status === "DRAFT" ? null : (intakeRequest?.id ?? null),
+    intakeStatus: row.status === "DRAFT" ? null : (intakeRequest?.status ?? null),
+    intakeAssigneeName:
+      row.status !== "DRAFT" && intakeRequest?.assignedTo
+        ? intakeRequest.assignedTo.name?.trim() || "운영팀"
+        : null,
+    intakeDueAt:
+      row.status === "DRAFT" ? null : (intakeRequest?.dueAt?.toISOString() ?? null),
     reviewNote: string(object(requirements.adminReview).reason) || null,
     latestProposal,
     productionSummary: {
@@ -428,7 +437,6 @@ export function brandCampaignDetail(request: Request, id: string) {
           deliverables: production,
           performance: { items: reporting },
           invoices,
-          documents: [],
           capabilities,
         };
       },

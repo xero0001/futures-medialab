@@ -1,0 +1,847 @@
+.actionCenter {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.panel,
+.progressPanel {
+  min-width: 0;
+  border: 1px solid var(--brand-line, #e5e5e7);
+  border-radius: 16px;
+  background: var(--brand-surface, #fff);
+  overflow: hidden;
+}
+.actionPanel {
+  border-top: 3px solid var(--brand-blue, #0066ff);
+}
+.panelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 24px 20px;
+}
+.panelHeader > div {
+  min-width: 0;
+}
+.panelHeader p {
+  margin-top: 8px !important;
+  line-height: 1.6;
+}
+.headingLine {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.headingLine h2 {
+  margin: 0;
+}
+.count {
+  display: inline-grid;
+  place-items: center;
+  padding: 2px 9px;
+  min-width: 28px;
+  min-height: 25px;
+  border-radius: 8px;
+  background: var(--brand-blue-soft, #f0f6ff);
+  color: var(--brand-blue, #0066ff);
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.muted {
+  color: var(--brand-muted, #46474c);
+}
+.urgencySummary {
+  display: flex;
+  flex-shrink: 0;
+  gap: 14px;
+  align-items: center;
+  color: var(--brand-subtle, #73767d);
+  font-size: 12px;
+  padding-top: 6px;
+}
+.urgencySummary > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.overdue {
+  color: #bf3525 !important;
+  font-weight: 600;
+}
+.filters {
+  display: flex;
+  gap: 8px;
+  padding: 0 24px 20px;
+  flex-wrap: wrap;
+}
+.filters button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  border: 1px solid var(--brand-line, #e5e5e7);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--brand-muted, #46474c);
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  line-height: 1.3;
+}
+.filters button > span {
+  font-size: 12px;
+  color: var(--brand-subtle, #73767d);
+  font-variant-numeric: tabular-nums;
+}
+.filters button:hover {
+  background: var(--brand-soft, #f7f7f8);
+}
+.filters button.selectedFilter {
+  background: var(--brand-blue-soft, #f0f6ff);
+  color: var(--brand-blue, #0066ff);
+  border-color: #b8d5ff;
+  font-weight: 600;
+}
+.filters button.selectedFilter > span {
+  color: var(--brand-blue, #0066ff);
+}
+.actionList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+  border-top: 1px solid var(--brand-line, #e5e5e7);
+}
+.actionIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--brand-blue-soft, #f0f6ff);
+  color: var(--brand-blue, #0066ff);
+  flex: none;
+}
+.lateIcon {
+  color: #c44827;
+  background: #fff3ed;
+}
+.actionBody {
+  flex: 1;
+  min-width: 0;
+}
+.rowEyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--brand-subtle, #73767d);
+}
+.rowEyebrow > span:first-child {
+  color: var(--brand-blue, #0066ff);
+  font-weight: 600;
+  flex: none;
+}
+.campaignLabel {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.actionTitle {
+  color: var(--brand-ink, #171719);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.actionTitle:hover {
+  color: var(--brand-blue, #0066ff);
+  text-decoration: underline !important;
+}
+.actionBody p {
+  margin: 6px 0 0 !important;
+  color: var(--brand-muted, #46474c);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.actionDeadline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  flex: none;
+  min-width: 140px;
+  font-size: 12px;
+}
+.actionDeadline > span {
+  color: var(--brand-subtle, #73767d);
+}
+.actionDeadline > time {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.actionRow > a:last-child {
+  flex: none;
+}
+.emptyActions {
+  min-height: 182px;
+  padding: 26px 24px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  flex-direction: column;
+  text-align: center;
+  border-top: 1px solid var(--brand-line, #e5e5e7);
+}
+.emptyActions > span {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #ecf8f0;
+  color: #258447;
+  display: grid;
+  place-items: center;
+  margin-bottom: 4px;
+}
+.emptyActions p {
+  max-width: 480px;
+  line-height: 1.6;
+}
+.moreRow {
+  padding: 16px 24px;
+  border-top: 1px solid var(--brand-line, #e5e5e7);
+  display: flex;
+  justify-content: center;
+}
+.limitNote {
+  font-size: 12px;
+  color: var(--brand-subtle, #73767d);
+  line-height: 1.7;
+  padding: 16px 24px;
+  border-top: 1px solid var(--brand-line, #e5e5e7);
+}
+.limitNote a {
+  color: var(--brand-blue, #0066ff);
+}
+.schedulePanel {
+  border: 1px solid var(--brand-line, #e5e5e7);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--brand-soft, #f7f7f8);
+}
+.scheduleHeading {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 18px 24px;
+}
+.scheduleHeading > div {
+  min-width: 0;
+}
+.scheduleHeading p {
+  color: var(--brand-subtle, #73767d);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 4px 0 0 !important;
+}
+.scheduleIcon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--brand-muted, #46474c);
+  flex: none;
+}
+.scheduleList {
+  list-style: none;
+  margin: 0;
+  padding: 0 24px;
+}
+.scheduleList > li {
+  border-top: 1px solid var(--brand-line, #e5e5e7);
+  padding: 14px 0;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.scheduleList > li > div:first-child {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.scheduleList > li > div:first-child > span {
+  color: var(--brand-subtle, #73767d);
+  font-size: 11px;
+}
+.scheduleList > li > div:first-child > a {
+  font-size: 13px;
+  color: var(--brand-ink, #171719);
+  line-height: 1.5;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.scheduleList > li > div:first-child > a:hover {
+  color: var(--brand-blue, #0066ff);
+}
+.scheduleDate {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  font-size: 12px;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.scheduleDate > span {
+  font-size: 11px;
+}
+.iconLink {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: var(--brand-muted, #46474c);
+  flex: none;
+  border-radius: 6px;
+}
+.iconLink:hover {
+  background: #fff;
+  color: var(--brand-blue, #0066ff);
+}
+.scheduleMore {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--brand-line, #e5e5e7);
+  padding: 12px;
+  color: var(--brand-muted, #46474c);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.permissionNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--brand-subtle, #73767d);
+  line-height: 1.6;
+}
+.permissionNote > svg {
+  flex: none;
+  margin-top: 2px;
+}
+.phaseBadge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: var(--brand-blue-soft, #f0f6ff);
+  color: var(--brand-blue, #0066ff);
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 600;
+  border-radius: 6px;
+}
+.closedBadge {
+  color: #73767d;
+  background: #f1f1f3;
+}
+.stageList {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin: 0;
+  padding: 0 24px 24px;
+  list-style: none;
+}
+.stageList li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 6px 0;
+  text-align: center;
+  color: #96999f;
+}
+.stageList li:before {
+  content: "";
+  position: absolute;
+  height: 2px;
+  top: 20px;
+  left: 0;
+  width: 100%;
+  background: #eceef1;
+}
+.stageList li:first-child:before {
+  left: 50%;
+  width: 50%;
+}
+.stageList li:last-child:before {
+  width: 50%;
+}
+.stageList li > span {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: 1px solid #e4e6eb;
+  background: #fff;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+}
+.stageList li > strong {
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.stageList .priorStage {
+  color: var(--brand-muted, #46474c);
+}
+.stageList .priorStage > span {
+  background: #f4f7fc;
+  border-color: #d7e3f7;
+  color: #7593bb;
+}
+.stageList .currentStage {
+  color: var(--brand-blue, #0066ff);
+}
+.stageList .currentStage > span {
+  background: var(--brand-blue, #0066ff);
+  border-color: var(--brand-blue, #0066ff);
+  color: white;
+  box-shadow: 0 0 0 4px var(--brand-blue-soft, #f0f6ff);
+}
+.stageList .currentStage > strong {
+  font-weight: 700;
+}
+.nextAction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 0 24px;
+  padding: 24px;
+  border-radius: 12px;
+  background: var(--brand-blue-soft, #f0f6ff);
+}
+.nextActionLate {
+  background: #fff8f1;
+}
+.nextActionCopy {
+  min-width: 0;
+  flex: 1;
+}
+.ownerLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--brand-blue, #0066ff);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 9px;
+}
+.nextActionLate .ownerLabel {
+  color: #a35d24;
+}
+.nextActionCopy h3 {
+  line-height: 1.5;
+}
+.nextActionCopy p {
+  margin-top: 9px !important;
+  color: var(--brand-muted, #46474c);
+  line-height: 1.7;
+  max-width: 700px;
+}
+.nextAction > a {
+  flex: none;
+}
+.currentDeadline {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--brand-muted, #46474c);
+}
+.currentDeadline > time {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.currentDeadline > strong {
+  margin-left: 3px;
+}
+.progressFacts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  margin: 0;
+  padding: 24px;
+}
+.progressFacts > div {
+  min-width: 0;
+}
+.progressFacts dt {
+  color: var(--brand-subtle, #73767d);
+  font-size: 12px;
+  margin-bottom: 7px;
+}
+.progressFacts dd {
+  margin: 0;
+  color: var(--brand-ink, #171719);
+  font-size: 13px;
+  font-weight: 550;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.reviewNote {
+  display: flex;
+  gap: 10px;
+  padding: 18px 24px;
+  border-top: 1px solid var(--brand-line, #e5e5e7);
+  background: #fffcf5;
+}
+.reviewNote > svg {
+  flex: none;
+  color: #a27216;
+  margin-top: 3px;
+}
+.reviewNote > div {
+  min-width: 0;
+}
+.reviewNote strong {
+  font-size: 13px;
+  color: #8b681f;
+}
+.reviewNote p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--brand-muted, #46474c);
+  margin: 6px 0 0 !important;
+}
+.waitingRequests {
+  padding: 20px 24px;
+  border-top: 1px solid var(--brand-line, #e5e5e7);
+}
+.waitingRequests h3 {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+.waitingRequests h3 > svg {
+  color: var(--brand-blue, #0066ff);
+  flex: none;
+  margin-top: 2px;
+}
+.waitingRequests ul {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+}
+.waitingRequests li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.waitingRequests li > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--brand-blue, #0066ff);
+  line-height: 1.6;
+}
+.waitingRequests li > a > span {
+  overflow-wrap: anywhere;
+}
+.waitingRequests li > a > svg {
+  flex: none;
+}
+.waitingRequests time {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--brand-subtle, #73767d);
+  font-size: 11px;
+  line-height: 1.5;
+  flex: none;
+}
+.privacyNote,
+.expiryHelp {
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+  padding: 16px 24px;
+  border-top: 1px solid var(--brand-line, #e5e5e7);
+  color: var(--brand-subtle, #73767d);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.privacyNote > svg,
+.expiryHelp > svg {
+  flex: none;
+  margin-top: 2px;
+}
+.expiryHelp {
+  border: none;
+  padding-top: 15px;
+  padding-bottom: 0;
+  flex-wrap: wrap;
+}
+.expiryHelp > a {
+  color: var(--brand-blue, #0066ff);
+  font-weight: 600;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.actionCenter :is(button, a):focus-visible,
+.progressPanel :is(button, a):focus-visible {
+  outline: 2px solid var(--brand-blue, #0066ff);
+  outline-offset: 3px;
+}
+@media (max-width: 1180px) {
+  .actionRow {
+    gap: 14px;
+  }
+  .actionDeadline {
+    min-width: 116px;
+  }
+  .panelHeader {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .urgencySummary {
+    padding-top: 0;
+  }
+  .progressFacts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .nextAction {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+}
+@media (max-width: 900px) {
+  .actionRow {
+    flex-wrap: wrap;
+    gap: 12px 14px;
+  }
+  .actionBody {
+    flex-basis: calc(100% - 60px);
+  }
+  .actionDeadline {
+    margin-left: 56px;
+    flex: 1;
+  }
+  .stageList li > strong {
+    font-size: 11px;
+  }
+}
+@media (max-width: 700px) {
+  .panelHeader {
+    padding: 20px;
+  }
+  .panelHeader p {
+    font-size: 13px;
+  }
+  .headingLine h2 {
+    font-size: 20px;
+  }
+  .filters {
+    padding: 0 20px 18px;
+    gap: 7px;
+  }
+  .filters button {
+    font-size: 12px;
+    padding: 7px 9px;
+  }
+  .actionRow {
+    padding: 20px;
+    align-items: flex-start;
+  }
+  .actionIcon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+  .actionIcon svg {
+    width: 18px;
+    height: 18px;
+  }
+  .actionBody {
+    flex-basis: calc(100% - 48px);
+  }
+  .actionTitle {
+    font-size: 14px;
+  }
+  .actionDeadline {
+    margin-left: 48px;
+    min-width: 0;
+  }
+  .actionRow > a:last-child {
+    align-self: flex-end;
+  }
+  .rowEyebrow {
+    flex-wrap: wrap;
+    gap: 2px 8px;
+  }
+  .campaignLabel {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .emptyActions {
+    min-height: 170px;
+    padding: 24px 20px;
+  }
+  .emptyActions p {
+    font-size: 13px;
+  }
+  .scheduleHeading {
+    padding: 18px 20px;
+    align-items: flex-start;
+  }
+  .scheduleHeading p {
+    font-size: 11px;
+  }
+  .scheduleList {
+    padding: 0 20px;
+  }
+  .scheduleList > li {
+    gap: 10px;
+  }
+  .scheduleDate {
+    max-width: 124px;
+    text-align: right;
+    line-height: 1.6;
+    font-size: 11px;
+  }
+  .scheduleList .iconLink {
+    display: none;
+  }
+  .stageList {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    padding: 0 20px 24px;
+    scrollbar-width: thin;
+  }
+  .stageList li {
+    flex: 0 0 86px;
+  }
+  .stageList li > strong {
+    font-size: 11px;
+  }
+  .nextAction {
+    margin: 0 20px;
+    padding: 20px;
+  }
+  .nextActionCopy h3 {
+    font-size: 18px;
+  }
+  .nextActionCopy p {
+    font-size: 13px;
+  }
+  .progressFacts {
+    padding: 22px 20px;
+    gap: 20px 16px;
+  }
+  .progressFacts dd {
+    font-size: 12px;
+  }
+  .reviewNote,
+  .waitingRequests {
+    padding: 18px 20px;
+  }
+  .waitingRequests li {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .privacyNote,
+  .expiryHelp {
+    padding-left: 20px;
+    padding-right: 20px;
+    font-size: 11px;
+  }
+  .limitNote {
+    padding: 14px 20px;
+  }
+  .permissionNote {
+    font-size: 11px;
+  }
+}
+@media (max-width: 400px) {
+  .actionDeadline {
+    margin-left: 0;
+  }
+  .actionRow > a:last-child {
+    max-width: 100%;
+  }
+  .actionRow {
+    gap: 14px 12px;
+  }
+  .progressFacts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .progressFacts > div {
+    display: grid;
+    grid-template-columns: 100px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .progressFacts dt {
+    margin: 0;
+  }
+  .nextAction > a {
+    width: 100%;
+  }
+  .currentDeadline {
+    gap: 5px;
+  }
+}

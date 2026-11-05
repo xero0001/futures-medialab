@@ -523,7 +523,8 @@ test("brand read allowlists omit internal metadata and never query supplier mate
   ).json();
   assert.deepEqual(detail.proposals, []);
   assert.deepEqual(detail.deliverables, []);
-  assert.deepEqual(detail.documents, []);
+  assert.equal(detail.documents, undefined);
+  assert.equal(detail.capabilities.campaignDocuments, true);
   assert.deepEqual(detail.performance, { items: [] });
   assert.equal(detail.capabilities.officialProposals, true);
   assert.equal(
@@ -908,4 +909,26 @@ test("completed campaigns expose their issued invoice summary independently from
   const paid = await (await api.brandCampaignDetail(request(), created.id)).json();
   assert.equal(paid.campaign.status, "COMPLETED");
   assert.deepEqual(paid.campaign.invoiceSummary, { issued: 0, paid: 1 });
+});
+
+
+test("progress uses the linked intake and public assignee name, never unrelated request state", async () => {
+  const { api, store } = fixture();
+  const created = await (await api.mutateBrandCampaign(request(input()))).json();
+  const intake = store.requests.find((row) => row.id === created.requestId);
+  intake.assignedTo = { name: "담당 매니저", email: "PRIVATE_MANAGER_EMAIL" };
+  intake.status = "WAITING_BRAND";
+  const expectedDue = intake.dueAt.toISOString();
+  store.requests.unshift({ ...intake, id: "unrelated-request", status: "RESOLVED", assignedTo: { name: "다른 담당자" }, dueAt: new Date("2099-01-01") });
+  const response = await api.brandCampaignDetail(request(), created.id);
+  assert.equal(response.status, 200);
+  const detail = await response.json();
+  assert.equal(detail.campaign.intakeStatus, "WAITING_BRAND");
+  assert.equal(detail.campaign.intakeAssigneeName, "담당 매니저");
+  assert.equal(detail.campaign.intakeDueAt, expectedDue);
+  assert.equal(detail.requests.find((row) => row.id === created.requestId).assigneeName, "담당 매니저");
+  assert.ok(!JSON.stringify(detail).includes("PRIVATE_MANAGER_EMAIL"));
+  store.campaigns[0].status = "DRAFT";
+  const draft = await (await api.brandCampaignDetail(request(), created.id)).json();
+  for (const field of ["intakeStatus", "intakeAssigneeName", "intakeDueAt"]) assert.equal(draft.campaign[field], null);
 });

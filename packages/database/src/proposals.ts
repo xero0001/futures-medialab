@@ -325,6 +325,27 @@ export async function listBrandLatestProposals(
   });
   return rows.map((row) => publicDto(row, true, canManage));
 }
+/** Published versions for the brand document library; never enables decisions. */
+export async function listBrandDocumentProposals(
+  tx: Tx,
+  organizationId: string,
+  campaignId?: string,
+  limit = 101,
+): Promise<BrandProposal[]> {
+  const rows = await tx.campaignProposal.findMany({
+    where: {
+      ...(campaignId ? { campaignId } : {}),
+      publishedAt: { not: null },
+      status: { not: "DRAFT" },
+      campaign: { brandOrganizationId: organizationId },
+    },
+    orderBy: [{ publishedAt: "desc" }, { id: "asc" }],
+    take: Math.min(501, Math.max(1, limit)),
+    select: publicSelect,
+  });
+  return rows.map((row) => publicDto(row, !row.supersededAt && row.status !== "SUPERSEDED", false));
+}
+
 export async function getBrandProposal(
   tx: Tx,
   organizationId: string,

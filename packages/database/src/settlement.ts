@@ -569,6 +569,7 @@ export async function listBrandInvoices(
   tx: Tx,
   actor: Actor,
   campaignId?: string,
+  limit?: number,
 ): Promise<BrandInvoice[]> {
   await requireProductionMember(tx, actor, "BRAND");
   if (
@@ -586,6 +587,7 @@ export async function listBrandInvoices(
       status: { in: ["ISSUED", "PAID"] },
       issuedAt: { not: null },
     },
+    ...(limit === undefined ? {} : { take: Math.min(501, Math.max(1, limit)) }),
     select: publicDocumentSelect,
     orderBy: [{ issuedAt: "desc" }, { id: "asc" }],
   });
