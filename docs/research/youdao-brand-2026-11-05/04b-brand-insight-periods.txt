@@ -1,0 +1,52 @@
+관찰일: 2026-11-05 (Asia/Seoul)
+계정 식별값 제외. 화면의 접근성 텍스트이며 동일 열이 중복될 수 있습니다.
+
+AXWebArea | Youdao Ads |  |
+AXStaticText |  |  | 免责声明
+AXStaticText |  |  | 升级会员
+AXStaticText |  |  | 开通权益，畅享达人资源
+AXMenuItem | 达人资源查询 |  |
+AXStaticText |  |  | 达人资源查询
+AXMenuItem | 达人查询 |  |
+AXMenuItem | 相似达人查询 |  |
+AXMenuItem | 同类品牌达人推荐 |  |
+AXMenuItem | Agent智能工具集 |  |
+AXStaticText |  |  | Agent智能工具集
+AXMenuItem | 收藏夹 |  |
+AXStaticText |  |  | 收藏夹
+AXMenuItem | 短链服务 |  |
+AXStaticText |  |  | 短链服务
+AXMenuItem | 推广系列管理 |  |
+AXStaticText |  |  | 推广系列管理
+AXMenuItem | 账户管理 |  |
+AXStaticText |  |  | 账户管理
+AXLink | Agent智能工具集 | Agent智能工具集 |
+AXStaticText |  |  | Agent智能工具集
+AXStaticText |  |  | /
+AXStaticText |  |  | 品牌推广洞察
+AXHeading | 品牌推广洞察 |  |
+AXStaticText |  |  | 品牌推广洞察
+AXHeading | AI自助分析品牌或产品在YouTube上的营销推广行为并生成报告 |  |
+AXStaticText |  |  | AI自助分析品牌或产品在YouTube上的营销推广行为并生成报告
+AXStaticText |  |  | 查看品牌/产品推广时间及推广地区汇总
+AXStaticText |  |  | 概览品牌/产品在社交媒体上的推广效果
+AXStaticText |  |  | 查看品牌商找了哪些达人合作
+AXStaticText |  |  | 参考品牌/产品网红营销的费用
+AXComboBox |  |  |
+AXStaticText |  |  | 最近1年
+AXStaticText |  |  | 最近1年
+AXStaticText |  |  | 最近半年
+AXStaticText |  |  | 最近1年
+AXStaticText |  |  | 最近半年
+AXStaticText |  |  | 最近90天
+AXStaticText |  |  | 最近30天
+AXComboBox |  |  |
+AXStaticText |  |  | 请根据国家输入对应语言的游戏/产品名称
+AXButton | 分析 |  |
+AXStaticText |  |  | 免费体验额度剩余
+AXStaticText |  |  | 2/2
+AXStaticText |  |  | 次
+AXStaticText |  |  | 升级会员
+AXHeading | 历史分析报告 |  |
+AXStaticText |  |  | 历史分析报告
+AXStaticText |  |  | 暂无历史分析报告，请选择品牌或产品分析

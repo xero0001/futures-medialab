@@ -1,0 +1,52 @@
+관찰일: 2026-11-05 (Asia/Seoul)
+계정 식별값 제외. 화면의 접근성 텍스트이며 동일 열이 중복될 수 있습니다.
+
+AXStaticText |  |  | 免责声明
+AXStaticText |  |  | 升级会员
+AXStaticText |  |  | 开通权益，畅享达人资源
+AXMenuItem | 达人资源查询 |  |
+AXStaticText |  |  | 达人资源查询
+AXMenuItem | 达人查询 |  |
+AXMenuItem | 相似达人查询 |  |
+AXMenuItem | 同类品牌达人推荐 |  |
+AXMenuItem | Agent智能工具集 |  |
+AXStaticText |  |  | Agent智能工具集
+AXMenuItem | 收藏夹 |  |
+AXStaticText |  |  | 收藏夹
+AXMenuItem | 短链服务 |  |
+AXStaticText |  |  | 短链服务
+AXMenuItem | 推广系列管理 |  |
+AXStaticText |  |  | 推广系列管理
+AXMenuItem | 账户管理 |  |
+AXStaticText |  |  | 账户管理
+AXHeading | 账户管理 |  |
+AXStaticText |  |  | 账户管理
+AXRadioButton | 个人信息 |  | 0
+AXRadioButton | 公司信息 |  | 1
+AXRadioButton | 安全设置 |  | 0
+AXStaticText |  |  | *
+AXStaticText |  |  | 公司名称
+AXStaticText |  |  | :
+AXTextField | * 公司名称 : |  | [company redacted]
+AXStaticText |  |  | *
+AXStaticText |  |  | 所属行业
+AXStaticText |  |  | :
+AXComboBox | * 所属行业 : |  |
+AXStaticText |  |  | [선택값 비공개]
+AXStaticText |  |  | 网址
+AXStaticText |  |  | :
+AXTextArea | 网址 : |  |
+AXStaticText |  |  | *
+AXStaticText |  |  | 国家/地区
+AXStaticText |  |  | :
+AXComboBox | * 国家/地区 : |  |
+AXStaticText |  |  | [선택값 비공개]
+AXStaticText |  |  | *
+AXStaticText |  |  | 公司规模
+AXStaticText |  |  | :
+AXComboBox | * 公司规模 : |  |
+AXStaticText |  |  | [선택값 비공개]
+AXStaticText |  |  | 推广产品
+AXStaticText |  |  | :
+AXTextField |  |  |
+AXButton | 编 辑 |  |

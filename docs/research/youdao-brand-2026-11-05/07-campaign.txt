@@ -1,0 +1,31 @@
+관찰일: 2026-11-05 (Asia/Seoul)
+계정 식별값 제외. 화면의 접근성 텍스트이며 동일 열이 중복될 수 있습니다.
+
+AXWebArea | Youdao Ads |  |
+AXStaticText |  |  | 免责声明
+AXStaticText |  |  | 升级会员
+AXStaticText |  |  | 开通权益，畅享达人资源
+AXMenuItem | 达人资源查询 |  |
+AXStaticText |  |  | 达人资源查询
+AXMenuItem | 达人查询 |  |
+AXMenuItem | 相似达人查询 |  |
+AXMenuItem | 同类品牌达人推荐 |  |
+AXMenuItem | Agent智能工具集 |  |
+AXStaticText |  |  | Agent智能工具集
+AXMenuItem | 收藏夹 |  |
+AXStaticText |  |  | 收藏夹
+AXMenuItem | 短链服务 |  |
+AXStaticText |  |  | 短链服务
+AXMenuItem | 推广系列管理 |  |
+AXStaticText |  |  | 推广系列管理
+AXMenuItem | 账户管理 |  |
+AXStaticText |  |  | 账户管理
+AXHeading | 推广系列管理 |  |
+AXStaticText |  |  | 推广系列管理
+AXStaticText |  |  | 与youdao Ads网红营销团队合作，一站式解决您的海外网红营销诉求
+AXStaticText |  |  | 与我们合作，我们会为您匹配与您项目最合适的达人，可体验youdao Ads独签资源、独家合作
+AXStaticText |  |  | 随时随地查看达人相关信息、报价花费等信息
+AXStaticText |  |  | 跟进最新的项目进展，追踪达人合作状态
+AXStaticText |  |  | 动态监控数据，评估合作效果
+AXStaticText |  |  | 自动生成归因复盘报告
+AXButton | 联系我们 |  |

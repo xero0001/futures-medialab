@@ -1,0 +1,71 @@
+관찰일: 2026-11-05 (Asia/Seoul)
+계정 식별값 제외. 화면의 접근성 텍스트이며 동일 열이 중복될 수 있습니다.
+
+AXWebArea | Youdao Ads |  |
+AXStaticText |  |  | 免责声明
+AXStaticText |  |  | 升级会员
+AXStaticText |  |  | 开通权益，畅享达人资源
+AXMenuItem | 达人资源查询 |  |
+AXStaticText |  |  | 达人资源查询
+AXMenuItem | 达人查询 |  |
+AXMenuItem | 相似达人查询 |  |
+AXMenuItem | 同类品牌达人推荐 |  |
+AXMenuItem | Agent智能工具集 |  |
+AXStaticText |  |  | Agent智能工具集
+AXMenuItem | 收藏夹 |  |
+AXStaticText |  |  | 收藏夹
+AXMenuItem | 短链服务 |  |
+AXStaticText |  |  | 短链服务
+AXMenuItem | 推广系列管理 |  |
+AXStaticText |  |  | 推广系列管理
+AXMenuItem | 账户管理 |  |
+AXStaticText |  |  | 账户管理
+AXHeading | 默认收藏夹 |  |
+AXStaticText |  |  | 收藏夹
+AXStaticText |  |  | /
+AXStaticText |  |  | 默认收藏夹
+AXStaticText |  |  | 默认收藏夹
+AXStaticText |  |  | 共有
+AXStaticText |  |  | 0
+AXStaticText |  |  |  位
+AXStaticText |  |  | 达人
+AXComboBox |  |  |
+AXStaticText |  |  | 默认排序
+AXTextField |  |  |
+AXButton | search |  |
+AXCheckBox | Select all | Select all |
+AXStaticText |  |  |
+AXStaticText |  |  | 基本信息
+AXStaticText |  |  | 粉丝数
+AXStaticText |  |  | 平均曝光量
+AXStaticText |  |  | 标签
+AXStaticText |  |  | 互动率
+AXStaticText |  |  | 观看量/粉丝数
+AXStaticText |  |  | 最近发布视频
+AXStaticText |  |  | 评价
+AXStaticText |  |  | 操作
+AXCheckBox | Select all | Select all |
+AXStaticText |  |  |
+AXStaticText |  |  | 基本信息
+AXStaticText |  |  | 粉丝数
+AXStaticText |  |  | 平均曝光量
+AXStaticText |  |  | 标签
+AXStaticText |  |  | 互动率
+AXStaticText |  |  | 观看量/粉丝数
+AXStaticText |  |  | 最近发布视频
+AXStaticText |  |  | 评价
+AXStaticText |  |  | 操作
+AXCheckBox | Select all | Select all |
+AXStaticText |  |  |
+AXStaticText |  |  | 基本信息
+AXStaticText |  |  | 粉丝数
+AXStaticText |  |  | 平均曝光量
+AXStaticText |  |  | 标签
+AXStaticText |  |  | 互动率
+AXStaticText |  |  | 观看量/粉丝数
+AXStaticText |  |  | 最近发布视频
+AXStaticText |  |  | 评价
+AXStaticText |  |  | 操作
+AXStaticText |  |  | 暂未找到符合条件的达人
+AXStaticText |  |  | 暂未找到符合条件的达人
+AXStaticText |  |  | Youdao Ads

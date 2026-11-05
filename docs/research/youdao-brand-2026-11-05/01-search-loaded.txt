@@ -1,0 +1,677 @@
+관찰일: 2026-11-05 (Asia/Seoul)
+계정 식별값 제외. 화면의 접근성 텍스트이며 동일 열이 중복될 수 있습니다.
+
+AXWebArea | Youdao Ads |  |
+AXStaticText |  |  | 免责声明
+AXStaticText |  |  | 升级会员
+AXStaticText |  |  | 开通权益，畅享达人资源
+AXMenuItem | 达人资源查询 |  |
+AXStaticText |  |  | 达人资源查询
+AXMenuItem | 达人查询 |  |
+AXMenuItem | 相似达人查询 |  |
+AXMenuItem | 同类品牌达人推荐 |  |
+AXMenuItem | Agent智能工具集 |  |
+AXStaticText |  |  | Agent智能工具集
+AXMenuItem | 收藏夹 |  |
+AXStaticText |  |  | 收藏夹
+AXMenuItem | 短链服务 |  |
+AXStaticText |  |  | 短链服务
+AXMenuItem | 推广系列管理 |  |
+AXStaticText |  |  | 推广系列管理
+AXMenuItem | 账户管理 |  |
+AXStaticText |  |  | 账户管理
+AXHeading | 达人资源查询 |  |
+AXStaticText |  |  | 达人
+AXStaticText |  |  | 资源查询
+AXRadioButton | YouTube |  | 1
+AXRadioButton | TikTok |  | 0
+AXRadioButton | Instagram |  | 0
+AXRadioButton | Twitch |  | 0
+AXRadioButton | Twitter |  | 0
+AXRadioButton | Facebook |  | 0
+AXRadioButton | 达人名称 |  | 1
+AXRadioButton | 媒体内容 |  | 0
+AXRadioButton | 个人简介 |  | 0
+AXRadioButton | 品牌名称 |  | 0
+AXTextField |  |  |
+AXStaticText |  |  | 内容属性
+AXStaticText |  |  | 视频类型
+AXComboBox |  |  |
+AXStaticText |  |  | 全部
+AXStaticText |  |  | 内容标签
+AXRadioButton | 或 |  |
+AXStaticText |  |  | 或
+AXRadioButton | 且 |  |
+AXStaticText |  |  | 且
+AXComboBox |  |  |
+AXStaticText |  |  | 包括
+AXStaticText |  |  |
+AXComboBox |  |  |
+AXStaticText |  |  | 不包括
+AXStaticText |  |  |
+AXStaticText |  |  | 频道关键词
+AXRadioButton | 或 |  |
+AXStaticText |  |  | 或
+AXRadioButton | 且 |  |
+AXStaticText |  |  | 且
+AXComboBox |  |  |
+AXStaticText |  |  | 包括
+AXStaticText |  |  |
+AXComboBox |  |  |
+AXStaticText |  |  | 不包括
+AXStaticText |  |  |
+AXStaticText |  |  | 频道属性
+AXStaticText |  |  | 国家/地区
+AXComboBox | 国家/地区 |  |
+AXStaticText |  |  | 请选择
+AXStaticText |  |  |
+AXStaticText |  |  | 粉丝数
+AXTextField |  |  |
+AXStaticText |  |  | K
+AXTextField |  |  |
+AXTextField |  |  |
+AXStaticText |  |  | K
+AXStaticText |  |  | 平均曝光量
+AXComboBox |  |  |
+AXStaticText |  |  | 最近10条
+AXTextField |  |  |
+AXStaticText |  |  | K
+AXTextField |  |  |
+AXTextField |  |  |
+AXStaticText |  |  | K
+AXStaticText |  |  | 曝光量波动率
+AXComboBox | 曝光量波动率 |  |
+AXStaticText |  |  | 请选择
+AXStaticText |  |  |
+AXStaticText |  |  | 最近发布日期
+AXComboBox | 最近发布日期 |  |
+AXStaticText |  |  | 请选择
+AXStaticText |  |  | 受众属性
+AXStaticText |  |  | 语言
+AXComboBox | 语言 |  |
+AXStaticText |  |  | 请搜索或选择
+AXStaticText |  |  |
+AXStaticText |  |  | 受众国家
+AXTextField |  |  |
+AXStaticText |  |  | 受众年龄
+AXTextField |  |  |
+AXStaticText |  |  | 受众性别
+AXTextField |  |  |
+AXButton | 重置 |  |
+AXButton | 查询 |  |
+AXStaticText |  |  | 达人列表
+AXComboBox |  |  |
+AXStaticText |  |  | 综合排序（新）
+AXStaticText |  |  | 免费体验额度剩余
+AXStaticText |  |  | 3/3
+AXStaticText |  |  | 次
+AXStaticText |  |  | 升级会员
+AXCheckBox | Select all | Select all |
+AXStaticText |  |  |
+AXStaticText |  |  | 基本信息
+AXStaticText |  |  | 粉丝数
+AXStaticText |  |  | 平均曝光量
+AXStaticText |  |  | 标签
+AXStaticText |  |  | 互动率
+AXStaticText |  |  | 观看量/粉丝数
+AXStaticText |  |  | 最近发布视频
+AXStaticText |  |  | 操作
+AXCheckBox | Select all | Select all |
+AXStaticText |  |  |
+AXStaticText |  |  | 基本信息
+AXStaticText |  |  | 粉丝数
+AXStaticText |  |  | 平均曝光量
+AXStaticText |  |  | 标签
+AXStaticText |  |  | 互动率
+AXStaticText |  |  | 观看量/粉丝数
+AXStaticText |  |  | 最近发布视频
+AXStaticText |  |  | 操作
+AXCheckBox | Select all | Select all |
+AXStaticText |  |  |
+AXStaticText |  |  | 基本信息
+AXStaticText |  |  | 粉丝数
+AXStaticText |  |  | 平均曝光量
+AXStaticText |  |  | 标签
+AXStaticText |  |  | 互动率
+AXStaticText |  |  | 观看量/粉丝数
+AXStaticText |  |  | 最近发布视频
+AXStaticText |  |  | 操作
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXStaticText |  |  | modinner
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 马来西亚
+AXStaticText |  |  | 2.98M
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 1.21M
+AXStaticText |  |  | 125%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 1.13M
+AXStaticText |  |  | 131%
+AXStaticText |  |  | 电脑游戏
+AXStaticText |  |  | 12%
+AXStaticText |  |  | 主机游戏
+AXStaticText |  |  | 12%
+AXStaticText |  |  | ···
+AXStaticText |  |  |
+AXStaticText |  |  | 1.17%
+AXStaticText |  |  | 40.55%
+AXStaticText |  |  | 166.75K
+AXStaticText |  |  | 11-02
+AXStaticText |  |  | 1.12M
+AXStaticText |  |  | 10-31
+AXStaticText |  |  | 368.41K
+AXStaticText |  |  | 10-26
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXStaticText |  |  | Okta MONR
+AXLink |  |  |
+AXStaticText |  |  | 印度尼西亚
+AXStaticText |  |  | 3.46M
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 97.41K
+AXStaticText |  |  | 127%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 70.97K
+AXStaticText |  |  | 153%
+AXStaticText |  |  | 生存
+AXStaticText |  |  | 12%
+AXStaticText |  |  | 电脑游戏
+AXStaticText |  |  | 12%
+AXStaticText |  |  | ···
+AXStaticText |  |  |
+AXStaticText |  |  | 0.89%
+AXStaticText |  |  | 2.82%
+AXStaticText |  |  | 15.27K
+AXStaticText |  |  | 11-04
+AXStaticText |  |  | 123.16K
+AXStaticText |  |  | 11-04
+AXStaticText |  |  | 259.30K
+AXStaticText |  |  | 11-03
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXStaticText |  |  | SMG4
+AXLink |  |  |
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 澳大利亚
+AXStaticText |  |  | 9.93M
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 1.91M
+AXStaticText |  |  | 104%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | -
+AXStaticText |  |  | 其他
+AXStaticText |  |  | 92%
+AXStaticText |  |  | 其他动漫
+AXStaticText |  |  | 8%
+AXStaticText |  |  |
+AXStaticText |  |  | -
+AXStaticText |  |  | 19.19%
+AXStaticText |  |  | 7.91M
+AXStaticText |  |  | 12-28
+AXStaticText |  |  | 1.84M
+AXStaticText |  |  | 12-21
+AXStaticText |  |  | 1.30M
+AXStaticText |  |  | 12-14
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXStaticText |  |  | dsand
+AXLink |  |  |
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 韩国
+AXStaticText |  |  | 10.60M
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 7.03M
+AXStaticText |  |  | 177%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 744.55K
+AXStaticText |  |  | 0%
+AXStaticText |  |  | 二次元
+AXStaticText |  |  | 90%
+AXStaticText |  |  | 其他动漫
+AXStaticText |  |  | 10%
+AXStaticText |  |  |
+AXStaticText |  |  | 9.19%
+AXStaticText |  |  | 66.36%
+AXStaticText |  |  | 770.69K
+AXStaticText |  |  | 10-16
+AXStaticText |  |  | 604.35K
+AXStaticText |  |  | 09-27
+AXStaticText |  |  | 1.94M
+AXStaticText |  |  | 09-08
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXStaticText |  |  | Billy Samuel
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 印度尼西亚
+AXStaticText |  |  | 6.03M
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 379.65K
+AXStaticText |  |  | 96%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 643.76K
+AXStaticText |  |  | 70%
+AXStaticText |  |  | 电脑游戏
+AXStaticText |  |  | 21%
+AXStaticText |  |  | 开放世界
+AXStaticText |  |  | 17%
+AXStaticText |  |  | ···
+AXStaticText |  |  |
+AXStaticText |  |  | 1.71%
+AXStaticText |  |  | 6.30%
+AXStaticText |  |  | 185.79K
+AXStaticText |  |  | 11-04
+AXStaticText |  |  | 138.55K
+AXStaticText |  |  | 11-03
+AXStaticText |  |  | 349.40K
+AXStaticText |  |  | 11-02
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXStaticText |  |  | Nekoturnal
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 印度尼西亚
+AXStaticText |  |  | 1.16M
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 28.00K
+AXStaticText |  |  | 133%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 85.02K
+AXStaticText |  |  | 0%
+AXStaticText |  |  | 主机游戏
+AXStaticText |  |  | 15%
+AXStaticText |  |  | 电脑游戏
+AXStaticText |  |  | 14%
+AXStaticText |  |  | ···
+AXStaticText |  |  |
+AXStaticText |  |  | 4.09%
+AXStaticText |  |  | 2.41%
+AXStaticText |  |  | 92.48K
+AXStaticText |  |  | 07-05
+AXStaticText |  |  | 84.51K
+AXStaticText |  |  | 06-13
+AXStaticText |  |  | 99.99K
+AXStaticText |  |  | 05-16
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXStaticText |  |  | ItsSandwich
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 印度尼西亚
+AXStaticText |  |  | 3.42M
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 3.13M
+AXStaticText |  |  | 79%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 3.53M
+AXStaticText |  |  | 0%
+AXStaticText |  |  | 奇幻
+AXStaticText |  |  | 14%
+AXStaticText |  |  | 电脑游戏
+AXStaticText |  |  | 14%
+AXStaticText |  |  | ···
+AXStaticText |  |  |
+AXStaticText |  |  | 1.85%
+AXStaticText |  |  | 91.59%
+AXStaticText |  |  | 3.54M
+AXStaticText |  |  | 10-17
+AXStaticText |  |  | 10.80M
+AXStaticText |  |  | 09-25
+AXStaticText |  |  | 2.22M
+AXStaticText |  |  | 07-25
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXStaticText |  |  | Ammar Nazhan
+AXLink |  |  |
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 马来西亚
+AXStaticText |  |  | 2.67M
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 25.52K
+AXStaticText |  |  | 20%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 24.85K
+AXStaticText |  |  | 20%
+AXStaticText |  |  | 体育健身
+AXStaticText |  |  | 38%
+AXStaticText |  |  | 其他
+AXStaticText |  |  | 29%
+AXStaticText |  |  | ···
+AXStaticText |  |  |
+AXStaticText |  |  | 1.46%
+AXStaticText |  |  | 0.96%
+AXStaticText |  |  | 9.83K
+AXStaticText |  |  | 11-04
+AXStaticText |  |  | 19.05K
+AXStaticText |  |  | 11-02
+AXStaticText |  |  | 25.93K
+AXStaticText |  |  | 10-31
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXStaticText |  |  | SebutSaja Dayat
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 印度尼西亚
+AXStaticText |  |  | 6.14M
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 133.62K
+AXStaticText |  |  | 27%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 151.53K
+AXStaticText |  |  | 70%
+AXStaticText |  |  | 其他
+AXStaticText |  |  | 53%
+AXStaticText |  |  | 搞笑
+AXStaticText |  |  | 48%
+AXStaticText |  |  |
+AXStaticText |  |  | 1.78%
+AXStaticText |  |  | 2.18%
+AXStaticText |  |  | 39.35K
+AXStaticText |  |  | 11-04
+AXStaticText |  |  | 108.96K
+AXStaticText |  |  | 11-03
+AXStaticText |  |  | 197.38K
+AXStaticText |  |  | 10-31
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXStaticText |  |  | Wielino INO
+AXLink |  |  |
+AXStaticText |  |  | 印度尼西亚
+AXStaticText |  |  | 1.30M
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 389.68K
+AXStaticText |  |  | 70%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 284.61K
+AXStaticText |  |  | 61%
+AXStaticText |  |  | 电脑游戏
+AXStaticText |  |  | 17%
+AXStaticText |  |  | 手机游戏
+AXStaticText |  |  | 14%
+AXStaticText |  |  | ···
+AXStaticText |  |  |
+AXStaticText |  |  | 2.38%
+AXStaticText |  |  | 29.98%
+AXStaticText |  |  | 12.17K
+AXStaticText |  |  | 11-03
+AXStaticText |  |  | 169.15K
+AXStaticText |  |  | 10-25
+AXStaticText |  |  | 391.47K
+AXStaticText |  |  | 10-18
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXCheckBox |   |  |
+AXStaticText |  |  |
+AXStaticText |  |  | modinner
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 马来西亚
+AXStaticText |  |  | Okta MONR
+AXLink |  |  |
+AXStaticText |  |  | 印度尼西亚
+AXStaticText |  |  | SMG4
+AXLink |  |  |
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 澳大利亚
+AXStaticText |  |  | dsand
+AXLink |  |  |
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 韩国
+AXStaticText |  |  | Billy Samuel
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 印度尼西亚
+AXStaticText |  |  | Nekoturnal
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 印度尼西亚
+AXStaticText |  |  | ItsSandwich
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 印度尼西亚
+AXStaticText |  |  | Ammar Nazhan
+AXLink |  |  |
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 马来西亚
+AXStaticText |  |  | SebutSaja Dayat
+AXLink |  |  |
+AXLink |  |  |
+AXStaticText |  |  | 印度尼西亚
+AXStaticText |  |  | Wielino INO
+AXLink |  |  |
+AXStaticText |  |  | 印度尼西亚
+AXStaticText |  |  | 2.98M
+AXStaticText |  |  | 3.46M
+AXStaticText |  |  | 9.93M
+AXStaticText |  |  | 10.60M
+AXStaticText |  |  | 6.03M
+AXStaticText |  |  | 1.16M
+AXStaticText |  |  | 3.42M
+AXStaticText |  |  | 2.67M
+AXStaticText |  |  | 6.14M
+AXStaticText |  |  | 1.30M
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 1.21M
+AXStaticText |  |  | 125%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 1.13M
+AXStaticText |  |  | 131%
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 97.41K
+AXStaticText |  |  | 127%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 70.97K
+AXStaticText |  |  | 153%
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 1.91M
+AXStaticText |  |  | 104%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | -
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 7.03M
+AXStaticText |  |  | 177%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 744.55K
+AXStaticText |  |  | 0%
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 379.65K
+AXStaticText |  |  | 96%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 643.76K
+AXStaticText |  |  | 70%
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 28.00K
+AXStaticText |  |  | 133%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 85.02K
+AXStaticText |  |  | 0%
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 3.13M
+AXStaticText |  |  | 79%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 3.53M
+AXStaticText |  |  | 0%
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 25.52K
+AXStaticText |  |  | 20%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 24.85K
+AXStaticText |  |  | 20%
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 133.62K
+AXStaticText |  |  | 27%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 151.53K
+AXStaticText |  |  | 70%
+AXStaticText |  |  | 最近10条视频
+AXStaticText |  |  | 389.68K
+AXStaticText |  |  | 70%
+AXStaticText |  |  | 最近30天视频
+AXStaticText |  |  | 284.61K
+AXStaticText |  |  | 61%
+AXStaticText |  |  | 电脑游戏
+AXStaticText |  |  | 12%
+AXStaticText |  |  | 主机游戏
+AXStaticText |  |  | 12%
+AXStaticText |  |  | ···
+AXStaticText |  |  |
+AXStaticText |  |  | 生存
+AXStaticText |  |  | 12%
+AXStaticText |  |  | 电脑游戏
+AXStaticText |  |  | 12%
+AXStaticText |  |  | ···
+AXStaticText |  |  |
+AXStaticText |  |  | 其他
+AXStaticText |  |  | 92%
+AXStaticText |  |  | 其他动漫
+AXStaticText |  |  | 8%
+AXStaticText |  |  |
+AXStaticText |  |  | 二次元
+AXStaticText |  |  | 90%
+AXStaticText |  |  | 其他动漫
+AXStaticText |  |  | 10%
+AXStaticText |  |  |
+AXStaticText |  |  | 电脑游戏
+AXStaticText |  |  | 21%
+AXStaticText |  |  | 开放世界
+AXStaticText |  |  | 17%
+AXStaticText |  |  | ···
+AXStaticText |  |  |
+AXStaticText |  |  | 主机游戏
+AXStaticText |  |  | 15%
+AXStaticText |  |  | 电脑游戏
+AXStaticText |  |  | 14%
+AXStaticText |  |  | ···
+AXStaticText |  |  |
+AXStaticText |  |  | 奇幻
+AXStaticText |  |  | 14%
+AXStaticText |  |  | 电脑游戏
+AXStaticText |  |  | 14%
+AXStaticText |  |  | ···
+AXStaticText |  |  |
+AXStaticText |  |  | 体育健身
+AXStaticText |  |  | 38%
+AXStaticText |  |  | 其他
+AXStaticText |  |  | 29%
+AXStaticText |  |  | ···
+AXStaticText |  |  |
+AXStaticText |  |  | 其他
+AXStaticText |  |  | 53%
+AXStaticText |  |  | 搞笑
+AXStaticText |  |  | 48%
+AXStaticText |  |  |
+AXStaticText |  |  | 电脑游戏
+AXStaticText |  |  | 17%
+AXStaticText |  |  | 手机游戏
+AXStaticText |  |  | 14%
+AXStaticText |  |  | ···
+AXStaticText |  |  |
+AXStaticText |  |  | 1.17%
+AXStaticText |  |  | 0.89%
+AXStaticText |  |  | -
+AXStaticText |  |  | 9.19%
+AXStaticText |  |  | 1.71%
+AXStaticText |  |  | 4.09%
+AXStaticText |  |  | 1.85%
+AXStaticText |  |  | 1.46%
+AXStaticText |  |  | 1.78%
+AXStaticText |  |  | 2.38%
+AXStaticText |  |  | 40.55%
+AXStaticText |  |  | 2.82%
+AXStaticText |  |  | 19.19%
+AXStaticText |  |  | 66.36%
+AXStaticText |  |  | 6.30%
+AXStaticText |  |  | 2.41%
+AXStaticText |  |  | 91.59%
+AXStaticText |  |  | 0.96%
+AXStaticText |  |  | 2.18%
+AXStaticText |  |  | 29.98%
+AXStaticText |  |  | 166.75K
+AXStaticText |  |  | 11-02
+AXStaticText |  |  | 1.12M
+AXStaticText |  |  | 10-31
+AXStaticText |  |  | 368.41K
+AXStaticText |  |  | 10-26
+AXStaticText |  |  | 15.27K
+AXStaticText |  |  | 11-04
+AXStaticText |  |  | 123.16K
+AXStaticText |  |  | 11-04
+AXStaticText |  |  | 259.30K
+AXStaticText |  |  | 11-03
+AXStaticText |  |  | 7.91M
+AXStaticText |  |  | 12-28
+AXStaticText |  |  | 1.84M
+AXStaticText |  |  | 12-21
+AXStaticText |  |  | 1.30M
+AXStaticText |  |  | 12-14
+AXStaticText |  |  | 770.69K
+AXStaticText |  |  | 10-16
+AXStaticText |  |  | 604.35K
+AXStaticText |  |  | 09-27
+AXStaticText |  |  | 1.94M
+AXStaticText |  |  | 09-08
+AXStaticText |  |  | 185.79K
+AXStaticText |  |  | 11-04
+AXStaticText |  |  | 138.55K
+AXStaticText |  |  | 11-03
+AXStaticText |  |  | 349.40K
+AXStaticText |  |  | 11-02
+AXStaticText |  |  | 92.48K
+AXStaticText |  |  | 07-05
+AXStaticText |  |  | 84.51K
+AXStaticText |  |  | 06-13
+AXStaticText |  |  | 99.99K
+AXStaticText |  |  | 05-16
+AXStaticText |  |  | 3.54M
+AXStaticText |  |  | 10-17
+AXStaticText |  |  | 10.80M
+AXStaticText |  |  | 09-25
+AXStaticText |  |  | 2.22M
+AXStaticText |  |  | 07-25
+AXStaticText |  |  | 9.83K
+AXStaticText |  |  | 11-04
+AXStaticText |  |  | 19.05K
+AXStaticText |  |  | 11-02
+AXStaticText |  |  | 25.93K
+AXStaticText |  |  | 10-31
+AXStaticText |  |  | 39.35K
+AXStaticText |  |  | 11-04
+AXStaticText |  |  | 108.96K
+AXStaticText |  |  | 11-03
+AXStaticText |  |  | 197.38K
+AXStaticText |  |  | 10-31
+AXStaticText |  |  | 12.17K
+AXStaticText |  |  | 11-03
+AXStaticText |  |  | 169.15K
+AXStaticText |  |  | 10-25
+AXStaticText |  |  | 391.47K
+AXStaticText |  |  | 10-18
+AXStaticText |  |  | 1
+AXStaticText |  |  | ···
+AXComboBox |  |  |
+AXStaticText |  |  | 10条/页
+AXStaticText |  |  | 反馈
