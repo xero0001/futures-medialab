@@ -765,3 +765,112 @@ test("publication checks price, expiration, schedule and exact trusted demo-chan
   };
   assert.ok(proposalPublicationProblems(row).some((p) => p.includes("HTTPS")));
 });
+
+test("internal cost correction preserves public version, approved decisions and production identities", async () => {
+  const f = fixture();
+  const published = await f.published(
+    data({ items: [item({ supplierCost: null })] }),
+  );
+  const approved = (await f.decide(decision(published))).proposal;
+  const before = await getBrandProposal(f.tx, "brand-own", published.id, true);
+  const productionIds = f.store.productionItems.map((i) => i.id);
+  const input = op("updateCosts", {
+    proposalId: approved.id,
+    expectedRevision: approved.revision,
+    reason: "공급 파트너 비용 확정",
+    items: [{ itemId: approved.items[0].id, supplierCost: "45.50" }],
+  });
+  const changed = (await f.admin(input)).proposal;
+  const after = await getBrandProposal(f.tx, "brand-own", published.id, true);
+  assert.equal(changed.items[0].supplierCost, "45.50");
+  assert.deepEqual({ ...after, revision: before.revision }, before);
+  assert.deepEqual(
+    f.store.productionItems.map((i) => i.id),
+    productionIds,
+  );
+  assert.equal(f.store.decisions.length, 1);
+  assert.equal(f.store.proposals.length, 1);
+  assert.equal((await f.admin(input)).proposal.revision, changed.revision);
+  assert.equal(
+    f.store.audits.filter((a) => a.action === "admin.proposal.costs_updated")
+      .length,
+    1,
+  );
+  assert.equal(f.store.audits.at(-1).payload.changes[0].before, null);
+  assert.equal(f.store.audits.at(-1).payload.changes[0].after, "45.50");
+  await assert.rejects(
+    () =>
+      f.admin(op("updateCosts", { ...input, clientRequestId: randomUUID() })),
+    statusError(409, "STALE_PROPOSAL"),
+  );
+});
+
+test("internal cost correction rejects foreign items, zero amounts, stale versions and completed economics", async () => {
+  for (const lock of ["completion", "brandInvoice", "agencyPayouts"]) {
+    const f = fixture(),
+      proposal = await f.published();
+    f.store.campaign[lock] =
+      lock === "agencyPayouts" ? [{ id: "payout" }] : { id: "locked" };
+    await assert.rejects(
+      () =>
+        f.admin(
+          op("updateCosts", {
+            proposalId: proposal.id,
+            expectedRevision: proposal.revision,
+            reason: "비용 변경 검토",
+            items: [{ itemId: proposal.items[0].id, supplierCost: "5.00" }],
+          }),
+        ),
+      statusError(409, "COSTS_LOCKED"),
+    );
+    assert.equal(
+      f.store.audits.filter((a) => a.action === "admin.proposal.costs_updated")
+        .length,
+      0,
+    );
+  }
+  const f = fixture(),
+    proposal = await f.published();
+  const input = {
+    proposalId: proposal.id,
+    expectedRevision: proposal.revision,
+    reason: "비용 변경 검토",
+    items: [{ itemId: "foreign-item", supplierCost: "5.00" }],
+  };
+  await assert.rejects(
+    () => f.admin(op("updateCosts", input)),
+    statusError(409, "INVALID_ITEMS"),
+  );
+  await assert.rejects(
+    () =>
+      f.admin(
+        op("updateCosts", {
+          ...input,
+          items: [{ itemId: proposal.items[0].id, supplierCost: "0" }],
+        }),
+      ),
+    statusError(400, "INVALID_INPUT"),
+  );
+  await assert.rejects(
+    () =>
+      applyAdminProposalMutation(f.tx, "brand-owner", op("updateCosts", input)),
+    statusError(403),
+  );
+});
+
+test("proposal publication identifies decision waiting and preserves original intake schedule", async () => {
+  const f = fixture();
+  f.store.request.inputJson = {
+    originalProposalDueAt: "2026-11-06T00:00:00.000Z",
+    waitingFor: "brief",
+  };
+  const proposal = await f.published();
+  assert.equal(f.store.request.inputJson.waitingFor, "proposal-decision");
+  assert.equal(
+    f.store.request.inputJson.originalProposalDueAt,
+    "2026-11-06T00:00:00.000Z",
+  );
+  assert.equal(f.store.request.dueAt, null);
+  await f.decide(decision(proposal));
+  assert.equal(f.store.request.inputJson.waitingFor, null);
+});

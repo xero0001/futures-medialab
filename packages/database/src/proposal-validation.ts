@@ -56,6 +56,29 @@ export const proposalDraftInputSchema = z.strictObject({
 });
 export const adminProposalMutationSchema = z.discriminatedUnion("action", [
   z.strictObject({
+    action: z.literal("updateCosts"),
+    campaignId: proposalIdSchema,
+    proposalId: proposalIdSchema,
+    expectedRevision: z.number().int().nonnegative(),
+    clientRequestId: z.uuid(),
+    reason: z.string().trim().min(2).max(1000),
+    items: z
+      .array(
+        z.strictObject({
+          itemId: proposalIdSchema,
+          supplierCost: proposalMoneySchema.refine(
+            (value) => Number(value) > 0,
+          ),
+        }),
+      )
+      .min(1)
+      .max(50)
+      .refine(
+        (items) =>
+          new Set(items.map((item) => item.itemId)).size === items.length,
+      ),
+  }),
+  z.strictObject({
     action: z.literal("createDraft"),
     campaignId: proposalIdSchema,
     clientRequestId: z.uuid(),

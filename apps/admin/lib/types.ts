@@ -75,6 +75,14 @@ export type OrganizationDetail = {
 };
 export type CampaignDetail = {
   id: string;
+  intakeSummary: {
+    id: string;
+    status: string;
+    assigneeName: string | null;
+    dueAt: string | null;
+    originalProposalDueAt: string | null;
+    waitingFor: "proposal-decision" | "brief" | "reply" | null;
+  } | null;
   campaign: CampaignRow;
   summary: string;
   regions: string[];

@@ -50,9 +50,11 @@ function Reference({
 export default function CampaignOperations({
   campaignId,
   onCampaignCompleted,
+  includeDelivery = true,
 }: {
   campaignId: string;
   onCampaignCompleted?: () => void;
+  includeDelivery?: boolean;
 }) {
   const [data, setData] = useState<CampaignOperationsData | null>(null);
   const [refresh, setRefresh] = useState(0);
@@ -120,15 +122,19 @@ export default function CampaignOperations({
   const current = data?.campaignId === campaignId ? data : null;
   return (
     <>
-      <ReportingReview
-        key={`reporting:${campaignId}`}
-        campaignId={campaignId}
-      />
-      <CampaignSettlement
-        key={`settlement:${campaignId}`}
-        campaignId={campaignId}
-        onCampaignCompleted={onCampaignCompleted}
-      />
+      {includeDelivery ? (
+        <>
+          <ReportingReview
+            key={`reporting:${campaignId}`}
+            campaignId={campaignId}
+          />
+          <CampaignSettlement
+            key={`settlement:${campaignId}`}
+            campaignId={campaignId}
+            onCampaignCompleted={onCampaignCompleted}
+          />
+        </>
+      ) : null}
       <section
         className="cop"
         aria-label="캠페인 상세 운영"
@@ -204,7 +210,7 @@ export default function CampaignOperations({
             </details>
             <p className="cop-notice">
               {current.officialProduction
-                ? "공식 제안의 청구·지급 확인은 위의 완료·정산에서 처리합니다. 계약은 외부 합의 문서의 참고 기록이며 전자서명·송금은 실행하지 않습니다."
+                ? "공식 제안의 청구·지급 확인은 청구·지급 탭에서 처리합니다. 계약은 외부 합의 문서의 참고 기록이며 전자서명·송금은 실행하지 않습니다."
                 : "계약은 외부에서 합의한 문서의 참고 기록입니다. 정산은 내부 검토 기록이며 전자서명·송금·지급 완료 처리는 제공하지 않습니다."}
             </p>
             {current.applications.length ? (

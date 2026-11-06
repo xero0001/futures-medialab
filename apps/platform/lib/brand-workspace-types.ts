@@ -47,15 +47,30 @@ export type BrandCampaign = CampaignArtwork & {
   proposalDueAt: string | null;
   requestId: string | null;
   intakeStatus: string | null;
+  intakeWaitingFor: "proposal-decision" | "brief" | "reply" | null;
+  originalProposalDueAt: string | null;
   intakeAssigneeName: string | null;
   intakeDueAt: string | null;
   reviewNote: string | null;
   latestProposal: BrandProposalSummary | null;
-  productionSummary: { total: number; awaitingSubmission: number; underReview: number; awaitingBrand: number; changesRequested: number; approved: number };
-  reportingSummary: { total: number; published: number; pending: number; allMetricsPending: number };
+  productionSummary: {
+    total: number;
+    awaitingSubmission: number;
+    underReview: number;
+    awaitingBrand: number;
+    changesRequested: number;
+    approved: number;
+  };
+  reportingSummary: {
+    total: number;
+    published: number;
+    pending: number;
+    allMetricsPending: number;
+  };
   invoiceSummary: { issued: number; paid: number };
 };
 export type BrandRequestSummary = {
+  waitingFor: "proposal-decision" | "brief" | "reply" | null;
   id: string;
   title: string;
   tool: string;
@@ -116,6 +131,7 @@ export type BrandCampaignCreateInput = BrandCampaignBrief & {
   applicationDeadline?: string | null;
 };
 export type BrandCampaignCreated = {
+  originalProposalDueAt?: string | null;
   id: string;
   requestId: string;
   submittedAt: string;

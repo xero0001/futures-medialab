@@ -27,6 +27,10 @@ export type RequestRow = {
   assigneeId: string | null;
   assigneeName: string | null;
   dueAt: string | null;
+  waitingFor: "proposal-decision" | "brief" | "reply" | null;
+  originalProposalDueAt: string | null;
+  operationDueAt: string | null;
+  replyDueAt: string | null;
   createdAt: string;
   updatedAt: string;
   version: number;

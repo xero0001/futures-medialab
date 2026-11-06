@@ -110,10 +110,14 @@ export function RequestConsole({
   userId,
   refreshToken = 0,
   onCampaign,
+  initialRequestId = "",
+  onSelectRequest,
 }: {
   userId: string;
   refreshToken?: number;
   onCampaign?: (id: string) => void;
+  initialRequestId?: string;
+  onSelectRequest?: (id: string) => void;
 }) {
   const [filters, setFilters] = useState({
     query: "",
@@ -126,9 +130,17 @@ export function RequestConsole({
   const [result, setResult] = useState<RequestsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedId, setSelectedId] = useState("");
+  const [selectedId, setSelectedId] = useState(initialRequestId);
   const [revision, setRevision] = useState(0);
   const detailSection = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSelectedId(initialRequestId);
+      if (initialRequestId)
+        detailSection.current?.scrollIntoView({ block: "start" });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [initialRequestId]);
   const queryString = new URLSearchParams({
     ...filters,
     page: String(filters.page),
@@ -175,7 +187,13 @@ export function RequestConsole({
     setFilters((current) => ({ ...current, query: search.trim(), page: 1 }));
   }
   function selectRequest(id: string) {
+    if (
+      selectedId !== id &&
+      !window.dispatchEvent(new Event("admin:navigate", { cancelable: true }))
+    )
+      return;
     setSelectedId(id);
+    onSelectRequest?.(id);
     requestAnimationFrame(() => {
       detailSection.current?.scrollIntoView({
         behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -355,6 +373,15 @@ export function RequestConsole({
                   </td>
                   <td>
                     <StatusBadge status={request.status} />
+                    {request.waitingFor ? (
+                      <span className="ar-campaign-caption">
+                        {request.waitingFor === "proposal-decision"
+                          ? "공식 제안 결정 대기"
+                          : request.waitingFor === "brief"
+                            ? "자료 보완 대기"
+                            : "회신 대기"}
+                      </span>
+                    ) : null}
                   </td>
                   <td>
                     <span
@@ -447,7 +474,16 @@ export function RequestConsole({
             userId={userId}
             assignees={result?.assignees ?? []}
             refreshToken={refreshToken}
-            onClose={() => setSelectedId("")}
+            onClose={() => {
+              if (
+                !window.dispatchEvent(
+                  new Event("admin:navigate", { cancelable: true }),
+                )
+              )
+                return;
+              setSelectedId("");
+              onSelectRequest?.("");
+            }}
             onCampaign={onCampaign}
             onChanged={() => setRevision((value) => value + 1)}
           />
@@ -755,7 +791,11 @@ function RequestManagement({
                 <option
                   key={value}
                   value={value}
-                  disabled={request.status === "CLOSED" && value !== "CLOSED"}
+                  disabled={
+                    (request.status === "CLOSED" && value !== "CLOSED") ||
+                    (value === "WAITING_BRAND" &&
+                      request.status !== "WAITING_BRAND")
+                  }
                 >
                   {label}
                 </option>
@@ -803,13 +843,32 @@ function RequestManagement({
             </AdminButton>
           ) : null}
           <label>
-            처리 기한 <span className="ar-optional">(한국 시간)</span>
+            {status === "WAITING_BRAND"
+              ? "브랜드 회신 기한"
+              : "운영팀 처리 기한"}{" "}
+            <span className="ar-optional">(한국 시간)</span>
             <input
               type="datetime-local"
               value={dueAt}
               onChange={(event) => setDueAt(event.target.value)}
+              disabled={
+                status === "WAITING_BRAND" &&
+                request.waitingFor === "proposal-decision"
+              }
             />
           </label>
+          {request.waitingFor === "proposal-decision" ? (
+            <p className="ar-help">
+              공식 제안의 결정 대기입니다. 유효기한은 제안서에서 관리합니다.
+            </p>
+          ) : null}
+          {request.originalProposalDueAt ? (
+            <p className="ar-help">
+              최초 제안 약속: {formatDate(request.originalProposalDueAt)}
+              <br />
+              현재 처리 기한을 바꾸어도 최초 약속은 보존됩니다.
+            </p>
+          ) : null}
           <label>
             처리 사유
             <textarea
@@ -824,7 +883,8 @@ function RequestManagement({
           </label>
           <p className="ar-help">
             처리 사유는 내부 이력에 남습니다. 브랜드에게 안내할 내용은 공개
-            답변으로 보내주세요.
+            답변으로 보내주세요. 회신이 필요하면 답변 작성에서 ‘회신 요청’ 또는
+            ‘자료 보완 요청’을 선택하세요.
           </p>
           {status === "CLOSED" && request.status !== "CLOSED" ? (
             <label className="ar-close-confirm">
@@ -872,6 +932,8 @@ function ReplyForm({
   onChanged: () => void;
 }) {
   const [internal, setInternal] = useState(false);
+  const [intent, setIntent] = useState<"notice" | "reply" | "brief">("notice");
+  const [replyDueAt, setReplyDueAt] = useState("");
   const [body, setBody] = useState("");
   const [attachments, setAttachments] = useState<RequestAttachment[]>(
     request.pendingAttachments,
@@ -885,6 +947,35 @@ function ReplyForm({
   const fileInput = useRef<HTMLInputElement>(null);
   const working = useRef(false);
   const closed = request.status === "CLOSED";
+  useEffect(() => {
+    const dirty = Boolean(
+      body.trim() || attachments.length || busy || uploading || discarding,
+    );
+    if (!dirty) return;
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    const beforeNavigate = (event: Event) => {
+      if (busy || uploading || discarding) {
+        event.preventDefault();
+        setError("진행 중인 저장 또는 첨부 처리가 끝난 뒤 이동해 주세요.");
+        return;
+      }
+      if (
+        !window.confirm(
+          "작성 중인 답변은 저장되지 않습니다. 다른 화면으로 이동할까요? 미전송 첨부는 이 요청에 보관됩니다.",
+        )
+      )
+        event.preventDefault();
+    };
+    window.addEventListener("beforeunload", beforeUnload);
+    window.addEventListener("admin:navigate", beforeNavigate);
+    return () => {
+      window.removeEventListener("beforeunload", beforeUnload);
+      window.removeEventListener("admin:navigate", beforeNavigate);
+    };
+  }, [body, attachments.length, busy, uploading, discarding]);
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!working.current) setAttachments(request.pendingAttachments);
@@ -984,6 +1075,15 @@ function ReplyForm({
             action: "message",
             body: body.trim(),
             internal,
+            version: request.version,
+            intent: internal ? "notice" : intent,
+            ...(!internal && intent !== "notice"
+              ? {
+                  dueAt: replyDueAt
+                    ? new Date(`${replyDueAt}:00+09:00`).toISOString()
+                    : null,
+                }
+              : {}),
             attachmentIds: attachments.map((attachment) => attachment.id),
           }),
         },
@@ -993,7 +1093,9 @@ function ReplyForm({
       setNotice(
         internal
           ? "내부 메모를 저장했습니다."
-          : "브랜드에게 공개 답변을 전달했습니다.",
+          : intent === "notice"
+            ? "브랜드에게 공개 답변을 전달했습니다."
+            : "공개 답변과 회신 기한을 저장하고 브랜드의 처리할 일에 추가했습니다.",
       );
       onChanged();
     } catch (caught) {
@@ -1098,6 +1200,39 @@ function ReplyForm({
             <LockKeyhole size={17} /> 내부 메모
           </AdminButton>
         </div>
+        {!internal ? (
+          <div className="ar-reply-intent">
+            <label>
+              답변 목적
+              <select
+                value={intent}
+                onChange={(event) =>
+                  setIntent(event.target.value as "notice" | "reply" | "brief")
+                }
+              >
+                <option value="notice">안내 보내기</option>
+                <option value="reply">회신 요청하기</option>
+                <option value="brief">자료 보완 요청하기</option>
+              </select>
+            </label>
+            {intent !== "notice" ? (
+              <label>
+                브랜드 회신 기한{" "}
+                <span className="ar-optional">(선택 · 한국 시간)</span>
+                <input
+                  type="datetime-local"
+                  value={replyDueAt}
+                  onChange={(event) => setReplyDueAt(event.target.value)}
+                />
+              </label>
+            ) : null}
+            <p className="ar-help">
+              {intent === "notice"
+                ? "안내와 자료를 공유합니다. 현재 처리 상태는 유지됩니다."
+                : "공개 답변과 함께 회신 대기 상태 및 기한을 저장합니다. 브랜드 홈의 처리할 일에 표시됩니다."}
+            </p>
+          </div>
+        ) : null}
         <label>
           <span>
             {internal ? "운영팀에 남길 메모" : "브랜드에게 보낼 답변"}
@@ -1149,7 +1284,11 @@ function ReplyForm({
               ? "저장 중…"
               : internal
                 ? "내부 메모 저장"
-                : "공개 답변 보내기"}
+                : intent === "notice"
+                  ? "안내 보내기"
+                  : intent === "brief"
+                    ? "자료 보완 요청 보내기"
+                    : "회신 요청 보내기"}
           </AdminButton>
         </div>
         <p className="ar-help">

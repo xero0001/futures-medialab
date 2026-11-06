@@ -1,3 +1,7 @@
+import {
+  originalProposalDeadline,
+  requestWaitingFor,
+} from "@futures-medialab/database/request-workflow";
 import "server-only";
 import { createHash } from "node:crypto";
 import { getDatabase, Prisma } from "@futures-medialab/database";
@@ -85,6 +89,7 @@ const requestSelect = {
   title: true,
   tool: true,
   status: true,
+  inputJson: true,
   campaignId: true,
   campaign: { select: { title: true } },
   assignedTo: { select: { name: true } },
@@ -102,9 +107,18 @@ function requestDto(row: RequestRow): BrandRequestSummary {
     title: row.title,
     tool: row.tool,
     status: row.status,
+    waitingFor: ["proposal-decision", "brief", "reply"].includes(
+      string(object(row.inputJson).waitingFor),
+    )
+      ? (string(
+          object(row.inputJson).waitingFor,
+        ) as BrandRequestSummary["waitingFor"])
+      : null,
     campaignId: row.campaignId,
     campaignTitle: row.campaign?.title ?? null,
-    assigneeName: row.assignedTo ? row.assignedTo.name?.trim() || "운영팀" : null,
+    assigneeName: row.assignedTo
+      ? row.assignedTo.name?.trim() || "운영팀"
+      : null,
     dueAt: row.dueAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -119,10 +133,13 @@ function campaignDto(
   reporting: BrandReportingItem[] = [],
   invoices: BrandInvoice[] = [],
 ): BrandCampaign {
-  const currentProduction = latestProposal?.status === "APPROVED"
-    ? production.filter((item) => item.proposalId === latestProposal.id)
-    : [];
-  const currentReports = reporting.filter((item) => item.isCurrent && item.proposalId === latestProposal?.id);
+  const currentProduction =
+    latestProposal?.status === "APPROVED"
+      ? production.filter((item) => item.proposalId === latestProposal.id)
+      : [];
+  const currentReports = reporting.filter(
+    (item) => item.isCurrent && item.proposalId === latestProposal?.id,
+  );
   const requirements = object(row.requirements);
   const brief = brandDraftBriefSchema.safeParse(requirements.brandBrief);
   const intake = object(requirements.brandIntake);
@@ -150,32 +167,65 @@ function campaignDto(
     submittedAt: row.status === "DRAFT" ? null : iso(intake.submittedAt),
     proposalDueAt:
       !["DRAFT", "CANCELED", "COMPLETED"].includes(row.status) &&
-      row.type === "MANAGED"
+      row.type === "MANAGED" &&
+      !latestProposal &&
+      intakeRequest?.status !== "WAITING_BRAND"
         ? (intakeRequest?.dueAt?.toISOString() ?? null)
         : null,
     requestId: row.status === "DRAFT" ? null : (intakeRequest?.id ?? null),
-    intakeStatus: row.status === "DRAFT" ? null : (intakeRequest?.status ?? null),
+    intakeStatus:
+      row.status === "DRAFT" ? null : (intakeRequest?.status ?? null),
+    intakeWaitingFor: intakeRequest
+      ? requestWaitingFor(
+          intakeRequest.inputJson,
+          intakeRequest.status,
+          Boolean(latestProposal),
+        )
+      : null,
+    originalProposalDueAt:
+      iso(intake.originalProposalDueAt) ??
+      (intakeRequest
+        ? originalProposalDeadline(intakeRequest.inputJson)
+        : null),
     intakeAssigneeName:
       row.status !== "DRAFT" && intakeRequest?.assignedTo
         ? intakeRequest.assignedTo.name?.trim() || "운영팀"
         : null,
     intakeDueAt:
-      row.status === "DRAFT" ? null : (intakeRequest?.dueAt?.toISOString() ?? null),
+      row.status === "DRAFT"
+        ? null
+        : (intakeRequest?.dueAt?.toISOString() ?? null),
     reviewNote: string(object(requirements.adminReview).reason) || null,
     latestProposal,
     productionSummary: {
       total: currentProduction.length,
-      awaitingSubmission: currentProduction.filter((item) => item.status === "AWAITING_SUBMISSION").length,
-      underReview: currentProduction.filter((item) => item.status === "ADMIN_REVIEW").length,
-      awaitingBrand: currentProduction.filter((item) => item.status === "BRAND_REVIEW").length,
-      changesRequested: currentProduction.filter((item) => ["BRAND_REVISION", "AGENCY_REVISION"].includes(item.status)).length,
-      approved: currentProduction.filter((item) => item.status === "APPROVED").length,
+      awaitingSubmission: currentProduction.filter(
+        (item) => item.status === "AWAITING_SUBMISSION",
+      ).length,
+      underReview: currentProduction.filter(
+        (item) => item.status === "ADMIN_REVIEW",
+      ).length,
+      awaitingBrand: currentProduction.filter(
+        (item) => item.status === "BRAND_REVIEW",
+      ).length,
+      changesRequested: currentProduction.filter((item) =>
+        ["BRAND_REVISION", "AGENCY_REVISION"].includes(item.status),
+      ).length,
+      approved: currentProduction.filter((item) => item.status === "APPROVED")
+        .length,
     },
     reportingSummary: {
       total: currentReports.length,
       published: currentReports.filter((item) => item.latestSubmission).length,
-      pending: currentReports.filter((item) => item.status !== "PUBLISHED").length,
-      allMetricsPending: currentReports.filter((item) => item.latestSubmission && Object.values(item.latestSubmission.metrics).every((value) => value === null)).length,
+      pending: currentReports.filter((item) => item.status !== "PUBLISHED")
+        .length,
+      allMetricsPending: currentReports.filter(
+        (item) =>
+          item.latestSubmission &&
+          Object.values(item.latestSubmission.metrics).every(
+            (value) => value === null,
+          ),
+      ).length,
     },
     invoiceSummary: {
       issued: invoices.filter((invoice) => invoice.status === "ISSUED").length,
@@ -212,52 +262,68 @@ export function brandWorkspace(request: Request) {
       async (tx): Promise<BrandWorkspace> => {
         const member = await authorize(tx, session);
         const organizationId = member.organizationId;
-        const [campaigns, requests, links, groupedCampaigns, groupedRequests, waitingContentReviews] =
-          await Promise.all([
-            tx.campaign.findMany({
-              where: { brandOrganizationId: organizationId },
-              orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-              take: 101,
-              select: campaignSelect,
-            }),
-            tx.workspaceToolRequest.findMany({
-              where: { organizationId },
-              orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-              take: 101,
-              select: requestSelect,
-            }),
-            tx.shortLink.findMany({
-              where: { organizationId },
-              orderBy: { createdAt: "desc" },
-              take: 100,
-              select: {
-                id: true,
-                code: true,
-                title: true,
-                targetUrl: true,
-                active: true,
-                clickCount: true,
-                createdAt: true,
+        const [
+          campaigns,
+          requests,
+          links,
+          groupedCampaigns,
+          groupedRequests,
+          waitingContentReviews,
+        ] = await Promise.all([
+          tx.campaign.findMany({
+            where: { brandOrganizationId: organizationId },
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            take: 101,
+            select: campaignSelect,
+          }),
+          tx.workspaceToolRequest.findMany({
+            where: { organizationId },
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            take: 101,
+            select: requestSelect,
+          }),
+          tx.shortLink.findMany({
+            where: { organizationId },
+            orderBy: { createdAt: "desc" },
+            take: 100,
+            select: {
+              id: true,
+              code: true,
+              title: true,
+              targetUrl: true,
+              active: true,
+              clickCount: true,
+              createdAt: true,
+            },
+          }),
+          tx.campaign.groupBy({
+            by: ["status"],
+            where: { brandOrganizationId: organizationId },
+            _count: { _all: true },
+          }),
+          tx.workspaceToolRequest.groupBy({
+            by: ["status"],
+            where: { organizationId },
+            _count: { _all: true },
+          }),
+          tx.productionItem.count({
+            where: {
+              status: "BRAND_REVIEW",
+              campaign: {
+                brandOrganizationId: organizationId,
+                status: { in: ["IN_PROGRESS", "VERIFYING"] },
               },
-            }),
-            tx.campaign.groupBy({
-              by: ["status"],
-              where: { brandOrganizationId: organizationId },
-              _count: { _all: true },
-            }),
-            tx.workspaceToolRequest.groupBy({
-              by: ["status"],
-              where: { organizationId },
-              _count: { _all: true },
-            }),
-            tx.productionItem.count({
-              where: {
-                status: "BRAND_REVIEW",
-                campaign: { brandOrganizationId: organizationId, status: { in: ["IN_PROGRESS", "VERIFYING"] } },
-                proposalItem: { status: "APPROVED", proposal: { status: "APPROVED", publishedAt: { not: null }, supersededAt: null } },
+              proposalItem: {
+                status: "APPROVED",
+                proposal: {
+                  status: "APPROVED",
+                  publishedAt: { not: null },
+                  supersededAt: null,
+                },
               },
-            }),
-          ]);
+            },
+          }),
+        ]);
         // Intake threads can be older than the inbox's latest 100 requests.
         const intakeIds = campaigns
           .slice(0, 100)
@@ -272,8 +338,18 @@ export function brandWorkspace(request: Request) {
             })
           : [];
         const [proposals, production, reporting, invoices] = await Promise.all([
-          listBrandLatestProposals(tx, organizationId, campaigns.slice(0, 100).map((campaign) => campaign.id), member.role !== "MEMBER"),
-          listBrandProductionItems(tx, organizationId, undefined, member.role !== "MEMBER"),
+          listBrandLatestProposals(
+            tx,
+            organizationId,
+            campaigns.slice(0, 100).map((campaign) => campaign.id),
+            member.role !== "MEMBER",
+          ),
+          listBrandProductionItems(
+            tx,
+            organizationId,
+            undefined,
+            member.role !== "MEMBER",
+          ),
           listBrandReportingItems(tx, organizationId),
           listBrandInvoices(tx, { userId: session.user.id, organizationId }),
         ]);
@@ -331,18 +407,16 @@ export function brandWorkspace(request: Request) {
             canManageCampaigns: member.role !== "MEMBER",
             canEditAccount: member.role === "OWNER",
           },
-          campaigns: campaigns
-            .slice(0, 100)
-            .map((campaign) =>
-              campaignDto(
-                campaign,
-                intakeRequests,
-                proposalSummaries.get(campaign.id) ?? null,
-                production.filter((item) => item.campaignId === campaign.id),
-                reporting.filter((item) => item.campaignId === campaign.id),
-                invoices.filter((invoice) => invoice.campaignId === campaign.id),
-              ),
+          campaigns: campaigns.slice(0, 100).map((campaign) =>
+            campaignDto(
+              campaign,
+              intakeRequests,
+              proposalSummaries.get(campaign.id) ?? null,
+              production.filter((item) => item.campaignId === campaign.id),
+              reporting.filter((item) => item.campaignId === campaign.id),
+              invoices.filter((invoice) => invoice.campaignId === campaign.id),
             ),
+          ),
           requests: requests.slice(0, 100).map(requestDto),
           invoices,
           pendingProposals,
@@ -418,10 +492,24 @@ export function brandCampaignDetail(request: Request, id: string) {
           select: requestSelect,
         });
         const [proposals, production, reporting, invoices] = await Promise.all([
-          listBrandCampaignProposals(tx, member.organizationId, campaign.id, member.role !== "MEMBER"),
-          listBrandProductionItems(tx, member.organizationId, campaign.id, member.role !== "MEMBER"),
+          listBrandCampaignProposals(
+            tx,
+            member.organizationId,
+            campaign.id,
+            member.role !== "MEMBER",
+          ),
+          listBrandProductionItems(
+            tx,
+            member.organizationId,
+            campaign.id,
+            member.role !== "MEMBER",
+          ),
           listBrandReportingItems(tx, member.organizationId, campaign.id),
-          listBrandInvoices(tx, { userId: session.user.id, organizationId: member.organizationId }, campaign.id),
+          listBrandInvoices(
+            tx,
+            { userId: session.user.id, organizationId: member.organizationId },
+            campaign.id,
+          ),
         ]);
         return {
           campaign: campaignDto(
@@ -489,6 +577,8 @@ async function createIntake(
     : null;
   if (prior) {
     const previousInput = object(prior.inputJson);
+    const originalDueAt =
+      originalProposalDeadline(previousInput) ?? dueAt?.toISOString() ?? null;
     const updated = await tx.workspaceToolRequest.updateMany({
       where: {
         id: prior.id,
@@ -503,6 +593,10 @@ async function createIntake(
           ...previousInput,
           input: campaign.summary,
           kind: "campaign-intake",
+          waitingFor: null,
+          operatorReplyPending: false,
+          originalProposalDueAt: originalDueAt,
+          proposalPausedAt: null,
           firstSubmittedAt:
             string(previousInput.firstSubmittedAt) ||
             string(previousInput.submittedAt) ||
@@ -542,6 +636,7 @@ async function createIntake(
       requestId: prior.id,
       submittedAt: now.toISOString(),
       proposalDueAt: dueAt?.toISOString() ?? null,
+      originalProposalDueAt: originalDueAt,
     };
   }
   const request = await tx.workspaceToolRequest.create({
@@ -554,6 +649,10 @@ async function createIntake(
       inputJson: {
         input: campaign.summary,
         kind: "campaign-intake",
+        waitingFor: null,
+        operatorReplyPending: false,
+        originalProposalDueAt: dueAt?.toISOString() ?? null,
+        firstSubmittedAt: now.toISOString(),
         submittedAt: now.toISOString(),
         route: campaign.type === "MANAGED" ? "managed" : "open",
       },
@@ -579,6 +678,7 @@ async function createIntake(
     requestId: request.id,
     submittedAt: now.toISOString(),
     proposalDueAt: dueAt?.toISOString() ?? null,
+    originalProposalDueAt: dueAt?.toISOString() ?? null,
   };
 }
 
@@ -714,6 +814,7 @@ export function mutateBrandCampaign(request: Request) {
                 id: campaign.id,
                 requestId: existing.id,
                 submittedAt: iso(previous.submittedAt)!,
+                originalProposalDueAt: iso(previous.originalProposalDueAt),
                 proposalDueAt:
                   campaign.type === "MANAGED"
                     ? (existing.dueAt?.toISOString() ?? null)
@@ -864,6 +965,7 @@ export function mutateBrandCampaign(request: Request) {
               id: duplicate.id,
               requestId: existing.id,
               submittedAt: iso(prior.submittedAt)!,
+              originalProposalDueAt: iso(prior.originalProposalDueAt),
               proposalDueAt:
                 duplicate.type === "MANAGED"
                   ? (existing.dueAt?.toISOString() ?? null)

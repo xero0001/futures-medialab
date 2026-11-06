@@ -720,6 +720,7 @@ function ItemDetail({
   );
 }
 export function ReportingReview({ campaignId }: { campaignId: string }) {
+  const [showHistory, setShowHistory] = useState(false);
   const [data, setData] = useState<AdminReportingResponse | null>(null);
   const [selectedId, setSelectedId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -730,10 +731,23 @@ export function ReportingReview({ campaignId }: { campaignId: string }) {
   const [action, setAction] = useState<ReviewAction | null>(null);
   const pending = useRef(false),
     retries = useRef(new Map<string, string>());
+  useEffect(() => {
+    const guard = (event: Event) => {
+      if (
+        busy ||
+        (action && !window.confirm("작성 중인 검수 내용을 닫고 이동할까요?"))
+      )
+        event.preventDefault();
+    };
+    window.addEventListener("admin:navigate", guard);
+    return () => window.removeEventListener("admin:navigate", guard);
+  }, [busy, action]);
   const current = data?.campaignId === campaignId ? data : null;
+  const currentItems = current?.items.filter((item) => item.isCurrent) ?? [];
+  const visibleItems = showHistory ? (current?.items ?? []) : currentItems;
   const selected =
-    current?.items.find((item) => item.id === selectedId) ??
-    current?.items[0] ??
+    visibleItems.find((item) => item.id === selectedId) ??
+    visibleItems[0] ??
     null;
   useEffect(() => {
     const controller = new AbortController();
@@ -860,18 +874,31 @@ export function ReportingReview({ campaignId }: { campaignId: string }) {
           게시·성과 내역을 불러오는 중입니다…
         </p>
       ) : null}
-      {current && current.items.length ? (
+      {current && current.items.some((item) => !item.isCurrent) ? (
+        <label className={s.historyFilter}>
+          <input
+            type="checkbox"
+            checked={showHistory}
+            onChange={(event) => setShowHistory(event.target.checked)}
+            disabled={busy}
+          />
+          이전 제안 기록 포함 (
+          {current.items.filter((item) => !item.isCurrent).length}건)
+        </label>
+      ) : null}
+      {current && visibleItems.length ? (
         <>
           <div className={s.stats}>
             <span>
-              전체 항목<strong>{current.items.length}</strong>
+              현재 제안 항목<strong>{currentItems.length}</strong>
             </span>
             <span>
               운영팀 검토
               <strong>
                 {
-                  current.items.filter((item) => item.status === "ADMIN_REVIEW")
-                    .length
+                  currentItems.filter(
+                    (item) => item.status === "ADMIN_REVIEW" && item.canReview,
+                  ).length
                 }
               </strong>
             </span>
@@ -879,7 +906,7 @@ export function ReportingReview({ campaignId }: { campaignId: string }) {
               공개본 있음
               <strong>
                 {
-                  current.items.filter((item) =>
+                  currentItems.filter((item) =>
                     item.submissions.some(
                       (entry) => entry.releasedSnapshot !== null,
                     ),
@@ -890,7 +917,7 @@ export function ReportingReview({ campaignId }: { campaignId: string }) {
           </div>
           <div className={s.layout}>
             <nav className={s.tasks} aria-label="게시·성과 항목">
-              {current.items.map((item) => (
+              {visibleItems.map((item) => (
                 <button
                   type="button"
                   key={item.id}

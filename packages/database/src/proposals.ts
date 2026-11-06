@@ -98,6 +98,9 @@ const adminInclude = {
   campaign: {
     include: {
       brandOrganization: { select: { id: true, status: true, metadata: true } },
+      completion: { select: { id: true } },
+      brandInvoice: { select: { id: true } },
+      agencyPayouts: { select: { id: true } },
     },
   },
   items: { orderBy: { position: "asc" } },
@@ -343,7 +346,9 @@ export async function listBrandDocumentProposals(
     take: Math.min(501, Math.max(1, limit)),
     select: publicSelect,
   });
-  return rows.map((row) => publicDto(row, !row.supersededAt && row.status !== "SUPERSEDED", false));
+  return rows.map((row) =>
+    publicDto(row, !row.supersededAt && row.status !== "SUPERSEDED", false),
+  );
 }
 
 export async function getBrandProposal(
@@ -502,6 +507,16 @@ function adminDto(
       row.status === "DRAFT" &&
       !row.publishedAt &&
       !["CANCELED", "COMPLETED"].includes(row.campaign.status),
+    canEditCosts: Boolean(
+      row.publishedAt &&
+      !row.supersededAt &&
+      row.id === latestPublishedId &&
+      !["CANCELED", "COMPLETED"].includes(row.campaign.status) &&
+      row.campaign.brandOrganization.status === "ACTIVE" &&
+      !row.campaign.completion &&
+      !row.campaign.brandInvoice &&
+      !row.campaign.agencyPayouts?.length,
+    ),
     canPublish: problems.length === 0,
     publishProblems: problems,
   };
@@ -735,7 +750,7 @@ async function updateIntake(
       campaignId: campaign.id,
       organizationId: campaign.brandOrganizationId,
     },
-    select: { id: true, status: true, version: true },
+    select: { id: true, status: true, version: true, inputJson: true },
   });
   if (!intake) return;
   await tx.requestMessage.create({
@@ -749,7 +764,16 @@ async function updateIntake(
         campaignId: campaign.id,
         version: intake.version,
       },
-      data: { status, dueAt: null, version: { increment: 1 } },
+      data: {
+        status,
+        dueAt: null,
+        version: { increment: 1 },
+        inputJson: {
+          ...object(intake.inputJson),
+          waitingFor: status === "WAITING_BRAND" ? "proposal-decision" : null,
+          operatorReplyPending: false,
+        } as Prisma.InputJsonObject,
+      },
     });
     if (updated.count !== 1)
       proposalFail(
@@ -865,6 +889,71 @@ export async function applyAdminProposalMutation(
         version: (last?.version ?? 0) + 1,
       });
     }
+  } else if (input.action === "updateCosts") {
+    const row = await tx.campaignProposal.findFirst({
+      where: { id: input.proposalId, campaignId: campaign.id },
+      include: adminInclude,
+    });
+    if (!row) proposalFail(404, "NOT_FOUND", "제안을 찾을 수 없습니다.");
+    const latest = await tx.campaignProposal.findFirst({
+      where: { campaignId: campaign.id, publishedAt: { not: null } },
+      orderBy: { version: "desc" },
+      select: { id: true },
+    });
+    if (!adminDto(row, latest?.id).canEditCosts)
+      proposalFail(
+        409,
+        "COSTS_LOCKED",
+        "완료·정산 전 현재 공개 제안의 내부 공급가만 보완할 수 있습니다.",
+      );
+    if (row.revision !== input.expectedRevision)
+      proposalFail(
+        409,
+        "STALE_PROPOSAL",
+        "제안이 변경되었습니다. 최신 내용을 확인해 주세요.",
+      );
+    if (
+      input.items.some(
+        (item) => !row.items.some((existing) => existing.id === item.itemId),
+      )
+    )
+      proposalFail(
+        409,
+        "INVALID_ITEMS",
+        "현재 제안의 항목만 변경할 수 있습니다.",
+      );
+    const changed = await tx.campaignProposal.updateMany({
+      where: {
+        id: row.id,
+        revision: input.expectedRevision,
+        supersededAt: null,
+      },
+      data: { revision: { increment: 1 } },
+    });
+    if (changed.count !== 1)
+      proposalFail(409, "STALE_PROPOSAL", "다른 담당자가 제안을 변경했습니다.");
+    for (const item of input.items) {
+      const updated = await tx.proposalItem.updateMany({
+        where: { id: item.itemId, proposalId: row.id },
+        data: { supplierCost: new Prisma.Decimal(item.supplierCost) },
+      });
+      if (updated.count !== 1)
+        proposalFail(409, "INVALID_ITEMS", "제안 항목이 변경되었습니다.");
+    }
+    proposalId = row.id;
+    await audit(tx, actorId, "admin.proposal.costs_updated", row.id, {
+      campaignId: campaign.id,
+      version: row.version,
+      reason: input.reason,
+      changes: input.items.map((item) => ({
+        itemId: item.itemId,
+        before:
+          row.items
+            .find((existing) => existing.id === item.itemId)
+            ?.supplierCost?.toFixed(2) ?? null,
+        after: proposalAmount(proposalCents(item.supplierCost)),
+      })),
+    });
   } else {
     const row = await tx.campaignProposal.findFirst({
       where: { id: input.proposalId, campaignId: campaign.id },

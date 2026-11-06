@@ -800,6 +800,10 @@ test("a returned campaign reuses its owned intake thread and records the renewed
   assert.equal(intake.status, "REQUESTED");
   assert.equal(intake.version, 1);
   assert.equal(intake.inputJson.firstSubmittedAt, originalSubmittedAt);
+  assert.equal(result.originalProposalDueAt, created.proposalDueAt);
+  assert.equal(intake.inputJson.originalProposalDueAt, created.proposalDueAt);
+  assert.equal(intake.inputJson.waitingFor, null);
+  assert.equal(intake.inputJson.operatorReplyPending, false);
   assert.equal(
     Date.parse(result.proposalDueAt) - Date.parse(result.submittedAt),
     48 * 3600000,

@@ -246,3 +246,83 @@ test("report awaiting operator review identifies Futures as the responsible part
   assert.equal(progress.stage, "reporting");
   assert.equal(progress.owner, "futures");
 });
+
+test("published intake is one proposal task and an expired proposal returns responsibility to Futures", () => {
+  const current = proposal();
+  const c = campaign({
+    latestProposal: current,
+    intakeStatus: "WAITING_BRAND",
+    intakeWaitingFor: "proposal-decision",
+  });
+  const request = {
+    id: "r1",
+    campaignId: "c1",
+    title: "의뢰",
+    status: "WAITING_BRAND",
+    waitingFor: "proposal-decision",
+    dueAt: null,
+  };
+  assert.deepEqual(
+    getBrandActions(workspace(c, { requests: [request] }), now).map(
+      (item) => item.kind,
+    ),
+    ["proposal"],
+  );
+  assert.equal(
+    getBrandCampaignProgress(detail(c), now).state,
+    "proposal-review",
+  );
+  current.expiresAt = past;
+  assert.deepEqual(
+    getBrandActions(workspace(c, { requests: [request] }), now),
+    [],
+  );
+  assert.equal(
+    getBrandCampaignProgress(detail(c), now).state,
+    "proposal-expired",
+  );
+});
+test("legacy intake is deduplicated while an explicit real reply remains actionable", () => {
+  const c = campaign({
+    latestProposal: proposal(),
+    intakeStatus: "WAITING_BRAND",
+  });
+  const request = {
+    id: "r1",
+    campaignId: "c1",
+    status: "WAITING_BRAND",
+    dueAt: null,
+  };
+  assert.deepEqual(
+    getBrandActions(workspace(c, { requests: [request] }), now).map(
+      (item) => item.kind,
+    ),
+    ["proposal"],
+  );
+  assert.equal(
+    getBrandCampaignProgress(detail(c), now).state,
+    "proposal-review",
+  );
+  request.waitingFor = "reply";
+  c.intakeWaitingFor = "reply";
+  assert.equal(
+    getBrandActions(workspace(c, { requests: [request] }), now).length,
+    2,
+  );
+  assert.equal(getBrandCampaignProgress(detail(c), now).state, "reply");
+});
+
+test("returned brief tasks lead to editing the existing draft rather than creating a second campaign", () => {
+  const c = campaign({ status: "DRAFT", requestId: null });
+  const request = {
+    id: "r1",
+    campaignId: "c1",
+    status: "WAITING_BRAND",
+    waitingFor: "brief",
+    dueAt: null,
+  };
+  assert.equal(
+    getBrandActions(workspace(c, { requests: [request] }), now)[0].href,
+    "/advertiser/campaign/new?draft=c1",
+  );
+});

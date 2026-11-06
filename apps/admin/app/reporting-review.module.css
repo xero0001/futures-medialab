@@ -449,3 +449,20 @@
     padding: 16px;
   }
 }
+
+.historyFilter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #70737c;
+  font-size: 13px;
+  margin: 16px 0;
+}
+.historyFilter input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  flex: 0 0 18px;
+  padding: 0;
+  accent-color: #0066ff;
+}

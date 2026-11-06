@@ -108,6 +108,7 @@ export type AdminProposal = Omit<
   updatedAt: string;
   canEdit: boolean;
   canPublish: boolean;
+  canEditCosts: boolean;
   publishProblems: string[];
 };
 export type AdminProposalCreatorOption = {
@@ -135,6 +136,15 @@ export type AdminProposalsResponse = {
   creators: AdminProposalCreatorOption[];
 };
 export type AdminProposalMutation =
+  | {
+      action: "updateCosts";
+      campaignId: string;
+      proposalId: string;
+      expectedRevision: number;
+      clientRequestId: string;
+      reason: string;
+      items: { itemId: string; supplierCost: string }[];
+    }
   | {
       action: "createDraft";
       campaignId: string;

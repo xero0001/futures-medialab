@@ -75,6 +75,7 @@ export type AdminProductionSubmission = AgencyProductionSubmission & {
   internalNote: string;
 };
 export type AdminProductionItem = ProductionItemBase & {
+  isCurrent: boolean;
   supplierOrganizationId: string | null;
   supplierName: string | null;
   submissions: AdminProductionSubmission[];

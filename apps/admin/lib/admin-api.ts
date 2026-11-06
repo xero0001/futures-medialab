@@ -1,4 +1,6 @@
 import "server-only";
+import { syncCampaignIntake } from "./campaign-intake";
+import { originalProposalDeadline, requestWaitingFor } from "@futures-medialab/database/request-workflow";
 import { getDatabase, Prisma } from "@futures-medialab/database";
 import { get } from "@vercel/blob";
 import { z } from "zod";
@@ -299,6 +301,7 @@ export function campaignDetail(request: Request, id: string) {
       where: { id },
       select: {
         id: true,
+        brandOrganizationId: true,
         summary: true,
         regions: true, categories: true, followerMin: true, followerMax: true,
         title: true, type: true, status: true, platforms: true, currency: true, budgetAmount: true, applicationDeadline: true, createdAt: true,
@@ -326,8 +329,23 @@ export function campaignDetail(request: Request, id: string) {
     });
     if (!campaign) fail(404, "NOT_FOUND", "캠페인을 찾을 수 없습니다.");
     await recheckAdmin(getDatabase(), admin);
+    const intakeId = text(record(record(campaign.requirements).brandIntake).requestId);
+    const intake = intakeId ? await getDatabase().workspaceToolRequest.findFirst({
+      where: { id: intakeId, campaignId: id, organizationId: campaign.brandOrganizationId },
+      select: { id: true, status: true, inputJson: true, dueAt: true,
+        assignedTo: { select: { name: true } },
+        campaign: { select: { proposals: { where: { publishedAt: { not: null } }, take: 1, select: { id: true } } } },
+      },
+    }) : null;
     return json({
       id,
+      intakeSummary: intake ? {
+        id: intake.id, status: intake.status,
+        assigneeName: intake.assignedTo?.name || null,
+        dueAt: intake.dueAt?.toISOString() ?? null,
+        originalProposalDueAt: originalProposalDeadline(intake.inputJson),
+        waitingFor: requestWaitingFor(intake.inputJson, intake.status, Boolean(intake.campaign?.proposals.length)),
+      } : null,
       summary: campaign.summary,
       regions: campaign.regions, categories: campaign.categories, followerMin: campaign.followerMin, followerMax: campaign.followerMax,
       campaign: { id, title: campaign.title, type: campaign.type, summary: campaign.summary, status: campaign.status,
@@ -530,11 +548,15 @@ export function action(request: Request) {
               reviewedAt,
             };
           }
+          const synchronizedRequirements = await syncCampaignIntake(
+            tx, admin.userId, { ...campaign, requirements },
+            input.action as "publishCampaign" | "returnCampaign" | "closeCampaign", input.reason,
+          );
           await tx.campaign.update({
             where: { id: input.id },
             data: {
               status: after as "RECRUITING" | "DRAFT" | "IN_PROGRESS",
-              requirements: requirements as Prisma.InputJsonObject,
+              requirements: synchronizedRequirements as Prisma.InputJsonObject,
               ...(input.action === "publishCampaign"
                 ? { publishedAt: new Date() }
                 : {}),

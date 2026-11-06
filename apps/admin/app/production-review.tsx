@@ -388,6 +388,29 @@ function SupplierAssignment({
   onAssign: (supplierOrganizationId: string) => void;
 }) {
   const [supplier, setSupplier] = useState(item.supplierOrganizationId ?? "");
+  const dirty = supplier !== (item.supplierOrganizationId ?? "");
+  useEffect(() => {
+    const guard = (event: Event) => {
+      if (
+        busy ||
+        (dirty &&
+          !window.confirm(
+            "저장하지 않은 공급 파트너 선택을 버리고 이동할까요?",
+          ))
+      )
+        event.preventDefault();
+    };
+    const unload = (event: BeforeUnloadEvent) => {
+      if (dirty) event.preventDefault();
+    };
+    window.addEventListener("admin:navigate", guard);
+    window.addEventListener("beforeunload", unload);
+    return () => {
+      window.removeEventListener("admin:navigate", guard);
+      window.removeEventListener("beforeunload", unload);
+    };
+  }, [busy, dirty]);
+
   return (
     <form
       className={s.internal}
@@ -648,6 +671,7 @@ function ItemDetail({
 }
 
 export function ProductionReview({ campaignId }: { campaignId: string }) {
+  const [showHistory, setShowHistory] = useState(false);
   const [data, setData] = useState<AdminProductionResponse | null>(null);
   const [selectedId, setSelectedId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -658,10 +682,23 @@ export function ProductionReview({ campaignId }: { campaignId: string }) {
   const [action, setAction] = useState<ReviewAction | null>(null);
   const pending = useRef(false);
   const retries = useRef(new Map<string, string>());
+  useEffect(() => {
+    const guard = (event: Event) => {
+      if (
+        busy ||
+        (action && !window.confirm("작성 중인 검수 내용을 닫고 이동할까요?"))
+      )
+        event.preventDefault();
+    };
+    window.addEventListener("admin:navigate", guard);
+    return () => window.removeEventListener("admin:navigate", guard);
+  }, [busy, action]);
   const current = data?.campaignId === campaignId ? data : null;
+  const currentItems = current?.items.filter((item) => item.isCurrent) ?? [];
+  const visibleItems = showHistory ? (current?.items ?? []) : currentItems;
   const selected =
-    current?.items.find((item) => item.id === selectedId) ??
-    current?.items[0] ??
+    visibleItems.find((item) => item.id === selectedId) ??
+    visibleItems[0] ??
     null;
   useEffect(() => {
     const controller = new AbortController();
@@ -815,18 +852,31 @@ export function ProductionReview({ campaignId }: { campaignId: string }) {
           제작물과 검토 내역을 불러오는 중입니다…
         </p>
       ) : null}
-      {current && current.items.length ? (
+      {current && current.items.some((item) => !item.isCurrent) ? (
+        <label className={s.historyFilter}>
+          <input
+            type="checkbox"
+            checked={showHistory}
+            onChange={(event) => setShowHistory(event.target.checked)}
+            disabled={busy}
+          />
+          이전 제안 기록 포함 (
+          {current.items.filter((item) => !item.isCurrent).length}건)
+        </label>
+      ) : null}
+      {current && visibleItems.length ? (
         <>
           <div className={s.stats}>
             <span className={s.stat}>
-              전체 항목<strong>{current.items.length}</strong>
+              현재 제안 항목<strong>{currentItems.length}</strong>
             </span>
             <span className={s.stat}>
               운영팀 검토
               <strong>
                 {
-                  current.items.filter((item) => item.status === "ADMIN_REVIEW")
-                    .length
+                  currentItems.filter(
+                    (item) => item.status === "ADMIN_REVIEW" && item.canReview,
+                  ).length
                 }
               </strong>
             </span>
@@ -834,7 +884,7 @@ export function ProductionReview({ campaignId }: { campaignId: string }) {
               브랜드 검토
               <strong>
                 {
-                  current.items.filter((item) => item.status === "BRAND_REVIEW")
+                  currentItems.filter((item) => item.status === "BRAND_REVIEW")
                     .length
                 }
               </strong>
@@ -843,7 +893,7 @@ export function ProductionReview({ campaignId }: { campaignId: string }) {
               승인 완료
               <strong>
                 {
-                  current.items.filter((item) => item.status === "APPROVED")
+                  currentItems.filter((item) => item.status === "APPROVED")
                     .length
                 }
               </strong>
@@ -851,7 +901,7 @@ export function ProductionReview({ campaignId }: { campaignId: string }) {
           </div>
           <div className={s.layout}>
             <nav className={s.tasks} aria-label="제작 항목">
-              {current.items.map((item) => (
+              {visibleItems.map((item) => (
                 <button
                   type="button"
                   key={item.id}
@@ -869,6 +919,7 @@ export function ProductionReview({ campaignId }: { campaignId: string }) {
                   <small>
                     {item.platform} · {item.quantity}건 · 제안 v
                     {item.proposalVersion}
+                    {!item.isCurrent ? " · 이전 기록" : ""}
                   </small>
                   <small>
                     {item.latestSubmission

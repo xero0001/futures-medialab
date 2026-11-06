@@ -1,0 +1,165 @@
+.workspace {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.workspace h3,
+.workspace h4,
+.workspace p {
+  margin: 0;
+}
+.workspace h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+}
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.muted {
+  color: #70737c;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.badge {
+  padding: 5px 10px;
+  border-radius: 6px;
+  color: #0066ff;
+  background: #f0f6ff;
+  font-size: 12px;
+  font-weight: 600;
+}
+.note {
+  background: #f7f7f8;
+  color: #5a5c63;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.list {
+  display: grid;
+  gap: 20px;
+}
+.card {
+  display: grid;
+  gap: 18px;
+  border: 1px solid #e1e2e4;
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 0;
+}
+.pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.creators {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 12px;
+}
+.creator {
+  border: 1px solid #eaebec;
+  border-radius: 8px;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.channel {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #5a5c63;
+}
+.channel a {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  overflow-wrap: anywhere;
+  color: #0066ff;
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.form {
+  display: grid;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eaebec;
+}
+.form label,
+.filter {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.form textarea,
+.form select,
+.filter select {
+  font: inherit;
+  border: 1px solid #e1e2e4;
+  border-radius: 8px;
+  padding: 12px;
+  background: white;
+  color: #171719;
+  min-width: 0;
+}
+.form textarea {
+  min-height: 92px;
+  resize: vertical;
+  width: 100%;
+  box-sizing: border-box;
+}
+.form .confirm {
+  display: flex;
+  align-items: flex-start;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.confirm input {
+  margin-top: 4px;
+}
+.filter {
+  max-width: 240px;
+}
+.empty {
+  padding: 36px;
+  text-align: center;
+  color: #70737c;
+}
+@media (max-width: 600px) {
+  .card {
+    padding: 16px;
+  }
+  .actions {
+    width: 100%;
+  }
+  .row {
+    align-items: flex-start;
+  }
+  .workspace {
+    gap: 16px;
+  }
+}
+
+.form .confirm input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  flex: 0 0 18px;
+  padding: 0;
+  accent-color: #0066ff;
+}

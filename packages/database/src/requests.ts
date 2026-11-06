@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { getDatabase, Prisma } from "./client";
+import {
+  originalProposalDeadline,
+  requestWaitingFor,
+} from "./request-workflow";
 
 export type RequestActor = {
   userId: string;
@@ -68,6 +72,9 @@ export const requestMutationSchema = z.discriminatedUnion("action", [
     action: z.literal("message"),
     body,
     internal: z.boolean().optional(),
+    intent: z.enum(["notice", "reply", "brief"]).optional(),
+    version: z.number().int().nonnegative().optional(),
+    dueAt: z.iso.datetime({ offset: true }).nullable().optional(),
     attachmentIds: z
       .array(requestId)
       .max(5)
@@ -132,13 +139,29 @@ export function requestTransaction<T>(
 }
 const rowInclude = {
   organization: { select: { name: true } },
-  campaign: { select: { title: true } },
+  campaign: {
+    select: {
+      title: true,
+      status: true,
+      proposals: {
+        where: { publishedAt: { not: null } },
+        orderBy: { version: "desc" },
+        take: 1,
+        select: { id: true },
+      },
+    },
+  },
   assignedTo: { select: { name: true } },
 } satisfies Prisma.WorkspaceToolRequestInclude;
 type Row = Prisma.WorkspaceToolRequestGetPayload<{
   include: typeof rowInclude;
 }>;
 function rowDto(row: Row) {
+  const waitingFor = requestWaitingFor(
+    row.inputJson,
+    row.status,
+    Boolean(row.campaign?.proposals?.length),
+  );
   return {
     id: row.id,
     title: row.title,
@@ -151,6 +174,16 @@ function rowDto(row: Row) {
     assigneeId: row.assignedToId,
     assigneeName: row.assignedTo ? row.assignedTo.name || "운영팀" : null,
     dueAt: row.dueAt?.toISOString() ?? null,
+    waitingFor,
+    originalProposalDueAt: originalProposalDeadline(row.inputJson),
+    operationDueAt:
+      row.status !== "WAITING_BRAND"
+        ? (row.dueAt?.toISOString() ?? null)
+        : null,
+    replyDueAt:
+      waitingFor === "reply" || waitingFor === "brief"
+        ? (row.dueAt?.toISOString() ?? null)
+        : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     version: row.version,
@@ -438,6 +471,46 @@ export function mutateRequest(
           "REQUEST_CLOSED",
           "처리 완료된 요청은 재검토를 요청한 후 답변할 수 있습니다. 종료된 요청은 새로 등록하세요.",
         );
+      const intent = input.intent ?? "notice";
+      if (
+        actor.kind !== "admin" &&
+        (input.intent !== undefined || input.dueAt !== undefined)
+      )
+        requestFail(
+          403,
+          "FORBIDDEN",
+          "브랜드는 운영팀의 회신 요청 상태를 지정할 수 없습니다.",
+        );
+      if (input.internal && intent !== "notice")
+        requestFail(
+          400,
+          "INVALID_INPUT",
+          "회신 및 자료 보완 요청은 공개 답변으로 보내 주세요.",
+        );
+      if (intent !== "notice" && input.version === undefined)
+        requestFail(400, "VERSION_REQUIRED", "최신 요청 버전을 확인해 주세요.");
+      if (input.version !== undefined && input.version !== row.version)
+        requestFail(
+          409,
+          "CONFLICT",
+          "요청이 변경되었습니다. 새로고침 후 다시 전송해 주세요.",
+        );
+      if (intent === "notice" && input.dueAt !== undefined)
+        requestFail(
+          400,
+          "INVALID_INPUT",
+          "회신 요청을 선택한 경우에만 회신 기한을 지정할 수 있습니다.",
+        );
+      if (
+        intent !== "notice" &&
+        input.dueAt &&
+        Date.parse(input.dueAt) <= Date.now()
+      )
+        requestFail(
+          400,
+          "INVALID_DEADLINE",
+          "회신 기한은 현재 이후로 지정해 주세요.",
+        );
       const attachments = await tx.requestAttachment.findMany({
         where: {
           id: { in: input.attachmentIds },
@@ -480,22 +553,79 @@ export function mutateRequest(
           "CONFLICT",
           "첨부파일이 변경되었습니다. 새로고침 후 다시 시도하세요.",
         );
-      await tx.workspaceToolRequest.update({
-        where: { id },
+      const waitingFor = requestWaitingFor(
+        row.inputJson,
+        row.status,
+        Boolean(row.campaign?.proposals?.length),
+      );
+      const needsResubmission =
+        waitingFor === "brief" &&
+        object(row.inputJson).kind === "campaign-intake" &&
+        row.campaign?.status === "DRAFT";
+      const brandReply =
+        actor.kind === "brand" &&
+        row.status === "WAITING_BRAND" &&
+        waitingFor !== "proposal-decision" &&
+        !needsResubmission;
+      const changed = await tx.workspaceToolRequest.updateMany({
+        where: { id, version: row.version },
         data: {
           version: { increment: 1 },
-          ...(actor.kind === "brand" && row.status === "WAITING_BRAND"
-            ? { status: "IN_PROGRESS" }
-            : {}),
+          ...(intent !== "notice"
+            ? {
+                status: "WAITING_BRAND",
+                dueAt: input.dueAt ? new Date(input.dueAt) : null,
+                inputJson: {
+                  ...object(row.inputJson),
+                  waitingFor: intent,
+                  operatorReplyPending: false,
+                } as Prisma.InputJsonObject,
+              }
+            : brandReply
+              ? {
+                  status: "IN_PROGRESS",
+                  dueAt: null,
+                  inputJson: {
+                    ...object(row.inputJson),
+                    waitingFor: null,
+                    operatorReplyPending: true,
+                  } as Prisma.InputJsonObject,
+                }
+              : !internal
+                ? {
+                    inputJson: {
+                      ...object(row.inputJson),
+                      operatorReplyPending: actor.kind === "brand",
+                    } as Prisma.InputJsonObject,
+                  }
+                : {}),
         },
       });
+      if (changed.count !== 1)
+        requestFail(
+          409,
+          "CONFLICT",
+          "요청이 변경되었습니다. 새로고침 후 다시 전송해 주세요.",
+        );
       await event(
         tx,
         actor,
         id,
-        internal ? "internal_note" : "reply",
-        internal ? "내부 메모 추가" : "공개 답변 추가",
-        internal ? undefined : "답변이 등록되었습니다.",
+        internal
+          ? "internal_note"
+          : intent === "notice"
+            ? "reply"
+            : "reply_requested",
+        internal
+          ? "내부 메모 추가"
+          : intent === "notice"
+            ? "공개 답변 추가"
+            : `${intent === "brief" ? "자료 보완" : "브랜드 회신"} 요청 · 회신 기한 ${input.dueAt ?? "미설정"}`,
+        internal
+          ? undefined
+          : intent === "notice"
+            ? "답변이 등록되었습니다."
+            : `${intent === "brief" ? "자료 보완" : "회신"}이 요청되었습니다.${input.dueAt ? ` 회신 기한: ${input.dueAt}` : ""}`,
       );
     } else if (input.action === "reopen") {
       if (row.status !== "RESOLVED")
@@ -506,7 +636,16 @@ export function mutateRequest(
         );
       const result = await tx.workspaceToolRequest.updateMany({
         where: { id, version: input.version, status: "RESOLVED" },
-        data: { status: "IN_PROGRESS", version: { increment: 1 } },
+        data: {
+          status: "IN_PROGRESS",
+          dueAt: null,
+          inputJson: {
+            ...object(row.inputJson),
+            waitingFor: null,
+            operatorReplyPending: true,
+          } as Prisma.InputJsonObject,
+          version: { increment: 1 },
+        },
       });
       if (!result.count)
         requestFail(
@@ -528,6 +667,12 @@ export function mutateRequest(
           403,
           "FORBIDDEN",
           "관리자만 처리 정보를 변경할 수 있습니다.",
+        );
+      if (input.status === "WAITING_BRAND" && row.status !== "WAITING_BRAND")
+        requestFail(
+          400,
+          "PUBLIC_REPLY_REQUIRED",
+          "공개 답변에서 회신 요청 또는 자료 보완 요청을 선택해 내용을 함께 보내 주세요.",
         );
       if (row.status === "CLOSED" && input.status !== "CLOSED")
         requestFail(409, "INVALID_STATE", "종료된 요청은 다시 열 수 없습니다.");
@@ -554,6 +699,19 @@ export function mutateRequest(
           priority: input.priority,
           assignedToId: input.assignedToId,
           dueAt: input.dueAt ? new Date(input.dueAt) : null,
+          inputJson: {
+            ...object(row.inputJson),
+            waitingFor:
+              input.status === "WAITING_BRAND"
+                ? row.status === "WAITING_BRAND"
+                  ? requestWaitingFor(
+                      row.inputJson,
+                      row.status,
+                      Boolean(row.campaign?.proposals?.length),
+                    )
+                  : "reply"
+                : null,
+          } as Prisma.InputJsonObject,
           version: { increment: 1 },
         },
       });

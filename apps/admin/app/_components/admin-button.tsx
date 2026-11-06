@@ -3,7 +3,7 @@
 import type { ComponentPropsWithoutRef } from "react";
 import { Button } from "@montage-ui/core";
 
-/** Preserve native form semantics while sharing Montage's action styles. */
+/** Preserve native form semantics and explicit accessible names with Montage styles. */
 export function AdminButton({
   className = "",
   type = "submit",
@@ -16,6 +16,9 @@ export function AdminButton({
   return (
     <Button
       {...props}
+      {...(props["aria-label"]
+        ? { "aria-labelledby": props["aria-labelledby"] }
+        : {})}
       type={type}
       size="medium"
       variant={primary || danger ? "solid" : "outlined"}

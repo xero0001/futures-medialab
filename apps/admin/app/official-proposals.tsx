@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { AdminButton } from "./_components/admin-button";
 import s from "./official-proposals.module.css";
+import { ProposalCostEditor } from "./proposal-cost-editor";
 
 import type {
   AdminProposal,
@@ -85,7 +86,22 @@ const labels: Record<string, string> = {
   PENDING: "검토 대기",
   ACCEPTED: "승인",
 };
-function Status({ value }: { value: string }) {
+function Status({
+  value,
+  expiresAt,
+}: {
+  value: string;
+  expiresAt?: string | null;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const expired =
+    expiresAt &&
+    Date.parse(expiresAt) <= now &&
+    ["PUBLISHED", "CHANGES_REQUESTED", "REJECTED"].includes(value);
   const tone = ["APPROVED", "ACCEPTED"].includes(value)
     ? "green"
     : ["REJECTED"].includes(value)
@@ -97,7 +113,7 @@ function Status({ value }: { value: string }) {
           : undefined;
   return (
     <span className={s.badge} data-tone={tone}>
-      {labels[value] ?? value}
+      {expired ? "기한 만료 · 재제안 필요" : (labels[value] ?? value)}
     </span>
   );
 }
@@ -258,7 +274,7 @@ function ProposalPreview({ proposal }: { proposal: Preview }) {
           <span className={s.muted}>공식 제안 · v{proposal.version}</span>
           <h4>{proposal.title || "제안서 제목"}</h4>
         </div>
-        <Status value={proposal.status} />
+        <Status value={proposal.status} expiresAt={proposal.expiresAt} />
       </div>
       {proposal.summary ? (
         <p className={s.pre} style={{ marginTop: 16 }}>
@@ -438,6 +454,15 @@ function PreviewDialog({
               <X size={18} />
             </AdminButton>
           </div>
+          {publish &&
+          proposal.items.some(
+            (item) => !item.supplierCost || Number(item.supplierCost) <= 0,
+          ) ? (
+            <p className={s.notice}>
+              공급가가 미확정인 항목이 있습니다. 발행 후 내부 공급가 보완이
+              가능하며 캠페인 완료 전에는 반드시 확정해야 합니다.
+            </p>
+          ) : null}
           <ProposalPreview proposal={proposal} />
           {publish ? (
             <>
@@ -956,6 +981,21 @@ export function OfficialProposals({
   } | null>(null);
   const busyRef = useRef(false);
   const dirtyRef = useRef(false);
+  useEffect(() => {
+    const guard = (event: Event) => {
+      if (
+        busyRef.current ||
+        (dirtyRef.current &&
+          !window.confirm(
+            "저장하지 않은 제안서 변경 사항을 버리고 이동할까요?",
+          ))
+      )
+        event.preventDefault();
+    };
+    window.addEventListener("admin:navigate", guard);
+    return () => window.removeEventListener("admin:navigate", guard);
+  }, []);
+
   const retries = useRef(new Map<string, string>());
   const current = data?.campaign.id === campaignId ? data : null;
   const selected =
@@ -1045,13 +1085,16 @@ export function OfficialProposals({
       setSelectedId(result.proposal.id);
       setPreview(null);
       setNotice(
-        input.action === "publish"
-          ? "공식 제안서를 발행했습니다. 브랜드에서 이 버전을 확인하고 승인할 수 있습니다."
-          : input.action === "createDraft"
-            ? "비공개 초안을 만들었습니다. 내용을 작성한 뒤 발행하세요."
-            : "초안을 저장했습니다. 아직 브랜드에는 공개되지 않았습니다.",
+        input.action === "updateCosts"
+          ? "내부 공급가를 보완했습니다. 브랜드의 제안 조건과 승인 이력은 유지됩니다."
+          : input.action === "publish"
+            ? "공식 제안서를 발행했습니다. 브랜드에서 이 버전을 확인하고 승인할 수 있습니다."
+            : input.action === "createDraft"
+              ? "비공개 초안을 만들었습니다. 내용을 작성한 뒤 발행하세요."
+              : "초안을 저장했습니다. 아직 브랜드에는 공개되지 않았습니다.",
       );
-      if (input.action === "publish") onCommitted();
+      if (input.action === "publish" || input.action === "updateCosts")
+        onCommitted();
     } catch (failure) {
       setError(
         failure instanceof Error
@@ -1179,7 +1222,10 @@ export function OfficialProposals({
               >
                 <span className={s.versionTop}>
                   <strong>v{proposal.version}</strong>
-                  <Status value={proposal.status} />
+                  <Status
+                    value={proposal.status}
+                    expiresAt={proposal.expiresAt}
+                  />
                 </span>
                 <span className={s.versionTitle}>{proposal.title}</span>
                 <small>
@@ -1219,6 +1265,23 @@ export function OfficialProposals({
             ) : (
               <>
                 <ProposalPreview proposal={selected} />
+                {selected.status !== "DRAFT" ? (
+                  <ProposalCostEditor
+                    key={`${selected.id}:${selected.revision}`}
+                    proposal={selected}
+                    busy={busy}
+                    onSave={(items, reason) =>
+                      mutate({
+                        action: "updateCosts",
+                        campaignId,
+                        proposalId: selected.id,
+                        expectedRevision: selected.revision,
+                        items,
+                        reason,
+                      })
+                    }
+                  />
+                ) : null}
                 <div className={s.notice}>
                   <CheckCheck size={18} />
                   <p>

@@ -158,13 +158,25 @@ export function getBrandActions(
   }
   for (const request of data.requests) {
     if (request.status !== "WAITING_BRAND") continue;
+    const campaign = request.campaignId
+      ? campaigns.get(request.campaignId)
+      : undefined;
+    const proposalDecision =
+      request.waitingFor === "proposal-decision" ||
+      (!request.waitingFor &&
+        campaign?.requestId === request.id &&
+        Boolean(campaign.latestProposal));
+    if (proposalDecision) continue;
     result.push({
       id: `request:${request.id}`,
       kind: "request",
       title: request.title,
       campaignTitle: request.campaignTitle,
       campaignId: request.campaignId,
-      href: requestPath(request.id),
+      href:
+        request.waitingFor === "brief" && campaign?.status === "DRAFT"
+          ? `/advertiser/campaign/new?draft=${encodeURIComponent(campaign.id)}`
+          : requestPath(request.id),
       dueAt: validDate(request.dueAt),
       deadlineKind: "reply",
       count: 1,
@@ -339,7 +351,12 @@ export function getBrandCampaignProgress(
           "payment",
         )
       : state("settling", "futures", campaignPath(campaign.id, "settlement"));
-  if (campaign.intakeStatus === "WAITING_BRAND" && campaign.requestId)
+  if (
+    campaign.intakeStatus === "WAITING_BRAND" &&
+    campaign.requestId &&
+    campaign.intakeWaitingFor !== "proposal-decision" &&
+    (campaign.intakeWaitingFor || !campaign.latestProposal)
+  )
     return state(
       "reply",
       "brand",

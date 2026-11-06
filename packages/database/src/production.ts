@@ -396,6 +396,14 @@ function adminDto(row: PrivateRow): AdminProductionItem {
   }));
   return {
     ...baseDto(row),
+    isCurrent: Boolean(
+      row.proposalItem.proposal.campaignId === row.campaignId &&
+      row.proposalItem.proposal.publishedAt &&
+      !row.proposalItem.proposal.supersededAt &&
+      row.proposalItem.proposal.status === "APPROVED" &&
+      row.proposalItem.status === "APPROVED" &&
+      row.campaign.proposals[0]?.id === row.proposalItem.proposal.id,
+    ),
     supplierOrganizationId: row.supplierOrganizationId,
     supplierName: row.supplierOrganization?.name ?? null,
     submissions,

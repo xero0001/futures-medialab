@@ -641,3 +641,16 @@
     padding-inline: 10px;
   }
 }
+
+.ar-reply-intent {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  margin: 14px 0;
+  border: 1px solid var(--admin-line);
+  border-radius: 12px;
+  background: var(--admin-tint);
+}
+.ar-reply-intent .ar-help {
+  margin: 0;
+}

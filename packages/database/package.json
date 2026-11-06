@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/client.ts",
     "./requests": "./src/requests.ts",
+    "./request-workflow": "./src/request-workflow.ts",
     "./request-http": "./src/request-http.ts",
     "./proposal-types": "./src/proposal-types.ts",
     "./proposal-validation": "./src/proposal-validation.ts",
