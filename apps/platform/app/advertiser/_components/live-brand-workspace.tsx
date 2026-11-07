@@ -60,6 +60,8 @@ import { BrandProductionPanel } from "./brand-production-panel";
 import { BrandReportingPanel } from "./brand-reporting-panel";
 import { BrandBillingPanel } from "./brand-billing-panel";
 import { BrandActionCenter } from "./brand-action-center";
+import { useBrandActivity } from "./brand-activity-provider";
+import { BrandInbox } from "./brand-inbox";
 import { BrandCampaignOverview } from "./brand-campaign-overview";
 import { BrandCampaignLink } from "./brand-campaign-link";
 import { BrandCampaignProgress } from "./brand-campaign-progress";
@@ -67,7 +69,7 @@ import { BrandDocumentsPanel } from "./brand-documents-panel";
 import styles from "./live-brand-workspace.module.css";
 
 export type LiveBrandWorkspaceMode =
-  "home" | "campaigns" | "detail" | "library" | "billing" | "new";
+  "home" | "campaigns" | "detail" | "library" | "billing" | "new" | "requests";
 type Account = {
   draftScope: string;
   organizationName: string;
@@ -339,7 +341,7 @@ export function LiveBrandWorkspace({
   const router = useRouter();
   const t = copyFor(locale);
   const href = (path: string) => hrefFor(path, locale);
-  const [data, setData] = useState<BrandWorkspace | null>(null);
+  const { data, error: activityError, refresh, changed } = useBrandActivity();
   const [detail, setDetail] = useState<BrandCampaignDetail | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -351,18 +353,14 @@ export function LiveBrandWorkspace({
     setLoading(true);
     setError("");
     setDetail(null);
-    Promise.all([
-      readData<BrandWorkspace>("/api/brand/workspace", controller.signal),
-      campaignId
+    (campaignId
         ? readData<BrandCampaignDetail>(
             `/api/brand/campaigns/${encodeURIComponent(campaignId)}`,
             controller.signal,
           )
-        : Promise.resolve(null),
-    ])
-      .then(([workspace, campaign]) => {
+        : Promise.resolve(null))
+      .then((campaign) => {
         if (controller.signal.aborted) return;
-        setData(workspace);
         setDetail(campaign);
         setLoading(false);
       })
@@ -376,21 +374,21 @@ export function LiveBrandWorkspace({
 
   return (
     <BrandWorkspaceFrame locale={locale} account={account}>
-      {loading ? (
+      {loading || (!data && !activityError) ? (
         <LoadingState t={t} />
-      ) : error ? (
+      ) : error || (!data && activityError) ? (
         <div className={styles.loadError}>
           <SectionMessage
             variant="negative"
             role="alert"
             description={
-              error === "LOAD_FAILED"
+              (error || activityError) === "LOAD_FAILED"
                 ? t(
                     "잠시 후 다시 시도해 주세요.",
                     "Please try again shortly.",
                     "请稍后重试。",
                   )
-                : error
+                : error || activityError
             }
           >
             {t(
@@ -402,21 +400,37 @@ export function LiveBrandWorkspace({
           <Button
             variant="outlined"
             color="assistive"
-            onClick={() => setRevision((value) => value + 1)}
+            onClick={() => {
+              void refresh();
+              setRevision((value) => value + 1);
+            }}
           >
             {t("다시 불러오기", "Try again", "重试")}
           </Button>
         </div>
       ) : data ? (
         <>
+          {activityError && (
+            <SectionMessage variant="negative" role="alert">
+              {t(
+                "최신 처리 상태를 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.",
+                "Could not refresh action status. Please check again shortly.",
+                "无法刷新处理状态，请稍后重试。",
+              )}
+            </SectionMessage>
+          )}
           {mode === "home" && <Home data={data} locale={locale} />}
+          {mode === "requests" && <BrandInbox locale={locale} />}
           {mode === "campaigns" && <Campaigns data={data} locale={locale} />}
           {mode === "detail" && detail && (
             <CampaignDetail
               detail={detail}
               canManage={data.permissions.canManageCampaigns}
               locale={locale}
-              onRefresh={() => setRevision((value) => value + 1)}
+              onRefresh={() => {
+                changed();
+                setRevision((value) => value + 1);
+              }}
             />
           )}
           {mode === "library" && <Library locale={locale} />}
@@ -697,7 +711,7 @@ function Home({ data, locale }: { data: BrandWorkspace; locale: Locale }) {
           </section>
         </div>
       </section>
-      <BrandActionCenter data={data} locale={locale} />
+      <BrandActionCenter locale={locale} />
       <BrandCampaignOverview
         campaigns={data.campaigns}
         locale={locale}

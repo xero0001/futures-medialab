@@ -78,6 +78,62 @@ function detail(c, extras = {}) {
   };
 }
 
+test("the shared inbox counts work entries and clears them after decisions and replies", () => {
+  const p = proposal({ pendingItemCount: 3 });
+  const c = campaign({
+    status: "IN_PROGRESS",
+    latestProposal: p,
+    productionSummary: { total: 2, approved: 0, awaitingBrand: 2 },
+  });
+  const reply = {
+    id: "reply",
+    title: "자료 보완",
+    status: "WAITING_BRAND",
+    waitingFor: "reply",
+    campaignId: "c1",
+    dueAt: future,
+    updatedAt: past,
+  };
+  const intake = { ...reply, id: "r1", waitingFor: "proposal-decision" };
+  const invoice = {
+    id: "invoice",
+    title: "청구 확인",
+    status: "ISSUED",
+    campaignId: "c1",
+    dueAt: future,
+    issuedAt: past,
+  };
+  const data = workspace(c, {
+    requests: [
+      intake,
+      reply,
+      { ...reply, id: "operations", status: "IN_PROGRESS" },
+    ],
+    invoices: [invoice],
+  });
+  const pending = getBrandActions(data, now);
+  // Three proposal items and two content items are four work entries in total,
+  // including one reply and one invoice; the intake is not counted twice.
+  assert.equal(pending.length, 4);
+  assert.deepEqual(
+    new Set(pending.map((action) => action.kind)),
+    new Set(["proposal", "content", "request", "invoice"]),
+  );
+  assert.equal(
+    pending.find((action) => action.kind === "request").href,
+    "/advertiser/requests?request=reply",
+  );
+
+  reply.status = "IN_PROGRESS";
+  reply.waitingFor = null;
+  assert.equal(getBrandActions(data, now).length, 3);
+  p.pendingItemCount = 0;
+  p.status = "APPROVED";
+  c.productionSummary.awaitingBrand = 0;
+  invoice.status = "PAID";
+  assert.deepEqual(getBrandActions(data, now), []);
+});
+
 test("expired, replaced and canceled proposals never become new approval tasks", () => {
   const expired = campaign({ latestProposal: proposal({ expiresAt: past }) });
   assert.deepEqual(getBrandActions(workspace(expired), now), []);

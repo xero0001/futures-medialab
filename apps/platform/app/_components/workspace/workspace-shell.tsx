@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Avatar,
   Button,
+  ContentBadge,
   Divider,
   List,
   ListCell,
@@ -44,6 +45,7 @@ import {
   type AgencySection,
 } from "../../agency/agency-workspace-copy";
 import styles from "./workspace-shell.module.css";
+import { useOptionalBrandActivity } from "../../advertiser/_components/brand-activity-provider";
 
 const languages = [
   { value: "ko", label: "한국어" },
@@ -79,12 +81,14 @@ export function WorkspaceShell({
   const router = useRouter();
   const pathname = usePathname();
   const isAgency = workspaceRole === "agency";
+  const activity = useOptionalBrandActivity();
+  const actionCount = isAgency ? 0 : (activity?.actions.length ?? 0);
   const accountPath = isAgency
     ? "/agency?section=organization"
     : "/advertiser/accountManagement";
   const helpPath = isAgency
     ? "/agency?section=notifications"
-    : "/advertiser/requests";
+    : "/advertiser/requests?view=inquiries";
   const t = (en: string, ko: string, zh: string) => ({ en, ko, zh })[locale];
   const href = (path: string) =>
     `${path}${path.includes("?") ? "&" : "?"}lang=${locale}`;
@@ -415,11 +419,36 @@ export function WorkspaceShell({
                         as={Link}
                         href={href(path)}
                         role="link"
+                        aria-labelledby={undefined}
+                        aria-label={
+                          path === "/advertiser/requests" && actionCount > 0
+                            ? t(
+                                `${label}, ${actionCount} actions to complete`,
+                                `${label}, 처리할 일 ${actionCount}건`,
+                                `${label}，${actionCount} 项待处理事项`,
+                              )
+                            : label
+                        }
                         aria-current={active ? "page" : undefined}
                         className={styles.navItem}
                         variant="full"
                         selected={active}
-                        trailingContent={null}
+                        trailingContent={
+                          path === "/advertiser/requests" && actionCount > 0 ? (
+                            <ContentBadge
+                              size="small"
+                              color="accent"
+                              accentColor="semantic.foreground.brand.primary"
+                              aria-label={t(
+                                `${actionCount} actions to complete`,
+                                `처리할 일 ${actionCount}건`,
+                                `${actionCount} 项待处理事项`,
+                              )}
+                            >
+                              {actionCount}
+                            </ContentBadge>
+                          ) : null
+                        }
                         verticalPadding="small"
                         textProps={{
                           variant: "label1",

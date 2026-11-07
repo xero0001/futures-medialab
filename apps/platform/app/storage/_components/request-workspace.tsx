@@ -21,6 +21,7 @@ import {
 import type { Locale } from "../../_components/landing-copy";
 import { BrandSelect as ProfileSelect } from "./brand-controls";
 import "./request-workspace.css";
+import { StatusBadge, type StatusTone } from "../../_components/workspace/status-badge";
 
 const statuses = [
   "REQUESTED",
@@ -165,10 +166,17 @@ function fileSize(size: number) {
 }
 
 function Status({ value, t }: { value: string; t: Text }) {
+  const tones: Record<string, StatusTone> = {
+    REQUESTED: "neutral",
+    IN_PROGRESS: "blue",
+    WAITING_BRAND: "amber",
+    RESOLVED: "green",
+    CLOSED: "neutral",
+  };
   return (
-    <span className={`cwr-status cwr-status-${value.toLowerCase()}`}>
+    <StatusBadge tone={tones[value] ?? "neutral"}>
       {statusLabel(value, t)}
-    </span>
+    </StatusBadge>
   );
 }
 
@@ -231,7 +239,15 @@ function PendingFiles({
   );
 }
 
-export function RequestWorkspace({ locale }: { locale: Locale }) {
+export function RequestWorkspace({
+  locale,
+  onChanged,
+  refreshKey,
+}: {
+  locale: Locale;
+  onChanged?: () => void;
+  refreshKey?: number;
+}) {
   const searchParams = useSearchParams();
   const t: Text = (en, ko, zh) =>
     locale === "ko" ? ko : locale === "zh" ? zh : en;
@@ -280,6 +296,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
       .then(async (response) => {
         if (!response.ok) throw new Error("load");
         const result = (await response.json()) as RequestList;
+        if (controller.signal.aborted) return;
         setData(result);
       })
       .catch((reason: unknown) => {
@@ -297,7 +314,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [appliedQuery, status, page, revision, locale]);
+  }, [appliedQuery, status, page, revision, locale, refreshKey]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -313,6 +330,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
       .then(async (response) => {
         if (!response.ok) throw new Error("detail");
         const result = (await response.json()) as { request: RequestDetail };
+        if (controller.signal.aborted) return;
         setDetail(result.request);
         setAttachments(result.request.pendingAttachments ?? []);
       })
@@ -431,6 +449,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
         ),
       );
       setRevision((value) => value + 1);
+      onChanged?.();
     } catch (reason) {
       setError(
         reason instanceof Error
@@ -473,6 +492,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
         ),
       );
       setRevision((value) => value + 1);
+      onChanged?.();
     } catch (reason) {
       setDetailError(
         reason instanceof Error
@@ -602,6 +622,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
         ),
       );
       setRevision((value) => value + 1);
+      onChanged?.();
     } catch (reason) {
       setDetailError(
         reason instanceof Error
@@ -647,16 +668,16 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
           )}
           {compose
             ? t("Cancel", "취소", "取消")
-            : t("New request", "새 요청", "新建请求")}
+            : t("New inquiry", "새 문의", "新建咨询")}
         </BrandButton>
       </div>
       <div className="cwr-delivery-note">
         <MessageSquareText size={19} aria-hidden="true" />
         <span>
           {t(
-            "Replies are delivered here. Email notifications are not connected yet. Analysis requests are reviewed by the team, not processed automatically.",
-            "답변은 이 요청함으로 전달됩니다. 이메일 알림은 아직 연결되지 않았으며, 분석 요청은 자동 실행되지 않고 운영팀이 검토합니다.",
-            "回复将在此处提供，尚未连接电子邮件通知。分析请求由团队审核，不会自动执行。",
+            "Use inquiries to share questions and supporting files. Review proposals and content in their campaign screens.",
+            "문의에서는 질문과 보완 자료를 전달합니다. 제안 승인과 콘텐츠 검수는 해당 캠페인 화면에서 진행하세요.",
+            "在咨询中提交问题和补充资料。提案审批及内容审核请前往对应活动页面。",
           )}
         </span>
       </div>
@@ -818,7 +839,10 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
               className="cwr-icon-button"
               aria-label={t("Refresh requests", "요청 새로고침", "刷新请求")}
               disabled={busy || loading}
-              onClick={() => setRevision((value) => value + 1)}
+              onClick={() => {
+                setRevision((value) => value + 1);
+                onChanged?.();
+              }}
             >
               <RefreshCw size={17} aria-hidden="true" />
             </button>
@@ -918,16 +942,16 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
               <MessageSquareText size={40} aria-hidden="true" />
               <h3>
                 {t(
-                  "A single conversation, from request to resolution",
-                  "요청부터 해결까지, 하나의 대화로",
-                  "从请求到解决，一处完成",
+                  "Track each inquiry and response",
+                  "문의별 진행 상황과 답변을 확인하세요",
+                  "查看各项咨询的进度与回复",
                 )}
               </h3>
               <p>
                 {t(
-                  "Choose a request to see progress and talk to the operations team.",
-                  "목록에서 요청을 선택해 진행 상황을 확인하고 운영팀과 대화하세요.",
-                  "请选择请求，查看进度并与运营团队沟通。",
+                  "Choose an inquiry to review its status, requested materials and responses.",
+                  "목록에서 문의를 선택하면 처리 상태, 보완할 자료와 담당자 답변을 확인할 수 있습니다.",
+                  "选择咨询，查看处理状态、所需补充资料及负责人回复。",
                 )}
               </p>
             </div>
@@ -987,7 +1011,7 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
               </div>
               <div className="cwr-conversation">
                 <h4>
-                  {t("Conversation", "운영팀과의 대화", "与运营团队的对话")}
+                  {t("Replies & materials", "답변·자료 내역", "回复与资料记录")}
                 </h4>
                 {activeDetail.messages.filter((message) => !message.internal)
                   .length === 0 ? (
@@ -1255,7 +1279,10 @@ export function RequestWorkspace({ locale }: { locale: Locale }) {
             <BrandButton
               type="button"
               className="cw-button"
-              onClick={() => setRevision((value) => value + 1)}
+              onClick={() => {
+                setRevision((value) => value + 1);
+                onChanged?.();
+              }}
             >
               {t("Retry", "다시 시도", "重试")}
             </BrandButton>

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
-import { Button, Divider, Typography } from "@montage-ui/core";
+import { useMemo, useState } from "react";
+import { Button, ContentBadge, Divider, Typography } from "@montage-ui/core";
 import {
   ArrowRight,
   CircleCheck,
@@ -15,9 +15,8 @@ import {
   ReceiptText,
 } from "lucide-react";
 import type { Locale } from "../../_components/landing-copy";
-import type { BrandWorkspace } from "../../../lib/brand-workspace-types";
+import { useBrandActivity } from "./brand-activity-provider";
 import {
-  getBrandActions,
   isPastBrandDeadline,
   type BrandAction,
   type BrandActionKind,
@@ -82,25 +81,20 @@ function ActionThumbnail({
 }
 
 export function BrandActionCenter({
-  data,
   locale,
+  showEmpty = false,
 }: {
-  data: BrandWorkspace;
   locale: Locale;
+  showEmpty?: boolean;
 }) {
   const t = (ko: string, en: string, zh: string) => ({ ko, en, zh })[locale];
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
-    return () => window.clearInterval(timer);
-  }, []);
-  const actions = useMemo(() => getBrandActions(data, now), [data, now]);
+  const { data, actions, now } = useBrandActivity();
   const campaignsById = useMemo(
-    () => new Map(data.campaigns.map((campaign) => [campaign.id, campaign])),
-    [data.campaigns],
+    () => new Map(data?.campaigns.map((campaign) => [campaign.id, campaign])),
+    [data?.campaigns],
   );
 
-  if (!actions.length) return null;
+  if (!data || (!actions.length && !showEmpty)) return null;
 
   const overdue = actions.filter((item) =>
     isPastBrandDeadline(item.dueAt, now),
@@ -181,31 +175,62 @@ export function BrandActionCenter({
               >
                 {t("지금 처리할 일", "Your next actions", "待处理事项")}
               </Typography>
-              <span className={styles.count}>{actions.length}</span>
+              <ContentBadge
+                size="small"
+                color="accent"
+                accentColor="semantic.foreground.brand.primary"
+              >
+                {actions.length}
+              </ContentBadge>
             </div>
           </div>
-          <div
-            className={styles.urgencySummary}
-            aria-label={t("업무 기한 요약", "Deadline summary", "期限概览")}
-          >
-            <span className={overdue ? styles.overdue : ""}>
-              <Clock3 size={15} />
-              {t(
-                `기한 지남 ${overdue}`,
-                `${overdue} overdue`,
-                `已逾期 ${overdue}`,
-              )}
-            </span>
-            <span>
-              {t(
-                `48시간 이내 ${soon}`,
-                `${soon} due within 48h`,
-                `48小时内 ${soon}`,
-              )}
-            </span>
-          </div>
+          {actions.length > 0 && (
+            <div
+              className={styles.urgencySummary}
+              aria-label={t("업무 기한 요약", "Deadline summary", "期限概览")}
+            >
+              <span className={overdue ? styles.overdue : ""}>
+                <Clock3 size={15} />
+                {t(
+                  `기한 지남 ${overdue}`,
+                  `${overdue} overdue`,
+                  `已逾期 ${overdue}`,
+                )}
+              </span>
+              <span>
+                {t(
+                  `48시간 이내 ${soon}`,
+                  `${soon} due within 48h`,
+                  `48小时内 ${soon}`,
+                )}
+              </span>
+            </div>
+          )}
         </div>
         <Divider />
+        {!actions.length && (
+          <div className={styles.emptyActions}>
+            <CircleCheck size={28} aria-hidden />
+            <Typography as="h3" variant="headline2" weight="bold">
+              {t(
+                "지금 처리할 일이 없습니다",
+                "You're all caught up",
+                "暂无待处理事项",
+              )}
+            </Typography>
+            <Typography
+              as="p"
+              variant="body2"
+              color="semantic.foreground.neutral.secondary"
+            >
+              {t(
+                "확인하거나 회신할 내용이 생기면 이곳에 표시됩니다.",
+                "Items that need your review or reply will appear here.",
+                "需要您确认或回复的事项会显示在此处。",
+              )}
+            </Typography>
+          </div>
+        )}
         <ul className={styles.actionList} aria-labelledby="brand-actions-title">
           {actions.map((item) => {
             const campaign = item.campaignId
