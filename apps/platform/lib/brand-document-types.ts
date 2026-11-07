@@ -27,6 +27,7 @@ export type BrandDocument = {
     submission: BrandReportingSubmission;
   };
   invoice?: BrandInvoice;
+  correctionReason?: string | null;
 };
 
 export type BrandDocumentResponse = {

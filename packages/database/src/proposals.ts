@@ -488,6 +488,8 @@ function adminDto(
       rights: item.rights,
       status: item.status,
       creatorId: item.creatorId,
+      catalogCreatorId: item.catalogCreatorId,
+      catalogRateVersion: item.catalogRateVersion,
       supplierOrganizationId: item.supplierOrganizationId,
       supplierCost: item.supplierCost?.toFixed(2) ?? null,
       internalNotes: item.internalNotes,
@@ -647,6 +649,31 @@ async function validateCreator(tx: Tx, campaignId: string, creatorId: string) {
     );
   return creator;
 }
+async function validateCatalogCreator(
+  tx: Tx,
+  id: string,
+  rateVersion?: number | null,
+) {
+  const creator = await tx.internalCreator.findFirst({
+    where: {
+      id,
+      isActive: true,
+      OR: [
+        { partnerOrganizationId: null },
+        { partnerOrganization: { type: "AGENCY", status: "ACTIVE" } },
+      ],
+      ...(rateVersion ? { rateCards: { some: { version: rateVersion } } } : {}),
+    },
+    select: { partnerOrganizationId: true },
+  });
+  if (!creator)
+    proposalFail(
+      409,
+      "CATALOG_UNAVAILABLE",
+      "내부 인물 또는 파트너·가격 정보가 변경되었습니다. 내부 DB에서 다시 확인해 주세요.",
+    );
+  return creator;
+}
 async function draftItems(
   tx: Tx,
   campaignId: string,
@@ -657,10 +684,22 @@ async function draftItems(
       const creator = item.creatorId
         ? await validateCreator(tx, campaignId, item.creatorId)
         : null;
+      const catalog = item.catalogCreatorId
+        ? await validateCatalogCreator(
+            tx,
+            item.catalogCreatorId,
+            item.catalogRateVersion,
+          )
+        : null;
       return {
         position,
+        catalogCreatorId: item.catalogCreatorId ?? null,
+        catalogRateVersion: item.catalogRateVersion ?? null,
         creatorId: item.creatorId,
-        supplierOrganizationId: creator?.agencyOrganizationId ?? null,
+        supplierOrganizationId:
+          creator?.agencyOrganizationId ??
+          catalog?.partnerOrganizationId ??
+          null,
         creatorName: item.creatorName,
         platform: item.platform,
         channelLabel: item.channelLabel,
@@ -873,6 +912,8 @@ export async function applyAdminProposalMutation(
                     scheduledAt: item.scheduledAt,
                     rights: item.rights,
                     creatorId: item.creatorId,
+                    catalogCreatorId: item.catalogCreatorId,
+                    catalogRateVersion: item.catalogRateVersion,
                     supplierOrganizationId: item.supplierOrganizationId,
                     supplierCost: item.supplierCost,
                     internalNotes: item.internalNotes,
@@ -1011,9 +1052,23 @@ export async function applyAdminProposalMutation(
       const problems = proposalPublicationProblems(row);
       if (problems.length)
         proposalFail(409, "PUBLICATION_REQUIREMENTS", problems.join(" "));
-      for (const item of row.items)
+      for (const item of row.items) {
         if (item.creatorId)
           await validateCreator(tx, campaign.id, item.creatorId);
+        if (item.catalogCreatorId) {
+          const catalog = await validateCatalogCreator(
+            tx,
+            item.catalogCreatorId,
+            item.catalogRateVersion,
+          );
+          if (catalog.partnerOrganizationId !== item.supplierOrganizationId)
+            proposalFail(
+              409,
+              "CATALOG_PARTNER_CHANGED",
+              "인물의 소속이 변경되었습니다. 초안을 다시 저장한 뒤 발행해 주세요.",
+            );
+        }
+      }
       const now = new Date();
       await tx.campaignProposal.updateMany({
         where: {

@@ -11,7 +11,14 @@ export const campaignSections = [
 export type CampaignSection = (typeof campaignSections)[number][0];
 export type AdminLocation = {
   tab:
-    "overview" | "users" | "organizations" | "campaigns" | "requests" | "audit";
+    | "overview"
+    | "users"
+    | "organizations"
+    | "campaigns"
+    | "intake"
+    | "creators"
+    | "requests"
+    | "audit";
   selected: string;
   section: CampaignSection;
   request: string;
@@ -23,6 +30,8 @@ const tabs = [
   "users",
   "organizations",
   "campaigns",
+  "intake",
+  "creators",
   "requests",
   "audit",
 ];

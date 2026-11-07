@@ -63,6 +63,12 @@ export const adminSettlementMutationSchema = z.discriminatedUnion("action", [
     ...payout,
     data: settlementDocumentSchema,
   }),
+  z.strictObject({
+    action: z.literal("reissueBrandInvoice"),
+    ...invoice,
+    reason: z.string().trim().min(2).max(1000),
+    data: settlementDocumentSchema.omit({ internalNote: true }),
+  }),
   z.strictObject({ action: z.literal("issueBrandInvoice"), ...invoice }),
   z.strictObject({ action: z.literal("issueAgencyPayout"), ...payout }),
   z.strictObject({

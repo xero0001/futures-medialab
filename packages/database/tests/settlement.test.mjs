@@ -39,6 +39,7 @@ async function financialFixture() {
   });
   f.store.completions = [];
   f.store.invoices = [];
+  f.store.invoiceVersions = [];
   f.store.payouts = [];
   f.store.settlementMutations = [];
   const { matches, select, find, findMany, update } = f.queryHelpers;
@@ -104,6 +105,9 @@ async function financialFixture() {
   };
   const decorate = (row) => ({
     ...row,
+    versions: f.store.invoiceVersions
+      .filter((v) => v.invoiceId === row.id)
+      .sort((a, b) => b.version - a.version),
     campaign: { title: f.store.campaign.title },
     completion: f.store.completions.find((c) => c.id === row.completionId),
     ...(row.supplierOrganizationId
@@ -125,6 +129,7 @@ async function financialFixture() {
         id: `document-${++sequence}`,
         status: "DRAFT",
         revision: 0,
+        documentVersion: 0,
         dueAt: null,
         documentUrl: null,
         internalNote: "",
@@ -147,6 +152,16 @@ async function financialFixture() {
     },
   });
   f.tx.brandInvoice = model(f.store.invoices);
+  f.tx.brandInvoiceVersion = {
+    create: async ({ data }) => {
+      assert.ok(
+        !f.store.invoiceVersions.some(
+          (v) => v.invoiceId === data.invoiceId && v.version === data.version,
+        ),
+      );
+      f.store.invoiceVersions.push({ reason: null, ...data });
+    },
+  };
   f.tx.agencyPayout = model(f.store.payouts);
   f.tx.settlementMutation = {
     findUnique: async ({ where }) =>
@@ -636,4 +651,116 @@ test("currency, decimal precision/limits and explicit supplier item-total confir
     }).success,
     false,
   );
+});
+
+test("invoice correction preserves original snapshots, one receivable and payment history", async () => {
+  const f = await financialFixture();
+  const draft = await f.prepare();
+  const first = (await f.mutate(f.issue(draft.invoice))).invoice;
+  assert.equal(first.documentVersion, 1);
+  const original = structuredClone(first.versions[0]);
+  const data = {
+    title: "변경된 청구서",
+    note: "수정한 납부 기한",
+    dueAt: "2027-01-15T00:00:00.000Z",
+    documentUrl: "https://example.com/v2.pdf",
+  };
+  const correction = f.action("reissueBrandInvoice", {
+    invoiceId: first.id,
+    expectedRevision: first.revision,
+    reason: "계약 담당자 요청으로 납부일 정정",
+    data,
+  });
+  const revised = (await f.mutate(correction)).invoice;
+  assert.equal(revised.documentVersion, 2);
+  assert.deepEqual(revised.versions[1], original);
+  assert.equal(revised.versions[0].reason, correction.reason);
+  assert.equal(revised.amount, first.amount);
+  assert.deepEqual(revised.lines, first.lines);
+  assert.equal(f.store.invoices.length, 1);
+  assert.equal(f.store.invoiceVersions.length, 2);
+  await f.mutate(correction);
+  assert.equal(f.store.invoiceVersions.length, 2);
+  await assert.rejects(
+    () => f.mutate({ ...correction, data: { ...data, title: "다른 제목" } }),
+    fail(409, "IDEMPOTENCY_CONFLICT"),
+  );
+  await assert.rejects(
+    () => f.mutate({ ...correction, clientRequestId: randomUUID() }),
+    fail(409, "STALE_SETTLEMENT"),
+  );
+  const fresh = {
+    ...correction,
+    clientRequestId: randomUUID(),
+    expectedRevision: revised.revision,
+  };
+  await assert.rejects(() => f.mutate(fresh), fail(400, "NO_INVOICE_CHANGES"));
+  for (const patch of [
+    { amount: "300" },
+    { currency: "CNY" },
+    { internalNote: "private" },
+  ])
+    assert.equal(
+      adminSettlementMutationSchema.safeParse({
+        ...fresh,
+        data: { ...data, ...patch },
+      }).success,
+      false,
+    );
+  const published = await listBrandInvoices(f.tx, brand);
+  assert.equal(published.length, 1);
+  assert.deepEqual(published[0].versions, revised.versions);
+  assert.ok(!JSON.stringify(published[0]).includes("issuedById"));
+  await assert.rejects(
+    () =>
+      listBrandInvoices(
+        f.tx,
+        { userId: "other-brand", organizationId: "brand-other" },
+        "campaign-own",
+      ),
+    fail(404),
+  );
+  const paid = (await f.mutate(f.paid(revised))).invoice;
+  assert.equal(paid.documentVersion, 2);
+  assert.equal(paid.canReissue, false);
+  await assert.rejects(
+    () =>
+      f.mutate({
+        ...fresh,
+        expectedRevision: paid.revision,
+        data: { ...data, title: "입금 후 정정" },
+      }),
+    fail(409, "INVOICE_REISSUE_NOT_ALLOWED"),
+  );
+  const event = f.store.audits.find(
+    (a) => a.action === "admin.settlement.reissueBrandInvoice",
+  );
+  assert.equal(event.payload.fromVersion, 1);
+  assert.equal(event.payload.toVersion, 2);
+});
+test("a legacy invoice issued during a rolling deployment is archived on first correction", async () => {
+  const f = await financialFixture();
+  const draft = await f.prepare();
+  const issued = (await f.mutate(f.issue(draft.invoice))).invoice;
+  f.store.invoices[0].documentVersion = 0;
+  f.store.invoiceVersions.length = 0;
+  assert.equal(
+    (await listBrandInvoices(f.tx, brand))[0].versions[0].version,
+    1,
+  );
+  const revised = (
+    await f.mutate(
+      f.action("reissueBrandInvoice", {
+        invoiceId: issued.id,
+        expectedRevision: issued.revision,
+        reason: "안내 정정",
+        data: { title: "변경 문서", note: "", dueAt: null, documentUrl: null },
+      }),
+    )
+  ).invoice;
+  assert.deepEqual(
+    revised.versions.map((v) => v.version),
+    [2, 1],
+  );
+  assert.equal(revised.versions[1].title, issued.title);
 });

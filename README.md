@@ -168,7 +168,9 @@ queries use `DATABASE_URL`; Prisma migrations prefer `DIRECT_URL` or
 The linked project is `flamingcc/futures-medialab` (`apps/platform` as root).
 Neon resource: `futures-medialab-db` (free plan, Singapore). Production uses
 `BETTER_AUTH_URL=https://futures-medialab.vercel.app` and a separate auth secret
-from development. Secrets and pulled environment files must never be committed.
+from development. The platform accepts same-origin browser requests on both
+`https://futures-medialab.vercel.app` and `https://www.futuresmedia.app`. Local
+and preview servers use their configured origin. Secrets and pulled environment files must never be committed.
 Preview has no production database credentials; connect an isolated database
 before testing authenticated preview deployments.
 

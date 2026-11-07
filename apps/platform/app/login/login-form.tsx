@@ -39,6 +39,8 @@ const copy = {
     register: "Create an account",
     invalid: "The email or password is incorrect. Please try again.",
     tooMany: "Too many attempts. Please wait a moment and try again.",
+    origin:
+      "Sign-in is restricted on this address. Check the site address and try again.",
     failed: "We couldn’t log you in. Check your connection and try again.",
   },
   ko: {
@@ -55,6 +57,7 @@ const copy = {
     register: "회원가입",
     invalid: "이메일 또는 비밀번호가 올바르지 않습니다. 다시 확인해 주세요.",
     tooMany: "시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+    origin: "이 주소에서는 로그인이 제한됩니다. 접속 주소를 확인해 주세요.",
     failed: "로그인하지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.",
   },
   zh: {
@@ -71,6 +74,7 @@ const copy = {
     register: "注册",
     invalid: "邮箱或密码不正确，请重新确认。",
     tooMany: "尝试次数过多，请稍后重试。",
+    origin: "此地址不允许登录，请检查网站地址后重试。",
     failed: "登录失败，请检查网络连接后重试。",
   },
 };
@@ -81,9 +85,9 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [pending, setPending] = useState(false);
-  const [status, setStatus] = useState<"invalid" | "tooMany" | "failed" | null>(
-    null,
-  );
+  const [status, setStatus] = useState<
+    "invalid" | "tooMany" | "origin" | "failed" | null
+  >(null);
   const requestPending = useRef(false);
   const statusRef = useRef<HTMLDivElement>(null);
   const t = copy[locale];
@@ -120,10 +124,12 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
         setStatus(
           result.error.status === 429
             ? "tooMany"
-            : result.error.status === 401 ||
-                result.error.code === "INVALID_EMAIL_OR_PASSWORD"
-              ? "invalid"
-              : "failed",
+            : result.error.code === "INVALID_ORIGIN"
+              ? "origin"
+              : result.error.status === 401 ||
+                  result.error.code === "INVALID_EMAIL_OR_PASSWORD"
+                ? "invalid"
+                : "failed",
         );
         return;
       }

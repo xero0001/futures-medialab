@@ -18,34 +18,43 @@ const platformSchema = z.enum([
   "x",
   "facebook",
 ]);
-export const proposalItemInputSchema = z.strictObject({
-  creatorId: proposalIdSchema.nullable().default(null),
-  creatorName: z.string().trim().max(100).default(""),
-  platform: z.union([platformSchema, z.literal("")]).default(""),
-  channelLabel: z.string().trim().max(120).default(""),
-  channelUrl: z.string().trim().max(2048).default(""),
-  followers: z
-    .number()
-    .int()
-    .min(0)
-    .max(2_147_483_647)
-    .nullable()
-    .default(null),
-  averageViews: z
-    .number()
-    .int()
-    .min(0)
-    .max(2_147_483_647)
-    .nullable()
-    .default(null),
-  deliverables: z.string().trim().max(1000).default(""),
-  quantity: z.number().int().min(0).max(1000).default(0),
-  unitAmount: z.union([proposalMoneySchema, z.literal("")]).default(""),
-  scheduledAt: z.iso.datetime({ offset: true }).nullable().default(null),
-  rights: z.string().trim().max(1000).default(""),
-  supplierCost: proposalMoneySchema.nullable().default(null),
-  internalNotes: z.string().trim().max(2000).default(""),
-});
+export const proposalItemInputSchema = z
+  .strictObject({
+    catalogCreatorId: proposalIdSchema.nullable().optional(),
+    catalogRateVersion: z.number().int().positive().nullable().optional(),
+    creatorId: proposalIdSchema.nullable().default(null),
+    creatorName: z.string().trim().max(100).default(""),
+    platform: z.union([platformSchema, z.literal("")]).default(""),
+    channelLabel: z.string().trim().max(120).default(""),
+    channelUrl: z.string().trim().max(2048).default(""),
+    followers: z
+      .number()
+      .int()
+      .min(0)
+      .max(2_147_483_647)
+      .nullable()
+      .default(null),
+    averageViews: z
+      .number()
+      .int()
+      .min(0)
+      .max(2_147_483_647)
+      .nullable()
+      .default(null),
+    deliverables: z.string().trim().max(1000).default(""),
+    quantity: z.number().int().min(0).max(1000).default(0),
+    unitAmount: z.union([proposalMoneySchema, z.literal("")]).default(""),
+    scheduledAt: z.iso.datetime({ offset: true }).nullable().default(null),
+    rights: z.string().trim().max(2000).default(""),
+    supplierCost: proposalMoneySchema.nullable().default(null),
+    internalNotes: z.string().trim().max(2000).default(""),
+  })
+  .refine(
+    (item) =>
+      !(item.creatorId && item.catalogCreatorId) &&
+      (!item.catalogRateVersion || Boolean(item.catalogCreatorId)),
+    "인물 연결 출처와 가격 버전을 확인해 주세요.",
+  );
 export const proposalDraftInputSchema = z.strictObject({
   title: z.string().trim().max(160).default(""),
   summary: z.string().trim().max(3000).default(""),

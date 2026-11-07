@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { isIP } from "node:net";
 import { getDatabase, Prisma } from "@futures-medialab/database";
 import { z } from "zod";
+import { allowsPlatformWrite, trustedPlatformOrigins } from "./platform-origins";
 import { getAuth } from "./auth";
 import { hasCompletedBrandProfile } from "./brand-profile";
 import { hasApprovedTestWorkspaceAccess } from "./test-workspace-access";
@@ -85,11 +86,7 @@ function applicationOrigin() {
   return new URL(base).origin;
 }
 export function verifyOrigin(request: Request) {
-  const site = request.headers.get("sec-fetch-site");
-  if (
-    request.headers.get("origin") !== applicationOrigin() ||
-    (site !== null && site !== "same-origin")
-  ) {
+  if (!allowsPlatformWrite(request.headers, applicationOrigin())) {
     fail(403, "INVALID_ORIGIN", "This request is not allowed.");
   }
 }
@@ -385,7 +382,7 @@ export function safeExternalUrl(value: string): string | null {
     const url = new URL(value),
       hostname = url.hostname.toLowerCase().replace(/\.$/, "");
     const ownHosts = [
-      new URL(applicationOrigin()).hostname.toLowerCase(),
+      ...trustedPlatformOrigins(applicationOrigin()).map((origin) => new URL(origin).hostname),
       "futures-medialab.vercel.app",
       process.env.VERCEL_URL?.toLowerCase(),
       process.env.VERCEL_PROJECT_PRODUCTION_URL?.toLowerCase(),

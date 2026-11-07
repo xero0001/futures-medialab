@@ -148,6 +148,10 @@ function DocumentStatus({
         : t("입금 확인 대기", "Awaiting payment confirmation", "等待收款确认");
     tone = document.status === "PAID" ? "green" : "amber";
   }
+  if (document.kind === "invoice" && !document.isLatest) {
+    label = t("이전 발행본", "Earlier issue", "历史版本");
+    tone = "neutral";
+  }
   if (document.kind === "proposal") {
     const states: Record<string, { label: string; tone: StatusTone }> = {
       APPROVED: { label: t("승인 완료", "Approved", "已批准"), tone: "green" },
@@ -281,9 +285,11 @@ function ProposalContent({
 function InvoiceContent({
   invoice,
   locale,
+  isLatest,
 }: {
   invoice: BrandInvoice;
   locale: Locale;
+  isLatest: boolean;
 }) {
   const t = copyFor(locale);
   return (
@@ -306,10 +312,14 @@ function InvoiceContent({
             label: t("발행일", "Issued", "出具日期"),
             value: dateLabel(invoice.issuedAt, locale, true),
           },
-          {
-            label: t("입금 확인일", "Payment confirmed", "收款确认日期"),
-            value: dateLabel(invoice.paidAt, locale, true),
-          },
+          ...(isLatest
+            ? [
+                {
+                  label: t("입금 확인일", "Payment confirmed", "收款确认日期"),
+                  value: dateLabel(invoice.paidAt, locale, true),
+                },
+              ]
+            : []),
         ]}
       />
       <section className={styles.detailSection}>
@@ -456,6 +466,14 @@ function DocumentDialog({
             )}
           </SectionMessage>
         )}
+        {document.correctionReason && (
+          <p className={styles.summary}>
+            <strong>
+              {t("정정 사유", "Reason for correction", "更正原因")}
+            </strong>{" "}
+            · {document.correctionReason}
+          </p>
+        )}
         {document.summary && !document.report && (
           <p className={styles.summary}>{document.summary}</p>
         )}
@@ -482,7 +500,11 @@ function DocumentDialog({
           </section>
         )}
         {document.invoice && (
-          <InvoiceContent invoice={document.invoice} locale={locale} />
+          <InvoiceContent
+            invoice={document.invoice}
+            locale={locale}
+            isLatest={document.isLatest}
+          />
         )}
         {file && (
           <section className={styles.fileCard}>
@@ -575,42 +597,47 @@ export function BrandDocumentsPanel({
   const [sort, setSort] = useState("newest");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<BrandDocument | null>(null);
-  const trigger = useRef<HTMLElement | null>(null);
+  const [trigger, setTrigger] = useState<HTMLElement | null>(null);
   const titleId = useId();
   const previousCampaignId = useRef(campaignId);
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
-    setFailed(false);
-    setData(null);
-    setSelected(null);
-    setPage(1);
-    if (previousCampaignId.current !== campaignId) {
-      setCampaign("all");
-      previousCampaignId.current = campaignId;
-    }
-    const url = `/api/brand/documents${campaignId ? `?campaign=${encodeURIComponent(campaignId)}` : ""}`;
-    fetch(url, { signal: controller.signal, cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("DOCUMENTS_UNAVAILABLE");
-        const result = (await response.json()) as BrandDocumentResponse;
-        if (!Array.isArray(result.documents))
-          throw new Error("DOCUMENTS_UNAVAILABLE");
-        if (!controller.signal.aborted) {
-          setData(result);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setFailed(true);
-          setLoading(false);
-        }
-      });
-    return () => controller.abort();
+    const timer = setTimeout(() => {
+      setLoading(true);
+      setFailed(false);
+      setData(null);
+      setSelected(null);
+      setPage(1);
+      if (previousCampaignId.current !== campaignId) {
+        setCampaign("all");
+        previousCampaignId.current = campaignId;
+      }
+      const url = `/api/brand/documents${campaignId ? `?campaign=${encodeURIComponent(campaignId)}` : ""}`;
+      fetch(url, { signal: controller.signal, cache: "no-store" })
+        .then(async (response) => {
+          if (!response.ok) throw new Error("DOCUMENTS_UNAVAILABLE");
+          const result = (await response.json()) as BrandDocumentResponse;
+          if (!Array.isArray(result.documents))
+            throw new Error("DOCUMENTS_UNAVAILABLE");
+          if (!controller.signal.aborted) {
+            setData(result);
+            setLoading(false);
+          }
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) {
+            setFailed(true);
+            setLoading(false);
+          }
+        });
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [campaignId, revision]);
 
-  const documents = data?.documents ?? [];
+  const documents = useMemo(() => data?.documents ?? [], [data]);
   const campaignOptions = useMemo(
     () =>
       Array.from(
@@ -662,7 +689,7 @@ export function BrandDocumentsPanel({
     setPage(1);
   }
   function open(document: BrandDocument, element: HTMLElement) {
-    trigger.current = element;
+    setTrigger(element);
     setSelected(document);
   }
 
@@ -1099,7 +1126,7 @@ export function BrandDocumentsPanel({
           document={selected}
           locale={locale}
           onClose={() => setSelected(null)}
-          returnFocus={trigger.current}
+          returnFocus={trigger}
         />
       )}
     </section>

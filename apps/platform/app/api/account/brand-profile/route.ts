@@ -1,4 +1,5 @@
 import { getDatabase, Prisma } from "@futures-medialab/database";
+import { allowsPlatformWrite } from "../../../../lib/platform-origins";
 import { getAuth } from "../../../../lib/auth";
 import { brandProfileSchema } from "../../../../lib/brand-profile";
 
@@ -14,19 +15,7 @@ function errorResponse(status: number, code: string, message: string) {
 export async function POST(request: Request) {
   try {
     const auth = getAuth();
-    const configuredUrl = auth.options.baseURL;
-    if (typeof configuredUrl !== "string") {
-      throw new Error("An explicit application origin is required.");
-    }
-
-    // This route is outside Better Auth's router, so enforce CSRF protection
-    // explicitly. Never infer trust from the incoming Host or forwarding headers.
-    const origin = request.headers.get("origin");
-    const fetchSite = request.headers.get("sec-fetch-site");
-    if (
-      origin !== new URL(configuredUrl).origin ||
-      (fetchSite !== null && fetchSite !== "same-origin")
-    ) {
+    if (!allowsPlatformWrite(request.headers, auth.options.baseURL)) {
       return errorResponse(
         403,
         "INVALID_ORIGIN",

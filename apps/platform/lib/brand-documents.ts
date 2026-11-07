@@ -15,7 +15,7 @@ import {
 import {
   attachmentDocument,
   documentLibrary,
-  invoiceDocument,
+  invoiceDocuments,
   proposalDocument,
   reportDocument,
 } from "./brand-document-mapping";
@@ -122,7 +122,13 @@ export function brandDocuments(request: Request) {
           [
             proposals.map(proposalDocument),
             reports.map(reportDocument),
-            invoices.map(invoiceDocument),
+            invoices
+              .flatMap(invoiceDocuments)
+              .sort(
+                (a, b) =>
+                  Date.parse(b.publishedAt) - Date.parse(a.publishedAt) ||
+                  a.id.localeCompare(b.id),
+              ),
             attachments.map((row) =>
               attachmentDocument(row, organizationId, campaignId),
             ),

@@ -9,6 +9,8 @@ export type ProposalItemStatus =
   "PENDING" | "APPROVED" | "CHANGES_REQUESTED" | "REJECTED";
 export type ProposalDecisionKind = "APPROVE" | "REQUEST_CHANGES" | "REJECT";
 export type ProposalItemInput = {
+  catalogCreatorId?: string | null;
+  catalogRateVersion?: number | null;
   creatorId: string | null;
   creatorName: string;
   platform: string;
@@ -92,6 +94,8 @@ export type BrandProposalSummary = Pick<
   | "canRespond"
 > & { pendingItemCount: number };
 export type AdminProposalItem = BrandProposalItem & {
+  catalogCreatorId?: string | null;
+  catalogRateVersion?: number | null;
   creatorId: string | null;
   supplierOrganizationId: string | null;
   supplierCost: string | null;

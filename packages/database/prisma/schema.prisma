@@ -112,6 +112,9 @@ enum ProposalDecisionKind {
 }
 
 model User {
+  ownedInternalCreators InternalCreator[]
+  internalRateUpdates InternalCreatorRateCard[]
+  internalCreatorMutations InternalCreatorMutation[]
   id                    String                 @id @default(cuid())
   email                 String                 @unique
   emailVerified         Boolean                @default(false)
@@ -145,6 +148,7 @@ model User {
   reportingMutations ReportingMutation[]
   campaignCompletions CampaignCompletion[]
   issuedBrandInvoices BrandInvoice[] @relation("BrandInvoiceIssuer")
+  issuedInvoiceVersions BrandInvoiceVersion[] @relation("BrandInvoiceVersionIssuer")
   recordedBrandPayments BrandInvoice[] @relation("BrandInvoicePaymentRecorder")
   issuedAgencyPayouts AgencyPayout[] @relation("AgencyPayoutIssuer")
   recordedAgencyPayments AgencyPayout[] @relation("AgencyPayoutPaymentRecorder")
@@ -211,6 +215,7 @@ model RateLimit {
 }
 
 model Organization {
+  internalCreators InternalCreator[]
   id                    String                 @id @default(cuid())
   type                  OrganizationType
   status                OrganizationStatus     @default(PENDING)
@@ -453,6 +458,7 @@ model RequestAttachment {
 }
 
 model CreatorProfile {
+  internalCatalogEntry InternalCreator?
   id                   String               @id @default(cuid())
   agencyOrganizationId String
   displayName          String
@@ -630,6 +636,10 @@ model CampaignProposal {
 }
 
 model ProposalItem {
+  catalogCreatorId String?
+  catalogRateVersion Int?
+  catalogCreator InternalCreator? @relation(fields: [catalogCreatorId], references: [id], onDelete: Restrict)
+  @@index([catalogCreatorId])
   id                       String @id @default(cuid())
   proposalId               String
   position                 Int
@@ -875,6 +885,8 @@ model BrandInvoice {
   brandOrganizationId String
   status OfficialSettlementStatus @default(DRAFT)
   revision Int @default(0)
+  documentVersion Int @default(0)
+  versions BrandInvoiceVersion[]
   currency Currency
   amount Decimal @db.Decimal(18, 2)
   lineSnapshot Json
@@ -898,6 +910,25 @@ model BrandInvoice {
   updatedAt DateTime @updatedAt
   @@index([brandOrganizationId, status])
 }
+model BrandInvoiceVersion {
+  invoiceId String
+  version Int
+  title String
+  note String @db.Text
+  dueAt DateTime?
+  documentUrl String? @db.Text
+  currency Currency
+  amount Decimal @db.Decimal(18, 2)
+  lineSnapshot Json
+  reason String? @db.Text
+  issuedAt DateTime
+  issuedById String?
+  invoice BrandInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  issuedBy User? @relation("BrandInvoiceVersionIssuer", fields: [issuedById], references: [id], onDelete: Restrict)
+  @@id([invoiceId, version])
+  @@index([issuedAt])
+}
+
 model AgencyPayout {
   id String @id @default(cuid())
   campaignId String
@@ -945,4 +976,69 @@ model SettlementMutation {
   createdAt DateTime @default(now())
   @@unique([actorId, clientRequestId])
   @@index([campaignId])
+}
+
+// Platform-only sourcing records. Public proposals expose independent snapshots.
+model InternalCreator {
+  id String @id @default(cuid())
+  displayName String
+  affiliation String
+  partnerOrganizationId String?
+  rosterCreatorId String? @unique
+  ownerId String
+  channels Json @default("[]")
+  genres String[] @default([])
+  languages String[] @default([])
+  formats String[] @default([])
+  audienceNotes String @default("") @db.Text
+  availability String @default("UNKNOWN")
+  availableFrom DateTime?
+  availableThrough DateTime?
+  availabilityNote String @default("") @db.Text
+  acceptsChinaGames String @default("UNKNOWN")
+  conflicts String @default("") @db.Text
+  riskNotes String @default("") @db.Text
+  availabilityCheckedAt DateTime?
+  priceCheckedAt DateTime?
+  isActive Boolean @default(true)
+  revision Int @default(1)
+  partnerOrganization Organization? @relation(fields: [partnerOrganizationId], references: [id], onDelete: Restrict)
+  rosterCreator CreatorProfile? @relation(fields: [rosterCreatorId], references: [id], onDelete: SetNull)
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  rateCards InternalCreatorRateCard[]
+  proposalItems ProposalItem[]
+  mutations InternalCreatorMutation[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, affiliation, updatedAt])
+  @@index([ownerId])
+  @@index([partnerOrganizationId])
+}
+
+model InternalCreatorRateCard {
+  id String @id @default(cuid())
+  creatorId String
+  version Int
+  rates Json
+  reason String
+  createdById String
+  creator InternalCreator @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+
+  @@unique([creatorId, version])
+}
+
+model InternalCreatorMutation {
+  id String @id @default(cuid())
+  creatorId String
+  actorId String
+  requestId String
+  payloadHash String
+  creator InternalCreator @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+
+  @@unique([actorId, requestId])
 }

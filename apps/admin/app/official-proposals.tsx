@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { AdminButton } from "./_components/admin-button";
 import s from "./official-proposals.module.css";
+import { CatalogProposalPicker } from "./catalog-proposal-picker";
 import { ProposalCostEditor } from "./proposal-cost-editor";
 
 import type {
@@ -52,6 +53,8 @@ type MutationInput = AdminProposalMutation extends infer T
   : never;
 type ItemDraft = {
   key: string;
+  catalogCreatorId: string;
+  catalogRateVersion: number | null;
   creatorId: string;
   creatorName: string;
   platform: string;
@@ -137,6 +140,8 @@ const dateIso = (value: string) =>
   value ? new Date(`${value}:00+09:00`).toISOString() : null;
 const blankItem = (): ItemDraft => ({
   key: crypto.randomUUID(),
+  catalogCreatorId: "",
+  catalogRateVersion: null,
   creatorId: "",
   creatorName: "",
   platform: "youtube",
@@ -161,6 +166,8 @@ function draftFrom(proposal: Proposal): Draft {
     changeSummary: proposal.changeSummary,
     items: proposal.items.map((item) => ({
       key: item.id,
+      catalogCreatorId: item.catalogCreatorId ?? "",
+      catalogRateVersion: item.catalogRateVersion ?? null,
       creatorId: item.creatorId ?? "",
       creatorName: item.creatorName,
       platform: item.platform,
@@ -187,6 +194,8 @@ function toInput(draft: Draft): ProposalDraftInput {
     expiresAt: dateIso(draft.expiresAt),
     items: draft.items.map((item) => ({
       creatorId: item.creatorId || null,
+      catalogCreatorId: item.catalogCreatorId || null,
+      catalogRateVersion: item.catalogRateVersion,
       creatorName: item.creatorName,
       platform: item.platform,
       channelLabel: item.channelLabel,
@@ -548,12 +557,18 @@ function DraftEditor({
   function selectCreator(key: string, id: string) {
     const creator = creators.find((item) => item.id === id);
     if (!creator) {
-      updateItem(key, { creatorId: "" });
+      updateItem(key, {
+        creatorId: "",
+        catalogCreatorId: "",
+        catalogRateVersion: null,
+      });
       return;
     }
     const channel = creator.channels[0];
     updateItem(key, {
       creatorId: id,
+      catalogCreatorId: "",
+      catalogRateVersion: null,
       creatorName: creator.displayName,
       platform: channel?.platform ?? "youtube",
       channelLabel: channel?.name ?? creator.displayName,
@@ -680,7 +695,11 @@ function DraftEditor({
                       selectCreator(item.key, event.target.value)
                     }
                   >
-                    <option value="">직접 입력</option>
+                    <option value="">
+                      {item.catalogCreatorId
+                        ? "내부 DB에서 연결됨"
+                        : "직접 입력"}
+                    </option>
                     {item.creatorId &&
                     !creators.some(
                       (creator) => creator.id === item.creatorId,
@@ -701,6 +720,21 @@ function DraftEditor({
                       : "연결된 캠페인 후보가 없습니다. 운영팀이 확인한 공개 정보를 직접 입력할 수 있습니다."}
                   </small>
                 </label>
+                <div className={s.fieldWide}>
+                  <CatalogProposalPicker
+                    currency={proposal.currency}
+                    selected={Boolean(item.catalogCreatorId)}
+                    onClear={() =>
+                      updateItem(item.key, {
+                        catalogCreatorId: "",
+                        catalogRateVersion: null,
+                      })
+                    }
+                    onPick={(patch) =>
+                      updateItem(item.key, { ...patch, creatorId: "" })
+                    }
+                  />
+                </div>
                 <label className={s.field}>
                   크리에이터 이름
                   <input
@@ -844,9 +878,10 @@ function DraftEditor({
                 </label>
                 <label className={s.field}>
                   사용권·활용 범위
-                  <input
+                  <textarea
+                    rows={3}
                     value={item.rights}
-                    maxLength={1000}
+                    maxLength={2000}
                     onChange={(event) =>
                       updateItem(item.key, { rights: event.target.value })
                     }

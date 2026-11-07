@@ -9,6 +9,8 @@ import { RequestConsole } from "./request-console";
 import { OperationsDashboard } from "./operations-dashboard";
 import { AdminCampaignList } from "./admin-campaign-list";
 import { AdminCampaignWorkspace } from "./admin-campaign-workspace";
+import { AdminDelegatedIntake } from "./admin-delegated-intake";
+import { AdminCreatorCatalog } from "./admin-creator-catalog";
 import {
   parseAdminLocation,
   adminLocationHref,
@@ -47,6 +49,8 @@ type Operation = {
   message: string;
 };
 const descriptions: Record<Tab, string> = {
+  intake: "브랜드가 전달한 브리프를 실제 의뢰자 명의로 접수합니다.",
+  creators: "후보의 채널, 가용 일정과 견적 이력을 관리합니다.",
   overview: "기한이 임박한 업무와 담당자별 처리할 일을 확인하세요.",
   users: "플랫폼에 함께하는 사용자와 소속 조직, 접근 권한을 확인하세요.",
   organizations: "파트너의 회사 정보와 제출 서류를 살펴보고 심사를 진행하세요.",
@@ -84,6 +88,11 @@ const labels: Record<string, string> = {
   CONTRACT: "계약서",
 };
 const actionLabels: Record<string, string> = {
+  "campaign.delegated_intake": "브랜드 의뢰 대리 접수",
+  "settlement.reissueBrandInvoice": "청구서 정정 발행",
+  "creator.create": "내부 크리에이터 등록",
+  "creator.update": "내부 크리에이터 수정",
+  "creator.rates": "크리에이터 단가표 개정",
   approveOrganization: "조직 승인",
   requestOrganizationChanges: "조직 보완 요청",
   suspendOrganization: "조직 이용 정지",
@@ -434,6 +443,8 @@ export function AdminConsole({
     tab === "campaigns" && selected
       ? (campaign?.title ?? "캠페인 운영")
       : tabs.find((value) => value.key === tab)!.label;
+  const usesBootstrapView =
+    tab !== "requests" && tab !== "intake" && tab !== "creators";
   const visibleUsers =
     data?.users.filter((user) => match(`${user.name} ${user.email}`)) ?? [];
   const visibleOrganizations =
@@ -463,25 +474,27 @@ export function AdminConsole({
             <h1>{title}</h1>
             <p>{descriptions[tab]}</p>
           </div>
-          <AdminButton
-            disabled={loading || busy}
-            onClick={() => {
-              if (
-                !window.dispatchEvent(
-                  new Event("admin:navigate", { cancelable: true }),
+          {tab !== "intake" && (
+            <AdminButton
+              disabled={loading || busy}
+              onClick={() => {
+                if (
+                  !window.dispatchEvent(
+                    new Event("admin:navigate", { cancelable: true }),
+                  )
                 )
-              )
-                return;
-              if (tab === "requests") setRequestRefresh((value) => value + 1);
-              else void refresh();
-            }}
-          >
-            <RefreshCw
-              size={17}
-              className={loading ? "admin-spin" : undefined}
-            />
-            새로고침
-          </AdminButton>
+                  return;
+                if (tab === "requests") setRequestRefresh((value) => value + 1);
+                else void refresh();
+              }}
+            >
+              <RefreshCw
+                size={17}
+                className={loading ? "admin-spin" : undefined}
+              />
+              새로고침
+            </AdminButton>
+          )}
         </div>
         {error && (
           <div role="alert" className="admin-alert error">
@@ -507,12 +520,21 @@ export function AdminConsole({
             onCampaign={(id) => openCampaign(id)}
           />
         )}
-        {tab !== "requests" && loading && !data && (
+        {tab === "intake" && (
+          <AdminDelegatedIntake
+            onCreated={(id) => openCampaign(id)}
+            onCancel={() => navigate("campaigns")}
+          />
+        )}
+        {tab === "creators" && (
+          <AdminCreatorCatalog refreshToken={viewRefresh} />
+        )}
+        {usesBootstrapView && loading && !data && (
           <section className="admin-panel admin-empty" aria-live="polite">
             운영 데이터를 불러오는 중입니다…
           </section>
         )}
-        {data && tab !== "requests" && (
+        {data && usesBootstrapView && (
           <>
             {tab === "overview" ? (
               <>

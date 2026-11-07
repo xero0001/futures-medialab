@@ -874,3 +874,99 @@ test("proposal publication identifies decision waiting and preserves original in
   await f.decide(decision(proposal));
   assert.equal(f.store.request.inputJson.waitingFor, null);
 });
+
+test("catalog creator can source a managed proposal without exposing private provenance to the brand", async () => {
+  const f = fixture();
+  f.tx.internalCreator = {
+    findFirst: async ({ where }) =>
+      where.id === "catalog-1" &&
+      where.isActive &&
+      where.rateCards.some.version === 2
+        ? { partnerOrganizationId: null }
+        : null,
+  };
+  const draft = await f.prepared(
+    data({
+      items: [
+        item({
+          creatorId: null,
+          catalogCreatorId: "catalog-1",
+          catalogRateVersion: 2,
+        }),
+      ],
+    }),
+  );
+  assert.equal(draft.items[0].catalogCreatorId, "catalog-1");
+  assert.equal(draft.items[0].catalogRateVersion, 2);
+  assert.deepEqual(
+    await listBrandCampaignProposals(f.tx, "brand-own", "campaign-own", true),
+    [],
+  );
+  await f.admin(
+    op("publish", { proposalId: draft.id, expectedRevision: draft.revision }),
+  );
+  const brand = await getBrandProposal(f.tx, "brand-own", draft.id, true);
+  assert.equal(brand.items[0].creatorName, "공개 스냅샷 이름");
+  for (const field of [
+    "catalogCreatorId",
+    "catalogRateVersion",
+    "supplierOrganizationId",
+    "supplierCost",
+    "internalNotes",
+  ])
+    assert.equal(Object.hasOwn(brand.items[0], field), false);
+});
+test("archived catalog creator or changed supplier needs a fresh draft before publishing", async () => {
+  const f = fixture();
+  let partner = "agency-own";
+  f.tx.internalCreator = {
+    findFirst: async () =>
+      partner === false ? null : { partnerOrganizationId: partner },
+  };
+  const draft = await f.prepared(
+    data({ items: [item({ creatorId: null, catalogCreatorId: "catalog-1" })] }),
+  );
+  assert.equal(draft.items[0].supplierOrganizationId, partner);
+  partner = "different-partner";
+  await assert.rejects(
+    () =>
+      f.admin(
+        op("publish", {
+          proposalId: draft.id,
+          expectedRevision: draft.revision,
+        }),
+      ),
+    statusError(409, "CATALOG_PARTNER_CHANGED"),
+  );
+  partner = false;
+  await assert.rejects(
+    () =>
+      f.admin(
+        op("publish", {
+          proposalId: draft.id,
+          expectedRevision: draft.revision,
+        }),
+      ),
+    statusError(409, "CATALOG_UNAVAILABLE"),
+  );
+});
+test("draft rejects conflicting application and catalog provenance", async () => {
+  const f = fixture(),
+    draft = await f.admin(op("createDraft"));
+  for (const source of [
+    { creatorId: "creator-own", catalogCreatorId: "catalog-1" },
+    { creatorId: null, catalogRateVersion: 1 },
+  ]) {
+    await assert.rejects(
+      () =>
+        f.admin(
+          op("saveDraft", {
+            proposalId: draft.proposal.id,
+            expectedRevision: 0,
+            data: data({ items: [item(source)] }),
+          }),
+        ),
+      statusError(400),
+    );
+  }
+});

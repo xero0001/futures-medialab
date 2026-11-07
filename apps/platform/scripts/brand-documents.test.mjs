@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, URL } from "node:url";
 import { runInThisContext } from "node:vm";
 import ts from "typescript";
 
@@ -164,7 +164,7 @@ test("unpublished artifacts are excluded while historical published versions rem
   assert.equal(mapping.proposalDocument(proposal).isLatest, false);
   assert.equal(mapping.invoiceDocument({ ...invoice, status: "DRAFT" }), null);
   assert.equal(mapping.invoiceDocument({ ...invoice, issuedAt: null }), null);
-  assert.equal(mapping.invoiceDocument(invoice).version, null);
+  assert.equal(mapping.invoiceDocument(invoice).version, 1);
   assert.equal(
     mapping.reportDocument({
       ...report,
@@ -333,9 +333,12 @@ function fixture(options = {}) {
   };
 }
 const request = (suffix = "", method = "GET") =>
-  new Request(`https://futures.example.com/api/brand/documents${suffix}`, {
-    method,
-  });
+  new globalThis.Request(
+    `https://futures.example.com/api/brand/documents${suffix}`,
+    {
+      method,
+    },
+  );
 
 test("document API uses live approved tenant, read permission, no-store and all published source types", async () => {
   const { handler, calls } = fixture();
@@ -382,4 +385,34 @@ test("anonymous, revoked, unapproved and suspended memberships cannot query docu
   const { handler, calls } = fixture();
   assert.equal((await handler(request("", "POST"))).status, 405);
   assert.equal(calls.auth, 0);
+});
+
+test("reissued invoice versions retain distinct files and do not duplicate current receivables", () => {
+  const v = (n) => ({
+    version: n,
+    title: "청구서 " + n,
+    note: "",
+    issuedAt: `2026-11-0${n}T00:00:00Z`,
+    dueAt: null,
+    documentUrl: `https://example.com/${n}.pdf`,
+    currency: "KRW",
+    amount: "100.00",
+    lines: [],
+    reason: n === 2 ? "안내 정정" : null,
+  });
+  const docs = mapping.invoiceDocuments({
+    ...invoice,
+    documentVersion: 2,
+    versions: [v(2), v(1)],
+  });
+  assert.deepEqual(
+    docs.map((d) => [d.version, d.isLatest, d.file.url]),
+    [
+      [2, true, "https://example.com/2.pdf"],
+      [1, false, "https://example.com/1.pdf"],
+    ],
+  );
+  assert.equal(docs[1].status, "SUPERSEDED");
+  assert.equal(docs[0].correctionReason, "안내 정정");
+  assert.equal(new Set(docs.map((d) => d.id)).size, 2);
 });

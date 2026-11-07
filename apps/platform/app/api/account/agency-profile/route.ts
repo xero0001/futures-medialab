@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { getDatabase, Prisma } from "@futures-medialab/database";
 import { z } from "zod";
+import { allowsPlatformWrite } from "../../../../lib/platform-origins";
 import { getAuth } from "../../../../lib/auth";
 import { agencyProfileSchema, getAgencyProfileValues, hasSubmittedAgencyProfile, metadataRecord, validateAgencyProfile } from "../../../../lib/agency-profile";
 
@@ -48,10 +49,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const auth = getAuth();
-    const base = auth.options.baseURL;
-    if (typeof base !== "string") throw new Error("Application origin required");
-    const site = request.headers.get("sec-fetch-site");
-    if (request.headers.get("origin") !== new URL(base).origin || (site !== null && site !== "same-origin")) return json({ code: "INVALID_ORIGIN" }, 403);
+    if (!allowsPlatformWrite(request.headers, auth.options.baseURL)) return json({ code: "INVALID_ORIGIN" }, 403);
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) return json({ code: "UNAUTHORIZED" }, 401);
     const parsed = schema.safeParse(await boundedBody(request));

@@ -23,7 +23,8 @@
     "./settlement-types": "./src/settlement-types.ts",
     "./settlement-validation": "./src/settlement-validation.ts",
     "./settlement": "./src/settlement.ts",
-    "./settlement-http": "./src/settlement-http.ts"
+    "./settlement-http": "./src/settlement-http.ts",
+    "./brand-intake": "./src/brand-intake.ts"
   },
   "scripts": {
     "build": "prisma generate && tsup src/client.ts --format esm --dts",

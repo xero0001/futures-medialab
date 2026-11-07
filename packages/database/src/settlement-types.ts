@@ -43,7 +43,23 @@ type SettlementDocumentBase = {
   paidAt: string | null;
   completedAt: string;
 };
+export type BrandInvoiceVersion = Pick<
+  SettlementDocumentBase,
+  | "title"
+  | "note"
+  | "dueAt"
+  | "documentUrl"
+  | "issuedAt"
+  | "currency"
+  | "amount"
+> & {
+  version: number;
+  reason: string | null;
+  lines: BrandInvoiceLine[];
+};
 export type BrandInvoice = SettlementDocumentBase & {
+  documentVersion: number;
+  versions: BrandInvoiceVersion[];
   lines: BrandInvoiceLine[];
 };
 export type AgencyPayout = SettlementDocumentBase & {
@@ -60,7 +76,7 @@ type AdminSettlementFields = {
   actionProblems: string[];
 };
 export type AdminBrandInvoice = Omit<BrandInvoice, "status" | "issuedAt"> &
-  AdminSettlementFields;
+  AdminSettlementFields & { canReissue: boolean };
 export type AdminAgencyPayout = Omit<AgencyPayout, "status" | "issuedAt"> &
   AdminSettlementFields & {
     supplierOrganizationId: string;
@@ -126,6 +142,12 @@ export type AdminSettlementMutation =
       action: "saveAgencyPayout";
       payoutId: string;
       data: SettlementDocumentInput;
+    })
+  | (DocumentMutation & {
+      action: "reissueBrandInvoice";
+      invoiceId: string;
+      reason: string;
+      data: Omit<SettlementDocumentInput, "internalNote">;
     })
   | (DocumentMutation & { action: "issueBrandInvoice"; invoiceId: string })
   | (DocumentMutation & { action: "issueAgencyPayout"; payoutId: string })

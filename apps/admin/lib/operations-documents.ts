@@ -170,6 +170,22 @@ export function adminCampaignDocumentsApi(request: Request) {
           take: limit + 1,
           select: {
             id: true,
+            documentVersion: true,
+            versions: {
+              take: limit + 1,
+              orderBy: { version: "desc" },
+              select: {
+                version: true,
+                title: true,
+                note: true,
+                dueAt: true,
+                documentUrl: true,
+                issuedAt: true,
+                reason: true,
+                currency: true,
+                amount: true,
+              },
+            },
             title: true,
             status: true,
             issuedAt: true,
@@ -320,29 +336,43 @@ export function adminCampaignDocumentsApi(request: Request) {
             ],
           });
         }
-        for (const i of invoices.slice(0, limit)) {
-          const shared = i.status !== "DRAFT" && Boolean(i.issuedAt);
-          documents.push({
-            id: `invoice:${i.id}`,
-            kind: "invoice",
-            title: i.title,
-            status: label(i.status),
-            version: null,
-            scope: shared ? "brand" : "internal",
-            recipient: shared ? campaign.brandOrganization.name : "운영팀",
-            sharedAt: shared ? iso(i.issuedAt) : null,
-            updatedAt: iso(i.updatedAt)!,
-            isLatest: true,
-            section: "settlement",
-            requestId: null,
-            file: file(i.documentUrl, "청구 원본"),
-            details: [
-              detail("청구 금액", money(i.amount, i.currency)),
-              detail("납부 기한", iso(i.dueAt)),
-              detail("공개 안내", i.note),
-              detail("입금 확인일", iso(i.paidAt)),
-            ],
-          });
+        let moreInvoices = false;
+        for (const invoice of invoices) {
+          const shared =
+            invoice.status !== "DRAFT" && Boolean(invoice.issuedAt);
+          const latest = shared ? invoice.documentVersion || 1 : null;
+          const versions =
+            shared && invoice.versions?.length
+              ? invoice.versions
+              : [{ ...invoice, version: latest, reason: null }];
+          moreInvoices ||= versions.length > limit;
+          for (const v of versions.slice(0, limit)) {
+            const isLatest = v.version === latest;
+            documents.push({
+              id: `invoice:${invoice.id}:${v.version ?? "draft"}`,
+              kind: "invoice",
+              title: v.title,
+              status: isLatest ? label(invoice.status) : "이전 발행본",
+              version: v.version,
+              scope: shared ? "brand" : "internal",
+              recipient: shared ? campaign.brandOrganization.name : "운영팀",
+              sharedAt: shared ? iso(v.issuedAt) : null,
+              updatedAt: (shared ? iso(v.issuedAt) : iso(invoice.updatedAt))!,
+              isLatest,
+              section: "settlement",
+              requestId: null,
+              file: file(v.documentUrl, "청구 원본"),
+              details: [
+                detail("청구 금액", money(v.amount, v.currency)),
+                detail("납부 기한", iso(v.dueAt)),
+                detail("공개 안내", v.note),
+                ...(v.reason ? [detail("정정 사유", v.reason)] : []),
+                ...(isLatest
+                  ? [detail("입금 확인일", iso(invoice.paidAt))]
+                  : []),
+              ],
+            });
+          }
         }
         for (const p of payouts.slice(0, limit)) {
           const shared = p.status !== "DRAFT" && Boolean(p.issuedAt);
@@ -408,9 +438,11 @@ export function adminCampaignDocumentsApi(request: Request) {
           campaignId: campaign.id,
           campaignTitle: campaign.title,
           documents,
-          hasMore: [proposals, reports, invoices, payouts, attachments].some(
-            (x) => x.length > limit,
-          ),
+          hasMore:
+            moreInvoices ||
+            [proposals, reports, invoices, payouts, attachments].some(
+              (x) => x.length > limit,
+            ),
           perKindLimit: limit,
         } satisfies AdminCampaignDocumentsResponse;
       },

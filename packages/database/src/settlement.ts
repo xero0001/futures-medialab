@@ -20,6 +20,7 @@ import type {
   BrandInvoice,
   AgencyPayout,
   BrandInvoiceLine,
+  BrandInvoiceVersion,
   AgencyPayoutLine,
   CampaignCompletionSummary,
 } from "@futures-medialab/database/settlement-types";
@@ -104,16 +105,38 @@ const publicDocumentSelect = {
 const publicPayoutSelect = {
   ...publicDocumentSelect,
 } satisfies Prisma.AgencyPayoutSelect;
+const invoiceVersions = {
+  orderBy: { version: "desc" },
+  select: {
+    version: true,
+    title: true,
+    note: true,
+    dueAt: true,
+    documentUrl: true,
+    issuedAt: true,
+    currency: true,
+    amount: true,
+    lineSnapshot: true,
+    reason: true,
+  },
+} satisfies Prisma.BrandInvoice$versionsArgs;
+const publicInvoiceSelect = {
+  ...publicDocumentSelect,
+  documentVersion: true,
+  versions: invoiceVersions,
+} satisfies Prisma.BrandInvoiceSelect;
 const adminInvoiceInclude = {
+  versions: invoiceVersions,
   campaign: { select: { title: true } },
   completion: { select: { proposalVersion: true, completedAt: true } },
 } satisfies Prisma.BrandInvoiceInclude;
 const adminPayoutInclude = {
-  ...adminInvoiceInclude,
+  campaign: adminInvoiceInclude.campaign,
+  completion: adminInvoiceInclude.completion,
   supplierOrganization: { select: { name: true, status: true, type: true } },
 } satisfies Prisma.AgencyPayoutInclude;
 type PublicInvoiceRow = Prisma.BrandInvoiceGetPayload<{
-  select: typeof publicDocumentSelect;
+  select: typeof publicInvoiceSelect;
 }>;
 type PublicPayoutRow = Prisma.AgencyPayoutGetPayload<{
   select: typeof publicPayoutSelect;
@@ -176,10 +199,49 @@ function documentBase(row: PublicInvoiceRow | PublicPayoutRow) {
     completedAt: row.completion.completedAt.toISOString(),
   };
 }
+function invoiceHistory(row: PublicInvoiceRow | AdminInvoiceRow): {
+  documentVersion: number;
+  versions: BrandInvoiceVersion[];
+} {
+  if (!row.issuedAt || row.status === "DRAFT")
+    return { documentVersion: 0, versions: [] };
+  const versions = row.versions.map((v) => ({
+    version: v.version,
+    title: v.title,
+    note: v.note,
+    dueAt: v.dueAt?.toISOString() ?? null,
+    documentUrl: v.documentUrl,
+    issuedAt: v.issuedAt.toISOString(),
+    currency: v.currency,
+    amount: v.amount.toFixed(2),
+    lines: invoiceLines(v.lineSnapshot),
+    reason: v.reason,
+  }));
+  // A previous app instance can still issue an invoice during a rolling deployment.
+  if (row.documentVersion === 0 && !versions.length) {
+    versions.push({
+      version: 1,
+      title: row.title,
+      note: row.note,
+      dueAt: row.dueAt?.toISOString() ?? null,
+      documentUrl: row.documentUrl,
+      issuedAt: row.issuedAt.toISOString(),
+      currency: row.currency,
+      amount: row.amount.toFixed(2),
+      lines: invoiceLines(row.lineSnapshot),
+      reason: null,
+    });
+  }
+  return { documentVersion: Math.max(1, row.documentVersion), versions };
+}
 function brandDto(row: PublicInvoiceRow): BrandInvoice {
   if (row.status === "DRAFT" || !row.issuedAt)
     settlementFail(404, "NOT_FOUND", "발행된 청구서를 찾을 수 없습니다.");
-  return { ...documentBase(row), lines: invoiceLines(row.lineSnapshot) };
+  return {
+    ...documentBase(row),
+    ...invoiceHistory(row),
+    lines: invoiceLines(row.lineSnapshot),
+  };
 }
 function agencyDto(row: PublicPayoutRow): AgencyPayout {
   if (row.status === "DRAFT" || !row.issuedAt)
@@ -465,6 +527,12 @@ function adminInvoiceDto(
     draft = row.status === "DRAFT" && !row.issuedAt;
   return {
     ...documentBase(row),
+    ...invoiceHistory(row),
+    canReissue:
+      !problems.length &&
+      row.status === "ISSUED" &&
+      Boolean(row.issuedAt) &&
+      !row.paidAt,
     lines: invoiceLines(row.lineSnapshot),
     status: row.status,
     issuedAt: row.issuedAt?.toISOString() ?? null,
@@ -580,6 +648,8 @@ export async function listBrandInvoices(
     }))
   )
     settlementFail(404, "NOT_FOUND", "캠페인을 찾을 수 없습니다.");
+  const take =
+    limit === undefined ? undefined : Math.min(501, Math.max(1, limit));
   const rows = await tx.brandInvoice.findMany({
     where: {
       brandOrganizationId: actor.organizationId,
@@ -587,8 +657,8 @@ export async function listBrandInvoices(
       status: { in: ["ISSUED", "PAID"] },
       issuedAt: { not: null },
     },
-    ...(limit === undefined ? {} : { take: Math.min(501, Math.max(1, limit)) }),
-    select: publicDocumentSelect,
+    take,
+    select: { ...publicInvoiceSelect, versions: { ...invoiceVersions, take } },
     orderBy: [{ issuedAt: "desc" }, { id: "asc" }],
   });
   return rows.map(brandDto);
@@ -801,7 +871,27 @@ export async function applyAdminSettlementMutation(
         revision: input.expectedRevision,
         status: document.status,
       };
-      let data: Prisma.BrandInvoiceUncheckedUpdateManyInput;
+      let newVersion:
+        Prisma.BrandInvoiceVersionUncheckedCreateInput | undefined;
+      let legacyVersion:
+        Prisma.BrandInvoiceVersionUncheckedCreateInput | undefined;
+      let nextVersion = 0;
+      let data: Pick<
+        Prisma.BrandInvoiceUncheckedUpdateManyInput,
+        | "title"
+        | "note"
+        | "dueAt"
+        | "documentUrl"
+        | "internalNote"
+        | "status"
+        | "issuedAt"
+        | "issuedById"
+        | "revision"
+        | "paidAt"
+        | "paidAmount"
+        | "paymentRecordedById"
+        | "externalPaymentReference"
+      >;
       if (
         input.action === "saveBrandInvoice" ||
         input.action === "saveAgencyPayout"
@@ -822,6 +912,64 @@ export async function applyAdminSettlementMutation(
           internalNote: input.data.internalNote,
           revision: { increment: 1 },
         };
+      } else if (input.action === "reissueBrandInvoice" && invoice) {
+        if (invoice.status !== "ISSUED" || !invoice.issuedAt || invoice.paidAt)
+          settlementFail(
+            409,
+            "INVOICE_REISSUE_NOT_ALLOWED",
+            "미입금 상태의 발행 청구서만 정정할 수 있습니다.",
+          );
+        const title = input.data.title,
+          note = input.data.note;
+        const dueAt = input.data.dueAt ? new Date(input.data.dueAt) : null;
+        const documentUrl = input.data.documentUrl
+          ? new URL(input.data.documentUrl).href
+          : null;
+        if (
+          title === invoice.title &&
+          note === invoice.note &&
+          dueAt?.getTime() === invoice.dueAt?.getTime() &&
+          documentUrl === invoice.documentUrl
+        )
+          settlementFail(
+            400,
+            "NO_INVOICE_CHANGES",
+            "정정할 공개 내용을 변경해 주세요.",
+          );
+        const snapshot = {
+          invoiceId: invoice.id,
+          currency: invoice.currency,
+          amount: invoice.amount,
+          lineSnapshot: invoice.lineSnapshot as Prisma.InputJsonValue,
+        };
+        if (invoice.documentVersion === 0) {
+          legacyVersion = {
+            ...snapshot,
+            version: 1,
+            title: invoice.title,
+            note: invoice.note,
+            dueAt: invoice.dueAt,
+            documentUrl: invoice.documentUrl,
+            issuedAt: invoice.issuedAt,
+            issuedById: invoice.issuedById,
+          };
+        }
+        nextVersion = Math.max(1, invoice.documentVersion) + 1;
+        const fields = {
+          title,
+          note,
+          dueAt,
+          documentUrl,
+          issuedAt: new Date(),
+          issuedById: userId,
+        };
+        newVersion = {
+          ...snapshot,
+          ...fields,
+          version: nextVersion,
+          reason: input.reason,
+        };
+        data = { ...fields, revision: { increment: 1 } };
       } else if (
         input.action === "issueBrandInvoice" ||
         input.action === "issueAgencyPayout"
@@ -847,7 +995,26 @@ export async function applyAdminSettlementMutation(
           issuedById: userId,
           revision: { increment: 1 },
         };
-      } else {
+        if (invoice) {
+          nextVersion = 1;
+          newVersion = {
+            invoiceId: invoice.id,
+            version: 1,
+            title: invoice.title,
+            note: invoice.note,
+            dueAt: invoice.dueAt,
+            documentUrl: invoice.documentUrl,
+            issuedAt: data.issuedAt as Date,
+            issuedById: userId,
+            currency: invoice.currency,
+            amount: invoice.amount,
+            lineSnapshot: invoice.lineSnapshot as Prisma.InputJsonValue,
+          };
+        }
+      } else if (
+        input.action === "recordBrandPayment" ||
+        input.action === "recordAgencyPayment"
+      ) {
         if (
           document.status !== "ISSUED" ||
           !document.issuedAt ||
@@ -868,7 +1035,9 @@ export async function applyAdminSettlementMutation(
             "AMOUNT_MISMATCH",
             "외부 처리 금액과 통화가 발행 문서와 일치해야 합니다.",
           );
-        if (Date.parse(input.data.paidAt) < document.issuedAt.getTime())
+        const firstIssue =
+          invoice?.versions.at(-1)?.issuedAt ?? document.issuedAt;
+        if (Date.parse(input.data.paidAt) < firstIssue.getTime())
           settlementFail(
             400,
             "INVALID_PAYMENT_DATE",
@@ -883,9 +1052,17 @@ export async function applyAdminSettlementMutation(
           internalNote: input.data.internalNote,
           revision: { increment: 1 },
         };
+      } else {
+        settlementFail(404, "NOT_FOUND", "청구서를 찾을 수 없습니다.");
       }
       const changed = brandAction
-        ? await tx.brandInvoice.updateMany({ where, data })
+        ? await tx.brandInvoice.updateMany({
+            where,
+            data: {
+              ...data,
+              ...(nextVersion ? { documentVersion: nextVersion } : {}),
+            },
+          })
         : await tx.agencyPayout.updateMany({ where, data });
       if (changed.count !== 1)
         settlementFail(
@@ -893,7 +1070,17 @@ export async function applyAdminSettlementMutation(
           "STALE_SETTLEMENT",
           "다른 담당자가 정산 내역을 변경했습니다.",
         );
+      if (legacyVersion)
+        await tx.brandInvoiceVersion.create({ data: legacyVersion });
+      if (newVersion) await tx.brandInvoiceVersion.create({ data: newVersion });
       await audit(tx, userId, input.action, completionId, {
+        ...(input.action === "reissueBrandInvoice"
+          ? {
+              fromVersion: nextVersion - 1,
+              toVersion: nextVersion,
+              reason: input.reason,
+            }
+          : {}),
         campaignId: row.id,
         documentId: document.id,
         revision: document.revision + 1,

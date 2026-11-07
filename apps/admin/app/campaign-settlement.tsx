@@ -32,7 +32,7 @@ type Document = AdminBrandInvoice | AdminAgencyPayout;
 type Action =
   | { kind: "complete" | "prepare"; data: AdminSettlementResponse }
   | {
-      kind: "edit" | "issue" | "payment";
+      kind: "edit" | "issue" | "reissue" | "payment";
       document: Document;
       campaignId: string;
     };
@@ -222,6 +222,33 @@ function DocumentCard({
         <Status document={document} />
       </div>
       <PublicDocument document={document} />
+      {!payout && document.versions.length > 0 && (
+        <details className={s.internal}>
+          <summary>청구서 발행 이력 · 현재 v{document.documentVersion}</summary>
+          {document.versions.map((version) => (
+            <details key={version.version} className={s.historyEntry}>
+              <summary>
+                v{version.version} ·{" "}
+                {version.version === document.documentVersion
+                  ? "현재 발행본"
+                  : "이전 발행본"}{" "}
+                · {date(version.issuedAt)}
+              </summary>
+              {version.reason && <p>정정 사유 · {version.reason}</p>}
+              <PublicDocument
+                document={{
+                  ...document,
+                  ...version,
+                  paidAt:
+                    version.version === document.documentVersion
+                      ? document.paidAt
+                      : null,
+                }}
+              />
+            </details>
+          ))}
+        </details>
+      )}
       {document.internalNote || document.externalPaymentReference ? (
         <details className={s.internal}>
           <summary>
@@ -262,6 +289,16 @@ function DocumentCard({
             {payout ? "에이전시 발행 검토" : "브랜드 발행 검토"}
           </AdminButton>
         ) : null}
+        {!payout && document.canReissue && (
+          <AdminButton
+            type="button"
+            disabled={busy}
+            onClick={() => onAction({ ...base, kind: "reissue" })}
+          >
+            <Pencil size={15} />
+            청구서 정정·재발행
+          </AdminButton>
+        )}
         {document.canRecordPayment ? (
           <AdminButton
             type="button"
@@ -301,30 +338,38 @@ function DialogForm({
   const [internalNote, setInternalNote] = useState(
     document?.internalNote ?? "",
   );
+  const [reason, setReason] = useState("");
   const [paidAt, setPaidAt] = useState("");
   const [reference, setReference] = useState("");
   const [amount, setAmount] = useState("");
   const [localError, setLocalError] = useState("");
   const heading =
-    action.kind === "complete"
-      ? "캠페인 완료 확인"
-      : action.kind === "prepare"
-        ? "청구·지급 초안 준비"
-        : action.kind === "edit"
-          ? payout
-            ? "에이전시 지급 초안 편집"
-            : "브랜드 청구 초안 편집"
-          : action.kind === "issue"
+    action.kind === "reissue"
+      ? "브랜드 청구서 정정·재발행"
+      : action.kind === "complete"
+        ? "캠페인 완료 확인"
+        : action.kind === "prepare"
+          ? "청구·지급 초안 준비"
+          : action.kind === "edit"
             ? payout
-              ? "에이전시 지급 내역 발행"
-              : "브랜드 청구서 발행"
-            : payout
-              ? "외부 지급 완료 기록"
-              : "외부 입금 확인 기록";
+              ? "에이전시 지급 초안 편집"
+              : "브랜드 청구 초안 편집"
+            : action.kind === "issue"
+              ? payout
+                ? "에이전시 지급 내역 발행"
+                : "브랜드 청구서 발행"
+              : payout
+                ? "외부 지급 완료 기록"
+                : "외부 입금 확인 기록";
   const draft = (): SettlementDocumentInput => ({
     title,
     note,
-    dueAt: dueAt ? isoDate(dueAt) : null,
+    dueAt:
+      dueAt === localDate(document?.dueAt ?? null)
+        ? (document?.dueAt ?? null)
+        : dueAt
+          ? isoDate(dueAt)
+          : null,
     documentUrl: documentUrl.trim() || null,
     internalNote,
   });
@@ -354,6 +399,17 @@ function DialogForm({
     if (!("document" in action)) return;
     const doc = action.document,
       base = { campaignId: action.campaignId, expectedRevision: doc.revision };
+    if (action.kind === "reissue" && !isPayout(doc)) {
+      const { title, note, dueAt, documentUrl } = draft();
+      onSubmit({
+        ...base,
+        action: "reissueBrandInvoice",
+        invoiceId: doc.id,
+        reason,
+        data: { title, note, dueAt, documentUrl },
+      });
+      return;
+    }
     if (action.kind === "edit") {
       onSubmit(
         isPayout(doc)
@@ -394,7 +450,12 @@ function DialogForm({
       !Number.isFinite(paymentTime) ||
       paymentTime > Date.now() ||
       !doc.issuedAt ||
-      paymentTime < Date.parse(doc.issuedAt)
+      paymentTime <
+        Date.parse(
+          !isPayout(doc)
+            ? (doc.versions.at(-1)?.issuedAt ?? doc.issuedAt)
+            : doc.issuedAt,
+        )
     ) {
       setLocalError("처리 시각은 문서 발행 이후부터 현재 사이로 입력하세요.");
       return;
@@ -504,13 +565,14 @@ function DialogForm({
             </label>
           </>
         ) : null}
-        {document && action.kind === "edit" ? (
+        {document && (action.kind === "edit" || action.kind === "reissue") ? (
           <>
             <div className={s.notice}>
               <LockKeyhole size={18} />
               <p>
-                금액과 항목은 완료 시점의 승인 내역을 따릅니다. 이 초안은 발행
-                전까지 수신 조직에 보이지 않습니다.
+                {action.kind === "reissue"
+                  ? "승인된 금액과 항목을 유지하고 새 발행본을 브랜드에 전달합니다. 이전 발행본도 자료실에 보관합니다."
+                  : "금액과 항목은 완료 시점의 승인 내역을 따릅니다. 초안은 운영팀이 검토합니다."}
               </p>
             </div>
             <label className={s.field}>
@@ -552,15 +614,38 @@ function DialogForm({
                 onChange={(e) => setNote(e.target.value)}
               />
             </label>
-            <label className={s.field}>
-              내부 메모 · 운영팀 전용
-              <textarea
-                rows={3}
-                maxLength={2000}
-                value={internalNote}
-                onChange={(e) => setInternalNote(e.target.value)}
-              />
-            </label>
+            {action.kind === "reissue" ? (
+              <>
+                <label className={s.field}>
+                  브랜드에 공개할 정정 사유
+                  <textarea
+                    rows={3}
+                    required
+                    minLength={2}
+                    maxLength={1000}
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                  />
+                </label>
+                <label className={s.check}>
+                  <input type="checkbox" required />새 발행본의 내용과 공개
+                  사유를 확인했습니다.
+                </label>
+              </>
+            ) : (
+              <>
+                {" "}
+                <label className={s.field}>
+                  내부 메모 · 운영팀 전용
+                  <textarea
+                    rows={3}
+                    maxLength={2000}
+                    value={internalNote}
+                    onChange={(e) => setInternalNote(e.target.value)}
+                  />
+                </label>
+              </>
+            )}
             <PublicDocument
               document={document}
               draft={{
@@ -577,7 +662,10 @@ function DialogForm({
           <>
             <p className={s.notice}>
               발행하면 아래 내용이 {payout ? "해당 에이전시" : "브랜드"}에
-              공개됩니다. 발행 후 금액·항목·안내·참고 문서는 변경할 수 없습니다.
+              공개됩니다.{" "}
+              {payout
+                ? "발행본을 보관하고 외부 지급 결과를 기록합니다."
+                : "미입금 청구서의 안내·기한·문서 링크는 새 버전으로 정정할 수 있습니다."}
             </p>
             <PublicDocument document={document} />
             <label className={s.check}>
@@ -668,9 +756,11 @@ function DialogForm({
                 ? "비공개 초안 준비"
                 : action.kind === "edit"
                   ? "초안 저장"
-                  : action.kind === "issue"
-                    ? "확인한 내역 발행"
-                    : "외부 처리 완료 기록"}
+                  : action.kind === "reissue"
+                    ? "정정본 재발행"
+                    : action.kind === "issue"
+                      ? "확인한 내역 발행"
+                      : "외부 처리 완료 기록"}
         </AdminButton>
       </div>
     </form>
@@ -825,11 +915,13 @@ export function CampaignSettlement({
           ? "캠페인을 완료했습니다. 청구·지급 내역을 준비할 수 있습니다."
           : input.action === "prepare"
             ? "브랜드 청구서와 담당 에이전시별 지급 초안을 준비했습니다."
-            : input.action.startsWith("save")
-              ? "비공개 초안을 저장했습니다."
-              : input.action.startsWith("issue")
-                ? "확인한 내역을 수신 조직에 발행했습니다."
-                : "외부 처리 완료 사실을 기록했습니다. 송금·결제는 실행되지 않았습니다.",
+            : input.action === "reissueBrandInvoice"
+              ? "정정한 청구서를 브랜드에 재발행했습니다."
+              : input.action.startsWith("save")
+                ? "비공개 초안을 저장했습니다."
+                : input.action.startsWith("issue")
+                  ? "확인한 내역을 수신 조직에 발행했습니다."
+                  : "외부 처리 완료 사실을 기록했습니다. 송금·결제는 실행되지 않았습니다.",
       );
     } catch (failure) {
       setError(

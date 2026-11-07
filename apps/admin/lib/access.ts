@@ -32,10 +32,10 @@ export async function boundary(work: () => Promise<Response>) {
   } catch (error) {
     if (error instanceof AdminError)
       return json({ code: error.code, message: error.message }, error.status);
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      ["P2034", "P2002"].includes(error.code)
-    )
+    // Driver and route bundles can load different Prisma error constructors.
+    const code =
+      error && typeof error === "object" && "code" in error ? error.code : null;
+    if (code === "P2034" || code === "P2002")
       return json(
         {
           code: "CONFLICT",

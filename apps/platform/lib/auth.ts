@@ -2,6 +2,7 @@ import { getDatabase } from "@futures-medialab/database";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import { trustedPlatformOrigins } from "./platform-origins";
 import { organizationRegistration } from "./auth-registration";
 
 function createAuth() {
@@ -31,7 +32,7 @@ function createAuth() {
     secret,
     baseURL: url.origin,
     basePath: "/api/auth",
-    trustedOrigins: [url.origin],
+    trustedOrigins: trustedPlatformOrigins(url.origin),
     database: prismaAdapter(getDatabase(), {
       provider: "postgresql",
       transaction: true,

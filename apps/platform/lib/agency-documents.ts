@@ -4,6 +4,7 @@ import { getDatabase, Prisma } from "@futures-medialab/database";
 import { BlobNotFoundError, get, head } from "@vercel/blob";
 import { handleUpload } from "@vercel/blob/client";
 import { z } from "zod";
+import { allowsPlatformWrite } from "./platform-origins";
 import { getAuth } from "./auth";
 
 type Transaction = Prisma.TransactionClient;
@@ -100,8 +101,7 @@ function applicationOrigin() {
   return new URL(base).origin;
 }
 function requireOrigin(request: Request) {
-  const site = request.headers.get("sec-fetch-site");
-  if (request.headers.get("origin") !== applicationOrigin() || (site !== null && site !== "same-origin")) {
+  if (!allowsPlatformWrite(request.headers, applicationOrigin())) {
     fail(403, "INVALID_ORIGIN", "This request is not allowed.");
   }
 }

@@ -29,6 +29,8 @@ export const adminNavigation = [
   { key: "users", label: "사용자 관리", icon: IconPersons },
   { key: "organizations", label: "조직 · 심사 관리", icon: IconCompany },
   { key: "campaigns", label: "캠페인 · 신청 관리", icon: IconMegaphone },
+  { key: "intake", label: "대리 접수", icon: IconInbox },
+  { key: "creators", label: "내부 크리에이터 DB", icon: IconPersons },
   { key: "requests", label: "브랜드 요청함", icon: IconInbox },
   { key: "audit", label: "변경 이력", icon: IconHistory },
 ] as const;

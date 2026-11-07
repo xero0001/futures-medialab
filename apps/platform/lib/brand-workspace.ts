@@ -1,4 +1,9 @@
 import {
+  campaignFieldsFromBrief,
+  createInitialIntake,
+  isValidRecruitmentDeadline,
+} from "@futures-medialab/database/brand-intake";
+import {
   originalProposalDeadline,
   requestWaitingFor,
 } from "@futures-medialab/database/request-workflow";
@@ -541,12 +546,7 @@ function assertFutureDeadline(
   value: string | null | undefined,
   desiredDate?: string,
 ) {
-  if (
-    value &&
-    (Date.parse(value) <= Date.now() ||
-      (desiredDate &&
-        Date.parse(value) >= Date.parse(`${desiredDate}T00:00:00.000+09:00`)))
-  )
+  if (value && !isValidRecruitmentDeadline(value, desiredDate))
     fail(
       400,
       "INVALID_DEADLINE",
@@ -639,47 +639,13 @@ async function createIntake(
       originalProposalDueAt: originalDueAt,
     };
   }
-  const request = await tx.workspaceToolRequest.create({
-    data: {
-      organizationId,
-      userId,
-      campaignId: campaign.id,
-      tool: "campaign",
-      title: `${campaign.title} · 캠페인 의뢰`.slice(0, 160),
-      inputJson: {
-        input: campaign.summary,
-        kind: "campaign-intake",
-        waitingFor: null,
-        operatorReplyPending: false,
-        originalProposalDueAt: dueAt?.toISOString() ?? null,
-        firstSubmittedAt: now.toISOString(),
-        submittedAt: now.toISOString(),
-        route: campaign.type === "MANAGED" ? "managed" : "open",
-      },
-      status: "REQUESTED",
-      dueAt,
-    },
-    select: { id: true },
+  return createInitialIntake(tx, {
+    organizationId,
+    requesterId: userId,
+    actorId: userId,
+    campaign,
+    now,
   });
-  await tx.auditLog.create({
-    data: {
-      actorId: userId,
-      action: "request.created",
-      entityType: "WorkspaceToolRequest",
-      entityId: request.id,
-      payload: {
-        public: true,
-        publicDetail: "캠페인 의뢰가 접수되었습니다.",
-        detail: "브랜드 캠페인 의뢰 접수",
-      },
-    },
-  });
-  return {
-    requestId: request.id,
-    submittedAt: now.toISOString(),
-    proposalDueAt: dueAt?.toISOString() ?? null,
-    originalProposalDueAt: dueAt?.toISOString() ?? null,
-  };
 }
 
 export function mutateBrandCampaign(request: Request) {
@@ -899,24 +865,7 @@ export function mutateBrandCampaign(request: Request) {
             "INVALID_DEADLINE",
             "오픈 캠페인의 모집 마감일을 입력해 주세요.",
           );
-        const {
-          genre,
-          goal,
-          contentFormat,
-          creatorCount,
-          desiredDate,
-          note,
-          compositionPreference,
-        } = input;
-        const brief = {
-          genre,
-          goal,
-          contentFormat,
-          creatorCount,
-          desiredDate,
-          note,
-          compositionPreference,
-        };
+        const { brief, values } = campaignFieldsFromBrief(input);
         const payloadHash = createHash("sha256")
           .update(JSON.stringify({ ...input, clientRequestId: undefined }))
           .digest("hex");
@@ -973,37 +922,6 @@ export function mutateBrandCampaign(request: Request) {
             } satisfies BrandCampaignCreated;
           }
         }
-        const values = {
-          title: input.title,
-          summary: [
-            goal,
-            [
-              genre,
-              contentFormat,
-              creatorCount > 0 ? `희망 ${creatorCount}명` : "",
-            ]
-              .filter(Boolean)
-              .join(" · "),
-            note,
-          ]
-            .filter(Boolean)
-            .join("\n\n"),
-          type:
-            input.route === "managed"
-              ? ("MANAGED" as const)
-              : ("OPEN_BIDDING" as const),
-          currency: input.currency,
-          budgetAmount: input.budgetAmount || null,
-          platforms: input.platforms,
-          regions: input.regions,
-          contentDeadline: input.desiredDate
-            ? new Date(`${input.desiredDate}T00:00:00.000Z`)
-            : null,
-          applicationDeadline:
-            input.route === "open" && input.applicationDeadline
-              ? new Date(input.applicationDeadline)
-              : null,
-        };
         if ("id" in input && input.id) {
           const campaign = await tx.campaign.findFirst({
             where: { id: input.id, brandOrganizationId: organizationId },

@@ -89,6 +89,14 @@ export function AdminCampaignWorkspace({
   const c = detail.campaign,
     brief = object(object(detail.requirements).brandBrief),
     intake = detail.intakeSummary;
+  const delegation = object(object(detail.requirements).delegatedIntake);
+  const channelLabels: Record<string, string> = {
+    email: "이메일",
+    meeting: "미팅",
+    phone: "전화",
+    messenger: "메신저",
+    other: "기타",
+  };
   const status =
     c.type === "MANAGED" && c.status === "RECRUITING"
       ? "소싱 중"
@@ -155,6 +163,28 @@ export function AdminCampaignWorkspace({
                     <dt>접수 의뢰</dt>
                     <dd>{intakeLabel}</dd>
                   </div>
+                  {content(delegation.requestId) && (
+                    <>
+                      <div>
+                        <dt>실제 의뢰자</dt>
+                        <dd>{content(delegation.requesterName)}</dd>
+                      </div>
+                      <div>
+                        <dt>대리 접수 운영자</dt>
+                        <dd>{content(delegation.registeredByName)}</dd>
+                      </div>
+                      <div>
+                        <dt>최종 광고주</dt>
+                        <dd>{content(delegation.finalAdvertiserName)}</dd>
+                      </div>
+                      <div>
+                        <dt>접수 경로</dt>
+                        <dd>
+                          {channelLabels[content(delegation.channel)] ?? "기타"}
+                        </dd>
+                      </div>
+                    </>
+                  )}
                   <div>
                     <dt>운영 담당자</dt>
                     <dd>{intake?.assigneeName ?? "미배정"}</dd>

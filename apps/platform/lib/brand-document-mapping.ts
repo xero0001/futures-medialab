@@ -1,6 +1,9 @@
 import type { BrandProposal } from "@futures-medialab/database/proposal-types";
 import type { BrandReportingSubmission } from "@futures-medialab/database/reporting-types";
-import type { BrandInvoice } from "@futures-medialab/database/settlement-types";
+import type {
+  BrandInvoice,
+  BrandInvoiceVersion,
+} from "@futures-medialab/database/settlement-types";
 import type { BrandDocument } from "./brand-document-types";
 
 const campaignHref = (id: string, tab: string) =>
@@ -86,25 +89,43 @@ export function reportDocument(row: {
     },
   };
 }
-export function invoiceDocument(invoice: BrandInvoice): BrandDocument | null {
+export function invoiceDocument(
+  current: BrandInvoice,
+  snapshot?: BrandInvoiceVersion,
+): BrandDocument | null {
+  const version = snapshot?.version ?? current.documentVersion ?? 1;
+  const isLatest = version === (current.documentVersion ?? 1);
+  const invoice = {
+    ...current,
+    ...snapshot,
+    documentVersion: version,
+    versions: [],
+  };
   if (!invoice.issuedAt || !["ISSUED", "PAID"].includes(invoice.status))
     return null;
   return {
-    id: `invoice:${invoice.id}`,
+    id: `invoice:${invoice.id}:v${version}`,
     kind: "invoice",
     title: invoice.title,
     campaignId: invoice.campaignId,
     campaignTitle: invoice.campaignTitle,
     publishedAt: invoice.issuedAt,
-    // Revision also changes when an external payment is recorded. It is not a document version.
-    version: null,
-    status: invoice.status,
-    isLatest: true,
+    version,
+    status: isLatest ? invoice.status : "SUPERSEDED",
+    isLatest,
     summary: invoice.note,
+    correctionReason: snapshot?.reason ?? null,
     sourceHref: campaignHref(invoice.campaignId, "settlement"),
     file: externalFile(invoice.documentUrl, invoice.title),
     invoice,
   };
+}
+
+export function invoiceDocuments(invoice: BrandInvoice): BrandDocument[] {
+  const rows = invoice.versions?.length
+    ? invoice.versions.map((version) => invoiceDocument(invoice, version))
+    : [invoiceDocument(invoice)];
+  return rows.filter((row): row is BrandDocument => Boolean(row));
 }
 
 export type PublishedAttachment = {
