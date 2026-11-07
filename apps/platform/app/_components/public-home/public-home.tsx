@@ -31,6 +31,10 @@ import styles from "./public-home.module.css";
 
 const stepIcons = [IconDocumentText, IconPersons, IconCheck];
 const partnerIcons = [IconGlobe, IconMegaphone];
+const partnerArtwork = [
+  "/partner-art/brand-partners.webp",
+  "/partner-art/creator-partners.webp",
+];
 const finalArtwork = [
   "/campaign-art/games/genshin.webp",
   "/campaign-art/games/star-rail.webp",
@@ -273,56 +277,63 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
             className={`${styles.container} ${styles.section}`}
             aria-labelledby="partners-title"
           >
-            <p className={styles.eyebrow}>{t.partners.eyebrow}</p>
-            <Typography
-              as="h2"
-              variant="title1"
-              weight="bold"
-              id="partners-title"
-              className={styles.sectionTitle}
-            >
-              {t.partners.title}
-            </Typography>
-            <p className={styles.sectionBody}>{t.partners.body}</p>
+            <div className={styles.partnerHeading}>
+              <Typography
+                as="h2"
+                variant="title1"
+                weight="bold"
+                id="partners-title"
+                className={styles.partnerHeadingTitle}
+              >
+                {t.partners.title}
+              </Typography>
+              <p>{t.partners.body}</p>
+            </div>
             <div className={styles.partnerGrid}>
-              {t.partners.items.map((partner, index) => {
-                const Icon = partnerIcons[index]!;
-                return (
-                  <article key={index} className={styles.partnerCard}>
-                    <div className={styles.partnerTop}>
-                      <p className={styles.partnerLabel}>{partner.label}</p>
-                      <Icon aria-hidden="true" />
-                    </div>
+              {t.partners.items.map((partner, index) => (
+                <a
+                  key={index}
+                  className={styles.partnerCard}
+                  href={destinations[index]}
+                  aria-labelledby={`partner-label-${index} partner-title-${index}`}
+                  aria-describedby={`partner-body-${index}`}
+                >
+                  <Image
+                    className={styles.partnerImage}
+                    src={partnerArtwork[index]!}
+                    alt=""
+                    fill
+                    sizes="(max-width: 600px) calc(100vw - 40px), (max-width: 760px) 560px, (max-width: 1260px) calc((100vw - 104px) / 2), 578px"
+                  />
+                  <p
+                    className={styles.partnerLabel}
+                    id={`partner-label-${index}`}
+                  >
+                    {partner.label}
+                  </p>
+                  <div className={styles.partnerContent}>
                     <Typography
                       as="h3"
                       variant="title2"
                       weight="bold"
+                      id={`partner-title-${index}`}
                       className={styles.partnerTitle}
                     >
                       {partner.title}
                     </Typography>
-                    <p className={styles.partnerBody}>{partner.body}</p>
-                    <ul className={styles.featureList}>
-                      {partner.features.map((feature) => (
-                        <li key={feature}>
-                          <IconCheck aria-hidden="true" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                    <Button
-                      as="a"
-                      href={destinations[index]}
-                      size="large"
-                      variant={index === 0 ? "solid" : "outlined"}
-                      color={index === 0 ? "primary" : "assistive"}
-                      trailingContent={<IconArrowRight />}
+                    <p
+                      className={styles.partnerBody}
+                      id={`partner-body-${index}`}
                     >
+                      {partner.body}
+                    </p>
+                    <span className={styles.partnerAction}>
                       {partner.cta}
-                    </Button>
-                  </article>
-                );
-              })}
+                      <IconArrowRight aria-hidden="true" />
+                    </span>
+                  </div>
+                </a>
+              ))}
             </div>
           </section>
           <section

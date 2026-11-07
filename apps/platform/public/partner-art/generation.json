@@ -1,0 +1,16 @@
+{
+  "createdAt": "2026-11-08",
+  "method": "Built-in image generation tool",
+  "purpose": "Original decorative art for homepage brand and creator partner cards",
+  "assets": [
+    {
+      "file": "brand-partners.webp",
+      "prompt": "Create one original cinematic editorial image for a premium Korean game-marketing website card. Use case: ads-marketing. Landscape 3:2 composition. A quiet, dark game publishing creative studio: one softly silhouetted campaign producer seen from behind, an expansive luminous display with an abstract fantasy landscape made of blue and cyan light, subtle glass reflections. Main visual interest in the upper half and right side; lower 45 percent fades into uncluttered deep charcoal, reserved for white HTML typography to be added later. Atmospheric analog film grain, soft focus, restrained chromatic light spill, natural photographic texture, sophisticated and minimal. Mostly near-black with muted cobalt and teal accents. A single evocative scene, not a collage. No rendered text, lettering, numbers, UI labels, logos, watermark, borders or rounded corners. No recognizable game characters. Deliver an image asset, not a webpage mockup."
+    },
+    {
+      "file": "creator-partners.webp",
+      "prompt": "Create one original cinematic editorial image for a premium Korean game-marketing website card. Use case: ads-marketing. Landscape 3:2 composition. An intimate content-creation studio: one creator in soft silhouette viewed from behind at a slight angle, with a small camera on a stand and a subtle microphone shape, facing an atmospheric projection of amber and soft vermilion light. Suggest recording and creative collaboration through light and composition, with no detailed interface. Main visual interest in the upper half and right side; lower 45 percent fades into uncluttered deep charcoal, reserved for white HTML typography to be added later. Atmospheric analog film grain, soft focus, restrained chromatic light spill, natural photographic texture, sophisticated and minimal. Mostly near-black with warm muted amber and red accents. A single evocative scene, not a collage. No rendered text, lettering, numbers, UI labels, logos, watermark, borders or rounded corners. Deliver an image asset, not a webpage mockup."
+    }
+  ],
+  "processing": "Encoded as 1152px-wide WebP for website delivery. Original generated PNGs retained."
+}
