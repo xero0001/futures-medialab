@@ -4,8 +4,20 @@
   gap: 32px;
   min-width: 0;
 }
-.panel,
 .progressPanel {
+  min-width: 0;
+}
+.progressPanel .panelHeader {
+  padding: 0 0 20px;
+}
+.progressPanel
+  :is(.stageList, .progressFacts, .waitingRequests, .privacyNote, .expiryHelp) {
+  padding-inline: 0;
+}
+.progressPanel .nextAction {
+  margin-inline: 0;
+}
+.panel {
   min-width: 0;
   border: 1px solid var(--brand-line, #e5e5e7);
   border-radius: 16px;
