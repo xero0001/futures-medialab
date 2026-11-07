@@ -743,7 +743,7 @@ export function AgencyMarketplace({
                             sizes={
                               view === "list"
                                 ? "(max-width: 560px) 100vw, 230px"
-                                : "(max-width: 560px) 100vw, (max-width: 1000px) 50vw, (max-width: 1180px) 33vw, 25vw"
+                                : "(max-width: 640px) 100vw, (max-width: 1199px) 50vw, 33vw"
                             }
                           />
                           <span className="cwa-art-shade" aria-hidden="true" />
@@ -780,16 +780,6 @@ export function AgencyMarketplace({
                       )}
                     </button>
                     <div className="cwa-offer-body">
-                      <div className="cwa-offer-meta">
-                        <span>
-                          {campaign.categories.map(categoryName).join(" / ") ||
-                            copy.allCategories}
-                        </span>
-                        <span>
-                          <CalendarDays size={14} aria-hidden="true" />
-                          {date(campaign.applicationDeadline, locale)}
-                        </span>
-                      </div>
                       <h2>
                         <button
                           type="button"
@@ -803,6 +793,16 @@ export function AgencyMarketplace({
                           .map((value) => platformLabels[value] ?? value)
                           .join(" · ")}
                       </p>
+                      <div className="cwa-offer-meta">
+                        <span>
+                          {campaign.categories.map(categoryName).join(" / ") ||
+                            copy.allCategories}
+                        </span>
+                        <span>
+                          <CalendarDays size={14} aria-hidden="true" />
+                          {date(campaign.applicationDeadline, locale)}
+                        </span>
+                      </div>
                       <div className="cwa-offer-tags">
                         <span>
                           <Users size={14} aria-hidden="true" />

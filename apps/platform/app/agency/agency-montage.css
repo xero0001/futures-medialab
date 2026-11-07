@@ -198,7 +198,79 @@
 }
 .agency-montage .cwa-marketplace .cwa-offers-board {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px;
+  gap: 36px 24px;
+}
+.agency-montage .cwa-marketplace .cwa-offers-board .cwa-offer {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.agency-montage .cwa-marketplace .cwa-offers-board .cwa-offer-art {
+  display: block;
+  width: 100%;
+  margin: 0;
+  aspect-ratio: 3 / 2;
+  border-radius: 12px;
+}
+.agency-montage .cwa-marketplace .cwa-offers-board .cwa-offer-body {
+  padding: 12px 6px 0;
+}
+.agency-montage .cwa-marketplace .cwa-offers-board .cwa-offer h2 {
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+.agency-montage .cwa-marketplace .cwa-offers-board .cwa-offer h2 > button {
+  min-height: 0;
+}
+.agency-montage .cwa-marketplace .cwa-offers-board .cwa-offer-platforms {
+  margin: 0 0 4px;
+  font-size: 14px;
+  line-height: 22px;
+}
+.agency-montage .cwa-marketplace .cwa-offers-board .cwa-offer-meta {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-bottom: 4px;
+  color: var(--agency-muted);
+}
+.agency-montage .cwa-marketplace .cwa-offers-board .cwa-offer-tags {
+  gap: 8px;
+}
+.agency-montage .cwa-marketplace .cwa-offers-board .cwa-offer-tags > span {
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  font-size: 13px;
+  line-height: 20px;
+}
+.agency-montage .cwa-marketplace .cwa-offers-board .cwa-offer-footer {
+  margin-top: 8px;
+  padding-top: 0;
+  border: 0;
+}
+.agency-montage .cwa-marketplace .cwa-offers-board .cwa-offer-footer > div {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.agency-montage .cwa-marketplace .cwa-offers-board .cwa-offer-footer strong {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  letter-spacing: normal;
+  color: var(--agency-muted);
+}
+.agency-montage .cwa-marketplace .cwa-offers-board .cwa-card-action {
+  background: transparent;
+  color: var(--agency-muted);
+}
+.agency-montage .cwa-marketplace .cwa-offers-board .cwa-card-action:hover {
+  background: var(--agency-soft);
+  color: var(--agency-blue);
 }
 .agency-montage .cwa-marketplace .cwa-offers-list {
   grid-template-columns: minmax(0, 1fr);

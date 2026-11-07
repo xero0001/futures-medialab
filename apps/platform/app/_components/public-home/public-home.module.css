@@ -270,12 +270,12 @@
 }
 .campaignTrack {
   display: flex;
-  gap: 24px;
   touch-action: pan-y pinch-zoom;
 }
 .campaignSlide {
-  flex: 0 0 44%;
+  flex: 0 0 280px;
   min-width: 0;
+  margin-right: 24px;
 }
 .campaignCard {
   padding: 0;
@@ -288,18 +288,6 @@
 .campaignCard img {
   user-select: none;
   -webkit-user-drag: none;
-}
-.campaignControls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 24px;
-}
-.campaignNavigation {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 .disclaimer {
   margin-top: 20px !important;
@@ -683,7 +671,7 @@
     font-size: 29px !important;
   }
   .campaignSlide {
-    flex-basis: 58%;
+    flex-basis: 260px;
   }
   .steps {
     gap: 26px;
@@ -822,14 +810,9 @@
   .sectionHeading {
     margin-bottom: 24px;
   }
-  .campaignTrack {
-    gap: 16px;
-  }
   .campaignSlide {
-    flex-basis: 86%;
-  }
-  .campaignControls {
-    margin-top: 18px;
+    flex-basis: min(240px, 78vw);
+    margin-right: 16px;
   }
   .disclaimer {
     font-size: 11px;

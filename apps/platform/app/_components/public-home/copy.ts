@@ -38,16 +38,11 @@ const ko = {
     title: "다음 협업을 상상해보세요",
     carousel: "캐러셀",
     slide: "슬라이드",
-    pagination: "게임 카드 페이지",
-    previous: "이전 게임 보기",
-    next: "다음 게임 보기",
-    pause: "자동 넘김 일시정지",
-    play: "자동 넘김 재생",
     concept: "캠페인 콘셉트",
+    spotlight: "게임 스포트라이트",
+    official: "공식 게임 소개",
     action: "콘셉트 살펴보기",
     access: "파트너로 참여하기",
-    disclaimer:
-      "아래는 가상의 캠페인 아이디어이며, 실제 모집 공고나 확정된 브랜드 협업이 아닙니다.",
     close: "상세 닫기",
     platform: "콘텐츠 채널 예시",
     market: "타깃 시장",
@@ -57,6 +52,62 @@ const ko = {
   },
   campaigns: [
     {
+      id: "genshin",
+      title: "원신",
+      genre: "오픈월드 RPG",
+      body: "티바트의 풍경과 원소 전투, 캐릭터의 이야기를 탐험 콘텐츠로 풀어냅니다.",
+      ideas: [
+        "지역 탐험과 숨은 명소",
+        "원소 반응 플레이 가이드",
+        "캐릭터 스토리 리액션",
+      ],
+    },
+    {
+      id: "star-rail",
+      title: "붕괴: 스타레일",
+      genre: "턴제 RPG",
+      body: "은하열차를 타고 만나는 세계와 동료들. 스토리 감상과 전략적인 파티 플레이를 연결합니다.",
+      ideas: [
+        "개척 임무 스토리 감상",
+        "캐릭터와 파티 조합 소개",
+        "턴제 전투 전략 가이드",
+      ],
+    },
+    {
+      id: "wuthering-waves",
+      title: "명조: 워더링 웨이브",
+      genre: "오픈월드 액션 RPG",
+      body: "솔라리스의 탐험과 속도감 있는 전투. 공명자들의 액션을 생생한 플레이로 전합니다.",
+      ideas: [
+        "오픈월드 탐험 라이브",
+        "회피와 반격 플레이 가이드",
+        "공명자 조합과 전투 하이라이트",
+      ],
+    },
+    {
+      id: "zenless",
+      title: "젠레스 존 제로",
+      genre: "어반 판타지 액션 RPG",
+      body: "뉴에리두의 일상과 공동 속 전투. 개성 있는 캐릭터와 연계 액션을 콘텐츠로 소개합니다.",
+      ideas: [
+        "뉴에리두 첫 탐방",
+        "캐릭터 연계 액션 가이드",
+        "전투 하이라이트 숏폼",
+      ],
+    },
+    {
+      id: "nte",
+      title: "이환",
+      genre: "어반 오픈월드 RPG",
+      body: "초자연적인 사건과 도시의 일상이 만나는 세계. 크리에이터의 시선으로 새로운 도시를 탐험합니다.",
+      ideas: [
+        "도시 탐험과 일상 플레이",
+        "초자연 사건 스토리 리액션",
+        "캐릭터 첫인상 콘텐츠",
+      ],
+    },
+    {
+      id: "mmorpg",
       title: "잿빛 왕관",
       genre: "MMORPG",
       body: "길드의 첫 만남부터 대규모 공성전까지. 함께 플레이하며 만들어가는 모험을 콘텐츠로 전합니다.",
@@ -67,6 +118,7 @@ const ko = {
       ],
     },
     {
+      id: "subculture",
       title: "아스테리아 프로토콜",
       genre: "서브컬처 RPG",
       body: "취향을 사로잡는 캐릭터와 몰입감 있는 이야기. 첫인상과 스토리 리액션으로 게임의 매력을 전합니다.",
@@ -77,6 +129,7 @@ const ko = {
       ],
     },
     {
+      id: "survival",
       title: "프로스트 프런티어",
       genre: "생존 전략",
       body: "얼어붙은 세계에서 시작하는 나만의 기지. 생존을 위한 선택과 도전을 시청자와 함께합니다.",
@@ -148,7 +201,7 @@ const ko = {
       {
         question: "메인페이지의 캠페인은 실제 모집 중인가요?",
         answer:
-          "메인페이지의 캠페인은 협업 방식을 보여주는 가상 콘셉트입니다. 실제 모집 공고나 확정된 협업이 아니며, 실제 캠페인은 승인 후 서비스에서 확인할 수 있습니다.",
+          "메인페이지는 게임별 콘텐츠와 협업 아이디어를 소개합니다. 실제 모집 중인 캠페인은 승인 후 서비스에서 확인할 수 있습니다.",
       },
       {
         question: "캠페인은 어떤 과정을 거쳐 공개되나요?",
@@ -212,16 +265,11 @@ const en: HomeCopy = {
     title: "Imagine your next collaboration.",
     carousel: "carousel",
     slide: "slide",
-    pagination: "Game card pages",
-    previous: "Previous game",
-    next: "Next game",
-    pause: "Pause autoplay",
-    play: "Start autoplay",
     concept: "Campaign concept",
+    spotlight: "Game spotlight",
+    official: "Official game website",
     action: "Explore this concept",
     access: "Join as a partner",
-    disclaimer:
-      "These are fictional campaign ideas, not open offers or confirmed brand partnerships.",
     close: "Close concept",
     platform: "Example channels",
     market: "Target market",
@@ -231,6 +279,62 @@ const en: HomeCopy = {
   },
   campaigns: [
     {
+      id: "genshin",
+      title: "Genshin Impact",
+      genre: "Open-world RPG",
+      body: "Explore Teyvat through its landscapes, elemental combat and character stories.",
+      ideas: [
+        "World exploration and hidden locations",
+        "Elemental reaction guides",
+        "Character story reactions",
+      ],
+    },
+    {
+      id: "star-rail",
+      title: "Honkai: Star Rail",
+      genre: "Turn-based RPG",
+      body: "Follow the Astral Express through new worlds, stories and strategic team battles.",
+      ideas: [
+        "Trailblaze story reactions",
+        "Character and team introductions",
+        "Turn-based combat guides",
+      ],
+    },
+    {
+      id: "wuthering-waves",
+      title: "Wuthering Waves",
+      genre: "Open-world action RPG",
+      body: "Discover Solaris through exploration and fast-paced Resonator combat.",
+      ideas: [
+        "Open-world exploration streams",
+        "Dodge and counter guides",
+        "Resonator teams and combat highlights",
+      ],
+    },
+    {
+      id: "zenless",
+      title: "Zenless Zone Zero",
+      genre: "Urban fantasy action RPG",
+      body: "Discover daily life in New Eridu and stylish team combat inside the Hollows.",
+      ideas: [
+        "First impressions of New Eridu",
+        "Character combo guides",
+        "Short-form combat highlights",
+      ],
+    },
+    {
+      id: "nte",
+      title: "Neverness to Everness",
+      genre: "Urban open-world RPG",
+      body: "Explore a city where supernatural encounters meet everyday life.",
+      ideas: [
+        "City exploration and daily life",
+        "Supernatural story reactions",
+        "Character first impressions",
+      ],
+    },
+    {
+      id: "mmorpg",
       title: "Crown of Ashes",
       genre: "MMORPG",
       body: "From a guild's first gathering to epic sieges. Bring shared adventures to life through creator-led play.",
@@ -241,6 +345,7 @@ const en: HomeCopy = {
       ],
     },
     {
+      id: "subculture",
       title: "Asteria Protocol",
       genre: "Anime RPG",
       body: "Memorable characters and immersive stories. Share a game's appeal through first impressions and story reactions.",
@@ -251,6 +356,7 @@ const en: HomeCopy = {
       ],
     },
     {
+      id: "survival",
       title: "Frost Frontier",
       genre: "Survival strategy",
       body: "Build a haven in a frozen world. Turn survival decisions and base-building challenges into stories with your viewers.",
@@ -322,7 +428,7 @@ const en: HomeCopy = {
       {
         question: "Are these campaigns open for applications?",
         answer:
-          "The campaigns on this page are fictional concepts that illustrate possible collaborations. They are not open offers or confirmed partnerships. Actual campaigns are available within the service after approval.",
+          "The homepage introduces game content and collaboration ideas. Campaigns currently accepting applications are available within the service after approval.",
       },
       {
         question: "How does a campaign get published?",
@@ -384,15 +490,11 @@ const zh: HomeCopy = {
     title: "想象下一次精彩合作。",
     carousel: "轮播",
     slide: "幻灯片",
-    pagination: "游戏卡片分页",
-    previous: "上一个游戏",
-    next: "下一个游戏",
-    pause: "暂停自动播放",
-    play: "开始自动播放",
     concept: "营销概念",
+    spotlight: "游戏精选",
+    official: "游戏官网",
     action: "查看创意详情",
     access: "申请成为合作伙伴",
-    disclaimer: "以下为虚构的营销创意，非实际招募项目或已确认的品牌合作。",
     close: "关闭详情",
     platform: "内容渠道示例",
     market: "目标市场",
@@ -402,18 +504,56 @@ const zh: HomeCopy = {
   },
   campaigns: [
     {
+      id: "genshin",
+      title: "原神",
+      genre: "开放世界 RPG",
+      body: "通过提瓦特的风景、元素战斗与角色故事，呈现探索的乐趣。",
+      ideas: ["区域探索与隐藏景点", "元素反应玩法指南", "角色剧情反应"],
+    },
+    {
+      id: "star-rail",
+      title: "崩坏：星穹铁道",
+      genre: "回合制 RPG",
+      body: "搭乘星穹列车，体验不同世界的故事与富有策略的队伍战斗。",
+      ideas: ["开拓任务剧情体验", "角色与队伍搭配介绍", "回合制战斗策略"],
+    },
+    {
+      id: "wuthering-waves",
+      title: "鸣潮",
+      genre: "开放世界动作 RPG",
+      body: "探索索拉里斯，以流畅的实机内容展现共鸣者的战斗魅力。",
+      ideas: ["开放世界探索直播", "闪避与反击指南", "共鸣者搭配与战斗集锦"],
+    },
+    {
+      id: "zenless",
+      title: "绝区零",
+      genre: "都市幻想动作 RPG",
+      body: "从新艾利都的日常到空洞中的战斗，展现鲜明角色与连携动作。",
+      ideas: ["新艾利都初体验", "角色连携动作指南", "战斗精彩短视频"],
+    },
+    {
+      id: "nte",
+      title: "异环",
+      genre: "都市开放世界 RPG",
+      body: "超自然事件与都市日常交织，以创作者的视角探索这座城市。",
+      ideas: ["都市探索与日常体验", "超自然剧情反应", "角色初印象内容"],
+    },
+    {
+      id: "mmorpg",
       title: "灰烬王冠",
       genre: "MMORPG",
       body: "从公会初聚到大规模攻城战，以创作者的共同冒险呈现游戏世界。",
       ideas: ["创作者公会体验", "攻城战实况直播", "角色成长指南"],
     },
     {
+      id: "subculture",
       title: "星辉协议",
       genre: "二次元 RPG",
       body: "令人难忘的角色与沉浸式剧情，通过初体验和剧情反应展现游戏魅力。",
       ideas: ["新角色初体验", "剧情反应内容", "队伍搭配与玩法指南"],
     },
     {
+      id: "survival",
       title: "霜境前线",
       genre: "生存策略",
       body: "在冰封世界建造自己的基地，与观众一起面对生存抉择与挑战。",
@@ -481,7 +621,7 @@ const zh: HomeCopy = {
       {
         question: "首页的项目正在招募吗？",
         answer:
-          "首页展示的是用于说明合作方式的虚构营销概念，并非实际招募或已确认的合作。真实项目可在机构获批后于服务内查看。",
+          "首页介绍游戏内容与合作创意。正在招募的项目可在机构获批后于服务内查看。",
       },
       {
         question: "营销项目如何发布？",
