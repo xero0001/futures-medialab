@@ -176,12 +176,7 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
                 </Typography>
                 <p className={styles.heroBody}>{t.hero.body}</p>
                 <div className={styles.actions}>
-                  <Button
-                    as="a"
-                    href={buyerHref}
-                    size="large"
-                    trailingContent={<IconArrowRight />}
-                  >
+                  <Button as="a" href={buyerHref} size="large">
                     {t.hero.primary}
                   </Button>
                   <TextButton
@@ -189,7 +184,6 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
                     href={partnerHref}
                     size="medium"
                     color="assistive"
-                    trailingContent={<IconArrowRight />}
                   >
                     {t.hero.secondary}
                   </TextButton>
@@ -197,7 +191,7 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
               </div>
               <div className={styles.heroArt} aria-hidden="true">
                 <Image
-                  src="/landing/creator-world-montage.webp"
+                  src="/landing/creator-world-mint.webp"
                   alt=""
                   width={1536}
                   height={1024}
@@ -232,10 +226,7 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
             })}
           </div>
           <CampaignIdeas t={t} />
-          <section
-            id="how-it-works"
-            aria-labelledby="workflow-title"
-          >
+          <section id="how-it-works" aria-labelledby="workflow-title">
             <div className={`${styles.container} ${styles.section}`}>
               <Typography
                 as="h2"

@@ -121,8 +121,8 @@
   background: linear-gradient(
     110deg,
     #fff 15%,
-    var(--atomic-blue-99) 65%,
-    var(--atomic-blue-95) 100%
+    #f1faf9 65%,
+    #e8f6f4 100%
   );
   overflow: hidden;
 }

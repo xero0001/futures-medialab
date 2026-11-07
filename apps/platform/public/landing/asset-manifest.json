@@ -19,6 +19,15 @@
       "mode": "edit",
       "prompt": "Preserve the game controller, video tile, megaphone, translucent ribbon, pearl spheres and podium composition. Replace lavender, purple and pink with Wanted electric blue #0066FF, cobalt #0052CC, pale ice blue, silver and white. Deep navy controller buttons. Premium polished 3D illustration, generous breathing room, no text or logos. Transparent background.",
       "transparent_background": true
+    },
+    {
+      "file": "creator-world-mint.webp",
+      "purpose": "Public home hero — soft mint and muted teal palette",
+      "source": "creator-world-montage.webp",
+      "mode": "edit",
+      "reference": "User-provided mint paper-and-pencil illustration, used for palette and material mood only",
+      "prompt": "Edit Image 1, the existing game marketing hero illustration. Image 2 is a COLOR PALETTE AND MATERIAL MOOD REFERENCE ONLY. Preserve Image 1's composition, object identities, placements, silhouettes, camera angle, proportions and 3:2 landscape canvas: floating game controller at center, play icon upper left, megaphone upper right, looping translucent ribbon, stars, cubes, spheres and round pedestal. Recolor the vivid saturated electric blue plastic to a calm mint, seafoam and muted turquoise palette inspired by Image 2: pale mint highlights, soft aquamarine midtones, deeper teal shadows and accents. Shift dark navy buttons to deep muted teal. Keep white and pearl-silver elements neutral with a slight mint reflection. Soften harsh high-gloss reflections into a refined satin finish while preserving clear three-dimensional depth, delicate glass ribbon transparency, and readable object details. The result should feel airy, quiet and softly lit like the mint paper-and-pencil reference, not neon, not strong cobalt blue. Do not introduce a paper scroll, pencil, new objects, text, lettering, logos, borders or watermarks. Preserve the transparent background and clean alpha edges; keep the existing objects completely in frame.",
+      "transparent_background": true
     }
   ],
   "notes": "Original artwork. No real brand partnerships or campaign availability implied. WebP compression only; originals retained by the image generation tool."
