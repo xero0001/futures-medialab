@@ -1126,6 +1126,10 @@ function CampaignDetail({
   ].includes(requestedTab)
     ? requestedTab
     : "overview";
+  const showCancelAction =
+    tab === "overview" &&
+    canManage &&
+    ["DRAFT", "REVIEW"].includes(campaign.status);
   const setTab = (value: string) =>
     router.replace(
       hrefFor(`${campaignPath(campaign.id)}?tab=${value}`, locale),
@@ -1471,7 +1475,7 @@ function CampaignDetail({
           )}
         </TabPanel>
       </Tab>
-      {canManage && ["DRAFT", "REVIEW"].includes(campaign.status) && (
+      {showCancelAction && (
         <div className={styles.cancelArea}>
           <Button
             variant="solid"
