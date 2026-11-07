@@ -236,11 +236,9 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
           <CampaignIdeas t={t} locale={locale} />
           <section
             id="how-it-works"
-            className={styles.workflowSurface}
             aria-labelledby="workflow-title"
           >
             <div className={`${styles.container} ${styles.section}`}>
-              <p className={styles.eyebrow}>{t.workflow.eyebrow}</p>
               <Typography
                 as="h2"
                 variant="title1"
@@ -250,7 +248,6 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
               >
                 {t.workflow.title}
               </Typography>
-              <p className={styles.sectionBody}>{t.workflow.body}</p>
               <ol className={styles.steps}>
                 {t.workflow.steps.map((step, i) => {
                   const Icon = stepIcons[i]!;
