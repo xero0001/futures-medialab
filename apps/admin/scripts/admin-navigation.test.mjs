@@ -50,3 +50,12 @@ test("status filters are valid for the selected workspace", () => {
     "all",
   );
 });
+
+test("game catalog URLs preserve selected games and new entries", () => {
+  for (const game of ["game_nte", "new"]) {
+    const location = parseAdminLocation(`?tab=games&game=${game}`);
+    assert.equal(location.tab, "games");
+    assert.equal(location.selected, game);
+    assert.equal(adminLocationHref(location), `/?tab=games&game=${game}`);
+  }
+});

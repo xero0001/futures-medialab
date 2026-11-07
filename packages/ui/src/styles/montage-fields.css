@@ -20,3 +20,8 @@
     outline-offset: 2px;
   }
 }
+
+/* Native form minimum heights must not inflate Montage's padded wrapper. */
+[data-component="text-field"] input {
+  min-height: 0;
+}

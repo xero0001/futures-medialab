@@ -17,6 +17,7 @@ export type AdminLocation = {
     | "campaigns"
     | "intake"
     | "creators"
+    | "games"
     | "requests"
     | "audit";
   selected: string;
@@ -32,6 +33,7 @@ const tabs = [
   "campaigns",
   "intake",
   "creators",
+  "games",
   "requests",
   "audit",
 ];
@@ -62,9 +64,9 @@ export function parseAdminLocation(search: string): AdminLocation {
     scope: "all",
     status: "all",
   };
-  if (location.tab === "campaigns" || location.tab === "organizations")
+  if (["campaigns", "organizations", "games"].includes(location.tab))
     location.selected = safeId(
-      q.get(location.tab === "campaigns" ? "campaign" : "organization"),
+      q.get(location.tab === "campaigns" ? "campaign" : location.tab === "games" ? "game" : "organization"),
     );
   if (location.tab === "requests") location.request = safeId(q.get("request"));
   if (campaignSections.some(([key]) => key === q.get("section")))
@@ -94,6 +96,8 @@ export function adminLocationHref(location: AdminLocation): string {
   }
   if (location.tab === "organizations" && location.selected)
     q.set("organization", location.selected);
+  if (location.tab === "games" && location.selected)
+    q.set("game", location.selected);
   if (location.tab === "requests" && location.request)
     q.set("request", location.request);
   if (

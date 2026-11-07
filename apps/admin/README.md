@@ -89,3 +89,13 @@ node --experimental-strip-types --test apps/admin/scripts/verification.test.mjs
 `청구·지급`에서 발행한 미입금 청구서의 안내를 정정하려면 새 제목·기한·문서 링크 등 변경 내용과 브랜드에 공개할 사유를 입력합니다. 같은 청구 건에 새 버전을 발행하므로 승인 금액·통화·항목과 미수 건수는 유지됩니다. 브랜드는 청구 화면과 자료실에서 정정본과 이전 발행본을 볼 수 있습니다. 입금 완료 후에는 청구서 이력을 조회합니다.
 
 배포 시 애플리케이션 교체 전에 대상 DB에서 `pnpm --filter @futures-medialab/database db:migrate:deploy`를 실행합니다. `20261107010000_internal_creator_catalog`는 운영 전용 인물·단가표와 제안의 내부 출처를 추가합니다. `20261107030000_brand_invoice_versions`는 기존 발행·입금 완료 청구서의 발행 정보를 v1으로 보존하며 초안은 최초 발행 시 v1을 생성합니다.
+
+## 게임 DB 관리
+
+`/?tab=games`에서 게임을 검색하고 `/?tab=games&game=<id>`에서 편집합니다. 대표명, 한국어·영어·중국어 공식명, 언어별 공식 사이트, 검색용 별칭과 공통 썸네일 이미지 주소를 관리합니다. 썸네일은 공개 HTTPS 이미지 URL과 기존 게임 이미지 경로를 지원하며 미리보기를 제공합니다. 파일 업로드는 포함하지 않습니다.
+
+공식 게임은 모든 브랜드 검색에 표시됩니다. 검토 중인 게임은 원래 등록한 브랜드에서만 검색할 수 있고, 운영자가 새로 만든 검토 중인 게임은 브랜드 검색에 표시되지 않습니다. 승인·수정 시 원래 등록 조직과 연결 캠페인 ID는 유지하며 별칭 검색과 연결 캠페인의 썸네일이 최신 정보로 반영됩니다. 미등록 언어는 대표명으로 표시합니다.
+
+`GET/POST /api/admin/games`는 관리자 세션·활성 PLATFORM 권한을 다시 확인하고 쓰기 요청의 출처를 검증합니다. 공식 명칭·별칭 중복 등록과 오래된 수정 요청은 거절하며, 새 게임 등록 재시도는 중복을 만들지 않습니다. 수정 사유와 변경 전후 정보는 감사 기록에 함께 보관합니다. 기존 `GameCatalog`·`GameLocalization`을 사용하므로 추가 DB 마이그레이션은 필요하지 않습니다.
+
+검사: `node --test apps/admin/scripts/game-catalog.test.mjs apps/admin/scripts/admin-navigation.test.mjs`

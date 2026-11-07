@@ -12,6 +12,7 @@ import { OperationsDashboard } from "./operations-dashboard";
 import { AdminCampaignList } from "./admin-campaign-list";
 import { AdminCampaignWorkspace } from "./admin-campaign-workspace";
 import { AdminDelegatedIntake } from "./admin-delegated-intake";
+import { AdminGameCatalog } from "./admin-game-catalog";
 import { AdminCreatorCatalog } from "./admin-creator-catalog";
 import {
   parseAdminLocation,
@@ -52,6 +53,7 @@ type Operation = {
 };
 const descriptions: Record<Tab, string> = {
   intake: "브랜드가 전달한 브리프를 실제 의뢰자 명의로 접수합니다.",
+  games: "언어별 공식 게임명과 썸네일, 브랜드 검색 공개 상태를 관리합니다.",
   creators: "후보의 채널, 가용 일정과 견적 이력을 관리합니다.",
   overview: "기한이 임박한 업무와 담당자별 처리할 일을 확인하세요.",
   users: "플랫폼에 함께하는 사용자와 소속 조직, 접근 권한을 확인하세요.",
@@ -92,6 +94,8 @@ const labels: Record<string, string> = {
 const actionLabels: Record<string, string> = {
   "campaign.delegated_intake": "브랜드 의뢰 대리 접수",
   "settlement.reissueBrandInvoice": "청구서 정정 발행",
+  "game.create": "게임 DB 등록",
+  "game.update": "게임 DB 수정",
   "creator.create": "내부 크리에이터 등록",
   "creator.update": "내부 크리에이터 수정",
   "creator.rates": "크리에이터 단가표 개정",
@@ -446,7 +450,7 @@ export function AdminConsole({
       ? (campaign?.title ?? "캠페인 운영")
       : tabs.find((value) => value.key === tab)!.label;
   const usesBootstrapView =
-    tab !== "requests" && tab !== "intake" && tab !== "creators";
+    tab !== "requests" && tab !== "intake" && tab !== "creators" && tab !== "games";
   const visibleUsers =
     data?.users.filter((user) => match(`${user.name} ${user.email}`)) ?? [];
   const visibleOrganizations =
@@ -526,6 +530,23 @@ export function AdminConsole({
           <AdminDelegatedIntake
             onCreated={(id) => openCampaign(id)}
             onCancel={() => navigate("campaigns")}
+          />
+        )}
+        {tab === "games" && (
+          <AdminGameCatalog
+            key={selected}
+            refreshToken={viewRefresh}
+            initialGameId={selected}
+            onSelectGame={(id) => {
+              const next = { ...locationRef.current, selected: id };
+              locationRef.current = next;
+              setSelected(id);
+              if (id !== selected) {
+                if (selected === "new" && id)
+                  window.history.replaceState(null, "", adminLocationHref(next));
+                else window.history.pushState(null, "", adminLocationHref(next));
+              }
+            }}
           />
         )}
         {tab === "creators" && (

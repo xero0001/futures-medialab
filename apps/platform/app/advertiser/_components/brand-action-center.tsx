@@ -61,6 +61,8 @@ function ActionThumbnail({
         {imageUrl && imageUrl !== failedUrl ? (
           <Image
             src={imageUrl}
+            unoptimized
+            referrerPolicy="no-referrer"
             alt=""
             width={42}
             height={42}

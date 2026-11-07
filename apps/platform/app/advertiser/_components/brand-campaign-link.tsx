@@ -23,6 +23,8 @@ export function BrandCampaignLink({
         {campaign.gameIconUrl ? (
           <Image
             src={campaign.gameIconUrl}
+            unoptimized
+            referrerPolicy="no-referrer"
             alt={
               campaign.gameName ??
               { ko: "게임", en: "Game", zh: "游戏" }[locale]
