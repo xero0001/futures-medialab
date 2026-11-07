@@ -259,104 +259,47 @@
 .sectionHeading {
   margin-bottom: 30px;
 }
-.tabs {
-  border-bottom: 1px solid var(--home-line);
-  margin-bottom: 28px;
+.campaignViewport {
+  overflow: hidden;
+  padding: 6px;
+  margin: -6px;
+  cursor: grab;
 }
-.campaignGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 26px;
+.campaignViewport:active {
+  cursor: grabbing;
+}
+.campaignTrack {
+  display: flex;
+  gap: 24px;
+  touch-action: pan-y pinch-zoom;
+}
+.campaignSlide {
+  flex: 0 0 44%;
+  min-width: 0;
 }
 .campaignCard {
-  min-width: 0;
-  border: 1px solid var(--home-line);
-  border-radius: 16px;
-  overflow: hidden;
-  transition:
-    box-shadow 0.2s,
-    transform 0.2s;
-}
-.campaignCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px #1717190d;
-}
-.campaignTrigger {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
   padding: 0;
   border: 0;
-  background: white;
+  background: transparent;
   color: inherit;
   text-align: start;
-  cursor: pointer;
+  cursor: inherit;
 }
-.campaignTrigger:focus-visible {
-  outline-offset: -4px;
+.campaignCard img {
+  user-select: none;
+  -webkit-user-drag: none;
 }
-.campaignImage {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1.6;
-  overflow: hidden;
-}
-.campaignImage img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.4s;
-}
-.campaignCard:hover .campaignImage img {
-  transform: scale(1.035);
-}
-.imageBadge {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  background: #171719b3;
-  color: #fff;
-  border: 1px solid #ffffff26;
-  border-radius: 6px;
-  padding: 5px 8px;
-  font-size: 11px;
-  line-height: 1.4;
-  font-weight: 600;
-  backdrop-filter: blur(8px);
-}
-.campaignCopy {
-  padding: 23px 24px 25px;
+.campaignControls {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  flex: 1;
-}
-.campaignCopy h3 {
-  margin: 12px 0 10px;
-  letter-spacing: -0.02em;
-}
-.campaignCopy > p {
-  color: var(--home-muted);
-  font-size: 14px;
-  line-height: 1.75;
-  word-break: keep-all;
-}
-.cardAction {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  width: 100%;
-  color: var(--home-blue);
-  font-size: 13px;
-  font-weight: 600;
-  padding-top: 24px;
-  margin-top: auto;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
 }
-.cardAction svg {
-  width: 18px;
-  height: 18px;
+.campaignNavigation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 .disclaimer {
   margin-top: 20px !important;
@@ -739,8 +682,8 @@
   .sectionTitle {
     font-size: 29px !important;
   }
-  .campaignGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .campaignSlide {
+    flex-basis: 58%;
   }
   .steps {
     gap: 26px;
@@ -879,15 +822,14 @@
   .sectionHeading {
     margin-bottom: 24px;
   }
-  .campaignGrid {
-    grid-template-columns: 1fr;
-    gap: 24px;
+  .campaignTrack {
+    gap: 16px;
   }
-  .campaignImage {
-    aspect-ratio: 1.7;
+  .campaignSlide {
+    flex-basis: 86%;
   }
-  .campaignCopy {
-    padding: 22px;
+  .campaignControls {
+    margin-top: 18px;
   }
   .disclaimer {
     font-size: 11px;
@@ -967,12 +909,11 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .campaignCard,
-  .campaignImage img,
+  .campaignCard [data-component="thumbnail"] img,
   .quickLink {
     transition: none;
   }
-  .campaignCard:hover {
+  .campaignCard:hover [data-component="thumbnail"] img {
     transform: none;
   }
 }
