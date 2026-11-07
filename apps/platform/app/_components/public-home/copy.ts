@@ -211,10 +211,9 @@ const ko = {
     ],
   },
   final: {
-    eyebrow: "YOUR NEXT CONNECTION",
-    title: "좋은 게임, 좋은 파트너.\n다음 이야기를 함께 시작하세요.",
-    body: "글로벌 게임과 한국의 팬을 잇는 첫걸음, Futures Medialab.",
-    cta: "브랜드·대행사로 시작",
+    title: "우리 게임의 다음 캠페인을 시작해볼까요?",
+    body: "한국의 크리에이터와 함께 게임의 매력을 전해보세요.",
+    cta: "캠페인 시작하기",
   },
   contact: {
     title: "한국 캠페인을 준비하고 계신가요?",
@@ -438,10 +437,9 @@ const en: HomeCopy = {
     ],
   },
   final: {
-    eyebrow: "YOUR NEXT CONNECTION",
-    title: "Great games. Great partners.\nYour next story starts here.",
-    body: "Take the first step toward your Korean audience with Futures Medialab.",
-    cta: "Start as a brand or agency",
+    title: "Ready to launch your next game campaign?",
+    body: "Bring your game to Korean audiences with the right creators.",
+    cta: "Start a campaign",
   },
   contact: {
     title: "Planning a campaign in Korea?",
@@ -631,10 +629,9 @@ const zh: HomeCopy = {
     ],
   },
   final: {
-    eyebrow: "YOUR NEXT CONNECTION",
-    title: "好游戏，好伙伴。\n一起开启下一段故事。",
-    body: "与 Futures Medialab 一起，迈出连接韩国玩家的第一步。",
-    cta: "品牌与广告代理机构入驻",
+    title: "准备好开启游戏的下一场营销活动了吗？",
+    body: "携手韩国创作者，让更多玩家发现游戏的魅力。",
+    cta: "发起营销活动",
   },
   contact: {
     title: "正在筹备韩国营销活动？",

@@ -473,36 +473,89 @@
   word-break: keep-all;
 }
 .finalSurface {
-  background: var(--home-blue);
-  color: #fff;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--semantic-background-base, #fff);
+}
+.finalBackdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 16%,
+    #000 84%,
+    transparent
+  );
+}
+.finalBackdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #ffffff30, #ffffffb8 45%, #fff 88%);
+}
+.finalPreviewRow {
+  display: flex;
+  gap: 24px;
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  width: max-content;
+  transform: translateX(-50%);
+  filter: blur(6px) saturate(0.25);
+  opacity: 0.24;
+}
+.finalPreviewCard {
+  width: 240px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #fff;
+}
+.finalPreviewImage {
+  position: relative;
+  aspect-ratio: 3 / 2;
+}
+.finalPreviewImage img {
+  object-fit: cover;
+}
+.finalPreviewCard > span {
+  display: block;
+  width: 70%;
+  height: 10px;
+  margin: 14px 12px;
+  border-radius: 4px;
+  background: var(--home-muted);
+}
+.finalPreviewCard > span:last-child {
+  width: 45%;
 }
 .finalInner {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 48px;
-  padding-block: 64px;
-}
-.finalInner .eyebrow {
-  color: var(--atomic-blue-90);
+  gap: 28px;
+  padding-block: 80px 52px;
+  text-align: center;
 }
 .finalTitle {
-  font-size: 34px !important;
-  line-height: 1.4 !important;
-  letter-spacing: -0.025em !important;
-  white-space: pre-line;
-  color: white !important;
+  color: var(--semantic-foreground-neutral-primary, #171719);
+  text-wrap: balance;
+  word-break: keep-all;
 }
-.finalInner p:not(.eyebrow) {
-  color: var(--atomic-blue-95);
-  font-size: 15px;
-  line-height: 1.7;
-  margin-top: 18px;
+.finalBody {
+  color: var(--semantic-foreground-neutral-secondary, #70737c);
+  font-size: 16px;
+  line-height: 1.5;
+  margin-top: 10px;
+  text-wrap: balance;
+  word-break: keep-all;
 }
-.finalButton {
-  background: white !important;
-  color: var(--atomic-blue-40) !important;
-  flex-shrink: 0;
+.finalInner .finalButton {
+  width: 240px;
+  max-width: 100%;
 }
 .contact {
   padding-block: 54px;
@@ -702,11 +755,6 @@
     display: flex;
     gap: 60px;
   }
-  .finalInner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 30px;
-  }
 }
 @media (max-width: 600px) {
   .container {
@@ -855,17 +903,18 @@
     font-size: 14px;
   }
   .finalInner {
-    padding-block: 44px;
+    padding-block: 64px 44px;
     gap: 24px;
   }
   .finalTitle {
-    font-size: 28px !important;
+    max-width: 340px;
+    margin-inline: auto;
   }
-  .finalInner p:not(.eyebrow) {
+  .finalBody {
     font-size: 14px;
   }
-  .finalButton {
-    width: 100%;
+  .finalPreviewCard {
+    width: 200px;
   }
   .contact {
     padding-block: 38px;

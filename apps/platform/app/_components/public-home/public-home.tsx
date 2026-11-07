@@ -31,6 +31,13 @@ import styles from "./public-home.module.css";
 
 const stepIcons = [IconDocumentText, IconPersons, IconCheck];
 const partnerIcons = [IconGlobe, IconMegaphone];
+const finalArtwork = [
+  "/campaign-art/games/genshin.webp",
+  "/campaign-art/games/star-rail.webp",
+  "/campaign-art/games/wuthering-waves.webp",
+  "/campaign-art/games/zenless.webp",
+  "/demo/nte/city-key-art.jpg",
+];
 
 export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
   const [locale, setLocale] = useState(initialLocale);
@@ -355,27 +362,37 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
             className={styles.finalSurface}
             aria-labelledby="final-title"
           >
+            <div className={styles.finalBackdrop} aria-hidden="true">
+              <div className={styles.finalPreviewRow}>
+                {finalArtwork.map((src) => (
+                  <div className={styles.finalPreviewCard} key={src}>
+                    <div className={styles.finalPreviewImage}>
+                      <Image src={src} alt="" fill sizes="240px" />
+                    </div>
+                    <span />
+                    <span />
+                  </div>
+                ))}
+              </div>
+            </div>
             <div className={`${styles.container} ${styles.finalInner}`}>
               <div>
-                <p className={styles.eyebrow}>{t.final.eyebrow}</p>
                 <Typography
                   as="h2"
-                  variant="title1"
+                  variant="title2"
                   weight="bold"
                   id="final-title"
                   className={styles.finalTitle}
                 >
                   {t.final.title}
                 </Typography>
-                <p>{t.final.body}</p>
+                <p className={styles.finalBody}>{t.final.body}</p>
               </div>
               <Button
                 as="a"
                 href={buyerHref}
                 size="large"
-                color="assistive"
                 className={styles.finalButton}
-                trailingContent={<IconArrowRight />}
               >
                 {t.final.cta}
               </Button>
