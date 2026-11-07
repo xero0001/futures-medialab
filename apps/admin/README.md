@@ -92,10 +92,18 @@ node --experimental-strip-types --test apps/admin/scripts/verification.test.mjs
 
 ## 게임 DB 관리
 
-`/?tab=games`에서 게임을 검색하고 `/?tab=games&game=<id>`에서 편집합니다. 대표명, 한국어·영어·중국어 공식명, 언어별 공식 사이트, 검색용 별칭과 공통 썸네일 이미지 주소를 관리합니다. 썸네일은 공개 HTTPS 이미지 URL과 기존 게임 이미지 경로를 지원하며 미리보기를 제공합니다. 파일 업로드는 포함하지 않습니다.
+`/?tab=games`에서 게임을 검색하고 `/?tab=games&game=<id>`에서 편집합니다. 대표명, 한국어·영어·중국어 공식명, 언어별 공식 사이트, 검색용 별칭과 공통 썸네일 이미지 주소를 관리합니다. 썸네일은 PNG·JPG·WebP 파일 업로드(4MB 이하), 공개 HTTPS 이미지 URL과 기존 게임 이미지 경로를 지원하며 미리보기를 제공합니다. 파일을 업로드한 뒤 게임 등록·저장을 눌러 반영합니다. 실패·취소 시 기존 썸네일은 유지됩니다.
 
 공식 게임은 모든 브랜드 검색에 표시됩니다. 검토 중인 게임은 원래 등록한 브랜드에서만 검색할 수 있고, 운영자가 새로 만든 검토 중인 게임은 브랜드 검색에 표시되지 않습니다. 승인·수정 시 원래 등록 조직과 연결 캠페인 ID는 유지하며 별칭 검색과 연결 캠페인의 썸네일이 최신 정보로 반영됩니다. 미등록 언어는 대표명으로 표시합니다.
 
 `GET/POST /api/admin/games`는 관리자 세션·활성 PLATFORM 권한을 다시 확인하고 쓰기 요청의 출처를 검증합니다. 공식 명칭·별칭 중복 등록과 오래된 수정 요청은 거절하며, 새 게임 등록 재시도는 중복을 만들지 않습니다. 수정 사유와 변경 전후 정보는 감사 기록에 함께 보관합니다. 기존 `GameCatalog`·`GameLocalization`을 사용하므로 추가 DB 마이그레이션은 필요하지 않습니다.
 
 검사: `node --test apps/admin/scripts/game-catalog.test.mjs apps/admin/scripts/admin-navigation.test.mjs`
+
+### 게임 썸네일 파일 저장
+
+`POST /api/admin/games/thumbnail`은 관리자 권한·동일 출처를 확인하고 요청 본문을 4MB로 제한합니다. 실제 이미지 디코딩으로 파일 종류와 픽셀 수를 검증하고, 방향을 보정해 최대 1024px WebP로 변환하며 원본 메타데이터를 제거합니다. 기존 `BLOB_READ_WRITE_TOKEN`의 비공개 저장소에 콘텐츠 해시 기반 경로로 저장합니다. 이 경로는 동일 이미지 바이트에만 재사용됩니다.
+
+어드민과 플랫폼의 `GET /api/games/thumbnails/<sha256>`이 이미지를 제공합니다. 관리자 세션 또는 활성 서비스 조직과 게임 열람 권한을 확인하고 저장된 파일의 형식·크기·해시를 검사합니다. 플랫폼에서는 저장되어 있고 검색 또는 연결 캠페인 권한이 있는 게임만 표시합니다. 저장소 원본 URL과 토큰은 클라이언트에 전달하지 않습니다. 변경·취소한 이미지는 참조 중인 파일을 지우지 않도록 즉시 삭제하지 않습니다.
+
+추가 DB 마이그레이션은 없습니다. 두 앱에 기존 저장소의 `BLOB_READ_WRITE_TOKEN`을 유지해야 합니다. 검사: `node --test apps/admin/scripts/game-thumbnail.test.mjs apps/admin/scripts/game-catalog.test.mjs`.

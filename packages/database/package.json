@@ -25,7 +25,9 @@
     "./settlement": "./src/settlement.ts",
     "./settlement-http": "./src/settlement-http.ts",
     "./brand-intake": "./src/brand-intake.ts",
-    "./game-catalog": "./src/game-catalog.ts"
+    "./game-catalog": "./src/game-catalog.ts",
+    "./game-thumbnail-shared": "./src/game-thumbnail-shared.ts",
+    "./game-thumbnail-storage": "./src/game-thumbnail-storage.ts"
   },
   "scripts": {
     "build": "prisma generate && tsup src/client.ts --format esm --dts",

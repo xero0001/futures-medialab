@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { gameThumbnailHash } from "@futures-medialab/database/game-thumbnail-shared";
 
 export const gameLanguages = [
   ["KO", "한국어"],
@@ -28,6 +29,7 @@ export function publicGameUrl(value: string) {
 }
 export function validGameThumbnail(value: string) {
   return (
+    Boolean(gameThumbnailHash(value)) ||
     publicGameUrl(value) ||
     (/^\/(?:demo|games)\/[a-zA-Z0-9_/-]+\.(?:png|jpe?g|webp|avif|svg)$/.test(
       value,
@@ -61,7 +63,7 @@ export const gameProfileSchema = z
       .max(2048)
       .refine(
         validGameThumbnail,
-        "썸네일 이미지의 HTTPS 주소를 입력해 주세요.",
+        "썸네일을 업로드하거나 이미지의 HTTPS 주소를 입력해 주세요.",
       ),
     verified: z.boolean(),
     aliases: z.array(z.string().trim().min(1).max(120)).max(40),

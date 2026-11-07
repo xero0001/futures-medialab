@@ -118,6 +118,9 @@ function setup(options = {}) {
   };
   const overrides = {
     "server-only": {},
+    "@futures-medialab/database/game-thumbnail-storage": {
+      storedGameThumbnailExists: async () => !options.missingThumbnail,
+    },
     "./game-catalog-model": { gameMutationSchema, gameQuerySchema },
     "@futures-medialab/database/game-catalog": { normalizeGameTitle },
     "@futures-medialab/database": {
@@ -370,4 +373,22 @@ test("validation rejects unsafe URLs and incomplete translations, while optional
     }).success,
     true,
   );
+});
+
+test("uploaded thumbnail references must exist before a catalog save", async () => {
+  const uploadProfile = {
+    ...profile,
+    thumbnailUrl: "/api/games/thumbnails/" + "a".repeat(64),
+  };
+  const valid = setup();
+  assert.equal(
+    (await valid.post({ ...create, profile: uploadProfile })).status,
+    200,
+  );
+  const missing = setup({ missingThumbnail: true });
+  assert.equal(
+    (await missing.post({ ...create, profile: uploadProfile })).status,
+    400,
+  );
+  assert.equal(missing.records.size, 0);
 });

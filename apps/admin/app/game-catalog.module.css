@@ -291,3 +291,38 @@
     align-items: stretch;
   }
 }
+
+.uploadFields {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.uploadFields > small {
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+.uploadActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.fileInput {
+  display: none;
+}
+.uploadStatus {
+  font-size: 13px;
+  color: var(--admin-accent);
+  overflow-wrap: anywhere;
+}
+.uploadError {
+  font-size: 13px;
+  color: var(--semantic-foreground-negative-primary, #e52222);
+}
+@media (max-width: 650px) {
+  .uploadFields {
+    width: 100%;
+  }
+}

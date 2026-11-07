@@ -1,3 +1,5 @@
+import { gameThumbnailHash } from "@futures-medialab/database/game-thumbnail-shared";
+import { storedGameThumbnailExists } from "@futures-medialab/database/game-thumbnail-storage";
 import "server-only";
 import { createHash } from "node:crypto";
 import { getDatabase, Prisma } from "@futures-medialab/database";
@@ -127,6 +129,15 @@ export function adminGameCatalog(request: Request) {
       );
     }
     const input = await readBody(request, gameMutationSchema);
+    if (
+      gameThumbnailHash(input.profile.thumbnailUrl) &&
+      !(await storedGameThumbnailExists(input.profile.thumbnailUrl))
+    )
+      fail(
+        400,
+        "INVALID_THUMBNAIL",
+        "업로드한 이미지를 찾을 수 없습니다. 다시 업로드해 주세요.",
+      );
     const payloadHash = createHash("sha256")
       .update(JSON.stringify(input))
       .digest("hex");

@@ -96,6 +96,7 @@ const actionLabels: Record<string, string> = {
   "settlement.reissueBrandInvoice": "청구서 정정 발행",
   "game.create": "게임 DB 등록",
   "game.update": "게임 DB 수정",
+  "game.thumbnail_upload": "게임 썸네일 업로드",
   "creator.create": "내부 크리에이터 등록",
   "creator.update": "내부 크리에이터 수정",
   "creator.rates": "크리에이터 단가표 개정",

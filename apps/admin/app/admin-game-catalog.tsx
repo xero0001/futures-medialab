@@ -15,6 +15,7 @@ import {
   type GameProfile,
   type GameLocale,
 } from "../lib/game-catalog-model";
+import { GameThumbnailField } from "./game-thumbnail-field";
 import s from "./game-catalog.module.css";
 
 async function api<T>(path: string, options?: RequestInit): Promise<T> {
@@ -86,13 +87,15 @@ function GameEditor({
   const [dirty, setDirty] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const blocked = busy || uploading;
   const request = useRef<{ body: string; id: string } | null>(null);
   const toast = useToast();
   useEffect(() => {
-    if (!dirty && !busy) return;
+    if (!dirty && !blocked) return;
     const guard = (event: Event) => {
       if (
-        busy ||
+        blocked ||
         !window.confirm(
           "저장하지 않은 변경사항이 있습니다. 이 화면을 나갈까요?",
         )
@@ -106,7 +109,7 @@ function GameEditor({
       window.removeEventListener("admin:navigate", guard);
       window.removeEventListener("beforeunload", unload);
     };
-  }, [dirty, busy]);
+  }, [dirty, blocked]);
   function update<K extends keyof GameProfile>(key: K, value: GameProfile[K]) {
     setProfile((p) => ({ ...p, [key]: value }));
     setDirty(true);
@@ -126,7 +129,7 @@ function GameEditor({
   }
   async function save(event: FormEvent) {
     event.preventDefault();
-    if (busy) return;
+    if (blocked) return;
     const value = {
       ...profile,
       aliases: aliases
@@ -185,7 +188,7 @@ function GameEditor({
         </div>
         <AdminButton
           type="button"
-          disabled={busy}
+          disabled={blocked}
           onClick={() => {
             if (navigate()) onCancel();
           }}
@@ -302,27 +305,12 @@ function GameEditor({
         </section>
         <section className={s.section}>
           <h3>썸네일</h3>
-          <div className={s.imageRow}>
-            <Thumbnail url={profile.thumbnailUrl.trim()} large />
-            <div className={s.field}>
-              <label htmlFor="game-thumbnail">썸네일 이미지 주소</label>
-              <TextField
-                id="game-thumbnail"
-                value={profile.thumbnailUrl}
-                onChange={(e) => update("thumbnailUrl", e.target.value)}
-                maxLength={2048}
-                width="100%"
-                placeholder="https://example.com/game-icon.png"
-              />
-              <small>
-                공개된 HTTPS 이미지 주소를 입력하세요. 정사각형 게임 아이콘을
-                권장합니다.
-              </small>
-              <small>
-                수정한 이미지는 이 게임이 연결된 캠페인에도 반영됩니다.
-              </small>
-            </div>
-          </div>
+          <GameThumbnailField
+            value={profile.thumbnailUrl}
+            disabled={busy}
+            onChange={(url) => update("thumbnailUrl", url)}
+            onBusyChange={setUploading}
+          />
         </section>
         <section className={s.section}>
           <div className={s.field}>
@@ -367,7 +355,7 @@ function GameEditor({
           {game && (
             <AdminButton
               type="button"
-              disabled={busy}
+              disabled={blocked}
               onClick={() => {
                 if (navigate()) onReload();
               }}
@@ -379,7 +367,7 @@ function GameEditor({
       )}
       <div className={s.footer}>
         <p>등록·수정 내역은 변경 이력에 기록됩니다.</p>
-        <AdminButton className="primary" disabled={busy}>
+        <AdminButton className="primary" disabled={blocked}>
           {busy ? "저장 중…" : game ? "변경사항 저장" : "게임 등록"}
         </AdminButton>
       </div>
