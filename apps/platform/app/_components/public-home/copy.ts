@@ -35,7 +35,7 @@ const ko = {
     },
   ],
   discovery: {
-    title: "다음 협업을 상상해보세요",
+    title: "어떤 게임을 알려볼까요?",
     carousel: "캐러셀",
     slide: "슬라이드",
     official: "공식 게임 소개",
