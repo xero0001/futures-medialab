@@ -221,7 +221,7 @@
   color: var(--auth-blue);
 }
 .page .header :global(.admin-brand > span) {
-  font-size: 25px;
+  font-size: 14px;
 }
 .badge {
   padding: 6px 10px;
@@ -273,7 +273,7 @@
     height: 36px;
   }
   .page .header :global(.admin-brand > span) {
-    font-size: 23px;
+    font-size: 13px;
   }
   .badge {
     font-size: 11px;

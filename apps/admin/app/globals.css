@@ -172,17 +172,8 @@ a {
   flex-shrink: 0;
 }
 .admin-brand > span {
-  font-size: 27px;
-  letter-spacing: -1.1px;
-  font-weight: 800;
+  font-size: 15px;
   color: var(--admin-ink);
-}
-.admin-brand-sub {
-  display: block;
-  margin-top: 6px;
-  font-size: 14px;
-  letter-spacing: 1px;
-  font-weight: 600;
 }
 .admin-eyebrow {
   display: block;
@@ -234,7 +225,7 @@ a {
   width: 176px;
 }
 .admin-topbar .admin-brand > span {
-  font-size: 25px;
+  font-size: 14px;
 }
 .admin-header-context {
   gap: 20px;
@@ -918,10 +909,7 @@ dd {
     height: 32px;
   }
   .admin-topbar .admin-brand > span {
-    font-size: 21px;
-  }
-  .admin-topbar .admin-brand-sub {
-    font-size: 11px;
+    font-size: 13px;
   }
   .admin-header-context,
   .admin-account-name,

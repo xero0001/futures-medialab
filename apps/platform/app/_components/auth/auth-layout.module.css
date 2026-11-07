@@ -62,7 +62,7 @@
 }
 
 .brand :global(.fm-wordmark > span) {
-  font-size: 25px;
+  font-size: 14px;
 }
 
 .language.language {
@@ -235,7 +235,7 @@
   }
 
   .brand :global(.fm-wordmark > span) {
-    font-size: 23px;
+    font-size: 13px;
   }
 
   .main {

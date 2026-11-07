@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./montage-fields.css";
 @import "./montage-controls.css";
+@import "./brand-wordmark.css";
 @source "../../../../apps/platform/**/*.{ts,tsx}";
 @source "../../../../apps/admin/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";

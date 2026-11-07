@@ -1,5 +1,6 @@
 import styles from "./brand-logo.module.css";
 import { BrandSymbol } from "@futures-medialab/ui/brand-symbol";
+import { BrandWordmark } from "@futures-medialab/ui/brand-wordmark";
 
 export { BrandSymbol };
 
@@ -17,9 +18,7 @@ export function Wordmark({
       aria-label="Futures Medialab home"
     >
       <BrandSymbol />
-      <span>
-        futures<span className={styles.subtitle}>MEDIALAB</span>
-      </span>
+      <BrandWordmark />
     </a>
   );
 }

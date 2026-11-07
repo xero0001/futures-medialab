@@ -27,17 +27,7 @@
 
 .cw-tds .tds-brand-area .fm-wordmark > span {
   color: #191f28;
-  font-size: 25px;
-  font-weight: 750;
-  letter-spacing: -0.055em;
-}
-
-.cw-tds .tds-brand-area .fm-wordmark > span > span {
-  margin-top: 5px;
-  color: #6b7684;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
+  font-size: 14px;
 }
 
 .cw-tds .tds-header-divider {
@@ -368,12 +358,7 @@
   }
 
   .cw-tds .tds-brand-area .fm-wordmark > span {
-    font-size: 22px;
-  }
-
-  .cw-tds .tds-brand-area .fm-wordmark > span > span {
-    margin-top: 4px;
-    font-size: 8px;
+    font-size: 13px;
   }
 
   .cw-tds .fm-language-switcher .fm-language-trigger {
@@ -401,7 +386,7 @@
   }
 
   .cw-tds .tds-brand-area .fm-wordmark > span {
-    font-size: 20px;
+    font-size: 12px;
   }
 
   .cw-tds .cw-topbar .cw-top-actions {

@@ -76,12 +76,7 @@
 }
 .brand :global(.fm-wordmark) > span {
   color: var(--home-ink);
-  font-size: 25px;
-}
-.brand :global(.fm-wordmark) > span > span {
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  margin-top: 5px;
+  font-size: 14px;
 }
 .navigation {
   display: flex;
@@ -817,10 +812,7 @@
     height: 30px;
   }
   .brand :global(.fm-wordmark) > span {
-    font-size: 23px;
-  }
-  .brand :global(.fm-wordmark) > span > span {
-    font-size: 9px;
+    font-size: 13px;
   }
   .headerActions {
     gap: 14px;

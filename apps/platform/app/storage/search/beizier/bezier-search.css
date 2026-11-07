@@ -117,17 +117,7 @@ html:has(.bz-workspace) {
   height: 34px;
 }
 .bz-shell-brand-name {
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -1.6px;
-  line-height: 1;
-}
-.bz-shell-brand-name small {
-  display: block;
-  font-size: 9px;
-  letter-spacing: 3.2px;
-  font-weight: 650;
-  margin-top: 7px;
+  font-size: 15px;
 }
 .bz-shell-organization {
   display: flex;

@@ -98,14 +98,8 @@ html:root:not([data-seed]) {
   color: var(--ss-brand);
 }
 .seed-search-brand .fm-wordmark > span {
-  font-size: 26px;
+  font-size: 15px;
   color: var(--ss-ink);
-}
-.seed-search-brand .fm-wordmark > span > span {
-  font-size: 11px;
-  color: var(--seed-color-fg-neutral-muted);
-  letter-spacing: 0.16em;
-  margin-top: 5px;
 }
 .seed-search-brand-divider {
   height: 24px;
@@ -977,10 +971,7 @@ html:root:not([data-seed]) {
     gap: 6px;
   }
   .seed-search-brand .fm-wordmark > span {
-    font-size: 22px;
-  }
-  .seed-search-brand .fm-wordmark > span > span {
-    font-size: 9px;
+    font-size: 13px;
   }
   .seed-search-brand .fm-wordmark > svg {
     width: 28px;

@@ -82,17 +82,8 @@
   height: 38px;
 }
 .fl-logo > span {
-  font-size: 27px;
-  letter-spacing: -1.1px;
-  font-weight: 800;
+  font-size: 15px;
   color: var(--fl-ink);
-}
-.fl-logo-sub {
-  display: block;
-  margin-top: 6px;
-  font-size: 14px;
-  letter-spacing: 1px;
-  font-weight: 600;
 }
 .fl-desktop-nav {
   display: flex;
@@ -745,7 +736,7 @@
   height: 32px;
 }
 .fl-footer .fl-logo > span {
-  font-size: 24px;
+  font-size: 14px;
 }
 .fl-footer > div > p {
   font-size: 14px;
@@ -824,12 +815,7 @@
   font-size: 14px !important;
   margin-bottom: 24px !important;
 }
-@media (min-width: 1100px) {
-  .fl-logo-sub {
-    font-size: 14px;
-    letter-spacing: 1px;
-  }
-}
+
 @media (max-width: 1150px) {
   .fl-desktop-nav {
     gap: 0;
@@ -1013,11 +999,7 @@
     height: 31px;
   }
   .fl-logo > span {
-    font-size: 25px;
-  }
-  .fl-logo-sub {
     font-size: 14px;
-    letter-spacing: 1px;
   }
   .fl-header-actions {
     gap: 8px;
@@ -1328,7 +1310,7 @@
     font-size: 14px;
   }
   .fl-logo > span {
-    font-size: 23px;
+    font-size: 13px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

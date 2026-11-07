@@ -36,13 +36,7 @@
 
 .cw-tds .fm-wordmark > span {
   color: var(--cw-ink);
-  font-size: 26px;
-}
-
-.cw-tds .fm-wordmark > span > span {
-  margin-top: 5px;
-  font-size: 10px;
-  letter-spacing: 0.2em;
+  font-size: 15px;
 }
 
 .cw-tds .cw-top-actions {
@@ -1251,7 +1245,7 @@
   }
 
   .cw-tds .fm-wordmark > span {
-    font-size: 22px;
+    font-size: 13px;
   }
 
   .cw-tds .cw-top-actions {

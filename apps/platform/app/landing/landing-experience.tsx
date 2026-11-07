@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { Locale } from "../_components/landing-copy";
 import { BrandSymbol } from "../_components/brand-logo";
+import { BrandWordmark } from "@futures-medialab/ui/brand-wordmark";
 import { LanguageSwitcher } from "../_components/language-switcher";
 import { landingCopy } from "./copy";
 
@@ -81,9 +82,7 @@ function Logo({ footer = false }: { footer?: boolean }) {
       aria-label="Futures Medialab"
     >
       <BrandSymbol />
-      <span>
-        futures<span className="fl-logo-sub">MEDIALAB</span>
-      </span>
+      <BrandWordmark />
     </a>
   );
 }

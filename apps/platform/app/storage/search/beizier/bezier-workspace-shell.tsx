@@ -36,6 +36,7 @@ import {
   ShineIcon,
 } from "@channel.io/bezier-icons";
 import { BrandSymbol } from "@futures-medialab/ui/brand-symbol";
+import { BrandWordmark } from "@futures-medialab/ui/brand-wordmark";
 
 import type { Locale } from "../../../_components/landing-copy";
 import { translate } from "../../_components/directory-filters";
@@ -214,9 +215,7 @@ export function BezierWorkspaceShell({
             <span className="bz-shell-brand-symbol">
               <BrandSymbol />
             </span>
-            <Text className="bz-shell-brand-name" typo="18" bold>
-              futures<small>MEDIALAB</small>
-            </Text>
+            <BrandWordmark className="bz-shell-brand-name" />
           </Link>
           <Button
             ref={closeRef}
