@@ -29,8 +29,9 @@ import styles from "./public-home.module.css";
 
 const stepIcons = [IconDocumentText, IconPersons, IconCheck];
 const quickArtwork = [
-  "/landing/quick-icons/game-globe-brand-blue.webp",
-  "/landing/quick-icons/creator-megaphone-brand-blue.webp",
+  { src: "/landing/quick-icons/game-globe-prismatic-glass.webp", scale: 1 },
+  // Match the visible glass size despite the different transparent image margins.
+  { src: "/landing/quick-icons/creator-megaphone-prismatic-glass.webp", scale: 0.89 },
 ];
 const partnerArtwork = [
   "/partner-art/brand-partners.webp",
@@ -211,11 +212,12 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
               >
                 <span className={styles.quickIcon} aria-hidden="true">
                   <Image
-                    src={quickArtwork[index]!}
+                    src={quickArtwork[index]!.src}
                     alt=""
                     width={64}
                     height={64}
                     sizes="(max-width: 600px) 52px, (max-width: 900px) 48px, 64px"
+                    style={{ transform: `scale(${quickArtwork[index]!.scale})` }}
                   />
                 </span>
                 <span>
