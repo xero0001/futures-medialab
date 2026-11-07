@@ -180,14 +180,18 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
                   <Button as="a" href={buyerHref} size="large">
                     {t.hero.primary}
                   </Button>
-                  <TextButton
+                  <Button
                     as="a"
                     href={partnerHref}
-                    size="medium"
+                    size="large"
+                    variant="outlined"
                     color="assistive"
+                    sx={(theme) => ({
+                      backgroundColor: theme.semantic.background.neutral.primary,
+                    })}
                   >
                     {t.hero.secondary}
-                  </TextButton>
+                  </Button>
                 </div>
               </div>
               <div className={styles.heroArt} aria-hidden="true">

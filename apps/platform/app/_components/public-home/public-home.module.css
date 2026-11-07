@@ -844,11 +844,8 @@
     margin-top: 25px;
     gap: 18px;
   }
-  .actions > a:first-child {
+  .actions > a {
     width: 100%;
-  }
-  .actions > a:last-child {
-    align-self: center;
   }
   .approval {
     font-size: 11px;
