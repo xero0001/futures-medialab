@@ -21,6 +21,21 @@
       "file": "zenless.webp",
       "sourcePage": "https://store.epicgames.com/p/zenless-zone-zero-c7c151",
       "sourceImage": "https://cdn1.epicgames.com/spt-assets/dcd83ace86fb4501bde1316ca03e29ad/zenless-zone-zero-video-rv98z.jpg?h=720&quality=medium&resize=1&w=1280"
+    },
+    {
+      "file": "once-human.webp",
+      "sourcePage": "https://store.steampowered.com/app/2139460/Once_Human/",
+      "sourceImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2139460/c18b08a2f93dec32fcc5fa71bc2da44ee42de1f0/header.jpg?t=1792640697"
+    },
+    {
+      "file": "infinity-nikki.webp",
+      "sourcePage": "https://store.steampowered.com/app/3164330/Infinity_Nikki/",
+      "sourceImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3164330/cf1ca7f2da4630063fabb13fb1789ba7ab14c80c/header.jpg?t=1793329246"
+    },
+    {
+      "file": "naraka.webp",
+      "sourcePage": "https://store.steampowered.com/app/1203220/NARAKA_BLADEPOINT/",
+      "sourceImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1203220/5857b2eed59cad31bea023c1b59fbb7c7064e222/header.jpg?t=1793846487"
     }
   ]
 }

@@ -10,9 +10,7 @@ import {
   CardBody,
   CardCaption,
   CardThumbnail,
-  CardThumbnailContent,
   CardTitle,
-  ContentBadge,
   Modal,
   ModalContainer,
   ModalContent,
@@ -23,22 +21,12 @@ import {
 } from "@montage-ui/core";
 import { IconArrowRight, IconCheck } from "@montage-ui/icon";
 import type { HomeCopy } from "./copy";
-import type { Locale } from "../landing-copy";
 import styles from "./public-home.module.css";
 
 const campaignAssets: Record<
   string,
-  { image: string; channels: string; officialUrl?: string }
+  { image: string; channels: string; officialUrl: string }
 > = {
-  mmorpg: { image: "/campaign-art/mmorpg.webp", channels: "YouTube · CHZZK" },
-  subculture: {
-    image: "/campaign-art/subculture.webp",
-    channels: "YouTube · TikTok",
-  },
-  survival: {
-    image: "/campaign-art/survival.webp",
-    channels: "YouTube · Instagram",
-  },
   genshin: {
     image: "/campaign-art/games/genshin.webp",
     channels: "YouTube · CHZZK",
@@ -64,9 +52,25 @@ const campaignAssets: Record<
     channels: "YouTube · CHZZK",
     officialUrl: "https://nte.perfectworld.com/kr/",
   },
+  "once-human": {
+    image: "/campaign-art/games/once-human.webp",
+    channels: "YouTube · CHZZK",
+    officialUrl: "https://store.steampowered.com/app/2139460/Once_Human/",
+  },
+  "infinity-nikki": {
+    image: "/campaign-art/games/infinity-nikki.webp",
+    channels: "YouTube · Instagram",
+    officialUrl: "https://store.steampowered.com/app/3164330/Infinity_Nikki/",
+  },
+  naraka: {
+    image: "/campaign-art/games/naraka.webp",
+    channels: "YouTube · CHZZK",
+    officialUrl:
+      "https://store.steampowered.com/app/1203220/NARAKA_BLADEPOINT/",
+  },
 };
 
-export function CampaignIdeas({ t, locale }: { t: HomeCopy; locale: Locale }) {
+export function CampaignIdeas({ t }: { t: HomeCopy }) {
   const sectionRef = useRef<HTMLElement>(null);
   const autoScroll = useMemo(
     () =>
@@ -191,17 +195,7 @@ export function CampaignIdeas({ t, locale }: { t: HomeCopy; locale: Locale }) {
                       className={styles.campaignCard}
                       aria-label={`${campaign.title} — ${t.discovery.action}`}
                     >
-                      <CardThumbnail
-                        src={asset.image}
-                        alt=""
-                        leadingContent={
-                          <CardThumbnailContent variant="text">
-                            {asset.officialUrl
-                              ? t.discovery.spotlight
-                              : t.discovery.concept}
-                          </CardThumbnailContent>
-                        }
-                      />
+                      <CardThumbnail src={asset.image} alt="" />
                       <CardBody>
                         <CardTitle as="span">{campaign.title}</CardTitle>
                         <CardCaption as="span">{campaign.genre}</CardCaption>
@@ -233,17 +227,6 @@ export function CampaignIdeas({ t, locale }: { t: HomeCopy; locale: Locale }) {
                         height={1024}
                         sizes="(max-width: 600px) 90vw, 520px"
                       />
-                      <div>
-                        <ContentBadge
-                          size="small"
-                          color="accent"
-                          accentColor="semantic.foreground.brand.primary"
-                        >
-                          {asset.officialUrl
-                            ? t.discovery.spotlight
-                            : t.discovery.concept}
-                        </ContentBadge>
-                      </div>
                       <Typography as="p" variant="body1">
                         {campaign.body}
                       </Typography>
@@ -272,20 +255,13 @@ export function CampaignIdeas({ t, locale }: { t: HomeCopy; locale: Locale }) {
                       </div>
                       <Button
                         as="a"
-                        href={
-                          asset.officialUrl ??
-                          `/register?audience=buyer&lang=${locale}`
-                        }
-                        target={asset.officialUrl ? "_blank" : undefined}
-                        rel={
-                          asset.officialUrl ? "noopener noreferrer" : undefined
-                        }
+                        href={asset.officialUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         size="large"
                         trailingContent={<IconArrowRight />}
                       >
-                        {asset.officialUrl
-                          ? t.discovery.official
-                          : t.discovery.cta}
+                        {t.discovery.official}
                       </Button>
                     </ModalContent>
                   </ModalContainer>

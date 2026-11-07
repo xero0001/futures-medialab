@@ -231,7 +231,7 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
               );
             })}
           </div>
-          <CampaignIdeas t={t} locale={locale} />
+          <CampaignIdeas t={t} />
           <section
             id="how-it-works"
             aria-labelledby="workflow-title"
