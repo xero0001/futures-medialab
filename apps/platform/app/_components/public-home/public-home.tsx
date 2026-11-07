@@ -16,8 +16,6 @@ import {
   IconCheck,
   IconClose,
   IconDocumentText,
-  IconGlobe,
-  IconMegaphone,
   IconMenu,
   IconPersons,
 } from "@montage-ui/icon";
@@ -30,7 +28,10 @@ import { homeCopy } from "./copy";
 import styles from "./public-home.module.css";
 
 const stepIcons = [IconDocumentText, IconPersons, IconCheck];
-const partnerIcons = [IconGlobe, IconMegaphone];
+const quickArtwork = [
+  "/landing/quick-icons/game-globe-coral.webp",
+  "/landing/quick-icons/creator-megaphone-lavender.webp",
+];
 const partnerArtwork = [
   "/partner-art/brand-partners.webp",
   "/partner-art/creator-partners.webp",
@@ -202,28 +203,31 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
             </div>
           </section>
           <div className={`${styles.container} ${styles.quickLinks}`}>
-            {t.quick.map((item, index) => {
-              const Icon = partnerIcons[index]!;
-              return (
-                <a
-                  href={destinations[index]}
-                  className={styles.quickLink}
-                  key={index}
-                >
-                  <span className={styles.quickIcon}>
-                    <Icon aria-hidden="true" />
-                  </span>
-                  <span>
-                    <strong>{item.title}</strong>
-                    <span>{item.body}</span>
-                  </span>
-                  <IconArrowRight
-                    className={styles.quickArrow}
-                    aria-hidden="true"
+            {t.quick.map((item, index) => (
+              <a
+                href={destinations[index]}
+                className={styles.quickLink}
+                key={index}
+              >
+                <span className={styles.quickIcon} aria-hidden="true">
+                  <Image
+                    src={quickArtwork[index]!}
+                    alt=""
+                    width={64}
+                    height={64}
+                    sizes="(max-width: 600px) 52px, (max-width: 900px) 48px, 64px"
                   />
-                </a>
-              );
-            })}
+                </span>
+                <span>
+                  <strong>{item.title}</strong>
+                  <span>{item.body}</span>
+                </span>
+                <IconArrowRight
+                  className={styles.quickArrow}
+                  aria-hidden="true"
+                />
+              </a>
+            ))}
           </div>
           <CampaignIdeas t={t} />
           <section id="how-it-works" aria-labelledby="workflow-title">

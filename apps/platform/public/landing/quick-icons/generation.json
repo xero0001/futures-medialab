@@ -1,0 +1,22 @@
+{
+  "generator": "OpenAI built-in imagegen",
+  "createdAt": "2026-11-08",
+  "usage": "Homepage quick links: game campaign globe and creator partner megaphone",
+  "assets": [
+    {
+      "file": "game-globe-coral.webp",
+      "mode": "Generate original 3D icon, then edit palette",
+      "prompt": "Create a single premium 3D globe icon for a Korean game-marketing website, designed to remain clear at 64 CSS pixels. Square canvas, transparent background. A simple softly rounded globe, pale seafoam oceans with gently raised muted teal continent silhouettes, and one slim satin teal meridian ring. Three-quarter view, slight natural tilt. No base or stand. The object is centered and fills roughly 82 percent of the square, fully in frame with equal breathing room. Soft three-dimensional satin ceramic material, refined smooth rounded edges, gentle diffuse upper-left lighting, soft mint highlights and deeper desaturated teal shadows. Match an airy premium 3D game controller illustration in mint and pearl white. Minimal, calm and tactile, not glossy neon, not flat vector art. Single isolated object; no scattered stars or other decorations. Genuine clean alpha background, no colored backdrop, no ground plane, no background shadow or glow. No words, letters, numbers, logos, watermark, border or enclosing tile.",
+      "colorEditPrompt": "Edit only the colors of this single 3D globe icon. Preserve its exact sphere shape, continent silhouettes, meridian ring, framing, camera angle, material texture, lighting, shadow detail, square dimensions and clean transparent background. Replace the pale mint oceans with softly lit warm ivory-peach. Replace teal continents with gentle coral-orange and the teal meridian ring with a slightly deeper warm terracotta-orange. Use a cohesive warm apricot, peach, coral and orange palette with satin ceramic shading, never neon. Keep the light source and subtle 3D depth. Remove all mint, green and teal tints. No new objects, ground plane, glow, backdrop, tile, text, logos, border or watermark. Entire globe fully in frame with the same padding. Preserve genuine alpha transparency.",
+      "transparent_background": true
+    },
+    {
+      "file": "creator-megaphone-lavender.webp",
+      "mode": "Generate original 3D icon, then edit palette",
+      "prompt": "Create a single premium 3D megaphone icon for a Korean creator-partner website, designed to remain clear at 64 CSS pixels. Square canvas, transparent background. A compact friendly rounded megaphone floating at a gentle diagonal, bell facing toward the upper right, clearly visible pale mint flared bell rim, muted teal inner cone and short deeper teal handle; a small pearl-white center inside the bell. Three-quarter view so both the horn and handle are recognizable. The object is centered and fills roughly 82 percent of the square, fully in frame with equal breathing room. Soft three-dimensional satin ceramic material, refined smooth rounded edges, gentle diffuse upper-left lighting, soft mint highlights and deeper desaturated teal shadows. Match an airy premium 3D game controller illustration in mint and pearl white. Minimal, calm and tactile, not glossy neon, not flat vector art. Single isolated object; no sound waves, scattered stars or other decorations. Genuine clean alpha background, no colored backdrop, no ground plane, no background shadow or glow. No words, letters, numbers, logos, watermark, border or enclosing tile.",
+      "colorEditPrompt": "Edit only the colors of this single 3D megaphone icon. Preserve its exact horn and handle shapes, center insert, framing, camera angle, material texture, lighting, shadow detail, square dimensions and clean transparent background. Replace the pale mint exterior and bell rim with softly lit pale lavender. Replace the teal inner cone with muted amethyst-purple and the deeper teal handle and rear section with gentle medium violet. Keep the center insert pearl white. Use a cohesive pastel lavender, lilac and purple palette with satin ceramic shading, never neon. Keep the light source and subtle 3D depth. Remove all mint, green and teal tints. No new objects, sound waves, ground plane, glow, backdrop, tile, text, logos, border or watermark. Entire megaphone fully in frame with the same padding. Preserve genuine alpha transparency.",
+      "transparent_background": true
+    }
+  ],
+  "processing": "Resized to 384px and encoded as WebP with alpha preserved. Original generated images retained."
+}
