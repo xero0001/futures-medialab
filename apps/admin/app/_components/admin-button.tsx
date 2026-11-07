@@ -1,31 +1,29 @@
 "use client";
 
 import type { ComponentPropsWithoutRef } from "react";
-import { Button } from "@montage-ui/core";
+import { ActionButton } from "@futures-medialab/ui/action-button";
 
-/** Preserve native form semantics and explicit accessible names with Montage styles. */
+/** Compatibility adapter for existing console forms and action classes. */
 export function AdminButton({
   className = "",
   type = "submit",
-  children,
   ...props
 }: ComponentPropsWithoutRef<"button">) {
   const classes = className.split(/\s+/);
-  const primary = classes.includes("primary");
-  const danger = classes.includes("danger");
+  const intent = classes.includes("danger")
+    ? "danger"
+    : classes.includes("primary")
+      ? "primary"
+      : classes.includes("admin-text-button")
+        ? "text"
+        : "secondary";
   return (
-    <Button
+    <ActionButton
       {...props}
-      {...(props["aria-label"]
-        ? { "aria-labelledby": props["aria-labelledby"] }
-        : {})}
       type={type}
-      size="medium"
-      variant={primary || danger ? "solid" : "outlined"}
-      color={danger ? "negative" : primary ? "primary" : "assistive"}
+      intent={intent}
+      iconOnly={classes.includes("icon")}
       className={`admin-control ${className}`}
-    >
-      <span className="admin-control-content">{children}</span>
-    </Button>
+    />
   );
 }

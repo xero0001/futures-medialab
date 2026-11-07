@@ -1,4 +1,6 @@
 "use client";
+
+import { FormSelect } from "@futures-medialab/ui/form-select";
 import { AdminButton } from "./_components/admin-button";
 
 import {
@@ -262,7 +264,7 @@ export function RequestConsole({
           </label>
           <label>
             <span>처리 상태</span>
-            <select
+            <FormSelect
               value={filters.status}
               onChange={(event) => filter("status", event.target.value)}
             >
@@ -272,11 +274,11 @@ export function RequestConsole({
                   {label}
                 </option>
               ))}
-            </select>
+            </FormSelect>
           </label>
           <label>
             <span>우선순위</span>
-            <select
+            <FormSelect
               value={filters.priority}
               onChange={(event) => filter("priority", event.target.value)}
             >
@@ -286,11 +288,11 @@ export function RequestConsole({
                   {label}
                 </option>
               ))}
-            </select>
+            </FormSelect>
           </label>
           <label>
             <span>담당자</span>
-            <select
+            <FormSelect
               value={filters.assignee}
               onChange={(event) => filter("assignee", event.target.value)}
             >
@@ -302,7 +304,7 @@ export function RequestConsole({
                   {assignee.id === userId ? " (나)" : ""}
                 </option>
               ))}
-            </select>
+            </FormSelect>
           </label>
         </form>
         <div className="ar-list-caption">
@@ -781,7 +783,7 @@ function RequestManagement({
         <fieldset disabled={busy}>
           <label>
             처리 상태
-            <select
+            <FormSelect
               value={status}
               onChange={(event) =>
                 setStatus(event.target.value as RequestStatus)
@@ -800,11 +802,11 @@ function RequestManagement({
                   {label}
                 </option>
               ))}
-            </select>
+            </FormSelect>
           </label>
           <label>
             우선순위
-            <select
+            <FormSelect
               value={priority}
               onChange={(event) =>
                 setPriority(event.target.value as RequestPriority)
@@ -815,11 +817,11 @@ function RequestManagement({
                   {label}
                 </option>
               ))}
-            </select>
+            </FormSelect>
           </label>
           <label>
             담당자
-            <select
+            <FormSelect
               value={assignee}
               onChange={(event) => setAssignee(event.target.value)}
             >
@@ -830,7 +832,7 @@ function RequestManagement({
                   {item.id === userId ? " (나)" : ""}
                 </option>
               ))}
-            </select>
+            </FormSelect>
           </label>
           {assignees.some((item) => item.id === userId) &&
           assignee !== userId ? (
@@ -1204,7 +1206,7 @@ function ReplyForm({
           <div className="ar-reply-intent">
             <label>
               답변 목적
-              <select
+              <FormSelect
                 value={intent}
                 onChange={(event) =>
                   setIntent(event.target.value as "notice" | "reply" | "brief")
@@ -1213,7 +1215,7 @@ function ReplyForm({
                 <option value="notice">안내 보내기</option>
                 <option value="reply">회신 요청하기</option>
                 <option value="brief">자료 보완 요청하기</option>
-              </select>
+              </FormSelect>
             </label>
             {intent !== "notice" ? (
               <label>

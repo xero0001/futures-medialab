@@ -113,42 +113,6 @@
   flex: 1;
   min-width: 0;
 }
-.cw-montage .brand-button {
-  min-height: 40px;
-  border-radius: 10px;
-  font-size: 15px;
-  line-height: 22px;
-  font-weight: 600;
-  box-shadow: none;
-  padding: 8px 16px;
-}
-.cw-montage .brand-button-content {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-.cw-montage .brand-button-content svg {
-  flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-}
-.cw-montage .brand-button:not(.cw-button-primary) {
-  color: var(--brand-ink);
-  background: #fff;
-  border: 1px solid var(--brand-line);
-}
-.cw-montage .brand-button:not(.cw-button-primary):hover {
-  background: var(--brand-neutral-soft);
-}
-.cw-montage .brand-button.cw-button-primary {
-  background: var(--brand-primary);
-  color: #fff;
-  border-color: transparent;
-}
-.cw-montage .brand-button.cw-button-primary:not(:disabled):hover {
-  background: var(--brand-primary-hover);
-}
 .cw-montage
   :is(.cw-tools button, .cw-tools a, .cw-tools summary):focus-visible {
   outline: 2px solid var(--brand-focus);

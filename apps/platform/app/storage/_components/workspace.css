@@ -21,7 +21,10 @@
   box-sizing: border-box;
 }
 
-.cw-workspace button,
+.cw-workspace
+  button:not([data-fm-control]):not([data-component]):not(
+    :has(> [data-component="with-interaction"])
+  ),
 .cw-workspace input,
 .cw-workspace select,
 .cw-workspace textarea {
@@ -34,17 +37,26 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.cw-workspace button:not(:disabled),
+.cw-workspace
+  button:not(:disabled):not([data-fm-control]):not([data-component]):not(
+    :has(> [data-component="with-interaction"])
+  ),
 .cw-workspace summary {
   cursor: pointer;
 }
 
-.cw-workspace :is(button, a, input, select, textarea, summary):focus-visible {
+.cw-workspace
+  :is(button, a, input, select, textarea, summary):focus-visible:not(
+    [data-fm-control]
+  ):not([data-component]):not(:has(> [data-component="with-interaction"])) {
   outline: 3px solid var(--brand-focus, #a5b4fc);
   outline-offset: 3px;
 }
 
-.cw-workspace button:disabled {
+.cw-workspace
+  button:disabled:not([data-fm-control]):not([data-component]):not(
+    :has(> [data-component="with-interaction"])
+  ) {
   cursor: not-allowed;
   opacity: 0.48;
 }
@@ -443,8 +455,8 @@
   border-color: var(--brand-primary, #818cf8);
 }
 
-.cw-button,
-.cw-button-primary,
+.cw-button:not([data-fm-control]),
+.cw-button-primary:not([data-fm-control]),
 .cw-icon-button {
   display: inline-flex;
   min-height: 44px;
@@ -464,20 +476,20 @@
   text-decoration: none;
 }
 
-.cw-button:not(:disabled):hover,
+.cw-button:not([data-fm-control]):not(:disabled):hover,
 .cw-icon-button:not(:disabled):hover {
   border-color: #b8c1d5;
   background: var(--brand-neutral-soft, #f8f9fc);
   color: var(--cw-ink);
 }
 
-.cw-button-primary {
+.cw-button-primary:not([data-fm-control]) {
   border-color: var(--cw-accent);
   background: var(--cw-accent);
   color: #fff;
 }
 
-.cw-button-primary:not(:disabled):hover {
+.cw-button-primary:not([data-fm-control]):not(:disabled):hover {
   border-color: var(--cw-accent-dark);
   background: var(--cw-accent-dark);
   color: #fff;
@@ -938,7 +950,9 @@
   gap: 12px;
 }
 
-button.cw-person {
+button.cw-person:not([data-fm-control]):not([data-component]):not(
+    :has(> [data-component="with-interaction"])
+  ) {
   border: 0;
   background: transparent;
   padding: 0;
@@ -1275,7 +1289,7 @@ button.cw-person {
   margin-top: 23px;
 }
 
-.cw-filter-toggle > .cw-button {
+.cw-filter-toggle > .cw-button:not([data-fm-control]) {
   min-height: 38px;
   border-color: transparent;
   background: var(--brand-neutral-soft, #f4f6fb);

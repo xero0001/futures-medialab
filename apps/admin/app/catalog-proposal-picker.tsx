@@ -1,4 +1,6 @@
 "use client";
+
+import { FormSelect } from "@futures-medialab/ui/form-select";
 import { useEffect, useRef, useState } from "react";
 import { AdminButton } from "./_components/admin-button";
 import {
@@ -243,7 +245,7 @@ export function CatalogProposalPicker({
             ) : null}
             <label className={s.field}>
               공개할 채널
-              <select
+              <FormSelect
                 value={channelIndex}
                 onChange={(e) => setChannelIndex(Number(e.target.value))}
               >
@@ -252,11 +254,11 @@ export function CatalogProposalPicker({
                     {c.platform} · {c.name}
                   </option>
                 ))}
-              </select>
+              </FormSelect>
             </label>
             <label className={s.field}>
               가격표 항목
-              <select
+              <FormSelect
                 value={rateIndex}
                 onChange={(e) => setRateIndex(Number(e.target.value))}
               >
@@ -269,7 +271,7 @@ export function CatalogProposalPicker({
                     </option>
                   ) : null,
                 )}
-              </select>
+              </FormSelect>
             </label>
             <AdminButton
               type="button"

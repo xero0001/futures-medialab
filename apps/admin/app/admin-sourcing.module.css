@@ -106,9 +106,11 @@
   font-size: 13px;
   font-weight: 600;
 }
-.form textarea,
-.form select,
-.filter select {
+.form :global(.fm-form-select),
+.filter :global(.fm-form-select) {
+  min-width: 0;
+}
+.form textarea {
   font: inherit;
   border: 1px solid #e1e2e4;
   border-radius: 8px;

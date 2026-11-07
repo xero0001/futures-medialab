@@ -1,4 +1,6 @@
 "use client";
+
+import { FormSelect } from "@futures-medialab/ui/form-select";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -278,7 +280,7 @@ export function AdminCampaignDocuments({
         </label>
         <label>
           <span>문서 종류</span>
-          <select
+          <FormSelect
             aria-label="문서 종류"
             value={kind}
             onChange={(e) => {
@@ -292,11 +294,11 @@ export function AdminCampaignDocuments({
                 {name}
               </option>
             ))}
-          </select>
+          </FormSelect>
         </label>
         <label>
           <span>공개 범위</span>
-          <select
+          <FormSelect
             aria-label="공개 범위"
             value={scope}
             onChange={(e) => {
@@ -310,11 +312,11 @@ export function AdminCampaignDocuments({
                 {name}
               </option>
             ))}
-          </select>
+          </FormSelect>
         </label>
         <label>
           <span>버전</span>
-          <select
+          <FormSelect
             aria-label="버전"
             value={versions}
             onChange={(e) => {
@@ -325,7 +327,7 @@ export function AdminCampaignDocuments({
             <option value="all">모든 버전</option>
             <option value="latest">현재 문서</option>
             <option value="previous">이전 버전</option>
-          </select>
+          </FormSelect>
         </label>
         <button
           type="button"

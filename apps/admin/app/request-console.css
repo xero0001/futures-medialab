@@ -32,8 +32,11 @@
   font-weight: 600;
   min-width: 0;
 }
+.ar-console .fm-form-select {
+  min-width: 0;
+  max-width: 100%;
+}
 .ar-console input,
-.ar-console select,
 .ar-console textarea {
   min-width: 0;
   max-width: 100%;

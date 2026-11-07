@@ -8,18 +8,30 @@
 .aop *::after {
   box-sizing: border-box;
 }
-.aop :is(button, input, summary) {
+.aop
+  :is(button, input, summary):not([data-fm-control]):not([data-component]):not(
+    :has(> [data-component="with-interaction"])
+  ) {
   font: inherit;
 }
-.aop :is(a, button, input, summary, [tabindex]):focus-visible {
+.aop
+  :is(a, button, input, summary, [tabindex]):focus-visible:not(
+    [data-fm-control]
+  ):not([data-component]):not(:has(> [data-component="with-interaction"])) {
   outline: 3px solid #a5b4fc;
   outline-offset: 3px;
 }
-.aop button:not(:disabled),
+.aop
+  button:not(:disabled):not([data-fm-control]):not([data-component]):not(
+    :has(> [data-component="with-interaction"])
+  ),
 .aop summary {
   cursor: pointer;
 }
-.aop button:disabled {
+.aop
+  button:disabled:not([data-fm-control]):not([data-component]):not(
+    :has(> [data-component="with-interaction"])
+  ) {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -39,7 +51,7 @@
 .aop-block {
   display: block;
 }
-.aop-button {
+.aop-button:not([data-fm-control]) {
   display: inline-flex;
   min-height: 40px;
   align-items: center;
@@ -54,17 +66,17 @@
   text-decoration: none;
   font-weight: 500;
 }
-.aop-button:not(:disabled):hover {
+.aop-button:not([data-fm-control]):not(:disabled):hover {
   border-color: #b9b5f2;
   color: #4f46e5;
   background: #fafaff;
 }
-.aop-primary {
+.aop-primary:not([data-fm-control]) {
   border-color: #4f46e5;
   background: #4f46e5;
   color: #fff;
 }
-.aop-primary:not(:disabled):hover {
+.aop-primary:not([data-fm-control]):not(:disabled):hover {
   background: #4338ca;
   border-color: #4338ca;
   color: #fff;
@@ -561,7 +573,31 @@
     align-items: flex-start;
   }
 }
-.aop-submit-form { margin-top: 20px; padding-top: 18px; border-top: 1px solid #e8e5ed; display: grid; gap: 12px; font-size: 14px; }
-.aop-submit-form label { font-weight: 600; }.aop-submit-form p { margin: 0; color: #716c83; line-height: 1.6; }
-.aop-submit-form input { min-height: 44px; width: 100%; border: 1px solid #dcd8e8; border-radius: 9px; padding: 10px 12px; font: inherit; background: white; }
-.aop-submit-form button { justify-self: start; }
+.aop-submit-form {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #e8e5ed;
+  display: grid;
+  gap: 12px;
+  font-size: 14px;
+}
+.aop-submit-form label {
+  font-weight: 600;
+}
+.aop-submit-form p {
+  margin: 0;
+  color: #716c83;
+  line-height: 1.6;
+}
+.aop-submit-form input {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid #dcd8e8;
+  border-radius: 9px;
+  padding: 10px 12px;
+  font: inherit;
+  background: white;
+}
+.aop-submit-form button {
+  justify-self: start;
+}

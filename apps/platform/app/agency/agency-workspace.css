@@ -12,10 +12,10 @@
   -webkit-font-smoothing: antialiased;
 }
 .cwa-workspace *, .cwa-workspace *::before, .cwa-workspace *::after { box-sizing: border-box; }
-.cwa-workspace :is(button, input, textarea) { font: inherit; }
-.cwa-workspace button:not(:disabled), .cwa-workspace summary { cursor: pointer; }
-.cwa-workspace :is(a, button, input, textarea, summary):focus-visible { outline: 3px solid #a5b4fc; outline-offset: 3px; }
-.cwa-workspace button:disabled { cursor: not-allowed; opacity: .55; }
+.cwa-workspace :is(button, input, textarea):not([data-fm-control]):not([data-component]):not(:has(> [data-component="with-interaction"])) { font: inherit; }
+.cwa-workspace button:not(:disabled):not([data-fm-control]):not([data-component]):not(:has(> [data-component="with-interaction"])), .cwa-workspace summary { cursor: pointer; }
+.cwa-workspace :is(a, button, input, textarea, summary):focus-visible:not([data-fm-control]):not([data-component]):not(:has(> [data-component="with-interaction"])) { outline: 3px solid #a5b4fc; outline-offset: 3px; }
+.cwa-workspace button:disabled:not([data-fm-control]):not([data-component]):not(:has(> [data-component="with-interaction"])) { cursor: not-allowed; opacity: .55; }
 .cwa-topbar { position: sticky; top: 0; z-index: 50; display: flex; height: 72px; align-items: center; gap: 24px; border-bottom: 1px solid var(--cwa-line); background: #fff; padding: 0 28px; }
 .cwa-topbar-divider { height: 23px; border-left: 1px solid var(--cwa-line); }
 .cwa-topbar-label { color: #68677d; font-size: 14px; font-weight: 600; }
@@ -73,10 +73,10 @@
 .cwa-search-input > svg { flex-shrink: 0; }
 .cwa-search-input > input { width: 100%; min-width: 0; border: 0; background: transparent; padding: 0; color: #344158; font-size: 14px; }
 .cwa-workspace input::placeholder { color: #9ca5b6; opacity: 1; }
-.cwa-button { display: inline-flex; min-height: 44px; flex-shrink: 0; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--cwa-line); border-radius: 30px; background: #fff; padding: 10px 18px; color: #615c78; font-size: 14px; font-weight: 600; line-height: 1.5; }
-.cwa-button:not(:disabled):hover { border-color: #c3cbed; background: #f7f8fe; color: #5147cb; }
-.cwa-button-primary { border-color: var(--cwa-indigo); background: var(--cwa-indigo); color: #fff; }
-.cwa-button-primary:not(:disabled):hover { border-color: #4338ca; background: #4338ca; color: #fff; }
+.cwa-button:not([data-fm-control]) { display: inline-flex; min-height: 44px; flex-shrink: 0; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--cwa-line); border-radius: 30px; background: #fff; padding: 10px 18px; color: #615c78; font-size: 14px; font-weight: 600; line-height: 1.5; }
+.cwa-button:not([data-fm-control]):not(:disabled):hover { border-color: #c3cbed; background: #f7f8fe; color: #5147cb; }
+.cwa-button-primary:not([data-fm-control]) { border-color: var(--cwa-indigo); background: var(--cwa-indigo); color: #fff; }
+.cwa-button-primary:not([data-fm-control]):not(:disabled):hover { border-color: #4338ca; background: #4338ca; color: #fff; }
 .cwa-filter-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .cwa-workspace .fmb-select { position: relative; min-width: 0; }
 .cwa-workspace .fmb-label { display: block; margin: 0 0 7px; color: #7e899f; font-size: 14px; font-weight: 500; line-height: 1.5; }
@@ -198,15 +198,7 @@
 .cwa-apply-gate > p { margin-top: 12px; color: #a0a8b8; font-size: 14px; }
 
 /* Keep secondary text readable at the minimum 14px size, including sample notices. */
-.cwa-topbar-label, .cwa-sidebar-footer > div > span, .cwa-heading > div > p:first-child,
-.cwa-heading .cwa-subtitle, .cwa-demo-note, .cwa-workspace input::placeholder,
-.cwa-workspace .fmb-label, .cwa-date-range > legend, .cwa-date-range input,
-.cwa-results-toolbar > p, .cwa-view-toggle > button, .cwa-offer-meta,
-.cwa-offer-platforms, .cwa-offer-footer > div > span, .cwa-offer-footer small,
-.cwa-empty-eyebrow, .cwa-empty p, .cwa-payment-summary span, .cwa-payment-summary small,
-.cwa-section-heading p, .cwa-organization dt, .cwa-prototype-note,
-.cwa-drawer-heading > span, .cwa-drawer-content p, .cwa-brief-details dt,
-.cwa-brief-details dd, .cwa-brief-payout > span, .cwa-apply-gate > p { color: #647089; }
+.cwa-topbar-label, .cwa-sidebar-footer > div > span, .cwa-heading > div > p:first-child, .cwa-heading .cwa-subtitle, .cwa-demo-note, .cwa-workspace input::placeholder, .cwa-workspace .fmb-label, .cwa-date-range > legend, .cwa-date-range input, .cwa-results-toolbar > p, .cwa-view-toggle > button, .cwa-offer-meta, .cwa-offer-platforms, .cwa-offer-footer > div > span, .cwa-offer-footer small, .cwa-empty-eyebrow, .cwa-empty p, .cwa-payment-summary span, .cwa-payment-summary small, .cwa-section-heading p, .cwa-organization dt, .cwa-prototype-note, .cwa-drawer-heading > span, .cwa-drawer-content p, .cwa-brief-details dt, .cwa-brief-details dd, .cwa-brief-payout > span, .cwa-apply-gate > p { color: #647089; }
 .cwa-offer-tags > span, .cwa-payment-note { color: #596881; }
 .cwa-drawer-content .cwa-drawer-notice { color: #6b608d; }
 .cwa-approval-banner p { color: #526b8c; }

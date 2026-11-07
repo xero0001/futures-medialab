@@ -8,7 +8,6 @@ import {
   type ReactNode,
 } from "react";
 import {
-  Button,
   TextField,
   TextArea,
   Select,
@@ -18,6 +17,7 @@ import {
   TabListItem,
   TabPanel,
 } from "@montage-ui/core";
+import { ActionButton } from "@futures-medialab/ui/action-button";
 import { ProfileSelect } from "../../onboarding/brand/profile-select";
 
 // Archived design explorations keep their original controls.
@@ -42,18 +42,14 @@ export function WorkspaceButton({
       ["cw-button-primary", "cwa-button-primary", "aop-primary"].includes(name),
     );
   return (
-    <Button
+    <ActionButton
       {...props}
       type={type}
-      size="medium"
-      variant={primary ? "solid" : "outlined"}
-      color={primary ? "primary" : "assistive"}
+      intent={primary ? "primary" : "secondary"}
       className={`${className} brand-button workspace-button`}
     >
-      <span className="brand-button-content workspace-button-content">
-        {children}
-      </span>
-    </Button>
+      {children}
+    </ActionButton>
   );
 }
 

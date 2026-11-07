@@ -1,4 +1,6 @@
 "use client";
+
+import { FormSelect } from "@futures-medialab/ui/form-select";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   ArrowRight,
@@ -216,7 +218,7 @@ export function OperationsDashboard({
               </label>
               <label>
                 <span className={s.srOnly}>담당자 필터</span>
-                <select
+                <FormSelect
                   aria-label="담당자 필터"
                   value={filters.assignee}
                   onChange={(e) =>
@@ -228,11 +230,11 @@ export function OperationsDashboard({
                   <option value="all">전체 담당자</option>
                   <option value="mine">내 담당</option>
                   <option value="unassigned">미배정</option>
-                </select>
+                </FormSelect>
               </label>
               <label>
                 <span className={s.srOnly}>기한 필터</span>
-                <select
+                <FormSelect
                   aria-label="기한 필터"
                   value={filters.deadline}
                   onChange={(e) =>
@@ -244,7 +246,7 @@ export function OperationsDashboard({
                   <option value="all">전체 기한</option>
                   <option value="overdue">기한 초과</option>
                   <option value="soon">48시간 이내</option>
-                </select>
+                </FormSelect>
               </label>
               <AdminButton type="submit" disabled={loading}>
                 검색

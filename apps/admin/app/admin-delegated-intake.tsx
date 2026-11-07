@@ -1,4 +1,6 @@
 "use client";
+
+import { FormSelect } from "@futures-medialab/ui/form-select";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { AdminButton } from "./_components/admin-button";
 import styles from "./admin-delegated-intake.module.css";
@@ -95,7 +97,7 @@ function PartyPicker({
         placeholder={organizationId ? "이름 또는 이메일" : "조직명"}
       />
       <label htmlFor={`${id}-select`}>{label}</label>
-      <select
+      <FormSelect
         id={`${id}-select`}
         required
         value={selected?.id ?? ""}
@@ -116,7 +118,7 @@ function PartyPicker({
             {item.agencyBuyer ? " · 구매자 대행사" : ""}
           </option>
         ))}
-      </select>
+      </FormSelect>
       {error ? (
         <div role="alert" className="admin-alert error">
           {error}{" "}
@@ -347,13 +349,13 @@ export function AdminDelegatedIntake({
           </label>
           <label>
             브리프 수신 경로
-            <select name="channel">
+            <FormSelect name="channel">
               {channels.map(([key, name]) => (
                 <option key={key} value={key}>
                   {name}
                 </option>
               ))}
-            </select>
+            </FormSelect>
           </label>
           <label className={styles.full}>
             대리 접수 사유{" "}
@@ -421,11 +423,11 @@ export function AdminDelegatedIntake({
           </label>
           <label>
             통화
-            <select name="currency">
+            <FormSelect name="currency">
               <option>KRW</option>
               <option>USD</option>
               <option>CNY</option>
-            </select>
+            </FormSelect>
           </label>
           <fieldset className={`${styles.platforms} ${styles.full}`}>
             <legend>매체 (복수 선택)</legend>
@@ -448,23 +450,23 @@ export function AdminDelegatedIntake({
           </label>
           <label>
             구성 방향 (선택)
-            <select name="compositionPreference">
+            <FormSelect name="compositionPreference">
               <option value="">미지정</option>
               <option value="balanced">요청 충족</option>
               <option value="reach">화제성</option>
               <option value="efficient">예산 효율</option>
-            </select>
+            </FormSelect>
           </label>
           <label>
             진행 방식
-            <select
+            <FormSelect
               aria-label="진행 방식"
               value={route}
               onChange={(e) => setRoute(e.target.value as "managed" | "open")}
             >
               <option value="managed">맞춤 의뢰</option>
               <option value="open">오픈 모집</option>
-            </select>
+            </FormSelect>
           </label>
           <label>
             희망 게시일

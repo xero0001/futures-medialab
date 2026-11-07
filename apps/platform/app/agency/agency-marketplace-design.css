@@ -26,7 +26,7 @@
   gap: 9px;
   margin-left: auto;
 }
-.cwa-marketplace .cwa-button {
+.cwa-marketplace .cwa-button:not([data-fm-control]) {
   min-height: 39px;
   border: 1px solid #dfe3eb;
   border-radius: 7px;
@@ -36,12 +36,13 @@
   font-size: 14px;
   font-weight: 550;
 }
-.cwa-marketplace .cwa-button-primary {
+.cwa-marketplace .cwa-button-primary:not([data-fm-control]) {
   border-color: var(--market-indigo);
   background: var(--market-indigo);
   color: #fff;
 }
-.cwa-marketplace .cwa-button-primary:not(:disabled):hover {
+.cwa-marketplace
+  .cwa-button-primary:not([data-fm-control]):not(:disabled):hover {
   border-color: #4338bc;
   background: #4338bc;
   color: #fff;

@@ -54,49 +54,6 @@
   padding: 8px 12px;
   font-size: 13px;
 }
-.agency-montage .workspace-button {
-  min-height: 40px;
-  border-radius: 10px;
-  padding: 8px 16px;
-  font-size: 15px;
-  line-height: 22px;
-  font-weight: 600;
-  box-shadow: none;
-}
-.agency-montage .workspace-button-content {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-.agency-montage .workspace-button-content svg {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-.agency-montage .workspace-button:not(.cwa-button-primary):not(.aop-primary) {
-  background: #fff;
-  border: 1px solid var(--agency-line);
-  color: var(--agency-ink);
-}
-.agency-montage
-  .workspace-button:not(.cwa-button-primary):not(.aop-primary):not(
-    :disabled
-  ):hover {
-  background: var(--agency-soft);
-  border-color: var(--agency-line);
-  color: var(--agency-ink);
-}
-.agency-montage .workspace-button:is(.cwa-button-primary, .aop-primary) {
-  background: var(--agency-blue);
-  border-color: transparent;
-  color: #fff;
-}
-.agency-montage
-  .workspace-button:is(.cwa-button-primary, .aop-primary):not(:disabled):hover {
-  background: var(--agency-blue-hover);
-  border-color: transparent;
-}
 .agency-montage .workspace-select {
   display: grid;
   align-content: start;

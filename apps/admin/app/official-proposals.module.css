@@ -170,8 +170,7 @@
   font-size: 12px;
 }
 .field input,
-.field textarea,
-.field select {
+.field textarea {
   font-weight: 400;
 }
 .fieldWide {

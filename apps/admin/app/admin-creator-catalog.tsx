@@ -1,4 +1,6 @@
 "use client";
+
+import { FormSelect } from "@futures-medialab/ui/form-select";
 import {
   useEffect,
   useRef,
@@ -43,7 +45,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
     </label>
   );
 }
-function Labels<T extends string>({ names }: { names: Record<T, string> }) {
+function labelOptions<T extends string>(names: Record<T, string>) {
   return (
     <>
       {(Object.entries(names) as [T, string][]).map(([v, l]) => (
@@ -301,7 +303,7 @@ function CatalogEditor({
                 />
               </Field>
               <Field label="소속 유형">
-                <select
+                <FormSelect
                   value={profile.affiliation}
                   onChange={(e) => {
                     const affiliation = e.target
@@ -315,11 +317,11 @@ function CatalogEditor({
                     }));
                   }}
                 >
-                  <Labels names={affiliationNames} />
-                </select>
+                  {labelOptions(affiliationNames)}
+                </FormSelect>
               </Field>
               <Field label="갱신 담당자">
-                <select
+                <FormSelect
                   required
                   value={profile.ownerId}
                   onChange={(e) => update("ownerId", e.target.value)}
@@ -329,16 +331,16 @@ function CatalogEditor({
                       {o.name}
                     </option>
                   ))}
-                </select>
+                </FormSelect>
               </Field>
               <Field label="운영 상태">
-                <select
+                <FormSelect
                   value={profile.isActive ? "yes" : "no"}
                   onChange={(e) => update("isActive", e.target.value === "yes")}
                 >
                   <option value="yes">활성</option>
                   <option value="no">보관</option>
-                </select>
+                </FormSelect>
               </Field>
             </section>
             {profile.affiliation === "PARTNER" ? (
@@ -351,7 +353,7 @@ function CatalogEditor({
                   />
                 </Field>
                 <Field label="파트너 조직">
-                  <select
+                  <FormSelect
                     required
                     value={profile.partnerOrganizationId ?? ""}
                     onChange={(e) => {
@@ -379,10 +381,10 @@ function CatalogEditor({
                         {o.name}
                       </option>
                     ))}
-                  </select>
+                  </FormSelect>
                 </Field>
                 <Field label="파트너 로스터 연결">
-                  <select
+                  <FormSelect
                     disabled={!profile.partnerOrganizationId}
                     value={profile.rosterCreatorId ?? ""}
                     onChange={(e) => {
@@ -416,7 +418,7 @@ function CatalogEditor({
                         {r.displayName}
                       </option>
                     ))}
-                  </select>
+                  </FormSelect>
                 </Field>
               </section>
             ) : null}
@@ -452,7 +454,7 @@ function CatalogEditor({
                   </div>
                   <div className={s.grid}>
                     <Field label="플랫폼">
-                      <select
+                      <FormSelect
                         value={c.platform}
                         onChange={(e) =>
                           setChannel(
@@ -465,7 +467,7 @@ function CatalogEditor({
                         {catalogPlatforms.map((platform) => (
                           <option key={platform}>{platform}</option>
                         ))}
-                      </select>
+                      </FormSelect>
                     </Field>
                     <Field label="채널명">
                       <input
@@ -550,7 +552,7 @@ function CatalogEditor({
               <h4>가용성·경쟁 제한</h4>
               <div className={s.grid}>
                 <Field label="광고 진행 가능 여부">
-                  <select
+                  <FormSelect
                     value={profile.availability}
                     onChange={(e) =>
                       update(
@@ -559,11 +561,11 @@ function CatalogEditor({
                       )
                     }
                   >
-                    <Labels names={availabilityNames} />
-                  </select>
+                    {labelOptions(availabilityNames)}
+                  </FormSelect>
                 </Field>
                 <Field label="중국 게임 광고">
-                  <select
+                  <FormSelect
                     value={profile.acceptsChinaGames}
                     onChange={(e) =>
                       update(
@@ -572,8 +574,8 @@ function CatalogEditor({
                       )
                     }
                   >
-                    <Labels names={acceptanceNames} />
-                  </select>
+                    {labelOptions(acceptanceNames)}
+                  </FormSelect>
                 </Field>
                 {(
                   [
@@ -645,7 +647,7 @@ function CatalogEditor({
                     />
                   </Field>
                   <Field label="통화">
-                    <select
+                    <FormSelect
                       value={r.currency}
                       onChange={(e) =>
                         setRate(
@@ -658,7 +660,7 @@ function CatalogEditor({
                       {["KRW", "USD", "CNY"].map((v) => (
                         <option key={v}>{v}</option>
                       ))}
-                    </select>
+                    </FormSelect>
                   </Field>
                   {(
                     [
@@ -699,7 +701,7 @@ function CatalogEditor({
                     />
                   </Field>
                   <Field label="VAT">
-                    <select
+                    <FormSelect
                       value={r.vat}
                       onChange={(e) =>
                         setRate(i, "vat", e.target.value as CatalogRate["vat"])
@@ -708,7 +710,7 @@ function CatalogEditor({
                       <option value="UNSPECIFIED">미확인</option>
                       <option value="INCLUDED">포함</option>
                       <option value="EXCLUDED">별도</option>
-                    </select>
+                    </FormSelect>
                   </Field>
                   {(
                     [
@@ -1038,7 +1040,7 @@ export function AdminCreatorCatalog({
               />
             </Field>
             <Field label="소속">
-              <select
+              <FormSelect
                 value={affiliation}
                 onChange={(e) => {
                   setAffiliation(e.target.value);
@@ -1046,11 +1048,11 @@ export function AdminCreatorCatalog({
                 }}
               >
                 <option value="all">전체 소속</option>
-                <Labels names={affiliationNames} />
-              </select>
+                {labelOptions(affiliationNames)}
+              </FormSelect>
             </Field>
             <Field label="상태">
-              <select
+              <FormSelect
                 value={active}
                 onChange={(e) => {
                   setActive(e.target.value);
@@ -1060,10 +1062,10 @@ export function AdminCreatorCatalog({
                 <option value="yes">활성</option>
                 <option value="no">보관</option>
                 <option value="all">전체 상태</option>
-              </select>
+              </FormSelect>
             </Field>
             <Field label="갱신">
-              <select
+              <FormSelect
                 value={stale}
                 onChange={(e) => {
                   setStale(e.target.value);
@@ -1072,7 +1074,7 @@ export function AdminCreatorCatalog({
               >
                 <option value="all">전체</option>
                 <option value="yes">90일 경과·미확인</option>
-              </select>
+              </FormSelect>
             </Field>
           </div>
           <div className={s.table}>

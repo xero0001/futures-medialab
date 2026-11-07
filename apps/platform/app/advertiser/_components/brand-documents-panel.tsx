@@ -1,5 +1,7 @@
 "use client";
 
+import { FormSelect } from "@futures-medialab/ui/form-select";
+
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
@@ -786,7 +788,7 @@ export function BrandDocumentsPanel({
             {!campaignId && (
               <label className={styles.filterField}>
                 <span>{t("캠페인", "Campaign", "活动")}</span>
-                <select
+                <FormSelect
                   aria-label={t(
                     "캠페인 필터",
                     "Filter by campaign",
@@ -811,12 +813,12 @@ export function BrandDocumentsPanel({
                       {t("캠페인 미지정", "Without campaign", "未关联活动")}
                     </option>
                   )}
-                </select>
+                </FormSelect>
               </label>
             )}
             <label className={styles.filterField}>
               <span>{t("버전", "Version", "版本")}</span>
-              <select
+              <FormSelect
                 aria-label={t(
                   "문서 버전 필터",
                   "Filter document versions",
@@ -841,7 +843,7 @@ export function BrandDocumentsPanel({
                 <option value="earlier">
                   {t("이전 버전만", "Earlier versions only", "仅历史版本")}
                 </option>
-              </select>
+              </FormSelect>
             </label>
           </div>
           <div
@@ -894,7 +896,7 @@ export function BrandDocumentsPanel({
                   {t("필터 초기화", "Reset filters", "重置筛选")}
                 </button>
               )}
-              <select
+              <FormSelect
                 aria-label={t("문서 정렬", "Sort documents", "文档排序")}
                 value={sort}
                 onChange={(event) => {
@@ -908,7 +910,7 @@ export function BrandDocumentsPanel({
                 <option value="oldest">
                   {t("오래된 공유순", "Oldest shared first", "较早共享优先")}
                 </option>
-              </select>
+              </FormSelect>
             </div>
           </div>
           {displayed.length ? (

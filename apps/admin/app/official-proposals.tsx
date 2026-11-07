@@ -1,5 +1,7 @@
 "use client";
 
+import { FormSelect } from "@futures-medialab/ui/form-select";
+
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   CheckCheck,
@@ -747,7 +749,7 @@ function DraftEditor({
                 </label>
                 <label className={s.field}>
                   플랫폼
-                  <select
+                  <FormSelect
                     value={item.platform}
                     onChange={(event) =>
                       updateItem(item.key, { platform: event.target.value })
@@ -767,7 +769,7 @@ function DraftEditor({
                         {platform}
                       </option>
                     ))}
-                  </select>
+                  </FormSelect>
                 </label>
                 <label className={s.field}>
                   채널명

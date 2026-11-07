@@ -46,14 +46,7 @@
   color: #46474c;
   min-width: 115px;
 }
-.filters select {
-  border: 1px solid #e1e2e4;
-  border-radius: 8px;
-  padding: 10px 12px;
-  font: inherit;
-  font-size: 13px;
-  background: #fff;
-  height: 42px;
+.filters :global(.fm-form-select) {
   min-width: 0;
 }
 .search {

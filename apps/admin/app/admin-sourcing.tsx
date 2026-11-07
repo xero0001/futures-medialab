@@ -1,4 +1,6 @@
 "use client";
+
+import { FormSelect } from "@futures-medialab/ui/form-select";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ExternalLink, RefreshCw, ShieldCheck, Users } from "lucide-react";
 import { AdminButton } from "./_components/admin-button";
@@ -122,7 +124,7 @@ function Candidate({
         <form onSubmit={submit} className={s.form}>
           <label>
             검토 결과
-            <select
+            <FormSelect
               value={status}
               disabled={busy}
               onChange={(event) =>
@@ -134,7 +136,7 @@ function Candidate({
                   {labels[value]}
                 </option>
               ))}
-            </select>
+            </FormSelect>
           </label>
           <label>
             검토 사유
@@ -331,7 +333,7 @@ export function AdminSourcing({
       ) : null}
       <label className={s.filter}>
         심사 상태
-        <select
+        <FormSelect
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
         >
@@ -341,7 +343,7 @@ export function AdminSourcing({
               {label}
             </option>
           ))}
-        </select>
+        </FormSelect>
       </label>
       {loading && !current ? (
         <p role="status">후보 정보를 불러오는 중입니다…</p>

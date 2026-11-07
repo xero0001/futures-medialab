@@ -1,5 +1,7 @@
 "use client";
 
+import { FormSelect } from "@futures-medialab/ui/form-select";
+
 import { useState } from "react";
 import {
   Table,
@@ -79,7 +81,7 @@ function InvoiceStatement({
     <div className={styles.workspace}>
       <label className={styles.invoiceVersion}>
         {t("청구서 발행본", "Invoice version", "账单版本")}{" "}
-        <select
+        <FormSelect
           aria-label={t("청구서 버전", "Invoice version", "账单版本")}
           value={version?.version ?? 1}
           onChange={(e) => setSelected(Number(e.target.value))}
@@ -92,7 +94,7 @@ function InvoiceStatement({
                 : t("이전 발행본", "Earlier issue", "历史版本")}
             </option>
           ))}
-        </select>
+        </FormSelect>
       </label>
       {historical && (
         <p className={styles.note}>

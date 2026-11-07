@@ -30,8 +30,10 @@
   font-size: 14px;
   min-width: 0;
 }
+.grid :global(.fm-form-select) {
+  max-width: 100%;
+}
 .grid input,
-.grid select,
 .grid textarea {
   max-width: 100%;
   font-weight: 400;

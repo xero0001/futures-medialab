@@ -8,7 +8,9 @@
     "./button": "./src/components/button.tsx",
     "./pretendard-font": "./src/components/pretendard-font.tsx",
     "./globals.css": "./src/styles/globals.css",
-    "./utils": "./src/lib/utils.ts"
+    "./utils": "./src/lib/utils.ts",
+    "./action-button": "./src/components/action-button.tsx",
+    "./form-select": "./src/components/form-select.tsx"
   },
   "scripts": {
     "check-types": "tsc --noEmit",
@@ -18,7 +20,8 @@
     "@radix-ui/react-slot": "^1.2.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "@montage-ui/core": "4.1.5"
   },
   "devDependencies": {
     "@futures-medialab/eslint-config": "workspace:*",

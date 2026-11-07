@@ -1,4 +1,6 @@
 "use client";
+
+import { FormSelect } from "@futures-medialab/ui/form-select";
 import { AdminButton } from "./_components/admin-button";
 import { ReportingReview } from "./reporting-review";
 import { CampaignSettlement } from "./campaign-settlement";
@@ -462,14 +464,14 @@ function ApplicationOperations({
               </label>
               <label className="cop-field" htmlFor={`${id}-contract-status`}>
                 확인 상태
-                <select
+                <FormSelect
                   id={`${id}-contract-status`}
                   name="status"
                   defaultValue={contract?.status ?? "DRAFT"}
                 >
                   <option value="DRAFT">미확인</option>
                   <option value="CONFIRMED">외부 합의 문서 확인</option>
-                </select>
+                </FormSelect>
               </label>
               <label className="cop-field" htmlFor={`${id}-contract-notes`}>
                 계약 메모

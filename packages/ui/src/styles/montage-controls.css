@@ -1,0 +1,62 @@
+/* Content layout only: Montage owns the action's visual variants and states. */
+.fm-action-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.fm-action-content > svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+[data-fm-control="action"] > svg,
+[data-fm-control="icon"] > svg {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+}
+.fm-form-select {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  vertical-align: middle;
+}
+.fm-form-select > [role="combobox"] {
+  min-width: 0;
+}
+/* Retain native validation/form semantics without a second visible control. */
+select.fm-form-select-native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  margin: -1px !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  pointer-events: none !important;
+}
+.fm-form-select-error {
+  margin-top: 6px;
+  color: var(--semantic-foreground-negative-primary, #ff4242);
+  font-size: 13px;
+  line-height: 18px;
+}
+/* Also cover menus portalled outside the workspace shell. */
+[role="menu"],
+[role="listbox"] {
+  font-family: var(--fm-font-family);
+}
+
+/* Shared keyboard indication for library actions, including portal contents. */
+:is(button, a)[data-fm-control]:focus-visible,
+:is(button, a):has(> [data-component="with-interaction"]):focus-visible {
+  outline: 2px solid var(--semantic-foreground-brand-primary, #0066ff);
+  outline-offset: 3px;
+}

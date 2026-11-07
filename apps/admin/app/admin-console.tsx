@@ -1,4 +1,6 @@
 "use client";
+
+import { FormSelect } from "@futures-medialab/ui/form-select";
 import {
   AdminShell,
   adminNavigation as tabs,
@@ -611,7 +613,7 @@ export function AdminConsole({
                       {["organizations", "campaigns"].includes(tab) && (
                         <label className="admin-filter">
                           상태
-                          <select
+                          <FormSelect
                             aria-label="상태 필터"
                             value={filter}
                             onChange={(event) =>
@@ -639,7 +641,7 @@ export function AdminConsole({
                                 {labels[value]}
                               </option>
                             ))}
-                          </select>
+                          </FormSelect>
                         </label>
                       )}
                     </div>

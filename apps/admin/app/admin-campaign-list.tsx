@@ -1,4 +1,6 @@
 "use client";
+
+import { FormSelect } from "@futures-medialab/ui/form-select";
 import { useEffect, useState, type FormEvent } from "react";
 import { Search, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { AdminButton } from "./_components/admin-button";
@@ -124,7 +126,7 @@ export function AdminCampaignList({
         <AdminButton type="submit">검색</AdminButton>
         <label className="admin-filter">
           상태
-          <select
+          <FormSelect
             aria-label="캠페인 상태"
             value={status}
             onChange={(e) => filter(scope, e.target.value)}
@@ -135,7 +137,7 @@ export function AdminCampaignList({
                 {label}
               </option>
             ))}
-          </select>
+          </FormSelect>
         </label>
       </form>
       <div className="admin-list-caption">

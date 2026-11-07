@@ -1,5 +1,7 @@
 "use client";
 
+import { FormSelect } from "@futures-medialab/ui/form-select";
+
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import {
@@ -425,7 +427,7 @@ function SupplierAssignment({
       </h5>
       <label className={s.field}>
         담당 에이전시
-        <select
+        <FormSelect
           value={supplier}
           onChange={(event) => setSupplier(event.target.value)}
           required
@@ -437,7 +439,7 @@ function SupplierAssignment({
               {option.name}
             </option>
           ))}
-        </select>
+        </FormSelect>
         <small>
           파트너가 제작물 제출을 시작하기 전까지 배정을 변경할 수 있습니다.
         </small>
