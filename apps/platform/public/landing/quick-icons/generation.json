@@ -28,11 +28,25 @@
       "mode": "Generate original 3D icon",
       "prompt": "Create a single premium 3D megaphone icon for a Korean creator-partner website, designed to remain clear at 64 CSS pixels. Square canvas, transparent background. A compact friendly rounded megaphone floating at a gentle diagonal, bell facing toward the upper right, clearly visible pale mint flared bell rim, muted teal inner cone and short deeper teal handle; a small pearl-white center inside the bell. Three-quarter view so both the horn and handle are recognizable. The object is centered and fills roughly 82 percent of the square, fully in frame with equal breathing room. Soft three-dimensional satin ceramic material, refined smooth rounded edges, gentle diffuse upper-left lighting, soft mint highlights and deeper desaturated teal shadows. Match an airy premium 3D game controller illustration in mint and pearl white. Minimal, calm and tactile, not glossy neon, not flat vector art. Single isolated object; no sound waves, scattered stars or other decorations. Genuine clean alpha background, no colored backdrop, no ground plane, no background shadow or glow. No words, letters, numbers, logos, watermark, border or enclosing tile.",
       "transparent_background": true
+    },
+    {
+      "file": "game-globe-brand-blue.webp",
+      "mode": "Edit original 3D icon palette",
+      "prompt": "Edit only the colors of this 3D globe icon for the Futures Medialab brand. Preserve its exact sphere shape, raised continent silhouettes, meridian ring, square framing, camera angle, satin ceramic material texture, lighting, depth and padding. The brand accent is a clear vivid royal blue #0066FF. Replace the teal continents with this brand blue, softly shaded with richer royal-blue shadows and luminous pale blue highlights. Replace the teal meridian ring with a slightly deeper royal blue. Replace the mint ocean surface with pearl white containing a very subtle cool blue tint. A cohesive premium royal-blue and pearl-white palette; no mint, green, turquoise, purple or orange. Keep the complete object fully inside frame. Genuine transparent alpha background with a clean refined cutout edge, no colored fringe, no ground plane, glow, drop shadow, backdrop, tile, letters, logo or watermark.",
+      "brandColor": "#0066FF",
+      "transparent_background": true
+    },
+    {
+      "file": "creator-megaphone-brand-blue.webp",
+      "mode": "Edit original 3D icon palette",
+      "prompt": "Edit only the colors of this 3D megaphone icon for the Futures Medialab brand. Preserve its exact horn, handle and center insert shapes, square framing, camera angle, satin ceramic material texture, lighting, depth and padding. The brand accent is a clear vivid royal blue #0066FF. Replace the teal inner horn, rear section and handle with this brand blue, softly shaded with richer royal-blue shadows and luminous pale blue highlights. Replace the pale mint exterior bell and rounded rim with pearl white containing a very subtle cool blue tint. Keep the center insert pearl white. A cohesive premium royal-blue and pearl-white palette; no mint, green, turquoise, purple or orange. Keep the complete object fully inside frame. Genuine transparent alpha background with a clean refined cutout edge, no colored fringe, no ground plane, glow, drop shadow, backdrop, tile, sound waves, letters, logo or watermark.",
+      "brandColor": "#0066FF",
+      "transparent_background": true
     }
   ],
   "processing": "Resized to 384px and encoded as WebP with alpha preserved. Original generated images retained.",
   "activeAssets": [
-    "game-globe-mint.webp",
-    "creator-megaphone-mint.webp"
+    "game-globe-brand-blue.webp",
+    "creator-megaphone-brand-blue.webp"
   ]
 }
