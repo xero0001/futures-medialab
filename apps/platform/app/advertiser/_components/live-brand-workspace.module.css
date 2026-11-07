@@ -26,7 +26,6 @@
   text-decoration: none;
 }
 .stat,
-.campaignName,
 .scheduleItem,
 .relatedRequests > a,
 .libraryCampaigns > a {
@@ -232,45 +231,6 @@
 }
 .table th {
   white-space: nowrap;
-}
-.campaignName {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 220px;
-  max-width: 390px;
-}
-.campaignName > span:last-child {
-  min-width: 0;
-}
-.campaignName strong {
-  display: block;
-  overflow-wrap: anywhere;
-}
-.campaignName > span > span {
-  display: block;
-  margin-top: 4px;
-}
-.campaignName:hover strong {
-  color: var(--brand-blue);
-}
-.campaignIcon {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  border-radius: 12px;
-  background: var(--brand-blue-soft);
-  color: var(--brand-blue);
-}
-.campaignIcon svg {
-  width: 20px;
-  height: 20px;
-}
-.campaignIcon img {
-  display: block;
-  border-radius: 10px;
 }
 .gameArtwork {
   margin: 0;

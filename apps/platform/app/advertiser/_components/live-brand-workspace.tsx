@@ -61,6 +61,7 @@ import { BrandReportingPanel } from "./brand-reporting-panel";
 import { BrandBillingPanel } from "./brand-billing-panel";
 import { BrandActionCenter } from "./brand-action-center";
 import { BrandCampaignOverview } from "./brand-campaign-overview";
+import { BrandCampaignLink } from "./brand-campaign-link";
 import { BrandCampaignProgress } from "./brand-campaign-progress";
 import { BrandDocumentsPanel } from "./brand-documents-panel";
 import styles from "./live-brand-workspace.module.css";
@@ -779,41 +780,14 @@ function CampaignTable({
           {campaigns.map((campaign) => (
             <TableRow key={campaign.id}>
               <TableCell>
-                <Link
+                <BrandCampaignLink
+                  campaign={campaign}
+                  locale={locale}
                   href={hrefFor(
                     `${campaignPath(campaign.id)}${campaign.status === "COMPLETED" && campaign.invoiceSummary.issued + campaign.invoiceSummary.paid > 0 ? "?tab=settlement" : campaign.reportingSummary.published > 0 && campaign.productionSummary.total === campaign.productionSummary.approved ? "?tab=performance" : campaign.productionSummary.total > 0 ? "?tab=production" : hasReviewableProposal(campaign, now) ? "?tab=proposal" : ""}`,
                     locale,
                   )}
-                  className={styles.campaignName}
-                >
-                  <span className={styles.campaignIcon}>
-                    {campaign.gameIconUrl ? (
-                      <Image
-                        src={campaign.gameIconUrl}
-                        alt={campaign.gameName ?? t("게임", "Game", "游戏")}
-                        width={40}
-                        height={40}
-                      />
-                    ) : (
-                      <IconMegaphone />
-                    )}
-                  </span>
-                  <span>
-                    <Typography as="strong" variant="label1" weight="bold">
-                      {campaign.title}
-                    </Typography>
-                    <Typography
-                      as="span"
-                      variant="caption1"
-                      className={styles.muted}
-                    >
-                      {campaign.type === "MANAGED" ? "Managed" : "Open"}
-                      {campaign.platforms.length
-                        ? ` · ${campaign.platforms.join(" · ")}`
-                        : ""}
-                    </Typography>
-                  </span>
-                </Link>
+                />
               </TableCell>
               <TableCell>
                 <div className={styles.statusStack}>

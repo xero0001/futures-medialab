@@ -40,6 +40,7 @@ export type BrandProposalItem = {
   platform: string;
   channelLabel: string;
   channelUrl: string;
+  channelThumbnailUrl?: string | null;
   followers: number | null;
   averageViews: number | null;
   deliverables: string;

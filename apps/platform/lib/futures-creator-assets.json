@@ -1,0 +1,37 @@
+[
+  {
+    "name": "이다의게임방송",
+    "channelUrls": [
+      "https://www.youtube.com/@%EC%9D%B4%EB%8B%A4%EC%9D%98%EA%B2%8C%EC%9E%84%EB%B0%A9%EC%86%A1",
+      "https://www.youtube.com/channel/UC46X_E7jxvJ1O_3gnaeCxeg"
+    ],
+    "thumbnailPath": "/creators/futures/ida.jpg",
+    "sourcePageUrl": "https://futuresenter.com/#creators",
+    "sourceImageUrl": "https://framerusercontent.com/images/tfcied5wmpKfGKe581vU8deoY.jpg?width=1920&height=1920&scale-down-to=512",
+    "checkedAt": "2026-11-08",
+    "sha256": "b61cdbc69f299224a9cd956beef9241769164b91536de4eddae182ffc2988b49"
+  },
+  {
+    "name": "박서림",
+    "channelUrls": [
+      "https://www.youtube.com/@%EB%B0%95%EC%84%9C%EB%A6%BC",
+      "https://www.youtube.com/channel/UC60HSePkZwGFzRj6VSDa6Ew"
+    ],
+    "thumbnailPath": "/creators/futures/park-seorim.png",
+    "sourcePageUrl": "https://futuresenter.com/#creators",
+    "sourceImageUrl": "https://framerusercontent.com/images/eeGeX4gQfBWSS5TGOJYn7Xz6fU.png?width=1920&height=1920&scale-down-to=512",
+    "checkedAt": "2026-11-08",
+    "sha256": "749c4bd9aebbda7df633bff2a88a1d7a7a4fb714388f5d07ad5715c59ae21548"
+  },
+  {
+    "name": "프레이",
+    "channelUrls": [
+      "https://www.youtube.com/channel/UCSzHok6X5qXEO7cjvVnE62g"
+    ],
+    "thumbnailPath": "/creators/futures/pray.jpg",
+    "sourcePageUrl": "https://futuresenter.com/#creators",
+    "sourceImageUrl": "https://framerusercontent.com/images/feBvCeitG7PfckvDIZBx7Oo0D4.jpg?width=900&height=900&scale-down-to=512",
+    "checkedAt": "2026-11-08",
+    "sha256": "580c54a66db5f053fecc1e615af448e886d1a6dedf99551c58e9c6243310cad5"
+  }
+]

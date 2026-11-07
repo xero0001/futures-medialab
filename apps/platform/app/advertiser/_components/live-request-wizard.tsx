@@ -9,7 +9,6 @@ import {
   RadioGroupItem,
   SectionMessage,
   Select,
-  SelectMultiple,
   Stepper,
   StepperItem,
   TextArea,
@@ -62,20 +61,6 @@ const platformOptions = [
   ["x", "X"],
   ["facebook", "Facebook"],
 ] as const;
-const regionOptions = [
-  ["KR", "대한민국", "South Korea", "韩国"],
-  ["US", "미국", "United States", "美国"],
-  ["JP", "일본", "Japan", "日本"],
-  ["CN", "중국", "China", "中国"],
-  ["TW", "대만", "Taiwan", "台湾"],
-  ["GB", "영국", "United Kingdom", "英国"],
-  ["DE", "독일", "Germany", "德国"],
-  ["FR", "프랑스", "France", "法国"],
-  ["TH", "태국", "Thailand", "泰国"],
-  ["VN", "베트남", "Vietnam", "越南"],
-  ["ID", "인도네시아", "Indonesia", "印度尼西亚"],
-  ["BR", "브라질", "Brazil", "巴西"],
-] as const;
 
 function koreanDate(date: Date) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -110,40 +95,39 @@ export function LiveRequestWizard({
           ? 1
           : 0),
   );
-  const [form, setForm] = useState<RequestDraftForm>(
-    () =>
-      recovered?.form ?? {
-        title: initialCampaign?.title ?? "",
-        gameName:
-          initialCampaign?.brief?.gameName || initialCampaign?.gameName || "",
-        genre: initialCampaign?.brief?.genre ?? "",
-        goal: initialCampaign?.brief?.goal ?? initialCampaign?.summary ?? "",
-        budgetAmount: initialCampaign?.budgetAmount ?? "",
-        currency: initialCampaign?.currency ?? "USD",
-        platforms: initialCampaign?.platforms ?? [],
-        regions: initialCampaign?.regions ?? [],
-        contentFormat: initialCampaign?.brief?.contentFormat ?? "",
-        creatorCount: initialCampaign?.brief?.creatorCount
-          ? String(initialCampaign.brief.creatorCount)
-          : "",
-        desiredDate:
-          initialCampaign?.brief?.desiredDate ??
-          initialCampaign?.contentDeadline?.slice(0, 10) ??
-          "",
-        note: initialCampaign?.brief?.note ?? "",
-        compositionPreference:
-          initialCampaign?.brief?.compositionPreference ??
-          ("balanced" as BrandCompositionPreference),
-        route: initialCampaign
-          ? initialCampaign.type === "OPEN_BIDDING"
-            ? ("open" as const)
-            : ("managed" as const)
-          : initialRoute,
-        applicationDate: initialCampaign?.applicationDeadline
-          ? koreanDate(new Date(initialCampaign.applicationDeadline))
-          : "",
-      },
-  );
+  const [form, setForm] = useState<RequestDraftForm>(() => ({
+    ...(recovered?.form ?? {
+      title: initialCampaign?.title ?? "",
+      gameName:
+        initialCampaign?.brief?.gameName || initialCampaign?.gameName || "",
+      genre: initialCampaign?.brief?.genre ?? "",
+      goal: initialCampaign?.brief?.goal ?? initialCampaign?.summary ?? "",
+      budgetAmount: initialCampaign?.budgetAmount ?? "",
+      currency: initialCampaign?.currency ?? "USD",
+      platforms: initialCampaign?.platforms ?? [],
+      contentFormat: initialCampaign?.brief?.contentFormat ?? "",
+      creatorCount: initialCampaign?.brief?.creatorCount
+        ? String(initialCampaign.brief.creatorCount)
+        : "",
+      desiredDate:
+        initialCampaign?.brief?.desiredDate ??
+        initialCampaign?.contentDeadline?.slice(0, 10) ??
+        "",
+      note: initialCampaign?.brief?.note ?? "",
+      compositionPreference:
+        initialCampaign?.brief?.compositionPreference ??
+        ("balanced" as BrandCompositionPreference),
+      route: initialCampaign
+        ? initialCampaign.type === "OPEN_BIDDING"
+          ? ("open" as const)
+          : ("managed" as const)
+        : initialRoute,
+      applicationDate: initialCampaign?.applicationDeadline
+        ? koreanDate(new Date(initialCampaign.applicationDeadline))
+        : "",
+    }),
+    regions: ["KR"],
+  }));
   const [busy, setBusy] = useState<"save" | "submit" | "continue" | null>(null);
   const [error, setError] = useState("");
   const [invalidField, setInvalidField] = useState<string | null>(null);
@@ -233,7 +217,6 @@ export function LiveRequestWizard({
       desiredDate: "brand-date",
       goal: "brand-goal",
       note: "brand-note",
-      regions: "brand-regions",
       applicationDate: "brand-application-date",
       platforms: "brand-platforms",
     };
@@ -275,7 +258,7 @@ export function LiveRequestWizard({
       budgetAmount: form.budgetAmount.trim(),
       currency: form.currency,
       platforms: form.platforms,
-      regions: form.regions,
+      regions: ["KR"],
       contentFormat: form.contentFormat.trim(),
       creatorCount: Number(form.creatorCount),
       desiredDate: form.desiredDate,
@@ -632,10 +615,6 @@ export function LiveRequestWizard({
   const selectedStrategy = strategyOptions.find(
     (option) => option.value === form.compositionPreference,
   )!;
-  const regionNames = form.regions.map((region) => {
-    const item = regionOptions.find((option) => option[0] === region);
-    return item ? t(item[1], item[2], item[3]) : region;
-  });
   const platformNames = form.platforms.map((platform) =>
     platform === "recommend"
       ? t("퓨쳐스 추천", "Futures recommendation", "Futures 推荐")
@@ -1054,48 +1033,9 @@ export function LiveRequestWizard({
                         />
                       </div>
                       <div className={`${s.field} ${s.full}`}>
-                        <label id="brand-regions-label" htmlFor="brand-regions">
-                          {t(
-                            "타깃 국가 · 선택",
-                            "Target countries · optional",
-                            "目标国家 · 选填",
-                          )}
-                        </label>
-                        <SelectMultiple
-                          id="brand-regions"
-                          aria-labelledby="brand-regions-label"
-                          value={form.regions}
-                          onChange={(value) => update("regions", value)}
-                          width="100%"
-                          placeholder={t(
-                            "미정이면 비워두셔도 됩니다",
-                            "Leave empty if undecided",
-                            "尚未确定可留空",
-                          )}
-                        >
-                          {regionOptions.map(([value, ko, en, zh]) => (
-                            <Option value={value} key={value}>
-                              {t(ko, en, zh)}
-                            </Option>
-                          ))}
-                          {form.regions
-                            .filter(
-                              (value) =>
-                                !regionOptions.some(
-                                  (option) => option[0] === value,
-                                ),
-                            )
-                            .map((value) => (
-                              <Option value={value} key={value}>
-                                {value}
-                              </Option>
-                            ))}
-                        </SelectMultiple>
-                      </div>
-                      <div className={`${s.field} ${s.full}`}>
                         <label htmlFor="brand-note">
                           {t(
-                            "추가 요청사항 · 선택",
+                            "추가 요청사항 (선택)",
                             "Additional notes · optional",
                             "附加说明 · 选填",
                           )}
@@ -1401,12 +1341,6 @@ export function LiveRequestWizard({
                       </dt>
                       <dd>{form.desiredDate}</dd>
                     </div>
-                    {regionNames.length > 0 && (
-                      <div>
-                        <dt>{t("타깃 국가", "Countries", "目标国家")}</dt>
-                        <dd>{regionNames.join(", ")}</dd>
-                      </div>
-                    )}
                     {form.note.trim() && (
                       <div>
                         <dt>{t("추가 요청", "Notes", "附加说明")}</dt>

@@ -176,3 +176,46 @@ export function publicChannelUrl(
     return null;
   }
 }
+
+/** Only reviewed social-channel image hosts are rendered by the browser. No URL is fetched by the server. */
+export function publicChannelThumbnailUrl(value: unknown): string | null {
+  if (typeof value !== "string" || value.length > 2048) return null;
+  const exactHosts = [
+    "yt3.ggpht.com",
+    "yt3.googleusercontent.com",
+    "pbs.twimg.com",
+  ];
+  const hostSuffixes = [
+    "ytimg.com",
+    "pstatic.net",
+    "sooplive.co.kr",
+    "sooplive.com",
+    "afreecatv.com",
+    "tiktokcdn.com",
+    "cdninstagram.com",
+    "fbcdn.net",
+    "jtvnw.net",
+  ];
+  try {
+    const url = new URL(value),
+      host = url.hostname.toLowerCase();
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      (url.port && url.port !== "443") ||
+      url.hash ||
+      url.pathname === "/" ||
+      !(
+        exactHosts.includes(host) ||
+        hostSuffixes.some(
+          (allowed) => host === allowed || host.endsWith(`.${allowed}`),
+        )
+      )
+    )
+      return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}

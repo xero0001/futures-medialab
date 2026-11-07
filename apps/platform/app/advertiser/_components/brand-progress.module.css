@@ -142,7 +142,7 @@
   height: 24px;
   border: 2px solid var(--brand-surface, #fff);
   border-radius: 8px;
-  background: var(--brand-blue-soft, #f0f6ff);
+  background: var(--atomic-blue-95, #eaf2fe);
   color: var(--brand-blue, #0066ff);
   transform: rotate(-12deg);
 }

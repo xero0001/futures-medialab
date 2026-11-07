@@ -12,6 +12,7 @@ import type { BrandProposal, BrandProposalItem, BrandProposalMutation, ProposalD
 import type { Locale } from "../../_components/landing-copy";
 import { StatusBadge } from "../../_components/workspace/status-badge";
 import styles from "./official-proposal-panel.module.css";
+import { ProposalChannelAvatar } from "./proposal-channel-avatar";
 
 type Copy = (ko: string, en: string, zh: string) => string;
 const copyFor = (locale: Locale): Copy => (ko, en, zh) => ({ ko, en, zh })[locale];
@@ -147,10 +148,10 @@ export function OfficialProposalPanel({ proposals, locale, canManage, requestHre
 
     <section className={styles.box}>
       <div className={styles.boxHeading}><Typography as="h3" variant="heading2" weight="bold">{t("제안 구성", "Proposed lineup", "提案组合")}</Typography>{canRespond && pendingItems.length > 0 && <div className={styles.agreement}><Checkbox id="proposal-select-all" checked={selected.length === pendingItems.length} indeterminate={selected.length > 0 && selected.length < pendingItems.length} onCheckedChange={checked => setSelectedIds(checked ? pendingItems.map(item => item.id) : [])} size="small" /><label htmlFor="proposal-select-all">{t("대기 구성 전체 선택", "Select all pending items", "选择全部待确认项目")}</label></div>}</div>
-      {proposal.items.map((item, index) => <article key={item.id} className={styles.creator}>
+      {proposal.items.map((item) => <article key={item.id} className={styles.creator}>
         <div className={styles.identity}>
           {canRespond && item.status === "PENDING" && <Checkbox checked={selected.some(value => value.id === item.id)} onCheckedChange={checked => chooseItem(item.id, checked)} aria-label={t(`${item.creatorName} 구성 선택`, `Select ${item.creatorName}`, `选择 ${item.creatorName}`)} size="small" />}
-          <span className={styles.avatar} aria-hidden="true">{item.creatorName.slice(0, 1) || index + 1}</span>
+          <ProposalChannelAvatar name={item.channelLabel || item.creatorName} channelUrl={item.channelUrl} thumbnailUrl={item.channelThumbnailUrl} alt={t(`${item.channelLabel || item.creatorName} 채널 프로필 이미지`, `${item.channelLabel || item.creatorName} channel profile image`, `${item.channelLabel || item.creatorName} 频道头像`)} />
           <div><Typography as="strong" variant="label1" weight="bold">{item.creatorName}</Typography><Typography variant="caption1" className={styles.muted}>{item.platform} · {item.channelLabel}</Typography>{publicChannel(item.channelUrl) ? <a href={publicChannel(item.channelUrl)!} className={styles.channel} target="_blank" rel="noopener noreferrer">{t("공식 채널 보기", "View channel", "查看频道")}<IconArrowUpRight /></a> : item.channelUrl.startsWith("https://example.invalid/") ? <Typography variant="caption1" className={styles.muted}>{t("시연용 채널 · 외부 연결 없음", "Demo channel · no external link", "演示频道 · 无外部链接")}</Typography> : null}<StatusBadge size="xsmall" tone={item.status === "APPROVED" ? "green" : item.status === "REJECTED" ? "red" : "amber"}>{itemStatusLabel(item.status, t)}</StatusBadge></div>
         </div>
         <div className={styles.deliverables}><Typography as="p" variant="body2" weight="medium">{item.deliverables}</Typography><Typography variant="caption1" className={styles.muted}>{t("예정 일정", "Scheduled", "计划时间")} · {dateLabel(item.scheduledAt, locale)}</Typography>{item.rights && <Typography as="p" variant="caption1" className={styles.muted}>{t("활용 범위", "Usage rights", "使用范围")} · {item.rights}</Typography>}<div className={styles.metrics}>{item.followers !== null && <Typography variant="caption1" className={styles.metric}><span className={styles.muted}>{t("팔로워", "Followers", "粉丝")}</span><span>{item.followers.toLocaleString(locale)}</span></Typography>}{item.averageViews !== null && <Typography variant="caption1" className={styles.metric}><span className={styles.muted}>{t("평균 조회", "Average views", "平均观看")}</span><span>{item.averageViews.toLocaleString(locale)}</span></Typography>}</div></div>

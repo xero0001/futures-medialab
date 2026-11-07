@@ -14,6 +14,7 @@ import {
   TableHead,
   TableHeadCell,
   TableRow,
+  Typography,
 } from "@montage-ui/core";
 import { IconArrowRight } from "@montage-ui/icon";
 import type { Locale } from "../../_components/landing-copy";
@@ -24,6 +25,7 @@ import {
   isPastBrandDeadline,
   type BrandScheduleAlert,
 } from "../../../lib/brand-progress";
+import { BrandCampaignLink } from "./brand-campaign-link";
 import styles from "./brand-campaign-overview.module.css";
 
 export function BrandCampaignOverview({
@@ -48,6 +50,10 @@ export function BrandCampaignOverview({
   const schedule = useMemo(
     () => getBrandScheduleItems(campaigns, now),
     [campaigns, now],
+  );
+  const campaignsById = useMemo(
+    () => new Map(campaigns.map((campaign) => [campaign.id, campaign])),
+    [campaigns],
   );
   const href = (path: string) =>
     `${path}${path.includes("?") ? "&" : "?"}lang=${locale}`;
@@ -114,13 +120,10 @@ export function BrandCampaignOverview({
                   {t("캠페인", "Campaign", "活动")}
                 </TableHeadCell>
                 <TableHeadCell scope="col">
-                  {t("일정 종류", "Milestone", "日程类型")}
+                  {t("일정 상태", "Schedule status", "日程状态")}
                 </TableHeadCell>
                 <TableHeadCell scope="col">
-                  {t("예정일", "Due date", "预计日期")}
-                </TableHeadCell>
-                <TableHeadCell scope="col">
-                  {t("상태", "Status", "状态")}
+                  {t("다음 일정", "Next milestone", "下一日程")}
                 </TableHeadCell>
               </TableRow>
             </TableHead>
@@ -130,21 +133,21 @@ export function BrandCampaignOverview({
                   .slice(0, showAllSchedule ? undefined : 4)
                   .map((item) => {
                     const overdue = isPastBrandDeadline(item.dueAt, now);
+                    const campaign = campaignsById.get(item.campaignId);
                     return (
                       <TableRow key={`${item.campaignId}:${item.kind}`}>
                         <TableCell>
-                          <Link
-                            className={styles.campaignLink}
-                            href={href(item.href)}
-                          >
-                            {item.campaignTitle}
-                          </Link>
-                        </TableCell>
-                        <TableCell>{labels[item.kind]}</TableCell>
-                        <TableCell>
-                          <time className={styles.date} dateTime={item.dueAt}>
-                            {dateFormat.format(new Date(item.dueAt))}
-                          </time>
+                          {campaign ? (
+                            <BrandCampaignLink
+                              campaign={campaign}
+                              href={href(item.href)}
+                              locale={locale}
+                            />
+                          ) : (
+                            <Link href={href(item.href)}>
+                              {item.campaignTitle}
+                            </Link>
+                          )}
                         </TableCell>
                         <TableCell>
                           <StatusBadge tone={overdue ? "amber" : "neutral"}>
@@ -157,12 +160,29 @@ export function BrandCampaignOverview({
                               : t("예정", "Upcoming", "预计")}
                           </StatusBadge>
                         </TableCell>
+                        <TableCell>
+                          <Typography
+                            as="span"
+                            variant="caption1"
+                            className={styles.nextStep}
+                          >
+                            {labels[item.kind]}
+                          </Typography>
+                          <Typography
+                            as="time"
+                            variant="caption1"
+                            className={styles.date}
+                            dateTime={item.dueAt}
+                          >
+                            {dateFormat.format(new Date(item.dueAt))}
+                          </Typography>
+                        </TableCell>
                       </TableRow>
                     );
                   })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className={styles.empty}>
+                  <TableCell colSpan={3} className={styles.empty}>
                     {t(
                       "등록된 진행 일정이 없습니다.",
                       "No scheduled milestones yet.",

@@ -24,8 +24,7 @@
   width: 16px;
   height: 16px;
 }
-.viewAll:hover,
-.campaignLink:hover {
+.viewAll:hover {
   text-decoration: underline !important;
 }
 .panel {
@@ -40,18 +39,13 @@
 .table th {
   white-space: nowrap;
 }
-.campaignLink {
+.nextStep {
   display: block;
-  min-width: 200px;
-  max-width: 400px;
-  color: var(--brand-ink, #171719);
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-.campaignLink:hover {
-  color: var(--brand-blue, #0066ff);
+  min-width: 105px;
+  margin-bottom: 4px;
 }
 .date {
+  color: var(--brand-muted, #46474c);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }

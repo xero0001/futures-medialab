@@ -1,0 +1,43 @@
+.link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+  max-width: 390px;
+  color: var(--brand-ink, #171719);
+}
+.link > span:last-child {
+  min-width: 0;
+}
+.link strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.link > span > span {
+  display: block;
+  margin-top: 4px;
+}
+.link:hover strong {
+  color: var(--brand-blue, #0066ff);
+}
+.icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: var(--brand-blue-soft, #f0f6ff);
+  color: var(--brand-blue, #0066ff);
+}
+.icon svg {
+  width: 20px;
+  height: 20px;
+}
+.icon img {
+  display: block;
+  border-radius: 10px;
+}
+.muted {
+  color: var(--brand-muted, #46474c);
+}
