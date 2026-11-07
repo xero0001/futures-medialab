@@ -163,7 +163,6 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
           <section className={styles.heroSurface} aria-labelledby="home-title">
             <div className={`${styles.container} ${styles.hero}`}>
               <div className={styles.heroCopy}>
-                <p className={styles.eyebrow}>{t.hero.eyebrow}</p>
                 <Typography
                   as="h1"
                   variant="display1"
@@ -195,7 +194,6 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
                     {t.hero.secondary}
                   </TextButton>
                 </div>
-                <p className={styles.approval}>{t.hero.approval}</p>
               </div>
               <div className={styles.heroArt} aria-hidden="true">
                 <Image
