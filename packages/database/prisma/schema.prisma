@@ -215,6 +215,7 @@ model RateLimit {
 }
 
 model Organization {
+  games GameCatalog[]
   internalCreators InternalCreator[]
   id                    String                 @id @default(cuid())
   type                  OrganizationType
@@ -281,6 +282,8 @@ model AgencyDocument {
 }
 
 model Campaign {
+  gameId String?
+  game GameCatalog? @relation(fields: [gameId], references: [id], onDelete: SetNull)
   id                  String                 @id @default(cuid())
   brandOrganizationId String
   createdById         String
@@ -321,6 +324,7 @@ model Campaign {
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
 
+  @@index([gameId])
   @@index([status, applicationDeadline])
   @@index([brandOrganizationId, status])
   @@index([type, status])
@@ -1041,4 +1045,36 @@ model InternalCreatorMutation {
   createdAt DateTime @default(now())
 
   @@unique([actorId, requestId])
+}
+
+// Official localized titles are curated; user-entered games keep their original title.
+model GameCatalog {
+  organizationId String?
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id            String @id @default(cuid())
+  key           String @unique
+  title         String
+  thumbnailUrl  String
+  verified      Boolean @default(false)
+  aliases       String[] @default([])
+  searchText    String @db.Text
+  localizations GameLocalization[]
+  campaigns     Campaign[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([verified, title])
+}
+
+model GameLocalization {
+  id          String @id @default(cuid())
+  gameId      String
+  locale      Locale
+  title       String
+  officialUrl String?
+  game        GameCatalog @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, locale])
+  @@index([title])
 }

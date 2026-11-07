@@ -53,8 +53,8 @@ import type {
   BrandCampaignRoute,
   BrandWorkspace,
 } from "../../../lib/brand-workspace-types";
-import { readRequestDraft, clearRequestDraft } from "../../../lib/brand-request-draft";
-import { LiveRequestWizard } from "./live-request-wizard";
+import { requestDraftPath } from "../../../lib/brand-request-draft";
+import { BrandRequestEntry } from "./brand-request-entry";
 import { OfficialProposalPanel } from "./official-proposal-panel";
 import { BrandProductionPanel } from "./brand-production-panel";
 import { BrandReportingPanel } from "./brand-reporting-panel";
@@ -360,24 +360,7 @@ export function LiveBrandWorkspace({
           )
         : Promise.resolve(null),
     ])
-      .then(async ([workspace, campaign]) => {
-        if (mode === "new" && !campaignId) {
-          const cached = readRequestDraft(account.draftScope, initialRoute ?? "managed");
-          if (cached?.draft) {
-            const response = await fetch(`/api/brand/campaigns/${encodeURIComponent(cached.draft.id)}`, {
-              cache: "no-store", signal: controller.signal,
-            });
-            if (controller.signal.aborted) return;
-            if (response.status === 404) {
-              clearRequestDraft(account.draftScope, initialRoute ?? "managed");
-            } else {
-              if (!response.ok) throw new Error("LOAD_FAILED");
-              const restored = await response.json() as BrandCampaignDetail;
-              if (restored.campaign.status === "DRAFT") campaign = restored;
-              else clearRequestDraft(account.draftScope, initialRoute ?? "managed");
-            }
-          }
-        }
+      .then(([workspace, campaign]) => {
         if (controller.signal.aborted) return;
         setData(workspace);
         setDetail(campaign);
@@ -456,7 +439,9 @@ export function LiveBrandWorkspace({
           )}
           {mode === "new" &&
             (data.permissions.canManageCampaigns ? (
-              <LiveRequestWizard
+              <BrandRequestEntry
+                key={`${account.draftScope}:${campaignId ?? "new"}:${initialRoute ?? "managed"}:${locale}`}
+                campaigns={data.campaigns}
                 locale={locale}
                 draftScope={account.draftScope}
                 initialCampaign={detail?.campaign}
@@ -784,14 +769,18 @@ function CampaignTable({
                   campaign={campaign}
                   locale={locale}
                   href={hrefFor(
-                    `${campaignPath(campaign.id)}${campaign.status === "COMPLETED" && campaign.invoiceSummary.issued + campaign.invoiceSummary.paid > 0 ? "?tab=settlement" : campaign.reportingSummary.published > 0 && campaign.productionSummary.total === campaign.productionSummary.approved ? "?tab=performance" : campaign.productionSummary.total > 0 ? "?tab=production" : hasReviewableProposal(campaign, now) ? "?tab=proposal" : ""}`,
+                    campaign.status === "DRAFT" ? requestDraftPath(campaign) : `${campaignPath(campaign.id)}${campaign.status === "COMPLETED" && campaign.invoiceSummary.issued + campaign.invoiceSummary.paid > 0 ? "?tab=settlement" : campaign.reportingSummary.published > 0 && campaign.productionSummary.total === campaign.productionSummary.approved ? "?tab=performance" : campaign.productionSummary.total > 0 ? "?tab=production" : hasReviewableProposal(campaign, now) ? "?tab=proposal" : ""}`,
                     locale,
                   )}
                 />
               </TableCell>
               <TableCell>
                 <div className={styles.statusStack}>
-                  <Status campaign={campaign} t={t} />
+                  {campaign.status === "DRAFT" ? (
+                    <Link href={hrefFor(requestDraftPath(campaign), locale)}>
+                      <Status campaign={campaign} t={t} />
+                    </Link>
+                  ) : <Status campaign={campaign} t={t} />}
                   {campaign.reportingSummary.published > 0 &&
                     campaign.productionSummary.total >
                       campaign.productionSummary.approved && (
@@ -1209,7 +1198,7 @@ function CampaignDetail({
               <Button
                 as={Link}
                 href={href(
-                  `/advertiser/campaign/new?draft=${encodeURIComponent(campaign.id)}`,
+                  requestDraftPath(campaign),
                 )}
               >
                 {t("브리프 이어 쓰기", "Continue brief", "继续填写简报")}

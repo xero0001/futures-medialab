@@ -1,4 +1,5 @@
 import "server-only";
+import { localizedGame, resolveCampaignGame } from "@futures-medialab/database/game-catalog";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { getDatabase, Prisma } from "@futures-medialab/database";
@@ -228,7 +229,10 @@ async function submit(
       "LIMIT_REACHED",
       "해당 브랜드의 캠페인 등록 한도에 도달했습니다.",
     );
-  const fields = campaignFieldsFromBrief(brief);
+  const game = await resolveCampaignGame(tx, organizationId, brief);
+  if (brief.gameId && !game) fail(400, "INVALID_GAME", "선택한 게임을 확인해 주세요.");
+  const fields = campaignFieldsFromBrief({ ...brief, gameId: game?.id ?? null,
+    gameName: game ? localizedGame(game, brief.gameLocale).title : brief.gameName });
   const campaign = await tx.campaign.create({
     data: {
       id: campaignId,

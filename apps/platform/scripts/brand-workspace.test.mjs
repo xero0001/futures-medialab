@@ -75,6 +75,7 @@ const request = (body, headers = {}) =>
 function fixture(options = {}) {
   const store = {
     campaigns: [],
+    games: [...(options.games ?? [])],
     requests: [],
     events: [],
     writes: 0,
@@ -128,7 +129,19 @@ function fixture(options = {}) {
       _count: { _all: rows.filter((row) => row.status === status).length },
     }));
   const timestamp = () => new Date(Date.now() + store.writes);
+  const visibleGame = (game, where) => where.OR.some(scope => scope.verified ? game.verified : game.organizationId === scope.organizationId);
   const tx = {
+    gameCatalog: {
+      findFirst: async ({ where }) => store.games.find(game => visibleGame(game, where) && (!where.id || game.id === where.id) && (!where.aliases || game.aliases.includes(where.aliases.has))) ?? null,
+      findMany: async ({ where, take }) => store.games.filter(game => visibleGame(game, where) && (!where.searchText || game.searchText.includes(where.searchText.contains))).slice(0, take),
+      upsert: async ({ where, create }) => {
+        const existing = store.games.find(game => game.key === where.key);
+        if (existing) return existing;
+        const game = { ...create, id: `game-${store.games.length + 1}`, verified: false, localizations: [create.localizations.create] };
+        store.games.push(game);
+        return game;
+      },
+    },
     session: {
       findFirst: async ({ where }) => {
         assert.equal(where.userId, "user-own");
@@ -206,6 +219,7 @@ function fixture(options = {}) {
                   valueOf: () => Number(data.budgetAmount),
                 },
         };
+        row.game = store.games.find(game => game.id === row.gameId) ?? null;
         store.campaigns.push(row);
         return row;
       },
@@ -214,6 +228,7 @@ function fixture(options = {}) {
         const row = store.campaigns.find((row) => row.id === where.id);
         assert.ok(row);
         Object.assign(row, data, { updatedAt: timestamp() });
+        row.game = store.games.find(game => game.id === row.gameId) ?? null;
         if (typeof row.budgetAmount === "string") {
           const amount = row.budgetAmount;
           row.budgetAmount = {
@@ -1019,4 +1034,98 @@ test("draft recovery is scoped and does not overwrite a newer server revision", 
     if (original) Object.defineProperty(globalThis, "localStorage", original);
     else delete globalThis.localStorage;
   }
+});
+
+const officialGame = {
+  id: "game_nte", key: "nte", title: "NTE (Neverness to Everness)", verified: true, organizationId: null,
+  thumbnailUrl: "/demo/nte/game-icon.png", aliases: ["이환", "nte", "异环"], searchText: "이환 nte neverness to everness 异环",
+  localizations: [
+    { locale: "KO", title: "이환", officialUrl: "https://nte.perfectworld.com/kr/" },
+    { locale: "EN", title: "NTE (Neverness to Everness)", officialUrl: "https://nte.perfectworld.com/en/" },
+    { locale: "ZH", title: "异环", officialUrl: "https://yh.wanmei.com/" },
+  ],
+};
+
+test("game search localizes official titles and never exposes another brand's unverified games", async () => {
+  const privateGame = { ...officialGame, id: "game-private", verified: false, organizationId: "brand-other", title: "Secret game", searchText: "secret", aliases: ["secret"] };
+  const { api } = fixture({ games: [officialGame, privateGame] });
+  for (const [lang, title] of [["ko", "이환"], ["en", "NTE (Neverness to Everness)"], ["zh", "异环"]]) {
+    const result = await api.brandGameCatalog(new globalThis.Request(`${origin}/api/brand/games?q=NTE&lang=${lang}`));
+    assert.equal(result.status, 200);
+    const body = await result.json();
+    assert.equal(body.games[0].title, title);
+    assert.equal(body.games[0].thumbnailUrl, "/demo/nte/game-icon.png");
+    assert.equal(body.games.length, 1);
+  }
+  assert.deepEqual((await (await api.brandGameCatalog(new globalThis.Request(`${origin}/api/brand/games?q=secret`))).json()).games, []);
+  assert.equal((await fixture({ expired: true }).api.brandGameCatalog(new globalThis.Request(`${origin}/api/brand/games`))).status, 401);
+  assert.equal((await api.brandGameCatalog(new globalThis.Request(`${origin}/api/brand/games?lang=invalid`))).status, 400);
+});
+
+test("selected games save canonical localized names, free input creates a scoped game, and duplicates reuse it", async () => {
+  const { api, store } = fixture({ games: [officialGame] });
+  const result = await api.mutateBrandCampaign(request(input({ gameId: "game_nte", gameName: "spoofed title", gameLocale: "zh", action: "saveDraft" })));
+  assert.equal(result.status, 200);
+  const version = await result.json();
+  let detail = await (await api.brandCampaignDetail(request(), version.id)).json();
+  assert.equal(detail.campaign.brief.gameId, "game_nte");
+  assert.equal(detail.campaign.brief.gameName, "异环");
+  assert.equal(detail.campaign.gameIconUrl, "/demo/nte/game-icon.png");
+  const update = input({ action: "saveDraft", id: version.id, expectedUpdatedAt: version.updatedAt, gameName: "새로운 게임", gameLocale: "ko" });
+  const changed = await api.mutateBrandCampaign(request(update));
+  assert.equal(changed.status, 200);
+  const updated = await changed.json();
+  detail = await (await api.brandCampaignDetail(request(), version.id)).json();
+  assert.equal(store.games.length, 2);
+  assert.equal(store.games[1].organizationId, "brand-own");
+  assert.equal(store.games[1].verified, false);
+  assert.equal(store.games[1].thumbnailUrl, "/games/placeholder.svg");
+  assert.equal(store.games[1].localizations.length, 1);
+  assert.equal(detail.campaign.brief.gameName, "새로운 게임");
+  const repeat = await api.mutateBrandCampaign(request({ ...update, expectedUpdatedAt: updated.updatedAt }));
+  assert.equal(repeat.status, 200);
+  assert.equal(store.games.length, 2);
+  const latest = await repeat.json();
+  const missing = await api.mutateBrandCampaign(request({ ...update, expectedUpdatedAt: latest.updatedAt, gameId: "game-missing" }));
+  assert.equal(missing.status, 400);
+});
+
+test("starting another request keeps previous unfinished work and permits deliberate recovery", () => {
+  const draft = compile("lib/brand-request-draft.ts", {});
+  const storage = new Map();
+  const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
+    get length() { return storage.size; }, key: index => [...storage.keys()][index] ?? null,
+    getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key),
+  } });
+  try {
+    const first = { version: 1, savedAt: Date.now(), form: { ...input({ gameName: "이환" }), gameId: null, creatorCount: "3", applicationDate: "" }, step: 0, stage: 2, requestId: key, submitId: null, draft: null };
+    draft.writeRequestDraft("org:user", "managed", first);
+    assert.equal(draft.startNewRequestDraft("org:user", "managed"), true);
+    assert.equal(draft.readRequestDraft("org:user", "managed"), null);
+    assert.equal(draft.listRequestDrafts("org:user", "managed").length, 1);
+    const second = { ...first, requestId: "3a957481-a381-49d9-b5a9-b9d41bf558d7", form: { ...first.form, title: "두번째 캠페인" } };
+    draft.writeRequestDraft("org:user", "managed", second);
+    assert.equal(draft.listRequestDrafts("org:user", "managed").length, 2);
+    draft.writeRequestDraft("org:user", "managed", first);
+    assert.equal(draft.readRequestDraft("org:user", "managed").form.title, first.form.title);
+    assert.equal(draft.listRequestDrafts("org:user", "managed").length, 2);
+    assert.equal(draft.listRequestDrafts("org:other-user", "managed").length, 0);
+    const options = draft.requestDraftChoices([], draft.listRequestDrafts("org:user", "managed").map(snapshot => ({ storageRoute: "managed", snapshot })));
+    assert.equal(options.length, 2);
+    const server = { id: "server-draft", title: "서버 초안", updatedAt: new Date().toISOString(), status: "DRAFT", type: "MANAGED" };
+    assert.equal(draft.requestDraftChoices([server], []).length, 1);
+    assert.equal(draft.requestDraftChoices([{ ...server, status: "REVIEW" }], []).length, 0);
+  } finally {
+    if (original) Object.defineProperty(globalThis, "localStorage", original); else delete globalThis.localStorage;
+  }
+});
+
+test("new request currencies follow language and draft links open the correct request route", () => {
+  const draft = compile("lib/brand-request-draft.ts", {});
+  assert.equal(draft.requestCurrencyForLocale("ko"), "KRW");
+  assert.equal(draft.requestCurrencyForLocale("en"), "USD");
+  assert.equal(draft.requestCurrencyForLocale("zh"), "CNY");
+  assert.equal(draft.requestDraftPath({ id: "campaign-1", type: "MANAGED" }), "/advertiser/campaign/new?draft=campaign-1&route=managed");
+  assert.equal(draft.requestDraftPath({ id: "campaign-2", type: "OPEN_BIDDING" }), "/advertiser/campaign/new?draft=campaign-2&route=open");
 });

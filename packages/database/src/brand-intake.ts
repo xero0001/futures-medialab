@@ -14,6 +14,8 @@ const dateOnly = z
   });
 export const brandBriefSchema = z.object({
   // Older briefs and delegated intakes may not have a separate game name.
+  gameId: z.string().regex(/^[a-zA-Z0-9_-]+$/).max(120).nullable().default(null),
+  gameLocale: z.enum(["ko", "en", "zh"]).default("ko"),
   gameName: z.string().trim().max(120).default(""),
   genre: z.string().trim().min(1).max(120),
   goal: z.string().trim().min(1).max(1000),
@@ -78,6 +80,8 @@ export type BrandIntakeBrief = z.output<typeof brandCampaignCreateSchema>;
 
 export function campaignFieldsFromBrief(input: BrandIntakeBrief) {
   const {
+    gameId,
+    gameLocale,
     gameName,
     genre,
     goal,
@@ -88,6 +92,8 @@ export function campaignFieldsFromBrief(input: BrandIntakeBrief) {
     compositionPreference,
   } = input;
   const brief = {
+    gameId,
+    gameLocale,
     gameName,
     genre,
     goal,
@@ -107,6 +113,7 @@ export function campaignFieldsFromBrief(input: BrandIntakeBrief) {
     .filter(Boolean)
     .join("\n\n");
   const values = {
+    gameId,
     title: input.title,
     summary,
     type:

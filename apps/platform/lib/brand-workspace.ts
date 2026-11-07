@@ -8,6 +8,7 @@ import {
   requestWaitingFor,
 } from "@futures-medialab/database/request-workflow";
 import "server-only";
+import { gameCatalogSelect, localizedGame, normalizeGameTitle, resolveCampaignGame } from "@futures-medialab/database/game-catalog";
 import { createHash } from "node:crypto";
 import { getDatabase, Prisma } from "@futures-medialab/database";
 import {
@@ -71,6 +72,7 @@ const capabilities: BrandWorkspaceCapabilities = {
   campaignDocuments: true,
 };
 const campaignSelect = {
+  game: { select: gameCatalogSelect },
   id: true,
   title: true,
   summary: true,
@@ -148,6 +150,7 @@ function campaignDto(
   const requirements = object(row.requirements);
   const brief = brandDraftBriefSchema.safeParse(requirements.brandBrief);
   const intake = object(requirements.brandIntake);
+  const game = row.game ? localizedGame(row.game, brief.success ? brief.data.gameLocale : "ko") : null;
   const intakeRequest = requests.find(
     (request) =>
       request.id === intake.requestId && request.campaignId === row.id,
@@ -157,6 +160,7 @@ function campaignDto(
     title: row.title,
     summary: row.summary,
     ...campaignArtwork(row.coverImageUrl, row.requirements),
+    ...(game && { gameName: game.title, gameIconUrl: game.thumbnailUrl, gameSourceUrl: game.officialUrl }),
     type: row.type,
     status: row.status,
     budgetAmount: row.budgetAmount?.toFixed(2) ?? null,
@@ -257,6 +261,28 @@ async function authorize(
   });
   if (!live) fail(401, "UNAUTHORIZED", "로그인이 만료되었습니다.");
   return membership(tx, session.user.id);
+}
+
+export function brandGameCatalog(request: Request) {
+  return workspaceBoundary(async () => {
+    const session = await authenticated(request);
+    await rateLimit(session.user.id, "brand-game-search", 120);
+    const params = new URL(request.url).searchParams;
+    const query = params.get("q") ?? "";
+    const language = params.get("lang") ?? "ko";
+    if (query.length > 120 || !["ko", "en", "zh"].includes(language)) fail(400, "INVALID_QUERY", "검색 조건을 확인해 주세요.");
+    const locale = language as "ko" | "en" | "zh";
+    const games = await getDatabase().$transaction(async (tx) => {
+      const member = await authorize(tx, session);
+      return tx.gameCatalog.findMany({
+        where: { OR: [{ verified: true }, { organizationId: member.organizationId }],
+          ...(query.trim() && { searchText: { contains: normalizeGameTitle(query), mode: "insensitive" } }),
+        },
+        orderBy: [{ verified: "desc" }, { title: "asc" }], take: 8, select: gameCatalogSelect,
+      });
+    });
+    return json({ games: games.map(game => ({ ...localizedGame(game, locale), exactMatch: game.aliases.includes(normalizeGameTitle(query)) })) });
+  });
 }
 
 export function brandWorkspace(request: Request) {
@@ -865,7 +891,11 @@ export function mutateBrandCampaign(request: Request) {
             "INVALID_DEADLINE",
             "오픈 캠페인의 모집 마감일을 입력해 주세요.",
           );
-        const { brief, values } = campaignFieldsFromBrief(input);
+        const game = await resolveCampaignGame(tx, organizationId, input);
+        if (input.gameId && !game) fail(400, "INVALID_GAME", "선택한 게임을 찾을 수 없습니다. 다시 선택해 주세요.");
+        const { brief, values } = campaignFieldsFromBrief({ ...input,
+          gameId: game?.id ?? null, gameName: game ? localizedGame(game, input.gameLocale).title : input.gameName,
+        });
         const payloadHash = createHash("sha256")
           .update(JSON.stringify({ ...input, clientRequestId: undefined }))
           .digest("hex");

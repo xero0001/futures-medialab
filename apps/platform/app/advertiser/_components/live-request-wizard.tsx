@@ -34,12 +34,15 @@ import {
 } from "../../../lib/brand-workspace-validation";
 import {
   canRestoreRequestDraft,
+  hasRequestDraftInput,
+  requestCurrencyForLocale,
   clearRequestDraft,
   readRequestDraft,
   writeRequestDraft,
   requestBriefStage,
   type RequestDraftForm,
 } from "../../../lib/brand-request-draft";
+import { GameNameField } from "./game-name-field";
 import s from "./live-request-wizard.module.css";
 
 type Props = {
@@ -83,8 +86,16 @@ export function LiveRequestWizard({
     locale === "ko" ? ko : locale === "zh" ? zh : en;
   const toast = useToast();
   const [recovered] = useState(() => {
-    const cached = readRequestDraft(draftScope, initialRoute);
-    return canRestoreRequestDraft(cached, initialCampaign) ? cached : null;
+    const cached = readRequestDraft(
+      draftScope,
+      initialRoute,
+      initialCampaign?.id,
+    );
+    return cached &&
+      hasRequestDraftInput(cached) &&
+      canRestoreRequestDraft(cached, initialCampaign)
+      ? cached
+      : null;
   });
   const [step, setStep] = useState(recovered?.step ?? 0);
   const [briefStage, setBriefStage] = useState(
@@ -98,12 +109,13 @@ export function LiveRequestWizard({
   const [form, setForm] = useState<RequestDraftForm>(() => ({
     ...(recovered?.form ?? {
       title: initialCampaign?.title ?? "",
+      gameId: initialCampaign?.brief?.gameId ?? null,
       gameName:
         initialCampaign?.brief?.gameName || initialCampaign?.gameName || "",
       genre: initialCampaign?.brief?.genre ?? "",
       goal: initialCampaign?.brief?.goal ?? initialCampaign?.summary ?? "",
       budgetAmount: initialCampaign?.budgetAmount ?? "",
-      currency: initialCampaign?.currency ?? "USD",
+      currency: initialCampaign?.currency ?? requestCurrencyForLocale(locale),
       platforms: initialCampaign?.platforms ?? [],
       contentFormat: initialCampaign?.brief?.contentFormat ?? "",
       creatorCount: initialCampaign?.brief?.creatorCount
@@ -253,6 +265,8 @@ export function LiveRequestWizard({
     return {
       title: form.title.trim(),
       gameName: form.gameName.trim(),
+      gameId: form.gameId,
+      gameLocale: locale,
       genre: form.genre.trim(),
       goal: form.goal.trim(),
       budgetAmount: form.budgetAmount.trim(),
@@ -796,21 +810,21 @@ export function LiveRequestWizard({
                     <label htmlFor="brand-game-name">
                       {t("게임명", "Game name", "游戏名称")}
                     </label>
-                    <TextField
-                      id="brand-game-name"
+                    <GameNameField
                       value={form.gameName}
-                      onChange={(event) =>
-                        update("gameName", event.target.value)
-                      }
-                      maxLength={120}
+                      gameId={form.gameId}
+                      locale={locale}
+                      disabled={Boolean(busy)}
                       status={fieldStatus("gameName")}
-                      width="100%"
-                      autoComplete="off"
-                      placeholder={t(
-                        "홍보할 게임명을 입력해 주세요",
-                        "Enter the game to promote",
-                        "请输入要推广的游戏名称",
-                      )}
+                      onChange={(gameName, gameId) => {
+                        setForm((current) => ({
+                          ...current,
+                          gameName,
+                          gameId,
+                        }));
+                        setError("");
+                        setInvalidField(null);
+                      }}
                     />
                   </div>
                   <div className={s.field}>
