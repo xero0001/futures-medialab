@@ -1165,7 +1165,7 @@ export function LiveRequestWizard({
                   )}
                   className={s.strategyGrid}
                 >
-                  {strategyOptions.map((option, index) => (
+                  {strategyOptions.map((option) => (
                     <label
                       htmlFor={`brand-strategy-${option.value}`}
                       key={option.value}
@@ -1173,11 +1173,12 @@ export function LiveRequestWizard({
                     >
                       <div className={s.choiceTop}>
                         <Typography
-                          variant="label1"
+                          as="h3"
+                          id={`brand-strategy-title-${option.value}`}
+                          variant="headline1"
                           weight="bold"
-                          color="semantic.foreground.brand.primary"
                         >
-                          {String.fromCharCode(65 + index)}
+                          {option.title}
                         </Typography>
                         <RadioGroupItem
                           id={`brand-strategy-${option.value}`}
@@ -1185,14 +1186,6 @@ export function LiveRequestWizard({
                           aria-labelledby={`brand-strategy-title-${option.value}`}
                         />
                       </div>
-                      <Typography
-                        as="h3"
-                        id={`brand-strategy-title-${option.value}`}
-                        variant="headline1"
-                        weight="bold"
-                      >
-                        {option.title}
-                      </Typography>
                       <Typography
                         as="p"
                         variant="body2"

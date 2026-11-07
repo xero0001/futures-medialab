@@ -3,10 +3,17 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  ActionArea,
+  ActionAreaButton,
   Button,
   ContentBadge,
+  Modal,
+  ModalContainer,
+  ModalContent,
+  ModalNavigation,
+  ModalNavigationButton,
   SearchField,
   SectionMessage,
   Skeleton,
@@ -1156,11 +1163,14 @@ function CampaignDetail({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [cancelNeedsRequest, setCancelNeedsRequest] = useState(false);
+  const cancelInFlight = useRef(false);
   const href = (path: string) => hrefFor(path, locale);
   const requestHref = href(
     `/advertiser/requests?compose=1&campaign=${encodeURIComponent(campaign.id)}`,
   );
   async function cancelCampaign() {
+    if (!confirmCancel || cancelInFlight.current || cancelNeedsRequest) return;
+    cancelInFlight.current = true;
     setBusy(true);
     setError("");
     setCancelNeedsRequest(false);
@@ -1191,6 +1201,7 @@ function CampaignDetail({
           : t("다시 시도해 주세요.", "Please try again.", "请重试。"),
       );
     } finally {
+      cancelInFlight.current = false;
       setBusy(false);
     }
   }
@@ -1490,80 +1501,119 @@ function CampaignDetail({
       </Tab>
       {canManage && ["DRAFT", "REVIEW"].includes(campaign.status) && (
         <div className={styles.cancelArea}>
-          {confirmCancel ? (
-            <SectionMessage
-              variant="cautionary"
-              description={t(
-                "취소하면 이 캠페인의 접수와 진행이 종료됩니다. 계속 진행하려면 취소하지 마세요.",
-                "Canceling ends this campaign's intake. Keep it if you intend to continue.",
-                "取消后此活动的受理将结束；如需继续，请保留活动。",
+          <Button
+            variant="solid"
+            color="negative"
+            size="small"
+            onClick={() => {
+              setError("");
+              setCancelNeedsRequest(false);
+              setConfirmCancel(true);
+            }}
+          >
+            {t("캠페인 취소", "Cancel campaign", "取消活动")}
+          </Button>
+          <Modal
+            open={confirmCancel}
+            onOpenChange={(open) => {
+              if (!cancelInFlight.current) setConfirmCancel(open);
+            }}
+          >
+            <ModalContainer
+              variant="popup"
+              size="medium"
+              className={styles.cancelDialog}
+              disableOutsideClickClose={busy}
+              disableEscapeKeyDownClose={busy}
+              aria-label={t(
+                "캠페인 취소 확인",
+                "Confirm campaign cancellation",
+                "确认取消活动",
               )}
+              aria-describedby="campaign-cancel-description"
             >
-              {t(
-                "이 캠페인을 취소할까요?",
-                "Cancel this campaign?",
-                "取消此活动？",
-              )}
-              <div className={styles.confirmActions}>
-                <Button
-                  variant="outlined"
-                  color="assistive"
-                  size="small"
+              <ModalNavigation
+                trailingContent={
+                  <ModalNavigationButton
+                    variant="close-button"
+                    disabled={busy}
+                    aria-label={t("닫기", "Close", "关闭")}
+                  />
+                }
+              >
+                {t(
+                  "이 캠페인을 취소할까요?",
+                  "Cancel this campaign?",
+                  "取消此活动？",
+                )}
+              </ModalNavigation>
+              <ModalContent gap="16px" verticalPadding="bottom-only">
+                <Typography as="p" variant="body2" weight="bold">
+                  {campaign.title}
+                </Typography>
+                <Typography
+                  as="p"
+                  id="campaign-cancel-description"
+                  variant="body2"
+                  color="semantic.foreground.neutral.secondary"
+                >
+                  {t(
+                    "취소하면 이 캠페인의 접수와 진행이 종료됩니다. 계속 진행하려면 유지하기를 선택해 주세요.",
+                    "Canceling ends this campaign's intake and progress. Choose Keep campaign to continue.",
+                    "取消后此活动的受理和执行将结束。如需继续，请选择保留活动。",
+                  )}
+                </Typography>
+                {error && (
+                  <SectionMessage
+                    variant="negative"
+                    role="alert"
+                    bottomButton={
+                      cancelNeedsRequest ? (
+                        <Button
+                          as={Link}
+                          href={requestHref}
+                          size="small"
+                          variant="outlined"
+                          color="assistive"
+                        >
+                          {t("취소 요청 남기기", "Request cancellation", "请求取消")}
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={onRefresh}
+                          size="small"
+                          variant="outlined"
+                          color="assistive"
+                        >
+                          {t("최신 상태 확인", "Refresh status", "刷新状态")}
+                        </Button>
+                      )
+                    }
+                  >
+                    {error}
+                  </SectionMessage>
+                )}
+              </ModalContent>
+              <ActionArea variant="neutral">
+                <ActionAreaButton
+                  variant="alternative"
                   disabled={busy}
                   onClick={() => setConfirmCancel(false)}
                 >
                   {t("유지하기", "Keep campaign", "保留活动")}
-                </Button>
-                <Button
-                  color="negative"
-                  size="small"
+                </ActionAreaButton>
+                <ActionAreaButton
+                  variant="main"
+                  buttonColor="negative"
                   loading={busy}
+                  disabled={busy || cancelNeedsRequest}
                   onClick={() => void cancelCampaign()}
                 >
                   {t("캠페인 취소", "Cancel campaign", "取消活动")}
-                </Button>
-              </div>
-            </SectionMessage>
-          ) : (
-            <Button
-              variant="outlined"
-              color="assistive"
-              size="small"
-              onClick={() => setConfirmCancel(true)}
-            >
-              {t("캠페인 취소", "Cancel campaign", "取消活动")}
-            </Button>
-          )}
-          {error && (
-            <SectionMessage
-              variant="negative"
-              role="alert"
-              bottomButton={
-                cancelNeedsRequest ? (
-                  <Button
-                    as={Link}
-                    href={requestHref}
-                    size="small"
-                    variant="outlined"
-                    color="assistive"
-                  >
-                    {t("취소 요청 남기기", "Request cancellation", "请求取消")}
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={onRefresh}
-                    size="small"
-                    variant="outlined"
-                    color="assistive"
-                  >
-                    {t("최신 상태 확인", "Refresh status", "刷新状态")}
-                  </Button>
-                )
-              }
-            >
-              {error}
-            </SectionMessage>
-          )}
+                </ActionAreaButton>
+              </ActionArea>
+            </ModalContainer>
+          </Modal>
         </div>
       )}
     </>

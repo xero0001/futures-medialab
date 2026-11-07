@@ -507,11 +507,12 @@
   align-items: flex-start;
   gap: 16px;
 }
-.confirmActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 20px;
+.cancelDialog {
+  font-family: var(--fm-font-family);
+}
+.cancelDialog p {
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 .libraryCampaigns {
   padding: 0 24px 12px;
