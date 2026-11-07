@@ -26,8 +26,8 @@ import { AdminButton } from "./admin-button";
 
 export const adminNavigation = [
   { key: "overview", label: "운영 현황", icon: IconHome },
-  { key: "users", label: "사용자 관리", icon: IconPersons },
-  { key: "organizations", label: "조직 · 심사 관리", icon: IconCompany },
+  { key: "users", label: "계정 관리", icon: IconPersons },
+  { key: "organizations", label: "심사 관리", icon: IconCompany },
   { key: "campaigns", label: "캠페인 · 신청 관리", icon: IconMegaphone },
   { key: "intake", label: "대리 접수", icon: IconInbox },
   { key: "creators", label: "내부 크리에이터 DB", icon: IconPersons },
@@ -126,6 +126,7 @@ export function AdminShell({
                   ref={menuRef}
                   type="button"
                   className="admin-mobile-menu"
+                  data-component="admin-mobile-menu"
                   aria-label="메뉴 열기"
                   aria-expanded={open}
                   aria-controls="admin-sidebar"
@@ -173,6 +174,7 @@ export function AdminShell({
             type="button"
             tabIndex={-1}
             className="admin-nav-backdrop"
+            data-component="admin-nav-backdrop"
             aria-label="메뉴 닫기"
             onClick={close}
           />
@@ -196,7 +198,12 @@ export function AdminShell({
           aria-modal={open || undefined}
           aria-label="관리자 메뉴"
         >
-          <button className="admin-mobile-close" type="button" onClick={close}>
+          <button
+            className="admin-mobile-close"
+            data-component="admin-mobile-close"
+            type="button"
+            onClick={close}
+          >
             메뉴 닫기
           </button>
           <nav aria-label="관리자 메뉴">

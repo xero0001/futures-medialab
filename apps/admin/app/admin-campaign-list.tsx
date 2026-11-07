@@ -1,8 +1,16 @@
 "use client";
 
 import { FormSelect } from "@futures-medialab/ui/form-select";
+import Image from "next/image";
+import { Tab, TabList, TabListItem, TabPanel } from "@montage-ui/core";
 import { useEffect, useState, type FormEvent } from "react";
-import { Search, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  ArrowRight,
+  Megaphone,
+} from "lucide-react";
 import { AdminButton } from "./_components/admin-button";
 import type { CampaignListResponse } from "../lib/campaign-list-types";
 import type { AdminLocation } from "../lib/admin-navigation";
@@ -92,166 +100,240 @@ export function AdminCampaignList({
     onFilter(nextScope, nextStatus);
   }
   return (
-    <section className="admin-panel admin-campaign-list" aria-busy={loading}>
-      <div className="admin-scope-tabs" aria-label="캠페인 진행 방식">
-        {(
-          [
-            ["all", "전체 캠페인"],
-            ["MANAGED", "맞춤 의뢰"],
-            ["OPEN_BIDDING", "오픈 모집"],
-          ] as const
-        ).map(([value, label]) => (
-          <AdminButton
-            key={value}
-            type="button"
-            aria-pressed={scope === value}
-            className={scope === value ? "primary" : ""}
-            onClick={() => filter(value, status)}
-          >
-            {label}
-          </AdminButton>
-        ))}
-      </div>
-      <form className="admin-toolbar" onSubmit={submit}>
-        <label className="admin-search">
-          <Search size={18} />
-          <input
-            maxLength={160}
-            aria-label="전체 캠페인 검색"
-            placeholder="캠페인 또는 브랜드 검색"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </label>
-        <AdminButton type="submit">검색</AdminButton>
-        <label className="admin-filter">
-          상태
-          <FormSelect
-            aria-label="캠페인 상태"
-            value={status}
-            onChange={(e) => filter(scope, e.target.value)}
-          >
-            <option value="all">전체 상태</option>
-            {Object.entries(statuses).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </FormSelect>
-        </label>
-      </form>
-      <div className="admin-list-caption">
-        <span>
-          {loading
-            ? "목록을 불러오는 중…"
-            : `검색 결과 ${(data?.total ?? 0).toLocaleString()}건`}
-        </span>
-        <span>최근 변경순 · 전체 캠페인에서 검색</span>
-      </div>
-      {error ? (
-        <p className="admin-alert error" role="alert">
-          {error}
-        </p>
-      ) : null}
-      <div className="admin-table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>캠페인 / 브랜드</th>
-              <th>상태</th>
-              <th>담당자</th>
-              <th>현재 기한</th>
-              <th>신청</th>
-              <th>운영</th>
-            </tr>
-          </thead>
-          <tbody>
-            {!data?.campaigns.length ? (
-              <tr>
-                <td colSpan={6} className="admin-empty">
-                  {loading
-                    ? "캠페인을 불러오고 있습니다."
-                    : "조건에 맞는 캠페인이 없습니다."}
-                </td>
-              </tr>
-            ) : (
-              data.campaigns.map((c) => (
-                <tr key={c.id}>
-                  <td>
-                    <strong>{c.title}</strong>
-                    <span className="admin-sub">
-                      {c.brandName} ·{" "}
-                      {c.type === "MANAGED" ? "맞춤 의뢰" : "오픈 모집"}
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      className={`admin-badge state-${c.status.toLowerCase()}`}
-                    >
-                      {c.status === "RECRUITING"
-                        ? c.type === "MANAGED"
-                          ? "소싱 중"
-                          : "모집 중"
-                        : (statuses[c.status] ?? c.status)}
-                    </span>
-                  </td>
-                  <td>{c.assigneeName ?? "미배정"}</td>
-                  <td>
-                    {date(
-                      c.type === "OPEN_BIDDING" && c.status === "RECRUITING"
-                        ? c.applicationDeadline
-                        : c.dueAt,
-                    )}
-                    <span className="admin-sub">
-                      {c.type === "OPEN_BIDDING" && c.status === "RECRUITING"
-                        ? "모집 마감"
-                        : "연결 요청 처리 기한"}
-                    </span>
-                  </td>
-                  <td>{c.applicationCount}</td>
-                  <td>
-                    <AdminButton
-                      type="button"
-                      onClick={() => onSelect(c.id)}
-                      aria-label={`${c.title} 운영 상세`}
-                    >
-                      운영 상세
-                      <ArrowRight size={16} />
-                    </AdminButton>
-                  </td>
+    <section
+      className="admin-campaign-list admin-flat-section"
+      aria-busy={loading}
+    >
+      <Tab
+        value={scope}
+        onValueChange={(value) =>
+          filter(value as AdminLocation["scope"], status)
+        }
+        disableScrollMoveOnChange
+      >
+        <TabList
+          size="medium"
+          horizontalPadding={false}
+          aria-label="캠페인 진행 방식"
+        >
+          {(
+            [
+              ["all", "전체 캠페인"],
+              ["MANAGED", "맞춤 의뢰"],
+              ["OPEN_BIDDING", "오픈 모집"],
+            ] as const
+          ).map(([value, label]) => (
+            <TabListItem
+              key={value}
+              value={value}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  filter(value, status);
+                }
+              }}
+            >
+              {label}
+            </TabListItem>
+          ))}
+        </TabList>
+        <TabPanel
+          value={scope}
+          mountMode="always"
+          className="admin-list-tab-panel"
+        >
+          <form className="admin-toolbar" onSubmit={submit}>
+            <label className="admin-search">
+              <Search size={18} />
+              <input
+                maxLength={160}
+                aria-label="전체 캠페인 검색"
+                placeholder="캠페인 또는 브랜드 검색"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </label>
+            <AdminButton type="submit">검색</AdminButton>
+            <label className="admin-filter">
+              상태
+              <FormSelect
+                aria-label="캠페인 상태"
+                value={status}
+                onChange={(e) => filter(scope, e.target.value)}
+              >
+                <option value="all">전체 상태</option>
+                {Object.entries(statuses).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </FormSelect>
+            </label>
+          </form>
+          <div className="admin-list-caption">
+            <span>
+              {loading
+                ? "목록을 불러오는 중…"
+                : `검색 결과 ${(data?.total ?? 0).toLocaleString()}건`}
+            </span>
+            <span>최근 변경순 · 전체 캠페인에서 검색</span>
+          </div>
+          {error ? (
+            <p className="admin-alert error" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <div className="admin-table-wrap admin-flat-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>캠페인 / 브랜드</th>
+                  <th>상태</th>
+                  <th>담당자</th>
+                  <th>현재 기한</th>
+                  <th>신청</th>
+                  <th>운영</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-      <div className="admin-pagination" key={key}>
-        <span>
-          {data?.page ?? page} /{" "}
-          {Math.max(1, Math.ceil((data?.total ?? 0) / (data?.pageSize ?? 25)))}{" "}
-          페이지
-        </span>
-        <div>
-          <AdminButton
-            type="button"
-            disabled={loading || (data?.page ?? page) <= 1}
-            onClick={() => setPage((data?.page ?? page) - 1)}
-          >
-            <ChevronLeft size={16} />
-            이전
-          </AdminButton>
-          <AdminButton
-            type="button"
-            disabled={
-              loading || !data || data.page * data.pageSize >= data.total
-            }
-            onClick={() => setPage((data?.page ?? page) + 1)}
-          >
-            다음
-            <ChevronRight size={16} />
-          </AdminButton>
-        </div>
-      </div>
+              </thead>
+              <tbody>
+                {!data?.campaigns.length ? (
+                  <tr>
+                    <td colSpan={6} className="admin-empty">
+                      {loading
+                        ? "캠페인을 불러오고 있습니다."
+                        : "조건에 맞는 캠페인이 없습니다."}
+                    </td>
+                  </tr>
+                ) : (
+                  data.campaigns.map((c) => (
+                    <tr key={c.id}>
+                      <td>
+                        <a
+                          href={`/?tab=campaigns&campaign=${encodeURIComponent(c.id)}`}
+                          className="admin-campaign-link"
+                          onClick={(event) => {
+                            if (
+                              event.metaKey ||
+                              event.ctrlKey ||
+                              event.shiftKey ||
+                              event.altKey
+                            )
+                              return;
+                            event.preventDefault();
+                            onSelect(c.id);
+                          }}
+                        >
+                          <CampaignThumbnail imageUrl={c.gameIconUrl} />
+                          <span>
+                            <strong>{c.title}</strong>
+                            <span className="admin-sub">
+                              {c.brandName}
+                              {c.gameName ? ` · ${c.gameName}` : ""}
+                            </span>
+                            <span className="admin-sub">
+                              {c.type === "MANAGED" ? "맞춤 의뢰" : "오픈 모집"}
+                              {c.platforms.length
+                                ? ` · ${c.platforms.join(" · ")}`
+                                : ""}
+                            </span>
+                          </span>
+                        </a>
+                      </td>
+                      <td>
+                        <span
+                          className={`admin-badge state-${c.status.toLowerCase()}`}
+                        >
+                          {c.status === "RECRUITING"
+                            ? c.type === "MANAGED"
+                              ? "소싱 중"
+                              : "모집 중"
+                            : (statuses[c.status] ?? c.status)}
+                        </span>
+                      </td>
+                      <td>{c.assigneeName ?? "미배정"}</td>
+                      <td>
+                        {date(
+                          c.type === "OPEN_BIDDING" && c.status === "RECRUITING"
+                            ? c.applicationDeadline
+                            : c.dueAt,
+                        )}
+                        <span className="admin-sub">
+                          {c.type === "OPEN_BIDDING" &&
+                          c.status === "RECRUITING"
+                            ? "모집 마감"
+                            : "연결 요청 처리 기한"}
+                        </span>
+                      </td>
+                      <td>{c.applicationCount}</td>
+                      <td>
+                        <AdminButton
+                          type="button"
+                          onClick={() => onSelect(c.id)}
+                          aria-label={`${c.title} 운영 상세`}
+                        >
+                          운영 상세
+                          <ArrowRight size={16} />
+                        </AdminButton>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="admin-pagination" key={key}>
+            <span>
+              {data?.page ?? page} /{" "}
+              {Math.max(
+                1,
+                Math.ceil((data?.total ?? 0) / (data?.pageSize ?? 25)),
+              )}{" "}
+              페이지
+            </span>
+            <div>
+              <AdminButton
+                type="button"
+                disabled={loading || (data?.page ?? page) <= 1}
+                onClick={() => setPage((data?.page ?? page) - 1)}
+              >
+                <ChevronLeft size={16} />
+                이전
+              </AdminButton>
+              <AdminButton
+                type="button"
+                disabled={
+                  loading || !data || data.page * data.pageSize >= data.total
+                }
+                onClick={() => setPage((data?.page ?? page) + 1)}
+              >
+                다음
+                <ChevronRight size={16} />
+              </AdminButton>
+            </div>
+          </div>
+        </TabPanel>
+      </Tab>
     </section>
+  );
+}
+
+function CampaignThumbnail({ imageUrl }: { imageUrl: string | null }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  return (
+    <span className="admin-campaign-thumbnail" aria-hidden="true">
+      {imageUrl && imageUrl !== failedUrl ? (
+        <Image
+          src={imageUrl}
+          alt=""
+          width={48}
+          height={48}
+          unoptimized
+          referrerPolicy="no-referrer"
+          onError={() => setFailedUrl(imageUrl)}
+        />
+      ) : (
+        <Megaphone size={22} />
+      )}
+    </span>
   );
 }

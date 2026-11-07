@@ -25,6 +25,7 @@ export type AdminLocation = {
   request: string;
   scope: "all" | "MANAGED" | "OPEN_BIDDING";
   status: string;
+  accountType: "all" | "BRAND" | "AGENCY";
 };
 const tabs = [
   "overview",
@@ -63,12 +64,28 @@ export function parseAdminLocation(search: string): AdminLocation {
     request: "",
     scope: "all",
     status: "all",
+    accountType: "all",
   };
-  if (["campaigns", "organizations", "games"].includes(location.tab))
+  if (
+    ["campaigns", "users", "organizations", "games"].includes(
+      location.tab,
+    )
+  )
     location.selected = safeId(
-      q.get(location.tab === "campaigns" ? "campaign" : location.tab === "games" ? "game" : "organization"),
+      q.get(
+        location.tab === "campaigns"
+          ? "campaign"
+          : location.tab === "games"
+            ? "game"
+            : "organization",
+      ),
     );
   if (location.tab === "requests") location.request = safeId(q.get("request"));
+  if (
+    ["users", "organizations"].includes(location.tab) &&
+    ["BRAND", "AGENCY"].includes(q.get("accountType") ?? "")
+  )
+    location.accountType = q.get("accountType") as AdminLocation["accountType"];
   if (campaignSections.some(([key]) => key === q.get("section")))
     location.section = q.get("section") as CampaignSection;
   if (["MANAGED", "OPEN_BIDDING"].includes(q.get("scope") ?? ""))
@@ -78,7 +95,7 @@ export function parseAdminLocation(search: string): AdminLocation {
       ? statuses.filter(
           (value) => !["PENDING", "ACTIVE", "SUSPENDED"].includes(value),
         )
-      : location.tab === "organizations"
+      : location.tab === "users"
         ? ["all", "PENDING", "ACTIVE", "SUSPENDED"]
         : ["all"];
   if (allowedStatuses.includes(q.get("status") ?? ""))
@@ -94,14 +111,17 @@ export function adminLocationHref(location: AdminLocation): string {
       q.set("section", location.section);
     if (location.scope !== "all") q.set("scope", location.scope);
   }
-  if (location.tab === "organizations" && location.selected)
-    q.set("organization", location.selected);
+  if (["users", "organizations"].includes(location.tab)) {
+    if (location.selected) q.set("organization", location.selected);
+    if (location.accountType !== "all")
+      q.set("accountType", location.accountType);
+  }
   if (location.tab === "games" && location.selected)
     q.set("game", location.selected);
   if (location.tab === "requests" && location.request)
     q.set("request", location.request);
   if (
-    ["campaigns", "organizations"].includes(location.tab) &&
+    ["campaigns", "users"].includes(location.tab) &&
     location.status !== "all"
   )
     q.set("status", location.status);

@@ -16,7 +16,7 @@ export type UserRow = {
   email: string;
   emailVerified: boolean;
   createdAt: string;
-  organizations: { name: string; type: string; role: string; status: string }[];
+  organizations: { id: string; name: string; type: string; role: string; status: string }[];
 };
 export type CampaignRow = {
   id: string;
@@ -63,6 +63,8 @@ export type OrganizationDetail = {
   name: string;
   type: string;
   status: string;
+  submitted: boolean;
+  testAccess: boolean;
   fields: { label: string; value: string }[];
   documents: {
     id: string;

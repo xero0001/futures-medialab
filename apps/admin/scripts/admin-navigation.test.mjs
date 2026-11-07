@@ -12,6 +12,7 @@ test("campaign section and list scope survive a shared URL and reload", () => {
     request: "",
     scope: "MANAGED",
     status: "RECRUITING",
+    accountType: "all",
   };
   assert.deepEqual(
     parseAdminLocation(adminLocationHref(input).split("?")[1]),
@@ -58,4 +59,44 @@ test("game catalog URLs preserve selected games and new entries", () => {
     assert.equal(location.selected, game);
     assert.equal(adminLocationHref(location), `/?tab=games&game=${game}`);
   }
+});
+
+test("account and review type tabs survive reloads and shared detail links", () => {
+  for (const tab of ["users", "organizations"]) {
+    for (const accountType of ["all", "BRAND", "AGENCY"]) {
+      const location = {
+        ...parseAdminLocation(""),
+        tab,
+        accountType,
+        selected: "partner_1",
+      };
+      assert.deepEqual(
+        parseAdminLocation(adminLocationHref(location).split("?")[1]),
+        location,
+      );
+    }
+  }
+});
+
+test("account status filters do not bring approved or suspended organizations into review", () => {
+  assert.equal(
+    parseAdminLocation("?tab=users&status=SUSPENDED").status,
+    "SUSPENDED",
+  );
+  assert.equal(
+    parseAdminLocation("?tab=organizations&status=ACTIVE").status,
+    "all",
+  );
+  assert.equal(
+    parseAdminLocation("?tab=users&accountType=PLATFORM").accountType,
+    "all",
+  );
+  assert.equal(
+    parseAdminLocation("?tab=campaigns&accountType=BRAND").accountType,
+    "all",
+  );
+  assert.equal(
+    parseAdminLocation("?tab=users&organization=../private").selected,
+    "",
+  );
 });

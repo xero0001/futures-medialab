@@ -82,6 +82,16 @@ export function listCampaigns(request: Request) {
             requirements: true,
             brandOrganizationId: true,
             brandOrganization: { select: { name: true, status: true } },
+            game: {
+              select: {
+                title: true,
+                thumbnailUrl: true,
+                localizations: {
+                  where: { locale: "KO" },
+                  select: { title: true },
+                },
+              },
+            },
             _count: { select: { applications: true } },
           },
         });
@@ -107,6 +117,13 @@ export function listCampaigns(request: Request) {
           page,
           pageSize,
           campaigns: rows.map((row) => {
+            const requirements = record(row.requirements);
+            // Match the existing brand artwork for campaigns predating the game catalog.
+            const legacyGame =
+              requirements.demo === true &&
+              requirements.seed === "official-proposals-nte-v1"
+                ? record(requirements.game)
+                : {};
             const requestId = text(
               record(record(row.requirements).brandIntake).requestId,
             );
@@ -123,6 +140,15 @@ export function listCampaigns(request: Request) {
               summary: row.summary.slice(0, 500),
               status: row.status,
               brandName: row.brandOrganization.name,
+              gameName:
+                row.game?.localizations[0]?.title ??
+                row.game?.title ??
+                (text(legacyGame.name).slice(0, 120) || null),
+              gameIconUrl:
+                row.game?.thumbnailUrl ??
+                (legacyGame.iconUrl === "/demo/nte/game-icon.png"
+                  ? legacyGame.iconUrl
+                  : null),
               brandStatus: row.brandOrganization.status,
               platforms: row.platforms,
               currency: row.currency,

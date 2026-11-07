@@ -75,7 +75,7 @@ export function bootstrap(request: Request) {
                 select: {
                   role: true,
                   organization: {
-                    select: { name: true, type: true, status: true },
+                    select: { id: true, name: true, type: true, status: true },
                   },
                 },
               },
@@ -280,6 +280,8 @@ export function organizationDetail(request: Request, id: string) {
       name: org.name,
       type: org.type,
       status: org.status,
+      submitted: submittedProfile(org.type, metadata),
+      testAccess: metadata.testWorkspaceAccess === true,
       fields: fields.map(([label, value]) => ({
         label,
         value: text(value) || "—",

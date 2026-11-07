@@ -19,9 +19,10 @@ function fixture(options = {}) {
     budgetAmount: { toFixed: () => "100.00" },
     applicationDeadline: null,
     createdAt: new Date("2026-11-06"),
-    requirements: { brandIntake: { requestId: "r1" } },
+    requirements: options.requirements ?? { brandIntake: { requestId: "r1" } },
     brandOrganizationId: "b1",
     brandOrganization: { name: "Brand", status: "ACTIVE" },
+    game: options.game ?? null,
     _count: { applications: 1 },
   };
   const tx = {
@@ -161,4 +162,58 @@ test("forged linked intake from another organization is not returned", async () 
   const b = await (await f.run()).json();
   assert.equal(b.campaigns[0].assigneeName, null);
   assert.equal(b.campaigns[0].requestId, null);
+});
+
+test("campaign list uses the linked game's current thumbnail and Korean official title", async () => {
+  const f = fixture({
+    game: {
+      title: "Neverness to Everness",
+      thumbnailUrl: "/demo/nte/game-icon.png",
+      localizations: [{ title: "이환" }],
+    },
+  });
+  const body = await (await f.run()).json();
+  assert.equal(body.campaigns[0].gameIconUrl, "/demo/nte/game-icon.png");
+  assert.equal(body.campaigns[0].gameName, "이환");
+  assert.equal(
+    f.calls.find(([key]) => key === "rows")[1].select.game.select.thumbnailUrl,
+    true,
+  );
+});
+
+test("missing game artwork remains optional and untranslated games use their main title", async () => {
+  const missing = await (await fixture().run()).json();
+  assert.equal(missing.campaigns[0].gameIconUrl, null);
+  assert.equal(missing.campaigns[0].gameName, null);
+  const fallback = await (
+    await fixture({
+      game: {
+        title: "Game",
+        thumbnailUrl: "/games/placeholder.svg",
+        localizations: [],
+      },
+    }).run()
+  ).json();
+  assert.equal(fallback.campaigns[0].gameName, "Game");
+});
+
+test("legacy demo campaigns retain the same approved artwork as the brand workspace", async () => {
+  const requirements = {
+    demo: true,
+    seed: "official-proposals-nte-v1",
+    game: { name: "이환", iconUrl: "/demo/nte/game-icon.png" },
+  };
+  const body = await (await fixture({ requirements }).run()).json();
+  assert.equal(body.campaigns[0].gameName, "이환");
+  assert.equal(body.campaigns[0].gameIconUrl, "/demo/nte/game-icon.png");
+  for (const invalid of [
+    { ...requirements, demo: false },
+    { ...requirements, seed: "other" },
+    { ...requirements, game: { iconUrl: "https://unknown.example/image.png" } },
+  ]) {
+    const result = await (
+      await fixture({ requirements: invalid }).run()
+    ).json();
+    assert.equal(result.campaigns[0].gameIconUrl, null);
+  }
 });

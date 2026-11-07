@@ -1,6 +1,5 @@
 "use client";
 
-import { FormSelect } from "@futures-medialab/ui/form-select";
 import {
   AdminShell,
   adminNavigation as tabs,
@@ -10,6 +9,7 @@ import { AdminButton } from "./_components/admin-button";
 import { RequestConsole } from "./request-console";
 import { OperationsDashboard } from "./operations-dashboard";
 import { AdminCampaignList } from "./admin-campaign-list";
+import { AdminAccountWorkspace } from "./admin-account-workspace";
 import { AdminCampaignWorkspace } from "./admin-campaign-workspace";
 import { AdminDelegatedIntake } from "./admin-delegated-intake";
 import { AdminGameCatalog } from "./admin-game-catalog";
@@ -28,22 +28,8 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import {
-  ArrowUpRight,
-  Building2,
-  CheckCircle2,
-  ChevronRight,
-  Download,
-  RefreshCw,
-  Search,
-  X,
-} from "lucide-react";
-import type {
-  AdminAction,
-  Bootstrap,
-  CampaignDetail,
-  OrganizationDetail,
-} from "../lib/types";
+import { ArrowUpRight, Building2, RefreshCw, Search, X } from "lucide-react";
+import type { AdminAction, Bootstrap, CampaignDetail } from "../lib/types";
 
 type Operation = {
   action: AdminAction;
@@ -56,40 +42,14 @@ const descriptions: Record<Tab, string> = {
   games: "언어별 공식 게임명과 썸네일, 브랜드 검색 공개 상태를 관리합니다.",
   creators: "후보의 채널, 가용 일정과 견적 이력을 관리합니다.",
   overview: "기한이 임박한 업무와 담당자별 처리할 일을 확인하세요.",
-  users: "플랫폼에 함께하는 사용자와 소속 조직, 접근 권한을 확인하세요.",
-  organizations: "파트너의 회사 정보와 제출 서류를 살펴보고 심사를 진행하세요.",
+  users: "브랜드·에이전시 계정의 소속 회사와 권한, 이용 상태를 관리하세요.",
+  organizations:
+    "승인 대기 중인 브랜드·에이전시의 제출 정보를 확인하고 심사하세요.",
   campaigns:
     "맞춤 의뢰와 오픈 모집의 후보 선정부터 제작·성과·청구까지 이어서 관리하세요.",
   requests:
     "브랜드의 문의부터 캠페인 변경 요청까지, 담당자를 정하고 답변을 이어가세요.",
   audit: "담당자의 검토 사유부터 처리 결과까지, 운영의 흐름을 확인하세요.",
-};
-const labels: Record<string, string> = {
-  ACTIVE: "승인",
-  PENDING: "승인 대기",
-  SUSPENDED: "이용 정지",
-  BRAND: "브랜드",
-  AGENCY: "에이전시",
-  PLATFORM: "운영 조직",
-  OWNER: "소유자",
-  ADMIN: "관리자",
-  MEMBER: "멤버",
-  DRAFT: "초안",
-  REVIEW: "공개 검토",
-  RECRUITING: "모집 중",
-  IN_PROGRESS: "진행 중",
-  VERIFYING: "콘텐츠 검수",
-  SETTLING: "정산",
-  COMPLETED: "완료",
-  CANCELED: "취소",
-  SUBMITTED: "신청 접수",
-  SHORTLISTED: "검토 후보",
-  ACCEPTED: "선정",
-  REJECTED: "미선정",
-  WITHDRAWN: "신청 철회",
-  UPLOADED: "검증 완료",
-  BUSINESS_REGISTRATION: "사업자 증빙",
-  CONTRACT: "계약서",
 };
 const actionLabels: Record<string, string> = {
   "campaign.delegated_intake": "브랜드 의뢰 대리 접수",
@@ -117,11 +77,6 @@ const date = (value: string | null) =>
         timeZone: "Asia/Seoul",
       }).format(new Date(value))
     : "미설정";
-const badge = (value: string, label?: string) => (
-  <span className={`admin-badge state-${value.toLowerCase()}`}>
-    {label ?? labels[value] ?? value}
-  </span>
-);
 async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(path, { ...options, cache: "no-store" });
   const body = await response.json().catch(() => ({}));
@@ -243,7 +198,8 @@ export function AdminConsole({
   const [requestId, setRequestId] = useState("");
   const [viewRefresh, setViewRefresh] = useState(0);
   const locationRef = useRef<AdminLocation>(parseAdminLocation(""));
-  const [orgDetail, setOrgDetail] = useState<OrganizationDetail | null>(null);
+  const [accountType, setAccountType] =
+    useState<AdminLocation["accountType"]>("all");
   const [campaignDetail, setCampaignDetail] = useState<CampaignDetail | null>(
     null,
   );
@@ -286,21 +242,15 @@ export function AdminConsole({
     return () => controller.abort();
   }, []);
   useEffect(() => {
-    if (!selected || !["organizations", "campaigns"].includes(tab)) return;
+    if (!selected || tab !== "campaigns") return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
       setDetailLoading(true);
-      setOrgDetail(null);
       setCampaignDetail(null);
-      void fetchJson<OrganizationDetail | CampaignDetail>(
-        `/api/admin/${tab}/${selected}`,
-        { signal: controller.signal },
-      )
-        .then((value) => {
-          if (tab === "organizations")
-            setOrgDetail(value as OrganizationDetail);
-          else setCampaignDetail(value as CampaignDetail);
-        })
+      void fetchJson<CampaignDetail>(`/api/admin/${tab}/${selected}`, {
+        signal: controller.signal,
+      })
+        .then(setCampaignDetail)
         .catch((caught) => {
           if (!controller.signal.aborted)
             setError(
@@ -331,22 +281,24 @@ export function AdminConsole({
     setSelected(next.selected);
     setSection(next.section);
     setScope(next.scope);
+    setAccountType(next.accountType);
     setRequestId(next.request);
     setNotice("");
     setError("");
     if (previous.tab !== next.tab || previous.selected !== next.selected) {
-      setOrgDetail(null);
       setCampaignDetail(null);
       setQuery("");
     }
     if (push) {
       window.history.pushState(null, "", adminLocationHref(next));
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: 0, behavior: "instant" });
-        document
-          .getElementById("admin-content")
-          ?.focus({ preventScroll: true });
-      });
+      if (previous.tab !== next.tab || previous.selected !== next.selected) {
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: 0, behavior: "instant" });
+          document
+            .getElementById("admin-content")
+            ?.focus({ preventScroll: true });
+        });
+      }
     }
   }, []);
   useEffect(() => {
@@ -441,7 +393,6 @@ export function AdminConsole({
   }
   const match = (value: string) =>
     value.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
-  const org = data?.organizations.find((value) => value.id === selected);
   const campaign =
     campaignDetail?.id === selected
       ? campaignDetail.campaign
@@ -451,13 +402,10 @@ export function AdminConsole({
       ? (campaign?.title ?? "캠페인 운영")
       : tabs.find((value) => value.key === tab)!.label;
   const usesBootstrapView =
-    tab !== "requests" && tab !== "intake" && tab !== "creators" && tab !== "games";
-  const visibleUsers =
-    data?.users.filter((user) => match(`${user.name} ${user.email}`)) ?? [];
-  const visibleOrganizations =
-    data?.organizations.filter(
-      (org) => (filter === "all" || org.status === filter) && match(org.name),
-    ) ?? [];
+    tab !== "requests" &&
+    tab !== "intake" &&
+    tab !== "creators" &&
+    tab !== "games";
   return (
     <AdminShell
       name={name}
@@ -544,8 +492,13 @@ export function AdminConsole({
               setSelected(id);
               if (id !== selected) {
                 if (selected === "new" && id)
-                  window.history.replaceState(null, "", adminLocationHref(next));
-                else window.history.pushState(null, "", adminLocationHref(next));
+                  window.history.replaceState(
+                    null,
+                    "",
+                    adminLocationHref(next),
+                  );
+                else
+                  window.history.pushState(null, "", adminLocationHref(next));
               }
             }}
           />
@@ -571,9 +524,9 @@ export function AdminConsole({
                 <div className="admin-context-links">
                   <AdminButton
                     type="button"
-                    onClick={() => navigate("organizations", "PENDING")}
+                    onClick={() => navigate("organizations")}
                   >
-                    조직 심사 대기 {data.counts.pendingOrganizations}건
+                    심사 대기 {data.counts.pendingOrganizations}건
                     <ArrowUpRight size={16} />
                   </AdminButton>
                   <AdminButton
@@ -614,7 +567,37 @@ export function AdminConsole({
                     onSelect={openDetail}
                   />
                 ) : null}
-                {tab !== "campaigns" ? (
+                {(tab === "users" || tab === "organizations") && (
+                  <AdminAccountWorkspace
+                    key={tab}
+                    mode={tab === "users" ? "accounts" : "reviews"}
+                    data={data}
+                    userId={userId}
+                    busy={busy}
+                    accountType={accountType}
+                    status={filter}
+                    selected={selected}
+                    onFilter={(type, status) =>
+                      applyLocation({
+                        ...locationRef.current,
+                        accountType: type,
+                        status,
+                        selected: "",
+                      })
+                    }
+                    onSelect={openDetail}
+                    onReview={(id, type) =>
+                      applyLocation({
+                        ...parseAdminLocation(""),
+                        tab: "organizations",
+                        selected: id,
+                        accountType: type,
+                      })
+                    }
+                    onOperation={setOperation}
+                  />
+                )}
+                {tab === "audit" && (
                   <section className="admin-panel">
                     <div className="admin-toolbar">
                       <label className="admin-search">
@@ -622,188 +605,27 @@ export function AdminConsole({
                         <input
                           value={query}
                           onChange={(event) => setQuery(event.target.value)}
-                          placeholder={
-                            tab === "users"
-                              ? "이름 또는 이메일 검색"
-                              : tab === "organizations"
-                                ? "조직명 검색"
-                                : "조치 또는 대상 ID 검색"
-                          }
+                          placeholder="조치 또는 대상 ID 검색"
                           aria-label="목록 검색"
                         />
                       </label>
-                      {["organizations", "campaigns"].includes(tab) && (
-                        <label className="admin-filter">
-                          상태
-                          <FormSelect
-                            aria-label="상태 필터"
-                            value={filter}
-                            onChange={(event) =>
-                              applyLocation({
-                                ...locationRef.current,
-                                status: event.target.value,
-                              })
-                            }
-                          >
-                            <option value="all">전체 상태</option>
-                            {(tab === "organizations"
-                              ? ["PENDING", "ACTIVE", "SUSPENDED"]
-                              : [
-                                  "DRAFT",
-                                  "REVIEW",
-                                  "RECRUITING",
-                                  "IN_PROGRESS",
-                                  "VERIFYING",
-                                  "SETTLING",
-                                  "COMPLETED",
-                                  "CANCELED",
-                                ]
-                            ).map((value) => (
-                              <option key={value} value={value}>
-                                {labels[value]}
-                              </option>
-                            ))}
-                          </FormSelect>
-                        </label>
-                      )}
                     </div>
                     <p className="admin-small">
-                      최근 {tab === "audit" ? "100" : data.limit}개 항목 내
-                      검색입니다. 조직·캠페인은 최근 변경순, 사용자는 가입순으로
-                      표시합니다.
+                      최근 100개 변경 이력 내 검색입니다.
                     </p>
-                    {tab === "users" && (
-                      <div className="admin-table-wrap">
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>사용자</th>
-                              <th>소속 조직 / 권한</th>
-                              <th>이메일 인증</th>
-                              <th>가입일</th>
-                              <th>관리</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {!visibleUsers.length && <EmptyRow columns={5} />}
-                            {visibleUsers.map((user) => (
-                              <tr key={user.id}>
-                                <td>
-                                  <strong>{user.name || "이름 없음"}</strong>
-                                  <span className="admin-sub">
-                                    {user.email}
-                                  </span>
-                                </td>
-                                <td>
-                                  {user.organizations.map((org, index) => (
-                                    <span className="admin-sub" key={index}>
-                                      {org.name} · {labels[org.role]} ·{" "}
-                                      {labels[org.status]}
-                                    </span>
-                                  ))}
-                                </td>
-                                <td>
-                                  {user.emailVerified ? "인증됨" : "미인증"}
-                                </td>
-                                <td>{date(user.createdAt)}</td>
-                                <td>
-                                  <AdminButton
-                                    disabled={
-                                      busy ||
-                                      user.id === userId ||
-                                      user.organizations.some(
-                                        (org) => org.type === "PLATFORM",
-                                      )
-                                    }
-                                    onClick={() =>
-                                      setOperation({
-                                        action: "revokeUserSessions",
-                                        id: user.id,
-                                        title: "사용자 세션 종료",
-                                        message: `${user.email}의 로그인 세션을 모두 종료합니다. 계정은 삭제되지 않으며 비밀번호로 다시 로그인할 수 있습니다.`,
-                                      })
-                                    }
-                                  >
-                                    세션 종료
-                                  </AdminButton>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                    {tab === "organizations" && (
-                      <div className="admin-table-wrap">
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>조직</th>
-                              <th>유형</th>
-                              <th>상태</th>
-                              <th>회사 정보</th>
-                              <th>멤버</th>
-                              <th>상세</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {!visibleOrganizations.length && (
-                              <EmptyRow columns={6} />
-                            )}
-                            {visibleOrganizations.map((org) => (
-                              <tr
-                                key={org.id}
-                                className={
-                                  selected === org.id ? "selected" : ""
-                                }
-                              >
-                                <td>
-                                  <strong>{org.name}</strong>
-                                  <span className="admin-sub">
-                                    {org.countryCode || "국가 미입력"}
-                                  </span>
-                                </td>
-                                <td>{labels[org.type]}</td>
-                                <td>{badge(org.status)}</td>
-                                <td>
-                                  {org.testAccess
-                                    ? "테스트 계정 예외"
-                                    : org.submitted
-                                      ? "제출 완료"
-                                      : "미제출 / 보완 중"}
-                                </td>
-                                <td>{org.memberCount}</td>
-                                <td>
-                                  <AdminButton
-                                    onClick={() => openDetail(org.id)}
-                                  >
-                                    심사 보기
-                                    <ChevronRight size={16} />
-                                  </AdminButton>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                    {tab === "audit" && (
-                      <AuditTable
-                        rows={data.audits.filter((audit) =>
-                          match(
-                            `${audit.action} ${audit.entityId} ${audit.reason} ${actionLabels[audit.action.replace("admin.", "")]}`,
-                          ),
-                        )}
-                      />
-                    )}
+                    <AuditTable
+                      rows={data.audits.filter((audit) =>
+                        match(
+                          `${audit.action} ${audit.entityId} ${audit.reason} ${actionLabels[audit.action.replace("admin.", "")]}`,
+                        ),
+                      )}
+                    />
                   </section>
-                ) : null}
-                {selected && ["organizations", "campaigns"].includes(tab) && (
-                  <section className="admin-panel admin-detail">
+                )}
+                {selected && tab === "campaigns" && (
+                  <section className="admin-detail admin-flat-section">
                     <div className="admin-row">
-                      <h2>
-                        {tab === "organizations" ? org?.name : "캠페인 운영"}
-                      </h2>
+                      <h2>캠페인 운영</h2>
                       <AdminButton
                         className="icon"
                         aria-label="상세 닫기"
@@ -814,108 +636,7 @@ export function AdminConsole({
                     </div>
                     {detailLoading ? (
                       <p role="status">상세 정보를 불러오는 중입니다…</p>
-                    ) : tab === "organizations" && orgDetail && org ? (
-                      <>
-                        <div className="admin-row">
-                          {badge(org.status)}
-                          <span>
-                            {labels[org.type]} ·{" "}
-                            {org.testAccess
-                              ? "서버에서 지정한 테스트 계정"
-                              : "일반 가입 조직"}
-                          </span>
-                        </div>
-                        <dl className="admin-fields">
-                          {orgDetail.fields.map((field) => (
-                            <div key={field.label}>
-                              <dt>{field.label}</dt>
-                              <dd>{field.value}</dd>
-                            </div>
-                          ))}
-                        </dl>
-                        <h3>제출 문서</h3>
-                        {orgDetail.documents.length ? (
-                          <ul className="admin-documents">
-                            {orgDetail.documents.map((doc) => (
-                              <li key={doc.id}>
-                                <div>
-                                  <strong>{doc.fileName}</strong>
-                                  <span>
-                                    {labels[doc.kind]} ·{" "}
-                                    {(doc.size / 1024).toFixed(0)} KB ·{" "}
-                                    {labels[doc.state] ?? doc.state}
-                                  </span>
-                                </div>
-                                {doc.state === "UPLOADED" && (
-                                  <a href={`/api/admin/documents/${doc.id}`}>
-                                    <Download size={16} />
-                                    비공개 다운로드
-                                  </a>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="admin-note">제출된 문서가 없습니다.</p>
-                        )}
-                        <div className="admin-actions">
-                          {org.status !== "ACTIVE" && (
-                            <AdminButton
-                              className="primary"
-                              disabled={
-                                busy || (!org.submitted && !org.testAccess)
-                              }
-                              onClick={() =>
-                                setOperation({
-                                  action: "approveOrganization",
-                                  id: org.id,
-                                  title: "조직 승인",
-                                  message: `${org.name}에 실제 워크스페이스 접근 권한을 부여합니다. 이메일 인증 상태는 변경되지 않습니다.`,
-                                })
-                              }
-                            >
-                              <CheckCircle2 size={18} />
-                              {org.status === "SUSPENDED"
-                                ? "검토 후 이용 재개"
-                                : "승인"}
-                            </AdminButton>
-                          )}
-                          {org.status === "PENDING" && (
-                            <AdminButton
-                              disabled={busy}
-                              onClick={() =>
-                                setOperation({
-                                  action: "requestOrganizationChanges",
-                                  id: org.id,
-                                  title: "회사 정보 보완 요청",
-                                  message:
-                                    "기존 회사 정보와 문서는 보관되며 신청자가 회사 정보를 수정하고 다시 제출할 수 있습니다.",
-                                })
-                              }
-                            >
-                              보완 요청
-                            </AdminButton>
-                          )}
-                          {org.status !== "SUSPENDED" && (
-                            <AdminButton
-                              className="danger"
-                              disabled={busy}
-                              onClick={() =>
-                                setOperation({
-                                  action: "suspendOrganization",
-                                  id: org.id,
-                                  title: "조직 이용 정지",
-                                  message:
-                                    "이 조직의 플랫폼 접근을 즉시 차단합니다. 브랜드인 경우 모집 캠페인도 에이전시 검색에서 제외됩니다. 기존 데이터는 삭제되지 않습니다.",
-                                })
-                              }
-                            >
-                              이용 정지
-                            </AdminButton>
-                          )}
-                        </div>
-                      </>
-                    ) : tab === "campaigns" && campaignDetail && campaign ? (
+                    ) : campaignDetail && campaign ? (
                       <AdminCampaignWorkspace
                         detail={campaignDetail}
                         section={section}
@@ -950,17 +671,6 @@ export function AdminConsole({
     </AdminShell>
   );
 }
-function EmptyRow({ columns }: { columns: number }) {
-  return (
-    <tr>
-      <td colSpan={columns} className="admin-empty">
-        <strong>표시할 항목이 없습니다.</strong>
-        <span className="admin-sub">검색어나 상태 필터를 변경해보세요.</span>
-      </td>
-    </tr>
-  );
-}
-
 function AuditTable({ rows }: { rows: Bootstrap["audits"] }) {
   if (!rows.length)
     return <p className="admin-note">표시할 변경 이력이 없습니다.</p>;
