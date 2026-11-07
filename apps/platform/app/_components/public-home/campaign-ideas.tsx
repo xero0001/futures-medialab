@@ -71,7 +71,7 @@ export function CampaignIdeas({ t, locale }: { t: HomeCopy; locale: Locale }) {
   const autoScroll = useMemo(
     () =>
       AutoScroll({
-        direction: "backward",
+        direction: "forward",
         speed: 0.6,
         startDelay: 0,
         playOnInit: false,

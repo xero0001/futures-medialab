@@ -260,10 +260,30 @@
   margin-bottom: 30px;
 }
 .campaignViewport {
+  position: relative;
+  isolation: isolate;
   overflow: hidden;
   padding: 6px;
   margin: -6px;
   cursor: grab;
+}
+.campaignViewport::before,
+.campaignViewport::after {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  width: clamp(24px, 6vw, 72px);
+  pointer-events: none;
+  content: "";
+}
+.campaignViewport::before {
+  left: 0;
+  background: linear-gradient(to right, #fff, rgb(255 255 255 / 0));
+}
+.campaignViewport::after {
+  right: 0;
+  background: linear-gradient(to left, #fff, rgb(255 255 255 / 0));
 }
 .campaignViewport:active {
   cursor: grabbing;
