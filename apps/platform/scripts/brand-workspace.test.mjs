@@ -936,3 +936,87 @@ test("progress uses the linked intake and public assignee name, never unrelated 
   const draft = await (await api.brandCampaignDetail(request(), created.id)).json();
   for (const field of ["intakeStatus", "intakeAssigneeName", "intakeDueAt"]) assert.equal(draft.campaign[field], null);
 });
+
+test("progressive brief validation only requires the revealed groups", () => {
+  const { brandCampaignBasicsSchema, brandCampaignDeliverySchema, brandCampaignWizardSchema } = compile("lib/brand-workspace-validation.ts", {});
+  const basics = input({ gameName: "신작 게임", goal: "", contentFormat: "", creatorCount: 0, desiredDate: "", platforms: [] });
+  assert.equal(brandCampaignBasicsSchema.safeParse(basics).success, true);
+  assert.equal(brandCampaignBasicsSchema.safeParse({ ...basics, gameName: " " }).success, false);
+  assert.equal(brandCampaignDeliverySchema.safeParse(basics).success, false);
+  const delivery = { ...basics, contentFormat: "라이브", creatorCount: 3, desiredDate: futureDate, platforms: ["youtube"] };
+  assert.equal(brandCampaignDeliverySchema.safeParse(delivery).success, true);
+  assert.equal(brandCampaignWizardSchema.safeParse(delivery).success, false);
+  assert.equal(brandCampaignWizardSchema.safeParse({ ...delivery, goal: "인지도 확대", regions: [], note: "" }).success, true);
+});
+
+test("each progressive draft roundtrips game name and preserves one campaign until final submission", async () => {
+  const { api, store } = fixture();
+  const basics = input({ action: "saveDraft", gameName: "신작 게임", goal: "", contentFormat: "", creatorCount: 0, desiredDate: "", platforms: [] });
+  const first = await api.mutateBrandCampaign(request(basics));
+  assert.equal(first.status, 200);
+  let version = await first.json();
+  let detail = await (await api.brandCampaignDetail(request(), version.id)).json();
+  assert.equal(detail.campaign.brief.gameName, "신작 게임");
+  assert.equal(detail.campaign.brief.goal, "");
+  assert.equal(store.requests.length, 0);
+  const incomplete = await api.mutateBrandCampaign(request({ action: "submitDraft", id: version.id, expectedUpdatedAt: version.updatedAt, clientRequestId: "3a957481-a381-49d9-b5a9-b9d41bf558d7" }));
+  assert.equal(incomplete.status, 400);
+  for (const values of [
+    { ...basics, contentFormat: "쇼츠", creatorCount: 2, desiredDate: futureDate, platforms: ["youtube"] },
+    input({ action: "saveDraft", gameName: "수정된 게임명", regions: ["KR", "JP"], note: "참고 사항" }),
+  ]) {
+    const saved = await api.mutateBrandCampaign(request({ ...values, id: version.id, expectedUpdatedAt: version.updatedAt }));
+    assert.equal(saved.status, 200);
+    version = await saved.json();
+    assert.equal(store.campaigns.length, 1);
+    assert.equal(store.requests.length, 0);
+  }
+  detail = await (await api.brandCampaignDetail(request(), version.id)).json();
+  assert.equal(detail.campaign.brief.gameName, "수정된 게임명");
+  assert.equal(detail.campaign.brief.note, "참고 사항");
+  assert.deepEqual(detail.campaign.regions, ["KR", "JP"]);
+  const submitted = await api.mutateBrandCampaign(request({ action: "submitDraft", id: version.id, expectedUpdatedAt: version.updatedAt, clientRequestId: "3a957481-a381-49d9-b5a9-b9d41bf558d7" }));
+  assert.equal(submitted.status, 200);
+  assert.equal(store.requests.length, 1);
+  assert.equal(store.campaigns[0].requirements.brandBrief.gameName, "수정된 게임명");
+});
+
+test("draft recovery is scoped and does not overwrite a newer server revision", () => {
+  const draft = compile("lib/brand-request-draft.ts", {});
+  const storage = new Map();
+  const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
+    getItem: (key) => storage.get(key) ?? null,
+    setItem: (key, value) => storage.set(key, value),
+    removeItem: (key) => storage.delete(key),
+  } });
+  try {
+    const form = { ...input({ gameName: "신작 게임" }), creatorCount: "3", applicationDate: "" };
+    const snapshot = { version: 1, savedAt: Date.now(), form, step: 1, stage: 2, requestId: key, submitId: null, draft: { id: "draft-one", updatedAt: "2026-11-08T00:00:00.000Z" } };
+    draft.writeRequestDraft("org-a:user-a", "managed", snapshot);
+    const restored = draft.readRequestDraft("org-a:user-a", "managed");
+    assert.equal(restored.form.gameName, "신작 게임");
+    assert.equal(restored.step, 1);
+    assert.equal(draft.readRequestDraft("org-a:user-b", "managed"), null);
+    assert.equal(draft.readRequestDraft("org-b:user-a", "managed"), null);
+    assert.equal(draft.readRequestDraft("org-a:user-a", "open"), null);
+    const campaign = { ...snapshot.draft, status: "DRAFT" };
+    assert.equal(draft.canRestoreRequestDraft(restored, campaign), true);
+    assert.equal(draft.canRestoreRequestDraft(restored, { ...campaign, updatedAt: "2026-11-08T00:00:01.000Z" }), false);
+    assert.equal(draft.canRestoreRequestDraft(restored, { ...campaign, status: "REVIEW" }), false);
+    assert.equal(draft.canRestoreRequestDraft(restored, { ...campaign, id: "another-draft" }), false);
+    assert.equal(draft.canRestoreRequestDraft(restored), false);
+    draft.clearRequestDraft("org-a:user-a", "managed");
+    assert.equal(draft.readRequestDraft("org-a:user-a", "managed"), null);
+    draft.writeRequestDraft("org-a:user-a", "managed", { ...snapshot, savedAt: Date.now() - 31 * 86400000 });
+    assert.equal(draft.readRequestDraft("org-a:user-a", "managed"), null);
+    storage.set([...storage.keys()][0], "malformed json");
+    assert.equal(draft.readRequestDraft("org-a:user-a", "managed"), null);
+    Object.defineProperty(globalThis, "localStorage", { configurable: true, get() { throw new Error("Storage disabled"); } });
+    assert.equal(draft.readRequestDraft("org-a:user-a", "managed"), null);
+    assert.doesNotThrow(() => draft.writeRequestDraft("org-a:user-a", "managed", snapshot));
+  } finally {
+    if (original) Object.defineProperty(globalThis, "localStorage", original);
+    else delete globalThis.localStorage;
+  }
+});

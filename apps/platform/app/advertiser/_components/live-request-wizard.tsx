@@ -15,6 +15,7 @@ import {
   TextArea,
   TextField,
   Typography,
+  useToast,
 } from "@montage-ui/core";
 import type { Locale } from "../../_components/landing-copy";
 import type {
@@ -26,13 +27,24 @@ import type {
   BrandCompositionPreference,
 } from "../../../lib/brand-workspace-types";
 import {
-  brandCampaignCreateSchema,
+  brandCampaignWizardSchema,
+  brandCampaignBasicsSchema,
+  brandCampaignDeliverySchema,
   brandCampaignDraftSchema,
   isFutureBrandDate,
 } from "../../../lib/brand-workspace-validation";
+import {
+  canRestoreRequestDraft,
+  clearRequestDraft,
+  readRequestDraft,
+  writeRequestDraft,
+  requestBriefStage,
+  type RequestDraftForm,
+} from "../../../lib/brand-request-draft";
 import s from "./live-request-wizard.module.css";
 
 type Props = {
+  draftScope: string;
   locale: Locale;
   initialRoute?: BrandCampaignRoute;
   initialCampaign?: BrandCampaign;
@@ -75,6 +87,7 @@ function koreanDate(date: Date) {
 }
 
 export function LiveRequestWizard({
+  draftScope,
   locale,
   initialRoute = "managed",
   initialCampaign,
@@ -83,43 +96,64 @@ export function LiveRequestWizard({
 }: Props) {
   const t = (ko: string, en: string, zh: string) =>
     locale === "ko" ? ko : locale === "zh" ? zh : en;
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState(() => ({
-    title: initialCampaign?.title ?? "",
-    genre: initialCampaign?.brief?.genre ?? "",
-    goal: initialCampaign?.brief?.goal ?? initialCampaign?.summary ?? "",
-    budgetAmount: initialCampaign?.budgetAmount ?? "",
-    currency: initialCampaign?.currency ?? "USD",
-    platforms: initialCampaign?.platforms ?? [],
-    regions: initialCampaign?.regions ?? [],
-    contentFormat: initialCampaign?.brief?.contentFormat ?? "",
-    creatorCount: initialCampaign?.brief?.creatorCount
-      ? String(initialCampaign.brief.creatorCount)
-      : "",
-    desiredDate:
-      initialCampaign?.brief?.desiredDate ??
-      initialCampaign?.contentDeadline?.slice(0, 10) ??
-      "",
-    note: initialCampaign?.brief?.note ?? "",
-    compositionPreference:
-      initialCampaign?.brief?.compositionPreference ??
-      ("balanced" as BrandCompositionPreference),
-    route: initialCampaign
-      ? initialCampaign.type === "OPEN_BIDDING"
-        ? ("open" as const)
-        : ("managed" as const)
-      : initialRoute,
-    applicationDate: initialCampaign?.applicationDeadline
-      ? koreanDate(new Date(initialCampaign.applicationDeadline))
-      : "",
-  }));
-  const [busy, setBusy] = useState<"save" | "submit" | null>(null);
+  const toast = useToast();
+  const [recovered] = useState(() => {
+    const cached = readRequestDraft(draftScope, initialRoute);
+    return canRestoreRequestDraft(cached, initialCampaign) ? cached : null;
+  });
+  const [step, setStep] = useState(recovered?.step ?? 0);
+  const [briefStage, setBriefStage] = useState(
+    recovered?.stage ??
+      (initialCampaign?.brief?.goal
+        ? 2
+        : initialCampaign?.brief?.contentFormat
+          ? 1
+          : 0),
+  );
+  const [form, setForm] = useState<RequestDraftForm>(
+    () =>
+      recovered?.form ?? {
+        title: initialCampaign?.title ?? "",
+        gameName:
+          initialCampaign?.brief?.gameName || initialCampaign?.gameName || "",
+        genre: initialCampaign?.brief?.genre ?? "",
+        goal: initialCampaign?.brief?.goal ?? initialCampaign?.summary ?? "",
+        budgetAmount: initialCampaign?.budgetAmount ?? "",
+        currency: initialCampaign?.currency ?? "USD",
+        platforms: initialCampaign?.platforms ?? [],
+        regions: initialCampaign?.regions ?? [],
+        contentFormat: initialCampaign?.brief?.contentFormat ?? "",
+        creatorCount: initialCampaign?.brief?.creatorCount
+          ? String(initialCampaign.brief.creatorCount)
+          : "",
+        desiredDate:
+          initialCampaign?.brief?.desiredDate ??
+          initialCampaign?.contentDeadline?.slice(0, 10) ??
+          "",
+        note: initialCampaign?.brief?.note ?? "",
+        compositionPreference:
+          initialCampaign?.brief?.compositionPreference ??
+          ("balanced" as BrandCompositionPreference),
+        route: initialCampaign
+          ? initialCampaign.type === "OPEN_BIDDING"
+            ? ("open" as const)
+            : ("managed" as const)
+          : initialRoute,
+        applicationDate: initialCampaign?.applicationDeadline
+          ? koreanDate(new Date(initialCampaign.applicationDeadline))
+          : "",
+      },
+  );
+  const [busy, setBusy] = useState<"save" | "submit" | "continue" | null>(null);
   const [error, setError] = useState("");
   const [invalidField, setInvalidField] = useState<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const inFlight = useRef(false);
-  const requestId = useRef<string | null>(null);
-  const submitId = useRef<string | null>(null);
+  const finished = useRef(false);
+  const deliverySection = useRef<HTMLDivElement>(null);
+  const goalsSection = useRef<HTMLDivElement>(null);
+  const requestId = useRef<string | null>(recovered?.requestId ?? null);
+  const submitId = useRef<string | null>(recovered?.submitId ?? null);
   const draftVersion = useRef(
     initialCampaign
       ? { id: initialCampaign.id, updatedAt: initialCampaign.updatedAt }
@@ -142,6 +176,69 @@ export function LiveRequestWizard({
   useEffect(() => {
     heading.current?.focus({ preventScroll: true });
   }, [step]);
+
+  useEffect(() => {
+    if (
+      finished.current ||
+      (initialCampaign && initialCampaign.status !== "DRAFT")
+    )
+      return;
+    writeRequestDraft(draftScope, initialRoute, {
+      version: 1,
+      savedAt: Date.now(),
+      form,
+      step,
+      stage: briefStage,
+      requestId: requestId.current,
+      submitId: submitId.current,
+      draft: draftVersion.current,
+    });
+  }, [form, step, briefStage, draftScope, initialRoute, initialCampaign]);
+
+  function remember(nextStep = step, nextStage = briefStage) {
+    writeRequestDraft(draftScope, initialRoute, {
+      version: 1,
+      savedAt: Date.now(),
+      form,
+      step: nextStep,
+      stage: nextStage,
+      requestId: requestId.current,
+      submitId: submitId.current,
+      draft: draftVersion.current,
+    });
+  }
+
+  function focusSection(section: HTMLDivElement | null) {
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    section
+      ?.querySelector<HTMLInputElement | HTMLTextAreaElement>("input, textarea")
+      ?.focus({ preventScroll: true });
+    section?.scrollIntoView({
+      behavior: reducedMotion ? "instant" : "smooth",
+      block: "start",
+    });
+  }
+
+  useEffect(() => {
+    if (!invalidField) return;
+    const ids: Record<string, string> = {
+      title: "brand-title",
+      gameName: "brand-game-name",
+      genre: "brand-genre",
+      budgetAmount: "brand-budget",
+      contentFormat: "brand-format",
+      creatorCount: "brand-count",
+      desiredDate: "brand-date",
+      goal: "brand-goal",
+      note: "brand-note",
+      regions: "brand-regions",
+      applicationDate: "brand-application-date",
+      platforms: "brand-platforms",
+    };
+    document.getElementById(ids[invalidField] ?? "")?.focus();
+  }, [invalidField, step]);
 
   function update<K extends keyof typeof form>(
     key: K,
@@ -172,6 +269,7 @@ export function LiveRequestWizard({
     if (!requestId.current) requestId.current = crypto.randomUUID();
     return {
       title: form.title.trim(),
+      gameName: form.gameName.trim(),
       genre: form.genre.trim(),
       goal: form.goal.trim(),
       budgetAmount: form.budgetAmount.trim(),
@@ -192,13 +290,18 @@ export function LiveRequestWizard({
     };
   }
 
-  function validate(includeRoute: boolean, draft = false) {
+  function validate(includeRoute: boolean, draft = false, stage = 2) {
     const parsed = draft
       ? brandCampaignDraftSchema.safeParse({
           ...payload(),
           action: "saveDraft",
         })
-      : brandCampaignCreateSchema.safeParse(payload());
+      : (stage === 0
+          ? brandCampaignBasicsSchema
+          : stage === 1
+            ? brandCampaignDeliverySchema
+            : brandCampaignWizardSchema
+        ).safeParse(payload());
     if (!parsed.success) {
       const field = String(parsed.error.issues[0]?.path[0] ?? "title");
       const messages: Record<string, string> = {
@@ -213,6 +316,11 @@ export function LiveRequestWizard({
               "Enter a campaign name of 2–160 characters.",
               "请输入 2–160 个字符的活动名称。",
             ),
+        gameName: t(
+          "게임명을 입력해 주세요.",
+          "Enter the game name.",
+          "请输入游戏名称。",
+        ),
         genre: t(
           "게임 장르 또는 제품 분야를 입력해 주세요.",
           "Enter a game genre or product category.",
@@ -254,6 +362,7 @@ export function LiveRequestWizard({
           "附加说明不能超过 2,000 个字符。",
         ),
       };
+      setBriefStage((current) => Math.max(current, requestBriefStage(field)));
       setInvalidField(field);
       setError(
         messages[field] ??
@@ -266,7 +375,11 @@ export function LiveRequestWizard({
       setStep(0);
       return false;
     }
-    if ((!draft || form.desiredDate) && !isFutureBrandDate(form.desiredDate)) {
+    if (
+      (draft ? Boolean(form.desiredDate) : stage >= 1) &&
+      !isFutureBrandDate(form.desiredDate)
+    ) {
+      setBriefStage((current) => Math.max(current, 1));
       setInvalidField("desiredDate");
       setError(
         t(
@@ -360,50 +473,96 @@ export function LiveRequestWizard({
     return result as T;
   }
 
-  async function save(mode: "save" | "submit") {
-    if (inFlight.current || !validate(mode === "submit", mode === "save"))
+  async function persistDraft(input: BrandCampaignCreateInput) {
+    const saved = await post<BrandCampaignDraftSaved>({
+      ...input,
+      action: "saveDraft",
+      ...(draftVersion.current && {
+        id: draftVersion.current.id,
+        expectedUpdatedAt: draftVersion.current.updatedAt,
+      }),
+    });
+    if (saved.draft !== true || !Number.isFinite(Date.parse(saved.updatedAt)))
+      throw new Error(
+        t(
+          "저장 결과를 확인하지 못했습니다. 다시 시도해 주세요.",
+          "Could not confirm the save. Please retry.",
+          "无法确认保存结果，请重试。",
+        ),
+      );
+    draftVersion.current = { id: saved.id, updatedAt: saved.updatedAt };
+    preparedSubmission.current = null;
+    const url = new URL(window.location.href);
+    url.searchParams.set("draft", saved.id);
+    window.history.replaceState(null, "", url);
+    return saved;
+  }
+
+  async function save(mode: "save" | "submit" | "continue") {
+    if (
+      inFlight.current ||
+      !validate(
+        mode === "submit",
+        mode === "save",
+        mode === "continue" ? briefStage : 2,
+      )
+    )
       return;
     inFlight.current = true;
     setBusy(mode);
     setError("");
     try {
       const input = payload();
-      if (mode === "save") {
-        const saved = await post<BrandCampaignDraftSaved>({
-          ...input,
-          action: "saveDraft",
-          ...(draftVersion.current && {
-            id: draftVersion.current.id,
-            expectedUpdatedAt: draftVersion.current.updatedAt,
-          }),
-        });
-        draftVersion.current = { id: saved.id, updatedAt: saved.updatedAt };
-        onSaved(saved);
+      remember();
+      if (mode === "save" || mode === "continue") {
+        const saved = await persistDraft(input);
+        if (mode === "save") {
+          remember();
+          onSaved(saved);
+        } else if (briefStage < 2) {
+          remember(0, briefStage + 1);
+          setBriefStage(briefStage + 1);
+          if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+            requestAnimationFrame(() =>
+              focusSection(
+                briefStage === 0
+                  ? deliverySection.current
+                  : goalsSection.current,
+              ),
+            );
+        } else {
+          remember(1);
+          setStep(1);
+          toast({
+            variant: "positive",
+            content: t("임시 저장 되었습니다.", "Draft saved.", "草稿已保存。"),
+          });
+        }
       } else if (draftVersion.current) {
         const fingerprint = JSON.stringify(input);
         let draft = preparedSubmission.current;
         if (!draft || draft.fingerprint !== fingerprint) {
-          const saved = await post<BrandCampaignDraftSaved>({
-            ...input,
-            action: "saveDraft",
-            id: draftVersion.current.id,
-            expectedUpdatedAt: draftVersion.current.updatedAt,
-          });
-          draftVersion.current = { id: saved.id, updatedAt: saved.updatedAt };
+          await persistDraft(input);
+          remember();
           draft = { ...draftVersion.current, fingerprint };
           preparedSubmission.current = draft;
         }
         if (!submitId.current) submitId.current = crypto.randomUUID();
-        onSaved(
-          await post<BrandCampaignCreated>({
-            action: "submitDraft",
-            id: draft.id,
-            expectedUpdatedAt: draft.updatedAt,
-            clientRequestId: submitId.current,
-          }),
-        );
+        remember();
+        const created = await post<BrandCampaignCreated>({
+          action: "submitDraft",
+          id: draft.id,
+          expectedUpdatedAt: draft.updatedAt,
+          clientRequestId: submitId.current,
+        });
+        finished.current = true;
+        clearRequestDraft(draftScope, initialRoute);
+        onSaved(created);
       } else {
-        onSaved(await post<BrandCampaignCreated>(input));
+        const created = await post<BrandCampaignCreated>(input);
+        finished.current = true;
+        clearRequestDraft(draftScope, initialRoute);
+        onSaved(created);
       }
     } catch (cause) {
       setError(
@@ -573,8 +732,9 @@ export function LiveRequestWizard({
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
-          if (step < 2) {
-            if (validate(false)) setStep(step + 1);
+          if (step === 0) void save("continue");
+          else if (step === 1) {
+            if (validate(false)) setStep(2);
           } else void save("submit");
         }}
       >
@@ -632,268 +792,345 @@ export function LiveRequestWizard({
 
           <fieldset disabled={Boolean(busy)} className={s.fieldset}>
             {step === 0 && (
-              <div className={s.formGrid}>
-                <div className={s.field}>
-                  <label htmlFor="brand-title">
-                    {t(
-                      "게임·제품 / 캠페인명",
-                      "Game / product / campaign name",
-                      "游戏、产品或活动名称",
-                    )}
-                  </label>
-                  <TextField
-                    id="brand-title"
-                    value={form.title}
-                    onChange={(event) => update("title", event.target.value)}
-                    maxLength={160}
-                    status={fieldStatus("title")}
-                    width="100%"
-                    autoComplete="off"
-                    placeholder={t(
-                      "요청할 캠페인 이름을 입력해 주세요",
-                      "Enter the campaign name",
-                      "请输入活动名称",
-                    )}
-                  />
-                </div>
-                <div className={s.field}>
-                  <label htmlFor="brand-genre">
-                    {t(
-                      "장르·제품 분야",
-                      "Genre / product category",
-                      "类型、产品类别",
-                    )}
-                  </label>
-                  <TextField
-                    id="brand-genre"
-                    value={form.genre}
-                    onChange={(event) => update("genre", event.target.value)}
-                    maxLength={120}
-                    status={fieldStatus("genre")}
-                    width="100%"
-                    placeholder={t(
-                      "게임 장르 또는 제품 분야",
-                      "Game genre or product category",
-                      "游戏类型或产品类别",
-                    )}
-                  />
-                </div>
-                <div className={s.field}>
-                  <label htmlFor="brand-budget">
-                    {t("총 예산", "Total budget", "总预算")}
-                  </label>
-                  <div className={s.budgetRow}>
-                    <Select
-                      value={form.currency}
-                      onChange={(value) =>
-                        update("currency", value as typeof form.currency)
-                      }
-                      aria-label={t("예산 통화", "Budget currency", "预算币种")}
-                      width="112px"
-                    >
-                      <Option value="USD">USD</Option>
-                      <Option value="KRW">KRW</Option>
-                      <Option value="CNY">CNY</Option>
-                    </Select>
+              <div>
+                <div className={s.formGrid}>
+                  <div className={s.field}>
+                    <label htmlFor="brand-title">
+                      {t("캠페인명", "Campaign name", "活动名称")}
+                    </label>
                     <TextField
-                      id="brand-budget"
-                      value={form.budgetAmount}
-                      onChange={(event) =>
-                        update("budgetAmount", event.target.value)
-                      }
-                      inputMode="decimal"
-                      status={fieldStatus("budgetAmount")}
+                      id="brand-title"
+                      value={form.title}
+                      onChange={(event) => update("title", event.target.value)}
+                      maxLength={160}
+                      status={fieldStatus("title")}
                       width="100%"
-                      placeholder="0.00"
+                      autoComplete="off"
+                      placeholder={t(
+                        "요청할 캠페인 이름을 입력해 주세요",
+                        "Enter the campaign name",
+                        "请输入活动名称",
+                      )}
                     />
                   </div>
-                </div>
-                <div className={s.field}>
-                  <label htmlFor="brand-format">
-                    {t("콘텐츠 형식", "Content format", "内容形式")}
-                  </label>
-                  <TextField
-                    id="brand-format"
-                    value={form.contentFormat}
-                    onChange={(event) =>
-                      update("contentFormat", event.target.value)
-                    }
-                    maxLength={160}
-                    status={fieldStatus("contentFormat")}
-                    width="100%"
-                    placeholder={t(
-                      "라이브, VOD, 쇼츠 등",
-                      "Live, VOD, short-form, etc.",
-                      "直播、VOD、短视频等",
-                    )}
-                  />
-                </div>
-                <div className={s.field}>
-                  <label htmlFor="brand-count">
-                    {t("희망 인원", "Requested creator count", "期望人数")}
-                  </label>
-                  <TextField
-                    id="brand-count"
-                    value={form.creatorCount}
-                    onChange={(event) =>
-                      update("creatorCount", event.target.value)
-                    }
-                    type="number"
-                    min={1}
-                    max={100}
-                    step={1}
-                    status={fieldStatus("creatorCount")}
-                    width="100%"
-                    placeholder={t("1–100명", "1–100", "1–100 人")}
-                  />
-                </div>
-                <div className={s.field}>
-                  <label htmlFor="brand-date">
-                    {t(
-                      "희망 게시일",
-                      "Target publication date",
-                      "期望发布日期",
-                    )}
-                  </label>
-                  <TextField
-                    id="brand-date"
-                    value={form.desiredDate}
-                    onChange={(event) =>
-                      update("desiredDate", event.target.value)
-                    }
-                    type="date"
-                    min={minimumDate}
-                    status={fieldStatus("desiredDate")}
-                    width="100%"
-                  />
-                </div>
-                <fieldset className={`${s.platforms} ${s.full}`}>
-                  <legend>{t("플랫폼", "Platforms", "平台")}</legend>
-                  <div className={s.checkGrid}>
-                    {[
-                      ...platformOptions,
-                      [
-                        "recommend",
-                        t(
-                          "퓨쳐스 추천에 맡기기",
-                          "Let Futures recommend",
-                          "交由 Futures 推荐",
-                        ),
-                      ],
-                    ].map(([value, label]) => (
-                      <label className={s.checkLabel} key={value}>
-                        <Checkbox
-                          checked={form.platforms.includes(value!)}
-                          onCheckedChange={(checked) =>
-                            selectPlatforms(value!, checked)
-                          }
-                          aria-label={label}
-                          disabled={Boolean(busy)}
-                        />
-                        <span>{label}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {invalidField === "platforms" && (
-                    <small className={s.fieldError}>
-                      {t(
-                        "플랫폼을 선택해 주세요.",
-                        "Choose a platform.",
-                        "请选择平台。",
+                  <div className={s.field}>
+                    <label htmlFor="brand-game-name">
+                      {t("게임명", "Game name", "游戏名称")}
+                    </label>
+                    <TextField
+                      id="brand-game-name"
+                      value={form.gameName}
+                      onChange={(event) =>
+                        update("gameName", event.target.value)
+                      }
+                      maxLength={120}
+                      status={fieldStatus("gameName")}
+                      width="100%"
+                      autoComplete="off"
+                      placeholder={t(
+                        "홍보할 게임명을 입력해 주세요",
+                        "Enter the game to promote",
+                        "请输入要推广的游戏名称",
                       )}
-                    </small>
-                  )}
-                </fieldset>
-                <div className={`${s.field} ${s.full}`}>
-                  <label htmlFor="brand-goal">
-                    {t("캠페인 목표", "Campaign goal", "活动目标")}
-                  </label>
-                  <TextArea
-                    id="brand-goal"
-                    value={form.goal}
-                    onChange={(event) => update("goal", event.target.value)}
-                    maxLength={1000}
-                    minRows={3}
-                    status={fieldStatus("goal")}
-                    width="100%"
-                    placeholder={t(
-                      "누구에게 어떤 메시지와 행동을 전달하고 싶으신가요?",
-                      "Who should the campaign reach, and what should they do?",
-                      "希望触达哪些受众，传达什么信息并促成什么行动？",
-                    )}
-                  />
+                    />
+                  </div>
+                  <div className={s.field}>
+                    <label htmlFor="brand-genre">
+                      {t("장르명", "Genre", "游戏类型")}
+                    </label>
+                    <TextField
+                      id="brand-genre"
+                      value={form.genre}
+                      onChange={(event) => update("genre", event.target.value)}
+                      maxLength={120}
+                      status={fieldStatus("genre")}
+                      width="100%"
+                      placeholder={t(
+                        "게임 장르 또는 제품 분야",
+                        "Game genre or product category",
+                        "游戏类型或产品类别",
+                      )}
+                    />
+                  </div>
+                  <div className={s.field}>
+                    <label htmlFor="brand-budget">
+                      {t("가용 예산", "Available budget", "可用预算")}
+                    </label>
+                    <div className={s.budgetRow}>
+                      <Select
+                        value={form.currency}
+                        onChange={(value) =>
+                          update("currency", value as typeof form.currency)
+                        }
+                        aria-label={t(
+                          "예산 통화",
+                          "Budget currency",
+                          "预算币种",
+                        )}
+                        width="112px"
+                      >
+                        <Option value="USD">USD</Option>
+                        <Option value="KRW">KRW</Option>
+                        <Option value="CNY">CNY</Option>
+                      </Select>
+                      <TextField
+                        id="brand-budget"
+                        value={form.budgetAmount}
+                        onChange={(event) =>
+                          update("budgetAmount", event.target.value)
+                        }
+                        inputMode="decimal"
+                        status={fieldStatus("budgetAmount")}
+                        width="100%"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className={`${s.field} ${s.full}`}>
-                  <label id="brand-regions-label" htmlFor="brand-regions">
-                    {t(
-                      "타깃 국가 · 선택",
-                      "Target countries · optional",
-                      "目标国家 · 选填",
-                    )}
-                  </label>
-                  <SelectMultiple
-                    id="brand-regions"
-                    aria-labelledby="brand-regions-label"
-                    value={form.regions}
-                    onChange={(value) => update("regions", value)}
-                    width="100%"
-                    placeholder={t(
-                      "미정이면 비워두셔도 됩니다",
-                      "Leave empty if undecided",
-                      "尚未确定可留空",
-                    )}
-                  >
-                    {regionOptions.map(([value, ko, en, zh]) => (
-                      <Option value={value} key={value}>
-                        {t(ko, en, zh)}
-                      </Option>
-                    ))}
-                    {form.regions
-                      .filter(
-                        (value) =>
-                          !regionOptions.some((option) => option[0] === value),
-                      )
-                      .map((value) => (
-                        <Option value={value} key={value}>
-                          {value}
-                        </Option>
-                      ))}
-                  </SelectMultiple>
-                </div>
-                <div className={`${s.field} ${s.full}`}>
-                  <label htmlFor="brand-note">
-                    {t(
-                      "추가 요청사항 · 선택",
-                      "Additional notes · optional",
-                      "附加说明 · 选填",
-                    )}
-                  </label>
-                  <TextArea
-                    id="brand-note"
-                    value={form.note}
-                    onChange={(event) => update("note", event.target.value)}
-                    maxLength={2000}
-                    minRows={3}
-                    width="100%"
-                    placeholder={t(
-                      "꼭 전달할 메시지, 비공개 조건, 참고 링크 등을 알려주세요.",
-                      "Share key messages, confidentiality requirements, or reference links.",
-                      "请填写核心信息、保密要求或参考链接。",
-                    )}
-                  />
-                </div>
-                <Typography
-                  as="p"
-                  variant="label1"
-                  color="semantic.foreground.neutral.tertiary"
-                  className={s.full}
+                <div
+                  className={s.reveal}
+                  data-open={briefStage >= 1}
+                  aria-hidden={briefStage < 1}
+                  inert={briefStage < 1}
+                  onTransitionEnd={(event) => {
+                    if (
+                      event.target === event.currentTarget &&
+                      event.propertyName === "grid-template-rows" &&
+                      briefStage === 1
+                    )
+                      focusSection(deliverySection.current);
+                  }}
                 >
-                  {t(
-                    "브리프 파일은 접수 후 해당 캠페인의 요청함에서 첨부할 수 있습니다.",
-                    "Attach brief files in the campaign request thread after submitting.",
-                    "提交后，可在该活动的请求中心上传需求文件。",
-                  )}
-                </Typography>
+                  <div className={s.revealClip}>
+                    <div
+                      className={`${s.formGrid} ${s.briefSection}`}
+                      ref={deliverySection}
+                    >
+                      <div className={s.field}>
+                        <label htmlFor="brand-format">
+                          {t("콘텐츠 형식", "Content format", "内容形式")}
+                        </label>
+                        <TextField
+                          id="brand-format"
+                          value={form.contentFormat}
+                          onChange={(event) =>
+                            update("contentFormat", event.target.value)
+                          }
+                          maxLength={160}
+                          status={fieldStatus("contentFormat")}
+                          width="100%"
+                          placeholder={t(
+                            "라이브, VOD, 쇼츠 등",
+                            "Live, VOD, short-form, etc.",
+                            "直播、VOD、短视频等",
+                          )}
+                        />
+                      </div>
+                      <div className={s.field}>
+                        <label htmlFor="brand-count">
+                          {t(
+                            "희망 인원",
+                            "Requested creator count",
+                            "期望人数",
+                          )}
+                        </label>
+                        <TextField
+                          id="brand-count"
+                          value={form.creatorCount}
+                          onChange={(event) =>
+                            update("creatorCount", event.target.value)
+                          }
+                          type="number"
+                          min={1}
+                          max={100}
+                          step={1}
+                          status={fieldStatus("creatorCount")}
+                          width="100%"
+                          placeholder={t("1–100명", "1–100", "1–100 人")}
+                        />
+                      </div>
+                      <div className={s.field}>
+                        <label htmlFor="brand-date">
+                          {t(
+                            "희망 게시일",
+                            "Target publication date",
+                            "期望发布日期",
+                          )}
+                        </label>
+                        <TextField
+                          id="brand-date"
+                          value={form.desiredDate}
+                          onChange={(event) =>
+                            update("desiredDate", event.target.value)
+                          }
+                          type="date"
+                          min={minimumDate}
+                          status={fieldStatus("desiredDate")}
+                          width="100%"
+                        />
+                      </div>
+                      <fieldset
+                        id="brand-platforms"
+                        tabIndex={-1}
+                        className={`${s.platforms} ${s.full}`}
+                      >
+                        <legend>{t("플랫폼", "Platforms", "平台")}</legend>
+                        <div className={s.checkGrid}>
+                          {[
+                            ...platformOptions,
+                            [
+                              "recommend",
+                              t(
+                                "퓨쳐스 추천에 맡기기",
+                                "Let Futures recommend",
+                                "交由 Futures 推荐",
+                              ),
+                            ],
+                          ].map(([value, label]) => (
+                            <label className={s.checkLabel} key={value}>
+                              <Checkbox
+                                checked={form.platforms.includes(value!)}
+                                onCheckedChange={(checked) =>
+                                  selectPlatforms(value!, checked)
+                                }
+                                aria-label={label}
+                                disabled={Boolean(busy)}
+                              />
+                              <span>{label}</span>
+                            </label>
+                          ))}
+                        </div>
+                        {invalidField === "platforms" && (
+                          <small className={s.fieldError}>
+                            {t(
+                              "플랫폼을 선택해 주세요.",
+                              "Choose a platform.",
+                              "请选择平台。",
+                            )}
+                          </small>
+                        )}
+                      </fieldset>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  className={s.reveal}
+                  data-open={briefStage >= 2}
+                  aria-hidden={briefStage < 2}
+                  inert={briefStage < 2}
+                  onTransitionEnd={(event) => {
+                    if (
+                      event.target === event.currentTarget &&
+                      event.propertyName === "grid-template-rows" &&
+                      briefStage === 2
+                    )
+                      focusSection(goalsSection.current);
+                  }}
+                >
+                  <div className={s.revealClip}>
+                    <div
+                      className={`${s.formGrid} ${s.briefSection}`}
+                      ref={goalsSection}
+                    >
+                      <div className={`${s.field} ${s.full}`}>
+                        <label htmlFor="brand-goal">
+                          {t("캠페인 목표", "Campaign goal", "活动目标")}
+                        </label>
+                        <TextArea
+                          id="brand-goal"
+                          value={form.goal}
+                          onChange={(event) =>
+                            update("goal", event.target.value)
+                          }
+                          maxLength={1000}
+                          minRows={3}
+                          status={fieldStatus("goal")}
+                          width="100%"
+                          placeholder={t(
+                            "누구에게 어떤 메시지와 행동을 전달하고 싶으신가요?",
+                            "Who should the campaign reach, and what should they do?",
+                            "希望触达哪些受众，传达什么信息并促成什么行动？",
+                          )}
+                        />
+                      </div>
+                      <div className={`${s.field} ${s.full}`}>
+                        <label id="brand-regions-label" htmlFor="brand-regions">
+                          {t(
+                            "타깃 국가 · 선택",
+                            "Target countries · optional",
+                            "目标国家 · 选填",
+                          )}
+                        </label>
+                        <SelectMultiple
+                          id="brand-regions"
+                          aria-labelledby="brand-regions-label"
+                          value={form.regions}
+                          onChange={(value) => update("regions", value)}
+                          width="100%"
+                          placeholder={t(
+                            "미정이면 비워두셔도 됩니다",
+                            "Leave empty if undecided",
+                            "尚未确定可留空",
+                          )}
+                        >
+                          {regionOptions.map(([value, ko, en, zh]) => (
+                            <Option value={value} key={value}>
+                              {t(ko, en, zh)}
+                            </Option>
+                          ))}
+                          {form.regions
+                            .filter(
+                              (value) =>
+                                !regionOptions.some(
+                                  (option) => option[0] === value,
+                                ),
+                            )
+                            .map((value) => (
+                              <Option value={value} key={value}>
+                                {value}
+                              </Option>
+                            ))}
+                        </SelectMultiple>
+                      </div>
+                      <div className={`${s.field} ${s.full}`}>
+                        <label htmlFor="brand-note">
+                          {t(
+                            "추가 요청사항 · 선택",
+                            "Additional notes · optional",
+                            "附加说明 · 选填",
+                          )}
+                        </label>
+                        <TextArea
+                          id="brand-note"
+                          value={form.note}
+                          onChange={(event) =>
+                            update("note", event.target.value)
+                          }
+                          maxLength={2000}
+                          minRows={3}
+                          width="100%"
+                          placeholder={t(
+                            "꼭 전달할 메시지, 비공개 조건, 참고 링크 등을 알려주세요.",
+                            "Share key messages, confidentiality requirements, or reference links.",
+                            "请填写核心信息、保密要求或参考链接。",
+                          )}
+                        />
+                      </div>
+                      <Typography
+                        as="p"
+                        variant="label1"
+                        color="semantic.foreground.neutral.tertiary"
+                        className={s.full}
+                      >
+                        {t(
+                          "브리프 파일은 접수 후 해당 캠페인의 요청함에서 첨부할 수 있습니다.",
+                          "Attach brief files in the campaign request thread after submitting.",
+                          "提交后，可在该活动的请求中心上传需求文件。",
+                        )}
+                      </Typography>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1134,7 +1371,11 @@ export function LiveRequestWizard({
                       <dd>{form.title}</dd>
                     </div>
                     <div>
-                      <dt>{t("장르·분야", "Category", "类别")}</dt>
+                      <dt>{t("게임명", "Game name", "游戏名称")}</dt>
+                      <dd>{form.gameName}</dd>
+                    </div>
+                    <div>
+                      <dt>{t("장르명", "Genre", "游戏类型")}</dt>
                       <dd>{form.genre}</dd>
                     </div>
                     <div>
@@ -1241,11 +1482,13 @@ export function LiveRequestWizard({
               size="large"
               variant="solid"
               color="primary"
-              loading={busy === "submit"}
+              loading={busy === "submit" || busy === "continue"}
               disabled={Boolean(busy)}
             >
               {step === 0
-                ? t("구성 방향 선택", "Choose a direction", "选择组合方向")
+                ? briefStage < 2
+                  ? t("다음", "Next", "下一步")
+                  : t("구성 방향 선택", "Choose a direction", "选择组合方向")
                 : step === 1
                   ? t("요청 확인", "Review request", "确认请求")
                   : t(

@@ -13,6 +13,8 @@ const dateOnly = z
     );
   });
 export const brandBriefSchema = z.object({
+  // Older briefs and delegated intakes may not have a separate game name.
+  gameName: z.string().trim().max(120).default(""),
   genre: z.string().trim().min(1).max(120),
   goal: z.string().trim().min(1).max(1000),
   contentFormat: z.string().trim().min(1).max(160),
@@ -76,6 +78,7 @@ export type BrandIntakeBrief = z.output<typeof brandCampaignCreateSchema>;
 
 export function campaignFieldsFromBrief(input: BrandIntakeBrief) {
   const {
+    gameName,
     genre,
     goal,
     contentFormat,
@@ -85,6 +88,7 @@ export function campaignFieldsFromBrief(input: BrandIntakeBrief) {
     compositionPreference,
   } = input;
   const brief = {
+    gameName,
     genre,
     goal,
     contentFormat,
@@ -95,7 +99,7 @@ export function campaignFieldsFromBrief(input: BrandIntakeBrief) {
   };
   const summary = [
     goal,
-    [genre, contentFormat, creatorCount > 0 ? `희망 ${creatorCount}명` : ""]
+    [gameName, genre, contentFormat, creatorCount > 0 ? `희망 ${creatorCount}명` : ""]
       .filter(Boolean)
       .join(" · "),
     note,

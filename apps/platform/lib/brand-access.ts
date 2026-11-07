@@ -24,6 +24,8 @@ function brandMembership(userId: string) {
     where: { userId, organization: { type: "BRAND" } },
     orderBy: [{ createdAt: "asc" }, { organizationId: "asc" }],
     select: {
+      userId: true,
+      organizationId: true,
       role: true,
       user: { select: { name: true } },
       organization: {
@@ -60,6 +62,7 @@ export async function getPostAuthDestination(locale: Locale, options: { register
 }
 
 export async function requireBrandWorkspace(locale: Locale): Promise<{
+  draftScope: string;
   organizationName: string;
   status: "PENDING" | "ACTIVE";
   userName: string;
@@ -74,6 +77,7 @@ export async function requireBrandWorkspace(locale: Locale): Promise<{
     redirect(`/account?lang=${locale}`);
 
   return {
+    draftScope: `${membership.organizationId}:${membership.userId}`,
     organizationName: membership.organization.name,
     status: membership.organization.status,
     userName: membership.user.name?.trim() || membership.organization.name,

@@ -11,6 +11,7 @@ import type {
 export type BrandCampaignRoute = "managed" | "open";
 export type BrandCompositionPreference = "balanced" | "reach" | "efficient";
 export type BrandCampaignBrief = {
+  gameName: string;
   genre: string;
   goal: string;
   contentFormat: string;

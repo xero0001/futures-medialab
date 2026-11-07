@@ -11,6 +11,33 @@ export {
   isFutureBrandDate,
 } from "@futures-medialab/database/brand-intake";
 
+// New requests collect the separate game name; persisted legacy briefs remain readable.
+export const brandCampaignWizardSchema = brandCampaignCreateSchema.extend({
+  gameName: brandBriefSchema.shape.gameName.removeDefault().min(1),
+});
+export const brandCampaignBasicsSchema = brandCampaignWizardSchema
+  .pick({
+    title: true,
+    gameName: true,
+    genre: true,
+    budgetAmount: true,
+    currency: true,
+  })
+  .strip();
+export const brandCampaignDeliverySchema = brandCampaignWizardSchema
+  .pick({
+    title: true,
+    gameName: true,
+    genre: true,
+    budgetAmount: true,
+    currency: true,
+    contentFormat: true,
+    creatorCount: true,
+    desiredDate: true,
+    platforms: true,
+  })
+  .strip();
+
 // Drafts preserve unfinished user input; they are never treated as submitted briefs.
 export const brandDraftBriefSchema = brandBriefSchema.extend({
   genre: z.string().trim().max(120).default(""),

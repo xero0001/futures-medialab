@@ -257,3 +257,37 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Animate the panel height as well as its contents; hidden controls stay inert. */
+.reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    grid-template-rows 360ms ease,
+    opacity 360ms ease,
+    visibility 360ms;
+}
+.reveal[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+}
+.revealClip {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 4px;
+  margin: 0 -4px;
+}
+.briefSection {
+  margin-top: var(--spacing-32);
+  padding: var(--spacing-32) 0 4px;
+  border-top: 1px solid var(--semantic-line-neutral-secondary);
+  scroll-margin-top: var(--spacing-24);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    transition: none;
+  }
+}

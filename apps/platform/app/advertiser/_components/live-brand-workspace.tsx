@@ -46,6 +46,7 @@ import type {
   BrandCampaignRoute,
   BrandWorkspace,
 } from "../../../lib/brand-workspace-types";
+import { readRequestDraft, clearRequestDraft } from "../../../lib/brand-request-draft";
 import { LiveRequestWizard } from "./live-request-wizard";
 import { OfficialProposalPanel } from "./official-proposal-panel";
 import { BrandProductionPanel } from "./brand-production-panel";
@@ -60,6 +61,7 @@ import styles from "./live-brand-workspace.module.css";
 export type LiveBrandWorkspaceMode =
   "home" | "campaigns" | "detail" | "library" | "billing" | "new";
 type Account = {
+  draftScope: string;
   organizationName: string;
   userName: string;
   status: "PENDING" | "ACTIVE";
@@ -350,7 +352,24 @@ export function LiveBrandWorkspace({
           )
         : Promise.resolve(null),
     ])
-      .then(([workspace, campaign]) => {
+      .then(async ([workspace, campaign]) => {
+        if (mode === "new" && !campaignId) {
+          const cached = readRequestDraft(account.draftScope, initialRoute ?? "managed");
+          if (cached?.draft) {
+            const response = await fetch(`/api/brand/campaigns/${encodeURIComponent(cached.draft.id)}`, {
+              cache: "no-store", signal: controller.signal,
+            });
+            if (controller.signal.aborted) return;
+            if (response.status === 404) {
+              clearRequestDraft(account.draftScope, initialRoute ?? "managed");
+            } else {
+              if (!response.ok) throw new Error("LOAD_FAILED");
+              const restored = await response.json() as BrandCampaignDetail;
+              if (restored.campaign.status === "DRAFT") campaign = restored;
+              else clearRequestDraft(account.draftScope, initialRoute ?? "managed");
+            }
+          }
+        }
         if (controller.signal.aborted) return;
         setData(workspace);
         setDetail(campaign);
@@ -362,7 +381,7 @@ export function LiveBrandWorkspace({
         setLoading(false);
       });
     return () => controller.abort();
-  }, [campaignId, revision]);
+  }, [campaignId, revision, mode, account.draftScope, initialRoute]);
 
   return (
     <BrandWorkspaceFrame locale={locale} account={account}>
@@ -431,6 +450,7 @@ export function LiveBrandWorkspace({
             (data.permissions.canManageCampaigns ? (
               <LiveRequestWizard
                 locale={locale}
+                draftScope={account.draftScope}
                 initialCampaign={detail?.campaign}
                 initialRoute={initialRoute}
                 onClose={() =>
@@ -1314,7 +1334,11 @@ function CampaignDetail({
                       value={amountLabel(campaign, locale)}
                     />
                     <BriefItem
-                      label={t("게임·장르", "Game / category", "游戏与类型")}
+                      label={t("게임명", "Game name", "游戏名称")}
+                      value={campaign.brief?.gameName || campaign.gameName || "—"}
+                    />
+                    <BriefItem
+                      label={t("장르명", "Genre", "游戏类型")}
                       value={
                         campaign.brief?.genre ||
                         campaign.categories.join(", ") ||
