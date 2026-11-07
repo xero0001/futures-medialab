@@ -287,7 +287,6 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
               >
                 {t.partners.title}
               </Typography>
-              <p>{t.partners.body}</p>
             </div>
             <div className={styles.partnerGrid}>
               {t.partners.items.map((partner, index) => (
@@ -341,7 +340,6 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
             aria-labelledby="faq-title"
           >
             <div>
-              <p className={styles.eyebrow}>{t.faq.eyebrow}</p>
               <Typography
                 as="h2"
                 variant="title1"
@@ -351,7 +349,6 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
               >
                 {t.faq.title}
               </Typography>
-              <p className={styles.sectionBody}>{t.faq.body}</p>
             </div>
             <div className={styles.faqList}>
               {t.faq.items.map((item, i) => (
