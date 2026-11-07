@@ -120,15 +120,21 @@ const invoiceVersions = {
     reason: true,
   },
 } satisfies Prisma.BrandInvoice$versionsArgs;
+const invoiceCompletionSelect = {
+  proposalVersion: true,
+  completedAt: true,
+  proposal: { select: { items: { select: { id: true, channelUrl: true } } } },
+} satisfies Prisma.CampaignCompletionSelect;
 const publicInvoiceSelect = {
   ...publicDocumentSelect,
+  completion: { select: invoiceCompletionSelect },
   documentVersion: true,
   versions: invoiceVersions,
 } satisfies Prisma.BrandInvoiceSelect;
 const adminInvoiceInclude = {
   versions: invoiceVersions,
   campaign: { select: { title: true } },
-  completion: { select: { proposalVersion: true, completedAt: true } },
+  completion: { select: invoiceCompletionSelect },
 } satisfies Prisma.BrandInvoiceInclude;
 const adminPayoutInclude = {
   campaign: adminInvoiceInclude.campaign,
@@ -151,13 +157,18 @@ const record = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
-function invoiceLines(value: unknown): BrandInvoiceLine[] {
+function invoiceLines(
+  value: unknown,
+  channels: { id: string; channelUrl: string }[] = [],
+): BrandInvoiceLine[] {
   if (!Array.isArray(value)) return [];
   return value.map((item) => {
     const row = record(item);
     return {
       proposalItemId: String(row.proposalItemId ?? ""),
       creatorName: String(row.creatorName ?? ""),
+      channelUrl: channels.find((item) => item.id === row.proposalItemId)
+        ?.channelUrl,
       platform: String(row.platform ?? ""),
       description: String(row.description ?? ""),
       quantity: typeof row.quantity === "number" ? row.quantity : 0,
@@ -214,7 +225,7 @@ function invoiceHistory(row: PublicInvoiceRow | AdminInvoiceRow): {
     issuedAt: v.issuedAt.toISOString(),
     currency: v.currency,
     amount: v.amount.toFixed(2),
-    lines: invoiceLines(v.lineSnapshot),
+    lines: invoiceLines(v.lineSnapshot, row.completion.proposal?.items),
     reason: v.reason,
   }));
   // A previous app instance can still issue an invoice during a rolling deployment.
@@ -228,7 +239,7 @@ function invoiceHistory(row: PublicInvoiceRow | AdminInvoiceRow): {
       issuedAt: row.issuedAt.toISOString(),
       currency: row.currency,
       amount: row.amount.toFixed(2),
-      lines: invoiceLines(row.lineSnapshot),
+      lines: invoiceLines(row.lineSnapshot, row.completion.proposal?.items),
       reason: null,
     });
   }
@@ -240,7 +251,7 @@ function brandDto(row: PublicInvoiceRow): BrandInvoice {
   return {
     ...documentBase(row),
     ...invoiceHistory(row),
-    lines: invoiceLines(row.lineSnapshot),
+    lines: invoiceLines(row.lineSnapshot, row.completion.proposal?.items),
   };
 }
 function agencyDto(row: PublicPayoutRow): AgencyPayout {
@@ -533,7 +544,7 @@ function adminInvoiceDto(
       row.status === "ISSUED" &&
       Boolean(row.issuedAt) &&
       !row.paidAt,
-    lines: invoiceLines(row.lineSnapshot),
+    lines: invoiceLines(row.lineSnapshot, row.completion.proposal?.items),
     status: row.status,
     issuedAt: row.issuedAt?.toISOString() ?? null,
     internalNote: row.internalNote,

@@ -28,6 +28,7 @@ export type ReportingItemBase = Omit<
 > & {
   id: string;
   productionItemId: string;
+  productionVideoUrl: string | null;
   status: ReportingStatus;
   revision: number;
   isCurrent: boolean;
@@ -62,6 +63,9 @@ export type AdminReportingSubmission = AgencyReportingSubmission & {
   internalNote: string;
 };
 export type AdminReportingItem = ReportingItemBase & {
+  isManaged: boolean;
+  canSubmit: boolean;
+  submitDisabledReason: string | null;
   supplierOrganizationId: string | null;
   supplierName: string | null;
   submissions: AdminReportingSubmission[];
@@ -91,6 +95,7 @@ export type AgencyReportingMutation = {
   data: ReportingSnapshot;
 };
 export type AdminReportingMutation =
+  | (AgencyReportingMutation & { campaignId: string })
   | { action: "prepare"; campaignId: string; clientRequestId: string }
   | {
       action: "requestChanges";

@@ -29,6 +29,8 @@ export type ProductionItemBase = {
   proposalVersion: number;
   proposalItemId: string;
   creatorName: string;
+  channelUrl: string;
+  channelLabel: string;
   platform: string;
   deliverables: string;
   quantity: number;
@@ -76,6 +78,9 @@ export type AdminProductionSubmission = AgencyProductionSubmission & {
 };
 export type AdminProductionItem = ProductionItemBase & {
   isCurrent: boolean;
+  isManaged: boolean;
+  canSubmit: boolean;
+  submitDisabledReason: string | null;
   supplierOrganizationId: string | null;
   supplierName: string | null;
   submissions: AdminProductionSubmission[];
@@ -109,6 +114,7 @@ export type AgencyProductionMutation = {
   note: string;
 };
 export type AdminProductionMutation =
+  | (AgencyProductionMutation & { campaignId: string })
   | { action: "prepare"; campaignId: string; clientRequestId: string }
   | {
       action: "assign";

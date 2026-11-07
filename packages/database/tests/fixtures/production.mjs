@@ -61,6 +61,7 @@ export function fixture() {
   const campaign = {
     id: "campaign-own",
     title: "이환 제작 시연",
+    type: "MANAGED",
     status: "IN_PROGRESS",
     brandOrganizationId: "brand-own",
     coverImageUrl: "/demo/nte/city-key-art.jpg",
@@ -91,6 +92,8 @@ export function fixture() {
       status: "APPROVED",
       position: 0,
       creatorName: "공개 이름",
+      channelUrl: "https://www.youtube.com/@futures",
+      channelLabel: "공개 채널",
       platform: "youtube",
       deliverables: "쇼츠 1편",
       quantity: 1,
@@ -108,6 +111,7 @@ export function fixture() {
     campaign,
     proposals,
     proposalItems,
+    media: [],
     reportItems: [],
     reportSubmissions: [],
     reportMutations: [],
@@ -249,6 +253,10 @@ export function fixture() {
         rows.forEach((row) => update(row, data));
         return { count: rows.length };
       },
+    },
+    productionMedia: {
+      findUnique: async query => find(store.media, query),
+      findFirst: async query => find(store.media, query),
     },
     productionSubmission: {
       create: async ({ data }) => {

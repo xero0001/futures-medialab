@@ -140,6 +140,7 @@ model User {
   proposalDecisions     ProposalDecision[]
   productionAssignments ProductionItem[] @relation("ProductionAssigner")
   productionSubmissions ProductionSubmission[] @relation("ProductionSubmitter")
+  productionMedia ProductionMedia[]
   reportingSubmissions ReportingSubmission[] @relation("ReportingSubmitter")
   reviewedReporting ReportingSubmission[] @relation("ReportingReviewer")
   reviewedProduction ProductionSubmission[] @relation("ProductionReviewer")
@@ -731,6 +732,7 @@ model ProductionItem {
   supplierOrganization Organization? @relation(fields: [supplierOrganizationId], references: [id], onDelete: SetNull)
   assignedBy User? @relation("ProductionAssigner", fields: [assignedById], references: [id], onDelete: Restrict)
   submissions ProductionSubmission[]
+  media ProductionMedia[]
   mutations ProductionMutation[]
   reportingItem ReportingItem?
   createdAt DateTime @default(now())
@@ -1077,4 +1079,22 @@ model GameLocalization {
 
   @@unique([gameId, locale])
   @@index([title])
+}
+
+// Private uploaded video. Submissions reference its immutable ID, never a public storage URL.
+model ProductionMedia {
+  id String @id
+  productionItemId String
+  uploadedById String
+  revision Int
+  pathname String @unique
+  filename String
+  contentType String
+  size Int
+  etag String?
+  completedAt DateTime?
+  createdAt DateTime @default(now())
+  productionItem ProductionItem @relation(fields: [productionItemId], references: [id], onDelete: Cascade)
+  uploadedBy User @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  @@index([productionItemId, uploadedById])
 }

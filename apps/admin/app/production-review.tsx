@@ -1,5 +1,15 @@
 "use client";
 
+import { AdminProductionSubmit } from "./production-submit";
+import {
+  VideoSubmissionInput,
+  VideoPreview,
+} from "@futures-medialab/ui/video-submission";
+import {
+  productionMediaUrl,
+  productionVideoSource,
+} from "@futures-medialab/database/production-media-shared";
+import { uploadProductionVideo } from "@futures-medialab/database/production-media-client";
 import { FormSelect } from "@futures-medialab/ui/form-select";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -81,12 +91,15 @@ function externalHref(value: string) {
   }
 }
 function ContentLink({ url, label }: { url: string; label: string }) {
-  const href = externalHref(url);
+  const href = productionMediaUrl(url) || externalHref(url);
   return href ? (
-    <a href={href} target="_blank" rel="noopener noreferrer">
-      {label}
-      <ExternalLink size={14} />
-    </a>
+    <div style={{ display: "grid", gap: 12 }}>
+      <VideoPreview source={productionVideoSource(url)} title={label} />
+      <a href={href} target="_blank" rel="noopener noreferrer">
+        {label}
+        <ExternalLink size={14} />
+      </a>
+    </div>
   ) : (
     <span className={s.muted}>
       {url ? "시연용 자료 · 외부 연결 없음" : "자료 링크 미입력"}
@@ -172,10 +185,11 @@ function ReviewForm({
   const [url, setUrl] = useState("");
   const [note, setNote] = useState("");
   const [internalNote, setInternalNote] = useState(submission.internalNote);
+  const [uploading, setUploading] = useState(false);
   const [agencyFeedback, setAgencyFeedback] = useState("");
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy) return;
+    if (busy || uploading) return;
     const base = {
       campaignId: item.campaignId,
       productionItemId: item.id,
@@ -210,7 +224,7 @@ function ReviewForm({
           type="button"
           className="icon"
           aria-label="검토 창 닫기"
-          disabled={busy}
+          disabled={busy || uploading}
           onClick={onClose}
         >
           <X size={18} />
@@ -220,7 +234,7 @@ function ReviewForm({
         <ShieldCheck size={18} />
         <p>
           {release
-            ? "브랜드는 아래 공개 내용만 확인합니다. 에이전시 제출 원문과 내부 메모는 전달되지 않습니다."
+            ? "브랜드는 아래 공개 내용만 확인합니다. 제출 원문과 내부 메모는 전달되지 않습니다."
             : "수정 요청은 담당 에이전시에 전달됩니다. 새 제출 버전은 다시 운영팀 검토를 거칩니다."}
         </p>
       </div>
@@ -245,20 +259,24 @@ function ReviewForm({
                 placeholder="브랜드가 확인할 제작물 제목"
               />
             </label>
-            <label className={s.field}>
-              공개 검토 자료 URL
-              <input
-                type="url"
-                value={url}
-                onChange={(event) => setUrl(event.target.value)}
-                required
-                maxLength={2048}
-                placeholder="https://"
-              />
-              <small>
-                공개 범위와 접근 권한을 확인한 검토 자료 링크를 입력하세요.
-              </small>
-            </label>
+            <VideoSubmissionInput
+              value={url}
+              onChange={setUrl}
+              label="브랜드 검토 동영상 또는 링크"
+              disabled={busy}
+              canUpload={item.isManaged}
+              onUploadingChange={setUploading}
+              onUpload={(file, signal, progress) =>
+                uploadProductionVideo(
+                  "/api/admin/production/media",
+                  item.id,
+                  item.revision,
+                  file,
+                  signal,
+                  progress,
+                )
+              }
+            />
             <label className={s.field}>
               브랜드 검토 안내
               <textarea
@@ -275,10 +293,7 @@ function ReviewForm({
           <>
             <div className={s.preview}>
               <strong>{submission.title}</strong>
-              <ContentLink
-                url={submission.url}
-                label="에이전시 제출 원문 열기"
-              />
+              <ContentLink url={submission.url} label="제출 원문 열기" />
               {submission.note ? (
                 <p className={s.pre}>{submission.note}</p>
               ) : null}
@@ -324,10 +339,14 @@ function ReviewForm({
         </p>
       ) : null}
       <div className={s.actions}>
-        <AdminButton type="button" disabled={busy} onClick={onClose}>
+        <AdminButton
+          type="button"
+          disabled={busy || uploading}
+          onClick={onClose}
+        >
           취소
         </AdminButton>
-        <AdminButton className="primary" disabled={busy}>
+        <AdminButton className="primary" disabled={busy || uploading}>
           <Send size={16} />
           {busy ? "처리 중…" : release ? "브랜드에 공개" : "수정 요청 전달"}
         </AdminButton>
@@ -458,6 +477,7 @@ function SupplierAssignment({
 }
 
 function ItemDetail({
+  onSubmit,
   item,
   suppliers,
   busy,
@@ -469,6 +489,7 @@ function ItemDetail({
   busy: boolean;
   onReview: (action: ReviewAction) => void;
   onAssign: (supplierOrganizationId: string) => void;
+  onSubmit: (input: MutationInput) => void;
 }) {
   const [selectedId, setSelectedId] = useState("");
   const submission =
@@ -515,6 +536,7 @@ function ItemDetail({
           onAssign={onAssign}
         />
       ) : null}
+      <AdminProductionSubmit item={item} busy={busy} onSubmit={onSubmit} />
       {item.submissions.length ? (
         <>
           <div className={s.row} style={{ marginTop: 24 }}>
@@ -545,7 +567,7 @@ function ItemDetail({
             <>
               <div className={s.preview}>
                 <div className={s.row}>
-                  <strong>에이전시 제출 원문 · v{submission.version}</strong>
+                  <strong>제출 원문 · v{submission.version}</strong>
                   <Status value={submission.status} />
                 </div>
                 <h5>{submission.title}</h5>
@@ -753,13 +775,15 @@ export function ProductionReview({ campaignId }: { campaignId: string }) {
       setData(result);
       setAction(null);
       setNotice(
-        input.action === "prepare"
-          ? "승인된 제안의 제작 항목을 준비했습니다."
-          : input.action === "assign"
-            ? "담당 공급 파트너를 배정했습니다."
-            : input.action === "requestChanges"
-              ? "에이전시에 수정 요청을 전달했습니다. 새 제출 버전은 다시 운영팀 검토를 거칩니다."
-              : "브랜드 검토용 제작물을 공개했습니다. 브랜드가 이 버전을 확인하고 결정할 수 있습니다.",
+        input.action === "submit"
+          ? "새 제작 버전을 등록했습니다. 검토 후 브랜드에게 공유해 주세요."
+          : input.action === "prepare"
+            ? "승인된 제안의 제작 항목을 준비했습니다."
+            : input.action === "assign"
+              ? "담당 공급 파트너를 배정했습니다."
+              : input.action === "requestChanges"
+                ? "에이전시에 수정 요청을 전달했습니다. 새 제출 버전은 다시 운영팀 검토를 거칩니다."
+                : "브랜드 검토용 제작물을 공개했습니다. 브랜드가 이 버전을 확인하고 결정할 수 있습니다.",
       );
     } catch (failure) {
       setError(
@@ -908,6 +932,7 @@ export function ProductionReview({ campaignId }: { campaignId: string }) {
                   type="button"
                   key={item.id}
                   className={s.task}
+                  style={{ display: "grid", whiteSpace: "normal" }}
                   disabled={busy}
                   aria-current={selected?.id === item.id ? "true" : undefined}
                   onClick={() => {
@@ -939,6 +964,7 @@ export function ProductionReview({ campaignId }: { campaignId: string }) {
                   suppliers={current.suppliers}
                   busy={busy || loading}
                   onReview={setAction}
+                  onSubmit={(input) => void mutate(input)}
                   onAssign={(supplierOrganizationId) =>
                     void mutate({
                       action: "assign",

@@ -93,13 +93,13 @@
   overflow-wrap: anywhere;
 }
 .tableWrap {
-  width: 100%;
-  max-width: 100%;
+  width: auto;
+  max-width: calc(100% - 48px);
+  margin: 8px 24px 24px;
   overflow-x: auto;
-  border-block: 1px solid var(--semantic-line-neutral-secondaryOpaque);
 }
 .table {
-  min-width: 490px;
+  min-width: 640px;
 }
 .table td:first-child {
   min-width: 160px;
@@ -174,4 +174,32 @@
   border-radius: 8px;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+.table th {
+  white-space: nowrap;
+}
+.table th:nth-child(2),
+.table td:nth-child(2) {
+  min-width: 64px;
+}
+.creatorLine {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.creatorLine > :first-child {
+  flex-shrink: 0;
+}
+.creatorLine > div:last-child {
+  min-width: 200px;
+}
+.creatorLine p {
+  margin-top: 6px;
+}
+@media (max-width: 600px) {
+  .tableWrap {
+    margin: 4px 20px 20px;
+    max-width: calc(100% - 40px);
+  }
 }

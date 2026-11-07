@@ -2,6 +2,7 @@
 
 import { FormSelect } from "@futures-medialab/ui/form-select";
 
+import { ProposalChannelAvatar } from "./proposal-channel-avatar";
 import { useState } from "react";
 import {
   Table,
@@ -136,16 +137,29 @@ function InvoiceStatement({
               {invoice.lines.map((line, index) => (
                 <TableRow key={`${line.proposalItemId}-${index}`}>
                   <TableCell>
-                    <Typography as="strong" variant="label1" weight="medium">
-                      {line.creatorName}
-                    </Typography>
-                    <Typography
-                      as="p"
-                      variant="caption1"
-                      className={styles.muted}
-                    >
-                      {line.platform} · {line.description}
-                    </Typography>
+                    <div className={styles.creatorLine}>
+                      <ProposalChannelAvatar
+                        name={line.creatorName}
+                        channelUrl={line.channelUrl ?? ""}
+                        alt={line.creatorName}
+                      />
+                      <div>
+                        <Typography
+                          as="strong"
+                          variant="label1"
+                          weight="medium"
+                        >
+                          {line.creatorName}
+                        </Typography>
+                        <Typography
+                          as="p"
+                          variant="caption1"
+                          className={styles.muted}
+                        >
+                          {line.platform} · {line.description}
+                        </Typography>
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell>{line.quantity}</TableCell>
                   <TableCell>

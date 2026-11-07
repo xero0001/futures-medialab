@@ -455,3 +455,20 @@ test("bounded JSON input rejects huge requests and required reporting validation
     fail(400),
   );
 });
+
+
+test("managed admin reports stay private until release and preserve published history during updates",async()=>{
+ const f=await prepared();
+ const input={...f.submission(f.initial),campaignId:"campaign-own"};
+ let item=(await f.admin(input)).items[0];
+ await f.admin(input);assert.equal(f.store.reportSubmissions.length,1);
+ assert.equal((await f.read())[0].latestSubmission,null);
+ assert.equal((await f.read())[0].productionVideoUrl,"https://www.youtube.com/watch?v=public-preview");
+ item=(await f.admin(f.release(item))).items[0];
+ const published=(await f.read())[0].latestSubmission;
+ item=(await f.admin({...input,expectedRevision:item.revision,clientRequestId:randomUUID(),data:source({title:"관리자 새 성과"})})).items[0];
+ assert.equal(item.latestSubmission.version,2);
+ assert.deepEqual((await f.read())[0].latestSubmission,published);
+ f.store.campaign.type="OPEN";
+ await assert.rejects(()=>f.admin({...input,expectedRevision:item.revision,clientRequestId:randomUUID()}),fail(409));
+});

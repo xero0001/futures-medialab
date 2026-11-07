@@ -88,6 +88,7 @@ export const agencyReportingMutationSchema = z.strictObject({
   data: reportingSnapshotSchema,
 });
 export const adminReportingMutationSchema = z.discriminatedUnion("action", [
+  agencyReportingMutationSchema.extend({ campaignId: reportingIdSchema }),
   z.strictObject({
     action: z.literal("prepare"),
     campaignId: reportingIdSchema,

@@ -9,6 +9,7 @@ export type CampaignCompletionSummary = {
   note: string;
 };
 export type BrandInvoiceLine = {
+  channelUrl?: string;
   proposalItemId: string;
   creatorName: string;
   platform: string;

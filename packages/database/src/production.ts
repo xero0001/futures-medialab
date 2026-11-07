@@ -1,3 +1,4 @@
+import { productionMediaId } from "@futures-medialab/database/production-media-shared";
 import { createHash } from "node:crypto";
 import { ensureCampaignReportingItems } from "@futures-medialab/database/reporting";
 import { getDatabase, Prisma } from "@futures-medialab/database";
@@ -149,6 +150,7 @@ export function productionTransaction<T>(
 }
 const campaignSelect = {
   id: true,
+  type: true,
   title: true,
   status: true,
   brandOrganizationId: true,
@@ -167,6 +169,8 @@ const proposalItemSelect = {
   proposalId: true,
   status: true,
   creatorName: true,
+  channelUrl: true,
+  channelLabel: true,
   platform: true,
   deliverables: true,
   quantity: true,
@@ -261,6 +265,8 @@ function baseDto(row: BaseRow) {
     proposalVersion: row.proposalItem.proposal.version,
     proposalItemId: row.proposalItemId,
     creatorName: row.proposalItem.creatorName,
+    channelUrl: row.proposalItem.channelUrl,
+    channelLabel: row.proposalItem.channelLabel,
     platform: row.proposalItem.platform,
     deliverables: row.proposalItem.deliverables,
     quantity: row.proposalItem.quantity,
@@ -382,6 +388,18 @@ function agencyDto(row: PrivateRow, canManage: boolean): AgencyProductionItem {
     submitDisabledReason: problem,
   };
 }
+function adminSubmitProblem(row: PrivateRow): string | null {
+  return (
+    activeProblem(row) ||
+    (row.campaign.type !== "MANAGED"
+      ? "매니지드 캠페인만 관리자가 직접 제출할 수 있습니다."
+      : row.status === "APPROVED"
+        ? "승인 완료된 콘텐츠는 새 버전으로 교체할 수 없습니다."
+        : row.submissions.length >= 100
+          ? "제출 버전 한도에 도달했습니다."
+          : null)
+  );
+}
 function adminDto(row: PrivateRow): AdminProductionItem {
   const problem =
     activeProblem(row) ||
@@ -396,6 +414,9 @@ function adminDto(row: PrivateRow): AdminProductionItem {
   }));
   return {
     ...baseDto(row),
+    isManaged: row.campaign.type === "MANAGED",
+    canSubmit: !adminSubmitProblem(row),
+    submitDisabledReason: adminSubmitProblem(row),
     isCurrent: Boolean(
       row.proposalItem.proposal.campaignId === row.campaignId &&
       row.proposalItem.proposal.publishedAt &&
@@ -700,6 +721,7 @@ export async function applyAgencyProductionMutation(
   const dto = agencyDto(row, true);
   if (!dto.canSubmit)
     productionFail(409, "PRODUCTION_NOT_ACTIONABLE", dto.submitDisabledReason!);
+  await assertProductionMediaReference(tx, row.id, input.url, actor.userId);
   const version = (row.submissions[0]?.version ?? 0) + 1;
   await advance(tx, row, "ADMIN_REVIEW");
   await tx.productionSubmission.create({
@@ -707,7 +729,7 @@ export async function applyAgencyProductionMutation(
       productionItemId: row.id,
       version,
       sourceTitle: input.title,
-      sourceUrl: new URL(input.url).href,
+      sourceUrl: normalizeProductionUrl(input.url),
       sourceNote: input.note,
       submittedById: actor.userId,
     },
@@ -753,7 +775,22 @@ export async function applyAdminProductionMutation(
     });
     assertRevision(row, input.expectedRevision);
     assertActive(row);
-    if (input.action === "assign") {
+    if (input.action === "submit") {
+      const problem = adminSubmitProblem(row);
+      if (problem) productionFail(409, "PRODUCTION_NOT_ACTIONABLE", problem);
+      await assertProductionMediaReference(tx, row.id, input.url, actorId);
+      await advance(tx, row, "ADMIN_REVIEW");
+      await tx.productionSubmission.create({
+        data: {
+          productionItemId: row.id,
+          version: (row.submissions[0]?.version ?? 0) + 1,
+          sourceTitle: input.title,
+          sourceUrl: normalizeProductionUrl(input.url),
+          sourceNote: input.note,
+          submittedById: actorId,
+        },
+      });
+    } else if (input.action === "assign") {
       if (!adminDto(row).canAssign)
         productionFail(
           409,
@@ -791,6 +828,14 @@ export async function applyAdminProductionMutation(
           "운영 검토 대기 중인 최신 제출본만 검토할 수 있습니다.",
         );
       const release = input.action === "releaseToBrand";
+      if (release)
+        await assertProductionMediaReference(
+          tx,
+          row.id,
+          input.url,
+          actorId,
+          latest.sourceUrl,
+        );
       const status = release ? "BRAND_REVIEW" : "AGENCY_REVISION";
       await advance(tx, row, status);
       const changed = await tx.productionSubmission.updateMany({
@@ -808,7 +853,7 @@ export async function applyAdminProductionMutation(
           ...(input.action === "releaseToBrand"
             ? {
                 releasedTitle: input.title,
-                releasedUrl: new URL(input.url).href,
+                releasedUrl: normalizeProductionUrl(input.url),
                 releasedNote: input.note,
                 releasedAt: new Date(),
               }
@@ -827,7 +872,9 @@ export async function applyAdminProductionMutation(
       revision: row.revision + 1,
       ...(input.action === "assign"
         ? { supplierOrganizationId: input.supplierOrganizationId }
-        : { submissionId: input.submissionId }),
+        : input.action === "submit"
+          ? { version: (row.submissions[0]?.version ?? 0) + 1 }
+          : { submissionId: input.submissionId }),
     });
     await remember(tx, actorId, input, hash, row.campaignId, row.id);
   }
@@ -911,4 +958,90 @@ export async function applyBrandProductionMutation(
   if (!updated)
     productionFail(404, "NOT_FOUND", "제작 항목을 찾을 수 없습니다.");
   return { item: updated };
+}
+
+function normalizeProductionUrl(url: string) {
+  return productionMediaId(url) ? url : new URL(url).href;
+}
+async function assertProductionMediaReference(
+  tx: Tx,
+  itemId: string,
+  url: string,
+  actorId: string,
+  sourceUrl?: string,
+) {
+  const id = productionMediaId(url);
+  if (!id) return;
+  const media = await tx.productionMedia.findFirst({
+    where: { id, productionItemId: itemId, completedAt: { not: null } },
+  });
+  if (!media || (media.uploadedById !== actorId && url !== sourceUrl))
+    productionFail(
+      400,
+      "INVALID_MEDIA",
+      "이 제작 항목에 업로드가 완료된 동영상을 선택해 주세요.",
+    );
+}
+export async function authorizeProductionUpload(
+  tx: Tx,
+  actor: ProductionActor,
+  itemId: string,
+  revision: number,
+) {
+  if (actor.kind === "brand")
+    productionFail(403, "FORBIDDEN", "제작 담당자만 업로드할 수 있습니다.");
+  if (actor.kind === "admin") await requireAdmin(tx, actor.userId);
+  else
+    await requireProductionMember(
+      tx,
+      { userId: actor.userId, organizationId: actor.organizationId || "" },
+      "AGENCY",
+      true,
+    );
+  const row = await getPrivate(
+    tx,
+    itemId,
+    actor.kind === "agency"
+      ? { supplierOrganizationId: actor.organizationId || "" }
+      : {},
+  );
+  assertRevision(row, revision);
+  const problem =
+    actor.kind === "admin"
+      ? adminSubmitProblem(row)
+      : agencyDto(row, true).submitDisabledReason;
+  if (problem) productionFail(409, "PRODUCTION_NOT_ACTIONABLE", problem);
+  return row;
+}
+export async function readableProductionMedia(
+  tx: Tx,
+  actor: ProductionActor,
+  id: string,
+) {
+  const media = await tx.productionMedia.findUnique({ where: { id } });
+  if (!media?.completedAt)
+    productionFail(404, "NOT_FOUND", "동영상을 찾을 수 없습니다.");
+  const row = await getPrivate(tx, media.productionItemId);
+  const reference = `production-media:${id}`;
+  if (actor.kind === "admin") {
+    await requireAdmin(tx, actor.userId);
+    return media;
+  }
+  await requireProductionMember(
+    tx,
+    { userId: actor.userId, organizationId: actor.organizationId || "" },
+    actor.kind === "brand" ? "BRAND" : "AGENCY",
+  );
+  const allowed =
+    actor.kind === "brand"
+      ? row.campaign.brandOrganizationId === actor.organizationId &&
+        Boolean(row.proposalItem.proposal.publishedAt) &&
+        row.submissions.some((s) => s.releasedAt && s.releasedUrl === reference)
+      : row.supplierOrganizationId === actor.organizationId &&
+        (media.uploadedById === actor.userId ||
+          row.submissions.some(
+            (s) => s.sourceUrl === reference || s.releasedUrl === reference,
+          ));
+  if (!allowed) productionFail(404, "NOT_FOUND", "동영상을 찾을 수 없습니다.");
+  return media;
 }

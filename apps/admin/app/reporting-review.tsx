@@ -21,6 +21,9 @@ import type {
   ReportingSnapshot,
   ReportingStatus,
 } from "@futures-medialab/database/reporting-types";
+import { AdminReportingSubmit } from "./reporting-submit";
+import { VideoPreview } from "@futures-medialab/ui/video-submission";
+import { productionVideoSource } from "@futures-medialab/database/production-media-shared";
 import { AdminButton } from "./_components/admin-button";
 import s from "./reporting-review.module.css";
 
@@ -138,6 +141,10 @@ function Snapshot({
     <div className={s.snapshot}>
       <span className={s.eyebrow}>{label}</span>
       <h5>{value.title || "공개 제목을 입력하세요"}</h5>
+      <VideoPreview
+        source={productionVideoSource(value.postUrl)}
+        title={value.title || "게시 영상"}
+      />
       <div className={s.links}>
         <ResourceLink url={value.postUrl} label="게시물 열기" />
         {value.evidenceUrl ? (
@@ -552,10 +559,12 @@ function ItemDetail({
   item,
   busy,
   onReview,
+  onSubmit,
 }: {
   item: AdminReportingItem;
   busy: boolean;
   onReview: (action: ReviewAction) => void;
+  onSubmit: (input: MutationInput) => void;
 }) {
   const [selectedId, setSelectedId] = useState("");
   const submission =
@@ -576,6 +585,7 @@ function ItemDetail({
         </div>
         <Status value={item.status} />
       </div>
+      <AdminReportingSubmit item={item} busy={busy} onSubmit={onSubmit} />
       <p className={s.context}>
         {item.deliverables} · {item.quantity}건<br />
         담당 공급 파트너 · {item.supplierName ?? "미배정"}
@@ -800,11 +810,13 @@ export function ReportingReview({ campaignId }: { campaignId: string }) {
       setData(result);
       setAction(null);
       setNotice(
-        input.action === "prepare"
-          ? "콘텐츠 승인이 완료된 게시·성과 항목을 준비했습니다."
-          : input.action === "requestChanges"
-            ? "담당 에이전시에 성과 수정 요청을 전달했습니다."
-            : "검토한 게시·성과를 브랜드에 공개했습니다. 다음 업데이트도 새 버전으로 검토합니다.",
+        input.action === "submit"
+          ? "게시·성과를 새 버전으로 등록했습니다. 검토 후 브랜드에 공개해 주세요."
+          : input.action === "prepare"
+            ? "콘텐츠 승인이 완료된 게시·성과 항목을 준비했습니다."
+            : input.action === "requestChanges"
+              ? "담당 에이전시에 성과 수정 요청을 전달했습니다."
+              : "검토한 게시·성과를 브랜드에 공개했습니다. 다음 업데이트도 새 버전으로 검토합니다.",
       );
     } catch (failure) {
       setError(
@@ -922,6 +934,7 @@ export function ReportingReview({ campaignId }: { campaignId: string }) {
                   type="button"
                   key={item.id}
                   className={s.task}
+                  style={{ display: "grid", whiteSpace: "normal" }}
                   disabled={busy || loading}
                   aria-current={selected?.id === item.id ? "true" : undefined}
                   onClick={() => {
@@ -951,6 +964,7 @@ export function ReportingReview({ campaignId }: { campaignId: string }) {
                   item={selected}
                   busy={busy || loading}
                   onReview={setAction}
+                  onSubmit={(input) => void mutate(input)}
                 />
               ) : null}
             </div>

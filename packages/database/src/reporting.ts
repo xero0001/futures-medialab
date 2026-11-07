@@ -35,6 +35,7 @@ const object = (value: unknown): Record<string, unknown> =>
     ? (value as Record<string, unknown>)
     : {};
 const campaignSelect = {
+  type: true,
   id: true,
   title: true,
   status: true,
@@ -54,12 +55,20 @@ const productionSelect = {
   campaignId: true,
   status: true,
   proposalItemId: true,
+  submissions: {
+    where: { brandDecision: "APPROVE", releasedAt: { not: null } },
+    orderBy: { version: "desc" },
+    take: 1,
+    select: { releasedUrl: true },
+  },
   proposalItem: {
     select: {
       id: true,
       status: true,
       proposalId: true,
       creatorName: true,
+      channelUrl: true,
+      channelLabel: true,
       platform: true,
       deliverables: true,
       quantity: true,
@@ -196,6 +205,10 @@ function baseDto(row: BaseRow) {
     proposalVersion: item.proposal.version,
     proposalItemId: item.id,
     creatorName: item.creatorName,
+    channelUrl: item.channelUrl,
+    channelLabel: item.channelLabel,
+    productionVideoUrl:
+      row.productionItem.submissions?.[0]?.releasedUrl ?? null,
     platform: item.platform,
     deliverables: item.deliverables,
     quantity: item.quantity,
@@ -301,6 +314,16 @@ function agencyDto(row: PrivateRow, canManage: boolean): AgencyReportingItem {
     submitDisabledReason: problem,
   };
 }
+function adminSubmitProblem(row: PrivateRow): string | null {
+  return (
+    activeProblem(row) ||
+    (row.campaign.type !== "MANAGED"
+      ? "매니지드 캠페인만 관리자가 직접 등록할 수 있습니다."
+      : row.submissions.length >= 100
+        ? "제출 버전 한도에 도달했습니다."
+        : null)
+  );
+}
 function adminDto(row: PrivateRow): AdminReportingItem {
   const problem =
     activeProblem(row) ||
@@ -314,6 +337,9 @@ function adminDto(row: PrivateRow): AdminReportingItem {
   }));
   return {
     ...baseDto(row),
+    isManaged: row.campaign.type === "MANAGED",
+    canSubmit: !adminSubmitProblem(row),
+    submitDisabledReason: adminSubmitProblem(row),
     supplierOrganizationId: row.productionItem.supplierOrganizationId,
     supplierName: row.productionItem.supplierOrganization?.name ?? null,
     submissions,
@@ -375,13 +401,15 @@ export async function listBrandDocumentReports(
   organizationId: string,
   campaignId?: string,
   limit = 101,
-): Promise<Array<{
-  campaignId: string;
-  campaignTitle: string;
-  creatorName: string;
-  platform: string;
-  submission: BrandReportingSubmission;
-}>> {
+): Promise<
+  Array<{
+    campaignId: string;
+    campaignTitle: string;
+    creatorName: string;
+    platform: string;
+    submission: BrandReportingSubmission;
+  }>
+> {
   const published = {
     releasedAt: { not: null },
     releasedPublishedAt: { not: null },
@@ -393,7 +421,11 @@ export async function listBrandDocumentReports(
       reportingItem: {
         ...(campaignId ? { campaignId } : {}),
         campaign: { brandOrganizationId: organizationId },
-        productionItem: { proposalItem: { proposal: { publishedAt: { not: null }, status: { not: "DRAFT" } } } },
+        productionItem: {
+          proposalItem: {
+            proposal: { publishedAt: { not: null }, status: { not: "DRAFT" } },
+          },
+        },
       },
     },
     orderBy: [{ releasedAt: "desc" }, { id: "asc" }],
@@ -403,7 +435,12 @@ export async function listBrandDocumentReports(
       reportingItem: {
         select: {
           ...baseSelect,
-          submissions: { where: published, orderBy: { version: "desc" }, take: 1, select: { id: true } },
+          submissions: {
+            where: published,
+            orderBy: { version: "desc" },
+            take: 1,
+            select: { id: true },
+          },
         },
       },
     },
@@ -411,21 +448,29 @@ export async function listBrandDocumentReports(
   return rows.flatMap((row) => {
     const snapshot = releasedSnapshot(row);
     const production = row.reportingItem.productionItem;
-    if (!snapshot || production.campaignId !== row.reportingItem.campaignId || production.proposalItem.proposal.campaignId !== row.reportingItem.campaignId) return [];
+    if (
+      !snapshot ||
+      production.campaignId !== row.reportingItem.campaignId ||
+      production.proposalItem.proposal.campaignId !==
+        row.reportingItem.campaignId
+    )
+      return [];
     const item = baseDto(row.reportingItem);
-    return [{
-      campaignId: item.campaignId,
-      campaignTitle: item.campaignTitle,
-      creatorName: item.creatorName,
-      platform: item.platform,
-      submission: {
-        ...snapshot,
-        id: row.id,
-        version: row.version,
-        releasedAt: row.releasedAt!.toISOString(),
-        isLatest: row.reportingItem.submissions[0]?.id === row.id,
+    return [
+      {
+        campaignId: item.campaignId,
+        campaignTitle: item.campaignTitle,
+        creatorName: item.creatorName,
+        platform: item.platform,
+        submission: {
+          ...snapshot,
+          id: row.id,
+          version: row.version,
+          releasedAt: row.releasedAt!.toISOString(),
+          isLatest: row.reportingItem.submissions[0]?.id === row.id,
+        },
       },
-    }];
+    ];
   });
 }
 
@@ -734,6 +779,27 @@ export async function applyAdminReportingMutation(
       campaignId: input.campaignId,
     });
     assertActionable(row, input.expectedRevision);
+    if (input.action === "submit") {
+      const problem = adminSubmitProblem(row);
+      if (problem) reportingFail(409, "REPORTING_NOT_ACTIONABLE", problem);
+      const version = (row.submissions[0]?.version ?? 0) + 1;
+      await advance(tx, row, "ADMIN_REVIEW");
+      await tx.reportingSubmission.create({
+        data: {
+          reportingItemId: row.id,
+          version,
+          ...sourceData(input.data),
+          submittedById: actorId,
+        },
+      });
+      await audit(tx, actorId, "admin.reporting.submit", row.id, {
+        campaignId: row.campaignId,
+        version,
+        revision: row.revision + 1,
+      });
+      await remember(tx, actorId, input, hash, row.campaignId, row.id);
+      return listAdminReporting(tx, actorId, input.campaignId);
+    }
     const latest = row.submissions[0];
     if (
       !adminDto(row).canReview ||

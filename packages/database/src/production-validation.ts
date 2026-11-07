@@ -1,3 +1,4 @@
+import { productionMediaId } from "@futures-medialab/database/production-media-shared";
 import { z } from "zod";
 import { isIP } from "node:net";
 
@@ -52,7 +53,14 @@ export function productionPublicUrl(value: string): boolean {
     return false;
   }
 }
-const url = z.string().trim().min(1).max(2048).refine(productionPublicUrl);
+const url = z
+  .string()
+  .trim()
+  .min(1)
+  .max(2048)
+  .refine(
+    (value) => Boolean(productionMediaId(value)) || productionPublicUrl(value),
+  );
 const title = z.string().trim().min(2).max(160);
 const note = z.string().trim().max(4000);
 const message = z.string().trim().max(2000);
@@ -75,6 +83,7 @@ export const agencyProductionMutationSchema = z.strictObject({
   note,
 });
 export const adminProductionMutationSchema = z.discriminatedUnion("action", [
+  agencyProductionMutationSchema.extend({ campaignId: productionIdSchema }),
   z.strictObject({
     action: z.literal("prepare"),
     campaignId: productionIdSchema,
