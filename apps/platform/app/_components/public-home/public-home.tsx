@@ -29,8 +29,8 @@ import styles from "./public-home.module.css";
 
 const stepIcons = [IconDocumentText, IconPersons, IconCheck];
 const quickArtwork = [
-  "/landing/quick-icons/game-globe-white-glass.webp",
-  "/landing/quick-icons/creator-megaphone-white-glass.webp",
+  "/landing/quick-icons/game-globe-glass-only.webp",
+  "/landing/quick-icons/creator-megaphone-glass-only.webp",
 ];
 const partnerArtwork = [
   "/partner-art/brand-partners.webp",
