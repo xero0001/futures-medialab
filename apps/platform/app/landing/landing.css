@@ -82,7 +82,7 @@
   height: 38px;
 }
 .fl-logo > span {
-  font-size: 15px;
+  font-size: 19px;
   color: var(--fl-ink);
 }
 .fl-desktop-nav {
@@ -736,7 +736,7 @@
   height: 32px;
 }
 .fl-footer .fl-logo > span {
-  font-size: 14px;
+  font-size: 18px;
 }
 .fl-footer > div > p {
   font-size: 14px;
@@ -999,7 +999,7 @@
     height: 31px;
   }
   .fl-logo > span {
-    font-size: 14px;
+    font-size: 18px;
   }
   .fl-header-actions {
     gap: 8px;
@@ -1310,7 +1310,7 @@
     font-size: 14px;
   }
   .fl-logo > span {
-    font-size: 13px;
+    font-size: 16px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -98,7 +98,7 @@ html:root:not([data-seed]) {
   color: var(--ss-brand);
 }
 .seed-search-brand .fm-wordmark > span {
-  font-size: 15px;
+  font-size: 19px;
   color: var(--ss-ink);
 }
 .seed-search-brand-divider {
@@ -971,7 +971,7 @@ html:root:not([data-seed]) {
     gap: 4px;
   }
   .seed-search-brand .fm-wordmark > span {
-    font-size: 13px;
+    font-size: 16px;
   }
   .seed-search-brand .fm-wordmark > svg {
     width: 28px;

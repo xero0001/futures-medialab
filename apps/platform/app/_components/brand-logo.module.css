@@ -17,7 +17,7 @@
 }
 
 .wordmark > span {
-  font-size: 16px;
+  font-size: 20px;
   color: #172039;
 }
 
@@ -32,6 +32,6 @@
   }
 
   .wordmark > span {
-    font-size: 14px;
+    font-size: 18px;
   }
 }

@@ -172,7 +172,7 @@ a {
   flex-shrink: 0;
 }
 .admin-brand > span {
-  font-size: 15px;
+  font-size: 19px;
   color: var(--admin-ink);
 }
 .admin-eyebrow {
@@ -225,7 +225,7 @@ a {
   width: 176px;
 }
 .admin-topbar .admin-brand > span {
-  font-size: 14px;
+  font-size: 18px;
 }
 .admin-header-context {
   gap: 20px;
@@ -909,7 +909,7 @@ dd {
     height: 32px;
   }
   .admin-topbar .admin-brand > span {
-    font-size: 13px;
+    font-size: 16px;
   }
   .admin-header-context,
   .admin-account-name,
