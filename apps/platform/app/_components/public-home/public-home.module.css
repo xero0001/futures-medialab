@@ -318,23 +318,13 @@
   object-fit: cover;
   border-radius: 12px;
 }
-.conceptFacts {
+.loginPrompt {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin: 0;
-  padding-block: 18px;
-  border-block: 1px solid var(--semantic-line-neutral-secondaryOpaque);
+  gap: 8px;
+  word-break: keep-all;
 }
-.conceptFacts dt {
+.loginPrompt p {
   color: var(--semantic-foreground-neutral-secondary);
-  font-size: 12px;
-  margin-bottom: 7px;
-}
-.conceptFacts dd {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
 }
 .steps {
   display: grid;

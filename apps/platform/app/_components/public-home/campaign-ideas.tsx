@@ -19,58 +19,44 @@ import {
   ModalTrigger,
   Typography,
 } from "@montage-ui/core";
-import { IconArrowRight, IconCheck } from "@montage-ui/icon";
+import { IconArrowRight } from "@montage-ui/icon";
 import type { HomeCopy } from "./copy";
 import styles from "./public-home.module.css";
 
-const campaignAssets: Record<
-  string,
-  { image: string; channels: string; officialUrl: string }
-> = {
+const campaignAssets: Record<string, { image: string }> = {
   genshin: {
     image: "/campaign-art/games/genshin.webp",
-    channels: "YouTube · CHZZK",
-    officialUrl: "https://genshin.hoyoverse.com/ko/",
   },
   "star-rail": {
     image: "/campaign-art/games/star-rail.webp",
-    channels: "YouTube · TikTok",
-    officialUrl: "https://hsr.hoyoverse.com/ko-kr/",
   },
   "wuthering-waves": {
     image: "/campaign-art/games/wuthering-waves.webp",
-    channels: "YouTube · CHZZK",
-    officialUrl: "https://wutheringwaves.kurogames.com/kr/main/",
   },
   zenless: {
     image: "/campaign-art/games/zenless.webp",
-    channels: "YouTube · TikTok",
-    officialUrl: "https://zenless.hoyoverse.com/ko-kr/main",
   },
   nte: {
     image: "/demo/nte/city-key-art.jpg",
-    channels: "YouTube · CHZZK",
-    officialUrl: "https://nte.perfectworld.com/kr/",
   },
   "once-human": {
     image: "/campaign-art/games/once-human.webp",
-    channels: "YouTube · CHZZK",
-    officialUrl: "https://store.steampowered.com/app/2139460/Once_Human/",
   },
   "infinity-nikki": {
     image: "/campaign-art/games/infinity-nikki.webp",
-    channels: "YouTube · Instagram",
-    officialUrl: "https://store.steampowered.com/app/3164330/Infinity_Nikki/",
   },
   naraka: {
     image: "/campaign-art/games/naraka.webp",
-    channels: "YouTube · CHZZK",
-    officialUrl:
-      "https://store.steampowered.com/app/1203220/NARAKA_BLADEPOINT/",
   },
 };
 
-export function CampaignIdeas({ t }: { t: HomeCopy }) {
+export function CampaignIdeas({
+  t,
+  loginHref,
+}: {
+  t: HomeCopy;
+  loginHref: string;
+}) {
   const sectionRef = useRef<HTMLElement>(null);
   const autoScroll = useMemo(
     () =>
@@ -227,41 +213,22 @@ export function CampaignIdeas({ t }: { t: HomeCopy }) {
                         height={1024}
                         sizes="(max-width: 600px) 90vw, 520px"
                       />
-                      <Typography as="p" variant="body1">
-                        {campaign.body}
-                      </Typography>
-                      <dl className={styles.conceptFacts}>
-                        <div>
-                          <dt>{t.discovery.platform}</dt>
-                          <dd>{asset.channels}</dd>
-                        </div>
-                        <div>
-                          <dt>{t.discovery.market}</dt>
-                          <dd>{t.discovery.korea}</dd>
-                        </div>
-                      </dl>
-                      <div>
+                      <div className={styles.loginPrompt}>
                         <Typography as="h3" variant="headline1" weight="bold">
-                          {t.discovery.direction}
+                          {t.discovery.loginTitle}
                         </Typography>
-                        <ul className={styles.featureList}>
-                          {campaign.ideas.map((idea) => (
-                            <li key={idea}>
-                              <IconCheck aria-hidden="true" />
-                              {idea}
-                            </li>
-                          ))}
-                        </ul>
+                        <Typography as="p" variant="body2">
+                          {t.discovery.loginBody}
+                        </Typography>
                       </div>
                       <Button
                         as="a"
-                        href={asset.officialUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={loginHref}
                         size="large"
+                        fullWidth
                         trailingContent={<IconArrowRight />}
                       >
-                        {t.discovery.official}
+                        {t.discovery.loginAction}
                       </Button>
                     </ModalContent>
                   </ModalContainer>

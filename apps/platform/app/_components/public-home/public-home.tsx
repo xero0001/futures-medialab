@@ -233,7 +233,7 @@ export function PublicHome({ initialLocale }: { initialLocale: Locale }) {
               </a>
             ))}
           </div>
-          <CampaignIdeas t={t} />
+          <CampaignIdeas t={t} loginHref={`/login?lang=${locale}`} />
           <section id="how-it-works" aria-labelledby="workflow-title">
             <div className={`${styles.container} ${styles.section}`}>
               <Typography
