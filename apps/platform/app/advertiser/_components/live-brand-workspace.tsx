@@ -422,14 +422,7 @@ export function LiveBrandWorkspace({
           {mode === "library" && <Library locale={locale} />}
           {mode === "billing" && (
             <>
-              <PageHeading
-                title={t("청구 내역", "Billing", "账单")}
-                description={t(
-                  "캠페인 완료 후 발행된 청구와 입금 확인 상태를 확인하세요.",
-                  "Review invoices issued after campaign completion and payment confirmation status.",
-                  "查看活动完成后出具的账单及收款确认状态。",
-                )}
-              />
+              <PageHeading title={t("청구 내역", "Billing", "账单")} />
               <BrandBillingPanel
                 invoices={data.invoices}
                 locale={locale}
@@ -507,7 +500,7 @@ function PageHeading({
   action,
 }: {
   title: string;
-  description: string;
+  description?: string;
   action?: ReactNode;
 }) {
   return (
@@ -516,9 +509,11 @@ function PageHeading({
         <Typography as="h1" variant="title2" weight="bold">
           {title}
         </Typography>
-        <Typography as="p" variant="body2" className={styles.muted}>
-          {description}
-        </Typography>
+        {description && (
+          <Typography as="p" variant="body2" className={styles.muted}>
+            {description}
+          </Typography>
+        )}
       </div>
       {action}
     </header>
