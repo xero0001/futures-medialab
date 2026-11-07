@@ -1,5 +1,7 @@
 "use client";
 
+import type { AdminApplicationRowOption } from "@futures-medialab/database/proposal-types";
+
 import { FormSelect } from "@futures-medialab/ui/form-select";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -18,6 +20,7 @@ import {
 } from "lucide-react";
 import { AdminButton } from "./_components/admin-button";
 import s from "./official-proposals.module.css";
+import { InfluencerAvatar } from "./_components/influencer-avatar";
 import { CatalogProposalPicker } from "./catalog-proposal-picker";
 import { ProposalCostEditor } from "./proposal-cost-editor";
 
@@ -25,13 +28,11 @@ import type {
   AdminProposal,
   AdminProposalMutation,
   AdminProposalsResponse,
-  AdminProposalCreatorOption,
   ProposalDraftInput,
 } from "@futures-medialab/database/proposal-types";
 
 type Proposal = AdminProposal;
 type ProposalData = AdminProposalsResponse;
-type CreatorOption = AdminProposalCreatorOption;
 type Preview = Pick<
   Proposal,
   | "id"
@@ -54,6 +55,7 @@ type MutationInput = AdminProposalMutation extends infer T
     : never
   : never;
 type ItemDraft = {
+  applicationRowId: string;
   key: string;
   catalogCreatorId: string;
   catalogRateVersion: number | null;
@@ -62,6 +64,7 @@ type ItemDraft = {
   platform: string;
   channelLabel: string;
   channelUrl: string;
+  channelThumbnailUrl: string | null;
   followers: string;
   averageViews: string;
   deliverables: string;
@@ -144,11 +147,13 @@ const blankItem = (): ItemDraft => ({
   key: crypto.randomUUID(),
   catalogCreatorId: "",
   catalogRateVersion: null,
+  applicationRowId: "",
   creatorId: "",
   creatorName: "",
   platform: "youtube",
   channelLabel: "",
   channelUrl: "",
+  channelThumbnailUrl: null,
   followers: "",
   averageViews: "",
   deliverables: "",
@@ -170,11 +175,13 @@ function draftFrom(proposal: Proposal): Draft {
       key: item.id,
       catalogCreatorId: item.catalogCreatorId ?? "",
       catalogRateVersion: item.catalogRateVersion ?? null,
+      applicationRowId: item.applicationRowId ?? "",
       creatorId: item.creatorId ?? "",
       creatorName: item.creatorName,
       platform: item.platform,
       channelLabel: item.channelLabel,
       channelUrl: item.channelUrl,
+      channelThumbnailUrl: item.channelThumbnailUrl ?? null,
       followers: item.followers === null ? "" : String(item.followers),
       averageViews: item.averageViews === null ? "" : String(item.averageViews),
       deliverables: item.deliverables,
@@ -195,6 +202,7 @@ function toInput(draft: Draft): ProposalDraftInput {
     terms: draft.terms,
     expiresAt: dateIso(draft.expiresAt),
     items: draft.items.map((item) => ({
+      applicationRowId: item.applicationRowId || null,
       creatorId: item.creatorId || null,
       catalogCreatorId: item.catalogCreatorId || null,
       catalogRateVersion: item.catalogRateVersion,
@@ -202,6 +210,7 @@ function toInput(draft: Draft): ProposalDraftInput {
       platform: item.platform,
       channelLabel: item.channelLabel,
       channelUrl: item.channelUrl,
+      channelThumbnailUrl: item.channelThumbnailUrl ?? null,
       followers: item.followers === "" ? null : Number(item.followers),
       averageViews: item.averageViews === "" ? null : Number(item.averageViews),
       deliverables: item.deliverables,
@@ -235,6 +244,7 @@ function publicPreview(draft: Draft, original: Proposal): Preview {
     items: input.items.map((item, index) => ({
       ...item,
       id: draft.items[index]!.key,
+      channelThumbnailUrl: item.channelThumbnailUrl ?? null,
       totalAmount: String((Number(item.unitAmount) || 0) * item.quantity),
       supplierOrganizationId: null,
       status: "PENDING",
@@ -319,39 +329,46 @@ function ProposalPreview({ proposal }: { proposal: Preview }) {
         {proposal.items.map((item, index) => (
           <article className={s.item} key={item.id}>
             <div className={s.row}>
-              <div>
-                <h5>{item.creatorName || `크리에이터 ${index + 1}`}</h5>
-                <span className={s.muted}>
-                  {item.platform}
-                  {item.channelLabel ? ` · ${item.channelLabel}` : ""}
-                </span>
-                {item.followers !== null || item.averageViews !== null ? (
-                  <p className={s.muted}>
-                    {item.followers !== null
-                      ? `팔로워 ${new Intl.NumberFormat("ko-KR").format(item.followers)}명`
-                      : ""}
-                    {item.followers !== null && item.averageViews !== null
-                      ? " · "
-                      : ""}
-                    {item.averageViews !== null
-                      ? `평균 조회 ${new Intl.NumberFormat("ko-KR").format(item.averageViews)}회`
-                      : ""}
-                  </p>
-                ) : null}
-                {demoChannel(item.channelUrl) ? (
-                  <p className={s.muted}>시연용 채널 · 외부 연결 없음</p>
-                ) : item.channelUrl && /^https:\/\//.test(item.channelUrl) ? (
-                  <p>
-                    <a
-                      href={item.channelUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      채널 확인
-                      <ExternalLink size={13} />
-                    </a>
-                  </p>
-                ) : null}
+              <div className={s.identity}>
+                <InfluencerAvatar
+                  name={item.creatorName}
+                  thumbnailUrl={item.channelThumbnailUrl}
+                  size={56}
+                />
+                <div>
+                  <h5>{item.creatorName || `인플루언서 ${index + 1}`}</h5>
+                  <span className={s.muted}>
+                    {item.platform}
+                    {item.channelLabel ? ` · ${item.channelLabel}` : ""}
+                  </span>
+                  {item.followers !== null || item.averageViews !== null ? (
+                    <p className={s.muted}>
+                      {item.followers !== null
+                        ? `팔로워 ${new Intl.NumberFormat("ko-KR").format(item.followers)}명`
+                        : ""}
+                      {item.followers !== null && item.averageViews !== null
+                        ? " · "
+                        : ""}
+                      {item.averageViews !== null
+                        ? `평균 조회 ${new Intl.NumberFormat("ko-KR").format(item.averageViews)}회`
+                        : ""}
+                    </p>
+                  ) : null}
+                  {demoChannel(item.channelUrl) ? (
+                    <p className={s.muted}>시연용 채널 · 외부 연결 없음</p>
+                  ) : item.channelUrl && /^https:\/\//.test(item.channelUrl) ? (
+                    <p>
+                      <a
+                        href={item.channelUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        채널 확인
+                        <ExternalLink size={13} />
+                      </a>
+                    </p>
+                  ) : null}
+                </div>
               </div>
               <strong className={s.price}>
                 {formatMoney(item.totalAmount, proposal.currency)}
@@ -486,7 +503,7 @@ function PreviewDialog({
               </div>
               <label className={s.check}>
                 <input type="checkbox" required disabled={busy} />
-                대상 크리에이터와 공개 금액을 확인했으며, 이 버전을 브랜드에
+                대상 인플루언서와 공개 금액을 확인했으며, 이 버전을 브랜드에
                 발행합니다.
               </label>
             </>
@@ -514,8 +531,8 @@ function PreviewDialog({
 }
 
 function DraftEditor({
+  applicationRows,
   proposal,
-  creators,
   busy,
   onSave,
   onPreview,
@@ -523,7 +540,7 @@ function DraftEditor({
   onDirtyChange,
 }: {
   proposal: Proposal;
-  creators: CreatorOption[];
+  applicationRows: AdminApplicationRowOption[];
   busy: boolean;
   onSave: (draft: Draft) => void;
   onPreview: (proposal: Preview) => void;
@@ -554,31 +571,6 @@ function DraftEditor({
       items: draft.items.map((item) =>
         item.key === key ? { ...item, ...input } : item,
       ),
-    });
-  }
-  function selectCreator(key: string, id: string) {
-    const creator = creators.find((item) => item.id === id);
-    if (!creator) {
-      updateItem(key, {
-        creatorId: "",
-        catalogCreatorId: "",
-        catalogRateVersion: null,
-      });
-      return;
-    }
-    const channel = creator.channels[0];
-    updateItem(key, {
-      creatorId: id,
-      catalogCreatorId: "",
-      catalogRateVersion: null,
-      creatorName: creator.displayName,
-      platform: channel?.platform ?? "youtube",
-      channelLabel: channel?.name ?? creator.displayName,
-      channelUrl: channel?.url ?? "",
-      followers:
-        channel?.followers === null || channel?.followers === undefined
-          ? ""
-          : String(channel.followers),
     });
   }
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -649,7 +641,7 @@ function DraftEditor({
         </div>
         <div className={s.items}>
           <div className={s.row}>
-            <h4>제안 크리에이터 · {draft.items.length}명</h4>
+            <h4>제안 인플루언서 · {draft.items.length}명</h4>
             <AdminButton
               type="button"
               onClick={() => update("items", [...draft.items, blankItem()])}
@@ -661,14 +653,14 @@ function DraftEditor({
           </div>
           {draft.items.length === 0 ? (
             <p className={s.muted}>
-              캠페인 후보에서 선택하거나 공개할 인물과 채널을 직접 입력하세요.
+              항목을 추가하고 인플루언서 DB에서 공개할 인물과 채널을 선택하세요.
             </p>
           ) : null}
           {draft.items.map((item, index) => (
             <article className={s.itemEditor} key={item.key}>
               <div className={s.itemHeading}>
                 <div>
-                  <h5>크리에이터 {index + 1}</h5>
+                  <h5>인플루언서 {index + 1}</h5>
                   <p>
                     이 항목의 이름·채널·제작 조건·제안가는 발행 후 브랜드에
                     공개됩니다.
@@ -677,7 +669,7 @@ function DraftEditor({
                 <AdminButton
                   type="button"
                   className="icon"
-                  aria-label={`크리에이터 ${index + 1} 항목 삭제`}
+                  aria-label={`인플루언서 ${index + 1} 항목 삭제`}
                   onClick={() =>
                     update(
                       "items",
@@ -689,40 +681,63 @@ function DraftEditor({
                 </AdminButton>
               </div>
               <div className={s.grid}>
-                <label className={`${s.field} ${s.fieldWide}`}>
-                  캠페인 후보에서 가져오기
-                  <select
-                    value={item.creatorId}
-                    onChange={(event) =>
-                      selectCreator(item.key, event.target.value)
-                    }
-                  >
-                    <option value="">
-                      {item.catalogCreatorId
-                        ? "내부 DB에서 연결됨"
-                        : "직접 입력"}
-                    </option>
-                    {item.creatorId &&
-                    !creators.some(
-                      (creator) => creator.id === item.creatorId,
-                    ) ? (
-                      <option value={item.creatorId}>
-                        {item.creatorName} · 현재 후보에서 제외됨
-                      </option>
-                    ) : null}
-                    {creators.map((creator) => (
-                      <option key={creator.id} value={creator.id}>
-                        {creator.displayName} · {creator.agencyName}
-                      </option>
-                    ))}
-                  </select>
-                  <small>
-                    {creators.length
-                      ? "이 캠페인에서 검토 후보 또는 선정으로 지정된 인물만 표시됩니다."
-                      : "연결된 캠페인 후보가 없습니다. 운영팀이 확인한 공개 정보를 직접 입력할 수 있습니다."}
-                  </small>
-                </label>
                 <div className={s.fieldWide}>
+                  <label className={s.fieldWide}>
+                    선정한 공급 파트너 신청
+                    <FormSelect
+                      value={item.applicationRowId}
+                      onChange={(event) => {
+                        const row = applicationRows.find(
+                          (row) => row.id === event.target.value,
+                        );
+                        if (!row) {
+                          updateItem(item.key, {
+                            applicationRowId: "",
+                            creatorId: "",
+                          });
+                          return;
+                        }
+                        updateItem(item.key, {
+                          applicationRowId: row.id,
+                          creatorId: row.creatorId,
+                          catalogCreatorId: "",
+                          catalogRateVersion: null,
+                          creatorName: row.creatorName,
+                          platform: row.platform,
+                          channelLabel: row.creatorName,
+                          channelUrl: row.channelUrl,
+                          channelThumbnailUrl: null,
+                          deliverables: row.format,
+                          quantity: String(row.quantity),
+                          supplierCost: (
+                            Number(row.unitAmount) * row.quantity
+                          ).toFixed(2),
+                          scheduledAt: dateInput(row.availableOn),
+                          unitAmount: "",
+                        });
+                      }}
+                    >
+                      <option value="">신청 항목 선택</option>
+                      {applicationRows
+                        .filter(
+                          (row) =>
+                            row.id === item.applicationRowId ||
+                            !draft.items.some(
+                              (other) => other.applicationRowId === row.id,
+                            ),
+                        )
+                        .map((row) => (
+                          <option key={row.id} value={row.id}>
+                            {row.agencyName} · {row.creatorName} ·{" "}
+                            {row.platform} · {row.format} {row.quantity}건 ·
+                            공급 {row.unitAmount}
+                          </option>
+                        ))}
+                    </FormSelect>
+                    <small>
+                      신청 조건을 불러온 뒤 브랜드 제안가와 사용권을 입력하세요.
+                    </small>
+                  </label>
                   <CatalogProposalPicker
                     currency={proposal.currency}
                     selected={Boolean(item.catalogCreatorId)}
@@ -730,15 +745,54 @@ function DraftEditor({
                       updateItem(item.key, {
                         catalogCreatorId: "",
                         catalogRateVersion: null,
+                        channelThumbnailUrl: null,
                       })
                     }
                     onPick={(patch) =>
-                      updateItem(item.key, { ...patch, creatorId: "" })
+                      updateItem(item.key, {
+                        ...patch,
+                        creatorId: "",
+                        applicationRowId: "",
+                      })
                     }
                   />
+                  <div className={s.linkedInfluencer}>
+                    <InfluencerAvatar
+                      name={item.creatorName}
+                      thumbnailUrl={item.channelThumbnailUrl}
+                      size={52}
+                    />
+                    <div>
+                      <strong>
+                        {item.applicationRowId
+                          ? "공급 파트너 신청 연결됨"
+                          : item.catalogCreatorId
+                            ? "인플루언서 DB 연결됨"
+                            : "인플루언서 선택 필요"}
+                      </strong>
+                      <p>
+                        {item.catalogCreatorId
+                          ? "선택한 채널의 썸네일이 제안에 함께 저장됩니다."
+                          : "초안 저장 후에도 선택할 수 있습니다. 발행 전에는 DB 인플루언서 또는 선정된 신청 항목을 연결해 주세요."}
+                      </p>
+                      <a
+                        href={
+                          item.catalogCreatorId
+                            ? `/?tab=creators&creator=${encodeURIComponent(item.catalogCreatorId)}`
+                            : "/?tab=creators"
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {item.catalogCreatorId
+                          ? "인플루언서 정보 관리 ↗"
+                          : "인플루언서 등록 ↗"}
+                      </a>
+                    </div>
+                  </div>
                 </div>
                 <label className={s.field}>
-                  크리에이터 이름
+                  인플루언서 이름
                   <input
                     value={item.creatorName}
                     maxLength={100}
@@ -751,6 +805,7 @@ function DraftEditor({
                   플랫폼
                   <FormSelect
                     value={item.platform}
+                    disabled={Boolean(item.catalogCreatorId)}
                     onChange={(event) =>
                       updateItem(item.key, { platform: event.target.value })
                     }
@@ -786,12 +841,18 @@ function DraftEditor({
                   <input
                     type="url"
                     value={item.channelUrl}
+                    readOnly={Boolean(item.catalogCreatorId)}
                     maxLength={2048}
                     onChange={(event) =>
                       updateItem(item.key, { channelUrl: event.target.value })
                     }
                     placeholder="https://"
                   />
+                  {item.catalogCreatorId ? (
+                    <small>
+                      다른 채널은 인플루언서 DB에서 다시 선택하세요.
+                    </small>
+                  ) : null}
                 </label>
                 <label className={s.field}>
                   구독자·팔로워 수 · 선택
@@ -1164,7 +1225,7 @@ export function OfficialProposals({
         <div>
           <h3>공식 제안서</h3>
           <p>
-            브랜드에 전달할 크리에이터와 조건을 검토하고, 확정한 버전을
+            브랜드에 전달할 인플루언서와 조건을 검토하고, 확정한 버전을
             발행하세요.
           </p>
         </div>
@@ -1229,7 +1290,7 @@ export function OfficialProposals({
           <FileText size={30} />
           <h4>아직 공식 제안서가 없습니다</h4>
           <p>
-            {campaignTitle}의 크리에이터 구성과 {campaignCurrency} 제안 금액을
+            {campaignTitle}의 인플루언서 구성과 {campaignCurrency} 제안 금액을
             작성하세요. 초안은 운영팀만 볼 수 있습니다.
           </p>
           <AdminButton
@@ -1278,7 +1339,7 @@ export function OfficialProposals({
               <DraftEditor
                 key={`${selected.id}:${selected.revision}:${reload}`}
                 proposal={selected}
-                creators={current.creators}
+                applicationRows={data?.applicationRows ?? []}
                 busy={busy || loading}
                 onDirtyChange={(value) => {
                   dirtyRef.current = value;

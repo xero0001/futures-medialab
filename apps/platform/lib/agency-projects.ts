@@ -53,7 +53,7 @@ function assignedCampaignSelect(organizationId: string) {
     brandOrganizationId: true,
     coverImageUrl: true,
     applications: {
-      where: { agencyOrganizationId: organizationId, status: "ACCEPTED" },
+      where: { agencyOrganizationId: organizationId, status: "ACCEPTED", rows: { none: {} } },
       select: { agencyOrganizationId: true, status: true },
     },
     // A new private draft never shadows the last published version.
@@ -263,7 +263,7 @@ export async function readAgencyAssignedCampaigns(
     OR: [
       {
         applications: {
-          some: { agencyOrganizationId: organizationId, status: "ACCEPTED" },
+          some: { agencyOrganizationId: organizationId, status: "ACCEPTED", rows: { none: {} } },
         },
       },
       {

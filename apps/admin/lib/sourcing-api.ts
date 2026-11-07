@@ -24,6 +24,13 @@ const record = (value: unknown): Record<string, unknown> =>
     : {};
 const text = (value: unknown) => (typeof value === "string" ? value : "");
 const include = {
+  rows: {
+    include: {
+      proposalItems: {
+        select: { proposal: { select: { publishedAt: true } } },
+      },
+    },
+  },
   agencyOrganization: { select: { name: true, status: true } },
   campaign: {
     select: { status: true, brandOrganization: { select: { status: true } } },
@@ -117,9 +124,32 @@ export function adminSourcingApi(request: Request) {
               "CONFLICT",
               "신청이 변경되었습니다. 새로고침 후 검토해 주세요.",
             );
-          const locked = await lockReason(tx, application);
+          const row = input.rowId
+            ? application.rows.find((r) => r.id === input.rowId)
+            : null;
+          if (input.rowId && !row)
+            fail(404, "NOT_FOUND", "신청 항목을 찾을 수 없습니다.");
+          if (application.rows?.length && !row)
+            fail(
+              400,
+              "ROW_REQUIRED",
+              "크리에이터별 신청 항목을 선택해 주세요.",
+            );
+          const locked = row
+            ? sourcingLockReason({
+                campaignStatus: application.campaign.status,
+                brandActive:
+                  application.campaign.brandOrganization.status === "ACTIVE",
+                applicationStatus: application.status,
+                hasWork: row.proposalItems.some(
+                  (i) => i.proposal.publishedAt !== null,
+                ),
+              })
+            : await lockReason(tx, application);
           if (locked) fail(409, "LOCKED", locked);
-          if (!canReviewSourcing(application.status, input.status))
+          if (
+            !canReviewSourcing(row?.status ?? application.status, input.status)
+          )
             fail(
               409,
               "INVALID_STATE",
@@ -131,6 +161,7 @@ export function adminSourcingApi(request: Request) {
               !application.creators.some(
                 ({ creator }) =>
                   creator.isActive &&
+                  (!row || row.creatorId === creator.id) &&
                   creator.agencyOrganizationId ===
                     application.agencyOrganizationId,
               ))
@@ -140,14 +171,31 @@ export function adminSourcingApi(request: Request) {
               "INACTIVE_CANDIDATE",
               "승인된 에이전시의 활성 크리에이터가 포함된 신청을 선택해 주세요.",
             );
-          const beforeStatus = application.status;
+          const beforeStatus = row?.status ?? application.status;
+          if (row)
+            await tx.applicationRow.update({
+              where: { id: row.id },
+              data: { status: input.status },
+            });
+          const states = (application.rows ?? []).map((r) =>
+            r.id === row?.id ? input.status : r.status,
+          );
+          const aggregate = row
+            ? states.every((s) => s === "REJECTED")
+              ? "REJECTED"
+              : states.every((s) => s === "ACCEPTED")
+                ? "ACCEPTED"
+                : states.some((s) => ["SHORTLISTED", "ACCEPTED"].includes(s))
+                  ? "SHORTLISTED"
+                  : "SUBMITTED"
+            : input.status;
           const changed = await tx.campaignApplication.updateMany({
             where: {
               id: application.id,
               status: application.status,
               updatedAt: new Date(input.expectedUpdatedAt),
             },
-            data: { status: input.status },
+            data: { status: aggregate },
           });
           if (changed.count !== 1)
             fail(409, "CONFLICT", "다른 담당자가 신청을 변경했습니다.");
@@ -159,6 +207,7 @@ export function adminSourcingApi(request: Request) {
               entityId: application.id,
               payload: {
                 campaignId: application.campaignId,
+                rowId: row?.id ?? null,
                 before: beforeStatus,
                 after: input.status,
                 reason: input.reason,
@@ -188,13 +237,13 @@ export function adminSourcingApi(request: Request) {
         )
           fail(404, "NOT_FOUND", "캠페인을 찾을 수 없습니다.");
         const applications = await tx.campaignApplication.findMany({
-          where: { campaignId },
+          where: { campaignId, status: { not: "DRAFT" } },
           orderBy: [{ createdAt: "desc" }, { id: "asc" }],
           take: 100,
           include,
         });
         const total = await tx.campaignApplication.count({
-          where: { campaignId },
+          where: { campaignId, status: { not: "DRAFT" } },
         });
         const audits = await tx.auditLog.findMany({
           where: {
@@ -296,7 +345,37 @@ export function adminSourcingApi(request: Request) {
               })),
           });
         }
-        return { campaignId, total, applications: rows };
+        const expanded: AdminSourcingData["applications"] = [];
+        for (const summary of rows) {
+          const application = applications.find((a) => a.id === summary.id)!;
+          if (!application.rows?.length) {
+            expanded.push(summary);
+            continue;
+          }
+          for (const row of application.rows)
+            expanded.push({
+              ...summary,
+              rowId: row.id,
+              status: row.status,
+              amount: row.unitAmount.mul(row.quantity).toFixed(2),
+              creators: summary.creators
+                .filter((c) => c.id === row.creatorId)
+                .map((c) => ({
+                  ...c,
+                  deliverables: `${row.platform} · ${row.format} ${row.quantity}건 · 건당 ${row.unitAmount.toFixed(2)} ${application.currency} · ${row.availableOn.toISOString().slice(0, 10)}`,
+                })),
+              lockReason: sourcingLockReason({
+                campaignStatus: application.campaign.status,
+                brandActive:
+                  application.campaign.brandOrganization.status === "ACTIVE",
+                applicationStatus: application.status,
+                hasWork: row.proposalItems.some(
+                  (item) => item.proposal.publishedAt !== null,
+                ),
+              }),
+            });
+        }
+        return { campaignId, total, applications: expanded };
       },
       {
         isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,

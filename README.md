@@ -608,3 +608,36 @@ pnpm db:migrate:dev
 pnpm db:migrate:deploy
 pnpm db:studio
 ```
+
+### Open campaign creator applications
+
+Approved supplier organizations register their own creator roster and submit one or
+more creator/channel/format rows from the offer board. Drafts, quantities, supply
+rates and availability are persisted. The server derives supplier identity and
+currency, verifies roster ownership and recruitment conditions, calculates totals
+in integer cents, and makes repeated submissions idempotent.
+
+Operators review individual rows in sourcing, then select the reviewed row in the
+official proposal editor. Proposal versions retain the row association. The
+supplier workspace derives approval-pending, confirmed, partially confirmed,
+rejected and expired states from the current published version. Brand responses
+omit supplier identities, original applications, row identifiers and supply costs.
+Published rows cannot be withdrawn or reassigned through recruitment controls.
+
+Supplier-facing campaign responses exclude the brand budget. Operators can set an
+independent per-item supplier rate ceiling under recruitment conditions; changes
+apply to later submissions, not to previously submitted terms. Unset ceilings are
+negotiable. Private invitations and the partner inquiry preview remain marked as
+previews and are separate from the persisted open-application workflow.
+
+Before deploying either app, apply
+`20261108000000_open_campaign_applications` after
+`20261107050000_proposal_channel_thumbnails` and regenerate the Prisma client.
+The migration is additive and retains existing applications and proposal versions.
+Existing applications without creator rows remain accessible in earlier records.
+
+Regression coverage:
+
+```bash
+node --experimental-strip-types --test apps/platform/scripts/partner-applications.test.mjs apps/admin/scripts/sourcing.test.mjs packages/database/tests/proposals.test.mjs
+```

@@ -58,6 +58,7 @@ enum CampaignStatus {
 }
 
 enum ApplicationStatus {
+  DRAFT
   SUBMITTED
   SHORTLISTED
   ACCEPTED
@@ -463,6 +464,8 @@ model RequestAttachment {
 }
 
 model CreatorProfile {
+  partnerProfile       Json                 @default("{}")
+  applicationRows      ApplicationRow[]
   internalCatalogEntry InternalCreator?
   id                   String               @id @default(cuid())
   agencyOrganizationId String
@@ -483,6 +486,9 @@ model CreatorProfile {
 }
 
 model CampaignApplication {
+  submissionKey        String?
+  submissionHash       String?
+  rows                 ApplicationRow[]
   id                   String               @id @default(cuid())
   campaignId           String
   agencyOrganizationId String
@@ -504,6 +510,28 @@ model CampaignApplication {
 
   @@unique([campaignId, agencyOrganizationId])
   @@index([agencyOrganizationId, status])
+}
+
+model ApplicationRow {
+  id             String @id @default(cuid())
+  applicationId  String
+  creatorId      String
+  creatorName    String
+  platform       String
+  channelUrl     String
+  format         String
+  quantity       Int
+  unitAmount     Decimal @db.Decimal(18, 2)
+  availableOn    DateTime @db.Date
+  status         ApplicationStatus @default(SUBMITTED)
+  application    CampaignApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  creator        CreatorProfile @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  proposalItems  ProposalItem[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([applicationId, creatorId, platform, format])
+  @@index([creatorId])
 }
 
 model CampaignContract {
@@ -641,6 +669,9 @@ model CampaignProposal {
 }
 
 model ProposalItem {
+  applicationRowId String?
+  applicationRow ApplicationRow? @relation(fields: [applicationRowId], references: [id], onDelete: Restrict)
+  @@unique([proposalId, applicationRowId])
   catalogCreatorId String?
   catalogRateVersion Int?
   catalogCreator InternalCreator? @relation(fields: [catalogCreatorId], references: [id], onDelete: Restrict)
@@ -652,6 +683,7 @@ model ProposalItem {
   platform                 String @default("")
   channelLabel             String @default("")
   channelUrl               String @default("")
+  channelThumbnailUrl      String? @db.Text
   followers                Int?
   averageViews             Int?
   deliverables             String @default("") @db.Text

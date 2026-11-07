@@ -7,6 +7,7 @@ import {
   proposalAmount,
   proposalCents,
   publicChannelUrl,
+  publicChannelThumbnailUrl,
 } from "@futures-medialab/database/proposal-validation";
 import type {
   AdminProposal,
@@ -73,6 +74,7 @@ const publicSelect = {
       platform: true,
       channelLabel: true,
       channelUrl: true,
+      channelThumbnailUrl: true,
       followers: true,
       averageViews: true,
       deliverables: true,
@@ -249,6 +251,7 @@ function publicDto(
       platform: item.platform,
       channelLabel: item.channelLabel,
       channelUrl: item.channelUrl,
+      channelThumbnailUrl: publicChannelThumbnailUrl(item.channelThumbnailUrl),
       followers: item.followers,
       averageViews: item.averageViews,
       deliverables: item.deliverables,
@@ -407,6 +410,10 @@ export function proposalPublicationProblems(
   if (!row.items.length) problems.push("제안 항목을 한 개 이상 추가해 주세요.");
   row.items.forEach((item, index) => {
     const label = `${index + 1}번 항목`;
+    if (!item.catalogCreatorId && !(item.applicationRowId && item.creatorId))
+      problems.push(
+        `${label}: 인플루언서 DB 또는 선정한 신청 항목을 연결해 주세요.`,
+      );
     if (!item.creatorName.trim() || !item.platform || !item.channelLabel.trim())
       problems.push(`${label}: 크리에이터와 채널 정보를 작성해 주세요.`);
     if (
@@ -478,6 +485,7 @@ function adminDto(
       platform: item.platform,
       channelLabel: item.channelLabel,
       channelUrl: item.channelUrl,
+      channelThumbnailUrl: publicChannelThumbnailUrl(item.channelThumbnailUrl),
       followers: item.followers,
       averageViews: item.averageViews,
       deliverables: item.deliverables,
@@ -487,6 +495,7 @@ function adminDto(
       scheduledAt: item.scheduledAt?.toISOString() ?? null,
       rights: item.rights,
       status: item.status,
+      applicationRowId: item.applicationRowId,
       creatorId: item.creatorId,
       catalogCreatorId: item.catalogCreatorId,
       catalogRateVersion: item.catalogRateVersion,
@@ -559,7 +568,7 @@ export async function listAdminProposals(
     },
   });
   if (!campaign) proposalFail(404, "NOT_FOUND", "캠페인을 찾을 수 없습니다.");
-  const [rows, creators] = await Promise.all([
+  const [rows, creators, applicationRows] = await Promise.all([
     tx.campaignProposal.findMany({
       where: { campaignId },
       orderBy: { version: "desc" },
@@ -588,6 +597,24 @@ export async function listAdminProposals(
         agencyOrganization: { select: { name: true } },
       },
     }),
+    tx.applicationRow.findMany({
+      where: {
+        status: { in: ["SHORTLISTED", "ACCEPTED"] },
+        application: {
+          campaignId,
+          status: { in: ["SHORTLISTED", "ACCEPTED"] },
+          agencyOrganization: { status: "ACTIVE" },
+        },
+        creator: { isActive: true },
+      },
+      include: {
+        application: {
+          select: { agencyOrganization: { select: { name: true } } },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+      take: 1000,
+    }),
   ]);
   const latestPublishedId = rows.find((row) => row.publishedAt)?.id;
   return {
@@ -600,6 +627,18 @@ export async function listAdminProposals(
       budgetAmount: campaign.budgetAmount?.toFixed(2) ?? null,
       brandActive: campaign.brandOrganization.status === "ACTIVE",
     },
+    applicationRows: applicationRows.map((row) => ({
+      id: row.id,
+      creatorId: row.creatorId,
+      creatorName: row.creatorName,
+      agencyName: row.application.agencyOrganization.name,
+      platform: row.platform,
+      channelUrl: row.channelUrl,
+      format: row.format,
+      quantity: row.quantity,
+      unitAmount: row.unitAmount.toFixed(2),
+      availableOn: row.availableOn.toISOString(),
+    })),
     proposals: rows.map((row) => adminDto(row, latestPublishedId)),
     creators: creators.map((creator) => ({
       id: creator.id,
@@ -664,7 +703,7 @@ async function validateCatalogCreator(
       ],
       ...(rateVersion ? { rateCards: { some: { version: rateVersion } } } : {}),
     },
-    select: { partnerOrganizationId: true },
+    select: { partnerOrganizationId: true, channels: true },
   });
   if (!creator)
     proposalFail(
@@ -674,6 +713,69 @@ async function validateCatalogCreator(
     );
   return creator;
 }
+function catalogChannel(
+  catalog: { channels: unknown },
+  platform: string,
+  channelUrl: string,
+) {
+  const url = publicChannelUrl(channelUrl, platform);
+  const channel = (Array.isArray(catalog.channels) ? catalog.channels : [])
+    .map(object)
+    .find(
+      (entry) =>
+        entry.platform === platform &&
+        url &&
+        publicChannelUrl(text(entry.url), platform) === url,
+    );
+  if (!channel)
+    proposalFail(
+      409,
+      "CATALOG_CHANNEL_CHANGED",
+      "인플루언서 DB에 등록된 채널을 선택해 주세요. 채널 정보가 변경되었다면 초안을 다시 확인해 주세요.",
+    );
+  return channel;
+}
+async function validateApplicationRow(
+  tx: Tx,
+  campaignId: string,
+  item: {
+    applicationRowId?: string | null;
+    creatorId: string | null;
+    platform: string;
+    channelUrl: string;
+  },
+) {
+  if (!item.applicationRowId) return;
+  const row = await tx.applicationRow.findFirst({
+    where: {
+      id: item.applicationRowId,
+      creatorId: item.creatorId ?? "",
+      platform: item.platform,
+      status: { in: ["SHORTLISTED", "ACCEPTED"] },
+      creator: { isActive: true },
+      application: {
+        campaignId,
+        status: { in: ["SHORTLISTED", "ACCEPTED"] },
+        agencyOrganization: { status: "ACTIVE" },
+      },
+    },
+    include: {
+      creator: { select: { agencyOrganizationId: true } },
+      application: { select: { agencyOrganizationId: true } },
+    },
+  });
+  if (
+    !row ||
+    row.creator.agencyOrganizationId !== row.application.agencyOrganizationId ||
+    publicChannelUrl(row.channelUrl, row.platform) !==
+      publicChannelUrl(item.channelUrl, item.platform)
+  )
+    proposalFail(
+      409,
+      "APPLICATION_ROW_CHANGED",
+      "선정된 신청 항목의 인물과 채널을 확인해 주세요.",
+    );
+}
 async function draftItems(
   tx: Tx,
   campaignId: string,
@@ -681,6 +783,7 @@ async function draftItems(
 ) {
   return Promise.all(
     data.items.map(async (item, position) => {
+      await validateApplicationRow(tx, campaignId, item);
       const creator = item.creatorId
         ? await validateCreator(tx, campaignId, item.creatorId)
         : null;
@@ -691,8 +794,12 @@ async function draftItems(
             item.catalogRateVersion,
           )
         : null;
+      const channel = catalog
+        ? catalogChannel(catalog, item.platform, item.channelUrl)
+        : null;
       return {
         position,
+        applicationRowId: item.applicationRowId ?? null,
         catalogCreatorId: item.catalogCreatorId ?? null,
         catalogRateVersion: item.catalogRateVersion ?? null,
         creatorId: item.creatorId,
@@ -704,6 +811,9 @@ async function draftItems(
         platform: item.platform,
         channelLabel: item.channelLabel,
         channelUrl: item.channelUrl,
+        channelThumbnailUrl: channel
+          ? publicChannelThumbnailUrl(channel.thumbnailUrl)
+          : publicChannelThumbnailUrl(item.channelThumbnailUrl),
         followers: item.followers,
         averageViews: item.averageViews,
         deliverables: item.deliverables,
@@ -904,6 +1014,7 @@ export async function applyAdminProposalMutation(
                     platform: item.platform,
                     channelLabel: item.channelLabel,
                     channelUrl: item.channelUrl,
+                    channelThumbnailUrl: item.channelThumbnailUrl,
                     followers: item.followers,
                     averageViews: item.averageViews,
                     deliverables: item.deliverables,
@@ -911,6 +1022,7 @@ export async function applyAdminProposalMutation(
                     unitAmount: item.unitAmount,
                     scheduledAt: item.scheduledAt,
                     rights: item.rights,
+                    applicationRowId: item.applicationRowId,
                     creatorId: item.creatorId,
                     catalogCreatorId: item.catalogCreatorId,
                     catalogRateVersion: item.catalogRateVersion,
@@ -1053,6 +1165,7 @@ export async function applyAdminProposalMutation(
       if (problems.length)
         proposalFail(409, "PUBLICATION_REQUIREMENTS", problems.join(" "));
       for (const item of row.items) {
+        await validateApplicationRow(tx, campaign.id, item);
         if (item.creatorId)
           await validateCreator(tx, campaign.id, item.creatorId);
         if (item.catalogCreatorId) {
@@ -1061,6 +1174,7 @@ export async function applyAdminProposalMutation(
             item.catalogCreatorId,
             item.catalogRateVersion,
           );
+          catalogChannel(catalog, item.platform, item.channelUrl);
           if (catalog.partnerOrganizationId !== item.supplierOrganizationId)
             proposalFail(
               409,

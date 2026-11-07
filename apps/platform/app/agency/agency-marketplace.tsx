@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   CalendarDays,
@@ -36,8 +30,8 @@ import {
   WorkspaceSelect as ProfileSelect,
   WorkspaceButton,
   WorkspaceInput,
-  WorkspaceTextArea,
 } from "../_components/workspace/workspace-controls";
+import { ApplicationComposerModal } from "./agency-application-composer";
 import { agencyCopy, agencyText } from "./agency-workspace-copy";
 import "./agency-marketplace-design.css";
 
@@ -68,13 +62,13 @@ const defaultFilters = {
   country: "",
   category: "",
   followers: "",
-  currency: "",
-  budget: "",
   start: "",
   end: "",
   sort: "newest",
 };
 const platformLabels: Record<string, string> = {
+  chzzk: "치지직",
+  soop: "SOOP",
   youtube: "YouTube",
   tiktok: "TikTok",
   instagram: "Instagram",
@@ -198,6 +192,9 @@ export function AgencyMarketplace({
   const [applicationStatus, setApplicationStatus] = useState("");
   const [applicationQuery, setApplicationQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [composeCampaign, setComposeCampaign] = useState<AgencyCampaign | null>(
+    null,
+  );
   const request = useRef<AbortController | null>(null);
   const mutationInFlight = useRef(false);
   const [now, setNow] = useState<number | null>(null);
@@ -253,10 +250,15 @@ export function AgencyMarketplace({
     const onFocus = () => {
       setNow(Date.now());
     };
+    const changed = () => {
+      void load();
+    };
+    window.addEventListener("agency:applications-changed", changed);
     window.addEventListener("focus", onFocus);
     const timer = window.setInterval(onFocus, 30_000);
     return () => {
       request.current?.abort();
+      window.removeEventListener("agency:applications-changed", changed);
       window.removeEventListener("focus", onFocus);
       window.clearInterval(timer);
     };
@@ -319,11 +321,6 @@ export function AgencyMarketplace({
             campaign.followerMin <= followers) &&
             (campaign.followerMax === null ||
               campaign.followerMax >= followers))) &&
-        (!filters.currency || campaign.currency === filters.currency) &&
-        (!filters.budget ||
-          !filters.currency ||
-          (campaign.budgetAmount !== null &&
-            Number(campaign.budgetAmount) >= Number(filters.budget))) &&
         (!filters.start || Boolean(day && day >= filters.start)) &&
         (!filters.end || Boolean(day && day <= filters.end))
       );
@@ -333,10 +330,7 @@ export function AgencyMarketplace({
         ? (a.applicationDeadline ?? "9999").localeCompare(
             b.applicationDeadline ?? "9999",
           )
-        : filters.sort === "highest"
-          ? a.currency.localeCompare(b.currency) ||
-            Number(b.budgetAmount ?? 0) - Number(a.budgetAmount ?? 0)
-          : (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""),
+        : (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""),
     );
   const countries = [
     ...new Set(campaigns.flatMap((campaign) => campaign.regions)),
@@ -350,8 +344,6 @@ export function AgencyMarketplace({
     filters.country,
     filters.category,
     filters.followers,
-    filters.currency,
-    filters.budget,
     filters.start,
     filters.end,
   ].filter(Boolean).length;
@@ -361,7 +353,9 @@ export function AgencyMarketplace({
     advancedFilterCount ||
     filters.sort !== "newest",
   );
-  const applications = data?.applications ?? [];
+  const applications = (data?.applications ?? []).filter(
+    (a) => !a.hasCreatorRows,
+  );
   const filteredApplications = applications.filter(
     (application) =>
       (!applicationStatus || application.status === applicationStatus) &&
@@ -375,7 +369,6 @@ export function AgencyMarketplace({
     setFilters((current) => ({
       ...current,
       [key]: value,
-      ...(key === "currency" && !value ? { budget: "" } : {}),
     }));
   }
   function select(
@@ -585,14 +578,6 @@ export function AgencyMarketplace({
               {select("sort", copy.sort, [
                 { value: "newest", label: copy.newest },
                 { value: "closing", label: copy.closing },
-                {
-                  value: "highest",
-                  label: t(
-                    "Budget (by currency)",
-                    "통화별 예산순",
-                    "按币种和预算",
-                  ),
-                },
               ])}
               {hasFilters && (
                 <button
@@ -639,43 +624,6 @@ export function AgencyMarketplace({
                   }
                 />
               </label>
-              <fieldset className="cwa-budget-filter">
-                <legend>{t("Budget", "예산", "预算")}</legend>
-                <div>
-                  {select(
-                    "currency",
-                    t("Budget currency", "예산 통화", "预算币种"),
-                    [
-                      { value: "", label: copy.any },
-                      ...["USD", "KRW", "CNY"].map((value) => ({
-                        value,
-                        label: value,
-                      })),
-                    ],
-                  )}
-                  <label className="cwa-live-field">
-                    <span>{t("Minimum budget", "최소 예산", "最低预算")}</span>
-                    <WorkspaceInput
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      disabled={!filters.currency}
-                      placeholder={
-                        filters.currency ||
-                        t(
-                          "Select currency first",
-                          "통화부터 선택",
-                          "先选择币种",
-                        )
-                      }
-                      value={filters.budget}
-                      onChange={(event) =>
-                        updateFilter("budget", event.target.value)
-                      }
-                    />
-                  </label>
-                </div>
-              </fieldset>
               <fieldset className="cwa-date-range">
                 <legend>{copy.deadline}</legend>
                 <div>
@@ -818,13 +766,13 @@ export function AgencyMarketplace({
                       <div className="cwa-offer-footer">
                         <div>
                           <span>
-                            {t("Campaign budget", "캠페인 예산", "活动预算")}
+                            {t("Supplier terms", "공급 조건", "供货条件")}
                           </span>
                           <strong>
-                            {amount(
-                              campaign.budgetAmount,
-                              campaign.currency,
-                              locale,
+                            {t(
+                              "Propose per creator",
+                              "크리에이터별 제안",
+                              "按达人报价",
                             )}
                           </strong>
                         </div>
@@ -1020,7 +968,17 @@ export function AgencyMarketplace({
         busy={busy || loading}
         onClose={() => setSelectedId(null)}
         onMutate={mutate}
+        onCompose={(campaign) => {
+          setSelectedId(null);
+          setComposeCampaign(campaign);
+        }}
       />
+      {composeCampaign && (
+        <ApplicationComposerModal
+          campaign={composeCampaign}
+          onClose={() => setComposeCampaign(null)}
+        />
+      )}
     </div>
   );
 }
@@ -1217,6 +1175,7 @@ function CampaignDrawer({
   busy,
   onClose,
   onMutate,
+  onCompose,
 }: {
   campaign: AgencyCampaign | null;
   locale: Locale;
@@ -1225,6 +1184,7 @@ function CampaignDrawer({
   busy: boolean;
   onClose: () => void;
   onMutate: (input: Mutation) => Promise<boolean>;
+  onCompose: (campaign: AgencyCampaign) => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const copy = agencyCopy[locale];
@@ -1331,14 +1291,29 @@ function CampaignDrawer({
                 <dd>{date(campaign.applicationDeadline, locale)} (UTC)</dd>
               </div>
               <div>
-                <dt>{t("Campaign budget", "캠페인 예산", "活动预算")}</dt>
+                <dt>{t("Supplier rate", "공급 단가", "供货单价")}</dt>
                 <dd>
-                  {amount(campaign.budgetAmount, campaign.currency, locale)}
+                  {t(
+                    "Propose a rate and schedule for each creator.",
+                    "크리에이터별 공급 단가와 가능 일정을 제안해 주세요.",
+                    "请按达人提出供货单价与可用档期。",
+                  )}
                 </dd>
               </div>
             </dl>
+            {campaign.supplierRateCap && (
+              <p>
+                {t(
+                  "Maximum supplier rate per item",
+                  "건별 공급 단가 상한",
+                  "每项供货单价上限",
+                )}{" "}
+                · {amount(campaign.supplierRateCap, campaign.currency, locale)}
+              </p>
+            )}
             <div className="cwa-apply-gate">
-              {campaign.application ? (
+              {campaign.application &&
+              campaign.application.status !== "DRAFT" ? (
                 <>
                   <p className="cwa-application-status">
                     {applicationLabel(campaign.application.status, locale)}
@@ -1379,121 +1354,34 @@ function CampaignDrawer({
                   )}
                 </p>
               ) : (
-                <ProposalForm
-                  key={campaign.id}
-                  campaign={campaign}
-                  locale={locale}
-                  busy={busy}
-                  onMutate={onMutate}
-                />
+                <div className="cwa-proposal">
+                  <h3>
+                    {t("Apply by creator", "크리에이터별 신청", "按达人申请")}
+                  </h3>
+                  <p>
+                    {t(
+                      "Select represented creators and propose deliverables, rates and availability for Futures to review.",
+                      "소속 크리에이터를 선택하고 제작 형식·수량·공급 단가·가능 일정을 제안하세요. 퓨처스가 조건을 검토합니다.",
+                      "选择所属达人并提出制作形式、数量、供货单价与档期，由 Futures 审核条件。",
+                    )}
+                  </p>
+                  <WorkspaceButton
+                    type="button"
+                    className="cwa-button cwa-button-primary"
+                    onClick={() => onCompose(campaign)}
+                  >
+                    {t(
+                      "Preview creator application",
+                      "크리에이터 신청서 작성 · 미리보기",
+                      "预览达人申请",
+                    )}
+                  </WorkspaceButton>
+                </div>
               )}
             </div>
           </div>
         </>
       )}
     </dialog>
-  );
-}
-
-function ProposalForm({
-  campaign,
-  locale,
-  busy,
-  onMutate,
-}: {
-  campaign: AgencyCampaign;
-  locale: Locale;
-  busy: boolean;
-  onMutate: (input: Mutation) => Promise<boolean>;
-}) {
-  const t = (en: string, ko: string, zh: string) =>
-    agencyText(locale, en, ko, zh);
-  const [proposal, setProposal] = useState("");
-  const [proposedAmount, setProposedAmount] = useState("");
-  const [error, setError] = useState("");
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    try {
-      await onMutate({
-        action: "apply",
-        campaignId: campaign.id,
-        proposal: proposal.trim(),
-        ...(proposedAmount.trim()
-          ? { proposedAmount: proposedAmount.trim() }
-          : {}),
-      });
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "UNAVAILABLE");
-    }
-  }
-  return (
-    <form className="cwa-proposal" onSubmit={submit}>
-      <h3>{t("Apply to this campaign", "캠페인 신청", "申请活动")}</h3>
-      <label className="cwa-live-field">
-        <span>{t("Proposal", "제안 내용", "提案内容")} *</span>
-        <WorkspaceTextArea
-          required
-          rows={6}
-          maxLength={5000}
-          value={proposal}
-          disabled={busy}
-          onChange={(event) => setProposal(event.target.value)}
-          placeholder={t(
-            "Introduce your proposed creators, channels, deliverables and schedule. Do not include private contact details.",
-            "제안할 크리에이터, 채널, 제작물과 일정을 소개하세요. 개인 연락처는 입력하지 마세요.",
-            "介绍拟合作达人、频道、内容与安排，请勿填写私人联系方式。",
-          )}
-        />
-      </label>
-      <label className="cwa-live-field">
-        <span>
-          {t(
-            "Proposed amount (optional)",
-            "제안 금액 (선택)",
-            "提案金额（可选）",
-          )}{" "}
-          · {campaign.currency}
-        </span>
-        <WorkspaceInput
-          inputMode="decimal"
-          maxLength={19}
-          pattern="(?:0|[1-9][0-9]{0,15})(\.[0-9]{1,2})?"
-          value={proposedAmount}
-          disabled={busy}
-          onChange={(event) => setProposedAmount(event.target.value)}
-          placeholder="0.00"
-        />
-      </label>
-      <p>
-        {campaign.isDemo
-          ? t(
-              "This demo proposal is saved only for testing. No real advertiser is contacted.",
-              "데모 제안서는 테스트용으로만 저장되며 실제 광고주에게 전달되지 않습니다.",
-              "演示提案仅保存用于测试，不会联系真实广告主。",
-            )
-          : t(
-              "Your proposal will be stored and shared with the campaign's brand and operations team.",
-              "제안서는 저장되며 해당 캠페인의 브랜드와 운영팀에 전달됩니다.",
-              "提案将保存并提供给本活动品牌与运营团队。",
-            )}
-      </p>
-      {error && (
-        <p className="cwa-date-error" role="alert">
-          {failureText(error, locale)}
-        </p>
-      )}
-      <WorkspaceButton
-        type="submit"
-        className="cwa-button cwa-button-primary"
-        disabled={busy || !proposal.trim()}
-      >
-        {busy
-          ? t("Submitting…", "처리 중…", "正在提交…")
-          : campaign.isDemo
-            ? t("Try submitting a demo", "데모 신청 체험", "体验演示申请")
-            : t("Submit application", "신청 제출", "提交申请")}
-      </WorkspaceButton>
-    </form>
   );
 }

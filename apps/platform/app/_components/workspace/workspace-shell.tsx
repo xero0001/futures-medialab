@@ -27,6 +27,7 @@ import {
   IconChevronDown,
   IconCircleQuestion,
   IconCompany,
+  IconPersons,
   IconFolderStar,
   IconFolder,
   IconGlobe,
@@ -87,7 +88,7 @@ export function WorkspaceShell({
     ? "/agency?section=organization"
     : "/advertiser/accountManagement";
   const helpPath = isAgency
-    ? "/agency?section=notifications"
+    ? "/agency?section=requests"
     : "/advertiser/requests?view=inquiries";
   const t = (en: string, ko: string, zh: string) => ({ en, ko, zh })[locale];
   const href = (path: string) =>
@@ -154,6 +155,7 @@ export function WorkspaceShell({
           label: t("Collaboration", "협업 관리", "合作管理"),
           items: [
             agencyItem("projects", IconFolderStar),
+            agencyItem("creators", IconPersons),
             agencyItem("invitations", IconMegaphone),
           ],
         },
@@ -168,6 +170,7 @@ export function WorkspaceShell({
           label: t("Workspace", "내 작업 공간", "工作区"),
           items: [
             agencyItem("payments", IconCompany),
+            agencyItem("requests", IconCircleQuestion),
             agencyItem("notifications", IconInbox),
           ],
         },

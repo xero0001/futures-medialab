@@ -4,6 +4,7 @@ const id = z.string().regex(/^[a-zA-Z0-9_-]{1,120}$/);
 export const sourcingMutationSchema = z.strictObject({
   campaignId: id,
   applicationId: id,
+  rowId: id.optional(),
   expectedUpdatedAt: z.iso.datetime({ offset: true }),
   status: z.enum(["SHORTLISTED", "ACCEPTED", "REJECTED"]),
   reason: z.string().trim().min(2).max(1000),

@@ -81,7 +81,7 @@ export async function agencyOperations(request: Request) {
         fail(403, "APPROVAL_REQUIRED", "Your organization must be approved before viewing live records.");
       const organizationId = member.organizationId;
       const demoScope = testAccess ? {} : { brandOrganizationId: { not: DEMO_CAMPAIGN_BRAND_ID } };
-      const applicationScope = { agencyOrganizationId: organizationId, campaign: demoScope, ...(campaignId ? { campaignId } : {}) };
+      const applicationScope = { rows: { none: {} }, agencyOrganizationId: organizationId, campaign: demoScope, ...(campaignId ? { campaignId } : {}) };
       // An interactive transaction shares one PostgreSQL connection. Read in
       // sequence while retaining the same repeatable-read snapshot.
       const projects = await tx.campaignApplication.findMany({

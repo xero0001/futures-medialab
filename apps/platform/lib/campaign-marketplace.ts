@@ -1,7 +1,6 @@
 import "server-only";
 import { getDatabase, Prisma } from "@futures-medialab/database";
-import { getAuth } from "./auth";
-import { hasSubmittedAgencyProfile } from "./agency-profile";
+import { authenticated, liveSession, agencyMember } from "./agency-api-access";
 import { hasApprovedTestWorkspaceAccess } from "./test-workspace-access";
 import {
   canAccessCampaign,
@@ -10,7 +9,6 @@ import {
   isDemoCampaign,
 } from "./campaign-demo";
 import {
-  agencyApplicationSchema,
   brandApplicationSchema,
   campaignIdSchema,
 } from "./campaign-validation";
@@ -24,73 +22,16 @@ import {
   verifyOrigin,
   workspaceBoundary,
 } from "./workspace-api";
+import { supplierOfferCap } from "./supplier-offer";
 import type {
   AgencyApplication,
   AgencyCampaignBootstrap,
   BrandCampaignApplication,
 } from "./campaign-marketplace-types";
 
-type Tx = Prisma.TransactionClient;
-type Db = Tx | ReturnType<typeof getDatabase>;
-
-async function authenticated(request: Request) {
-  const session = await getAuth().api.getSession({ headers: request.headers });
-  if (!session) fail(401, "UNAUTHORIZED", "Log in to continue.");
-  return session;
-}
-
-async function liveSession(
-  tx: Tx,
-  session: Awaited<ReturnType<typeof authenticated>>,
-) {
-  if (
-    !(await tx.session.findFirst({
-      where: {
-        id: session.session.id,
-        userId: session.user.id,
-        expiresAt: { gt: new Date() },
-      },
-      select: { id: true },
-    }))
-  ) {
-    fail(401, "UNAUTHORIZED", "Log in to continue.");
-  }
-}
-
-async function agencyMember(db: Db, userId: string, write = false) {
-  const member = await db.organizationMember.findFirst({
-    where: { userId, organization: { type: "AGENCY" } },
-    orderBy: [{ createdAt: "asc" }, { organizationId: "asc" }],
-    select: {
-      role: true,
-      organizationId: true,
-      organization: { select: { status: true, metadata: true } },
-    },
-  });
-  if (!member || member.organization.status === "SUSPENDED")
-    fail(403, "FORBIDDEN", "This agency workspace is unavailable.");
-  if (
-    member.organization.status !== "ACTIVE" ||
-    (!hasSubmittedAgencyProfile(member.organization.metadata) &&
-      !hasApprovedTestWorkspaceAccess(member.organization))
-  ) {
-    fail(
-      403,
-      "APPROVAL_REQUIRED",
-      "Your organization must be approved before viewing live campaigns.",
-    );
-  }
-  if (write && member.role === "MEMBER")
-    fail(
-      403,
-      "FORBIDDEN",
-      "Only an owner or administrator can manage applications.",
-    );
-  return member;
-}
-
 const applicationSelect = {
   id: true,
+  _count: { select: { rows: true } },
   campaignId: true,
   status: true,
   proposal: true,
@@ -113,6 +54,7 @@ type ApplicationRow = Prisma.CampaignApplicationGetPayload<{
 function applicationDto(row: ApplicationRow): AgencyApplication {
   return {
     id: row.id,
+    hasCreatorRows: row._count.rows > 0,
     campaignId: row.campaignId,
     status: row.status,
     proposal: row.proposal,
@@ -161,7 +103,6 @@ export async function agencyCampaigns(request: Request) {
               categories: true,
               followerMin: true,
               followerMax: true,
-              budgetAmount: true,
               currency: true,
               applicationDeadline: true,
               publishedAt: true,
@@ -191,14 +132,23 @@ export async function agencyCampaigns(request: Request) {
           campaigns: campaigns
             .filter((campaign) => canAccessCampaign(campaign, testAccess))
             .map(({ requirements, brandOrganizationId, ...campaign }) => ({
-              ...campaign,
+              id: campaign.id,
+              title: campaign.title,
+              summary: campaign.summary,
+              platforms: campaign.platforms,
+              regions: campaign.regions,
+              categories: campaign.categories,
+              followerMin: campaign.followerMin,
+              followerMax: campaign.followerMax,
+              currency: campaign.currency,
+              status: campaign.status,
               isDemo: isDemoCampaign({ requirements, brandOrganizationId }),
               artworkUrl: getDemoCampaignArtwork({
                 id: campaign.id,
                 requirements,
                 brandOrganizationId,
               }),
-              budgetAmount: campaign.budgetAmount?.toFixed(2) ?? null,
+              supplierRateCap: supplierOfferCap(requirements),
               applicationDeadline:
                 campaign.applicationDeadline?.toISOString() ?? null,
               publishedAt: campaign.publishedAt?.toISOString() ?? null,
@@ -218,130 +168,7 @@ export async function agencyCampaigns(request: Request) {
   });
 }
 
-export async function agencyApplications(request: Request) {
-  return workspaceBoundary(async () => {
-    verifyOrigin(request);
-    const session = await authenticated(request);
-    await agencyMember(getDatabase(), session.user.id, true);
-    await rateLimit(session.user.id, "agency-apply", 30);
-    const input = await readBody(request, agencyApplicationSchema);
-    await getDatabase().$transaction(
-      async (tx) => {
-        await liveSession(tx, session);
-        const member = await agencyMember(tx, session.user.id, true);
-        const testAccess = hasApprovedTestWorkspaceAccess(member.organization);
-        if (input.action === "withdraw") {
-          const application = await tx.campaignApplication.findFirst({
-            where: {
-              id: input.applicationId,
-              agencyOrganizationId: member.organizationId,
-            },
-            select: {
-              campaign: {
-                select: { requirements: true, brandOrganizationId: true },
-              },
-            },
-          });
-          if (
-            !application ||
-            !canAccessCampaign(application.campaign, testAccess)
-          )
-            fail(409, "INVALID_STATE", "This application cannot be withdrawn.");
-          const result = await tx.campaignApplication.updateMany({
-            where: {
-              id: input.applicationId,
-              agencyOrganizationId: member.organizationId,
-              status: { in: ["SUBMITTED", "SHORTLISTED"] },
-            },
-            data: { status: "WITHDRAWN" },
-          });
-          if (!result.count)
-            fail(409, "INVALID_STATE", "This application cannot be withdrawn.");
-          await tx.auditLog.create({
-            data: {
-              actorId: session.user.id,
-              action: "application.withdrawn",
-              entityType: "CampaignApplication",
-              entityId: input.applicationId,
-            },
-          });
-          return;
-        }
-        const campaign = await tx.campaign.findFirst({
-          where: {
-            id: input.campaignId,
-            type: "OPEN_BIDDING",
-            status: "RECRUITING",
-            publishedAt: { not: null },
-            applicationDeadline: { gt: new Date() },
-            brandOrganization: { type: "BRAND", status: "ACTIVE" },
-          },
-          select: {
-            id: true,
-            currency: true,
-            requirements: true,
-            brandOrganizationId: true,
-          },
-        });
-        if (!campaign || !canAccessCampaign(campaign, testAccess))
-          fail(
-            409,
-            "CAMPAIGN_CLOSED",
-            "This campaign is not accepting applications.",
-          );
-        const existing = await tx.campaignApplication.findUnique({
-          where: {
-            campaignId_agencyOrganizationId: {
-              campaignId: campaign.id,
-              agencyOrganizationId: member.organizationId,
-            },
-          },
-          select: { id: true },
-        });
-        if (existing)
-          fail(
-            409,
-            "ALREADY_APPLIED",
-            "Your organization has already applied to this campaign.",
-          );
-        if (
-          (await tx.campaignApplication.count({
-            where: { agencyOrganizationId: member.organizationId },
-          })) >= 1000
-        )
-          fail(
-            409,
-            "LIMIT_REACHED",
-            "The application limit for this organization has been reached.",
-          );
-        const application = await tx.campaignApplication.create({
-          data: {
-            campaignId: campaign.id,
-            agencyOrganizationId: member.organizationId,
-            submittedById: session.user.id,
-            proposal: input.proposal,
-            proposedAmount: input.proposedAmount ?? null,
-            currency: campaign.currency,
-          },
-        });
-        await tx.auditLog.create({
-          data: {
-            actorId: session.user.id,
-            action: "application.submitted",
-            entityType: "CampaignApplication",
-            entityId: application.id,
-            payload: { campaignId: campaign.id },
-          },
-        });
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        timeout: 15000,
-      },
-    );
-    return json({ success: true });
-  });
-}
+export { agencyApplications } from "./partner-applications";
 
 export async function brandApplications(request: Request) {
   return workspaceBoundary(async () => {

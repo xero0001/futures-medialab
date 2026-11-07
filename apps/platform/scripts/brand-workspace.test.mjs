@@ -902,11 +902,13 @@ test("managed campaigns cannot enter public agency discovery or direct applicati
         request({
           action: "apply",
           campaignId: "managed-private",
-          proposal: "Cannot apply by knowing a managed campaign ID",
+          clientRequestId: "8bba4ee7-50bb-43c3-87c4-1783299b600b",
+          note: "Cannot apply by knowing a managed campaign ID",
+          rows: [{ creatorId: "creator", platform: "youtube", format: "VOD", quantity: 1, unitAmount: "50", date: "2030-01-01" }],
         }),
       )
     ).status,
-    409,
+    404,
   );
   assert.equal(queries.length, 2);
 });

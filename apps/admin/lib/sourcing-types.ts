@@ -3,6 +3,7 @@ export type AdminSourcingData = {
   total: number;
   applications: {
     id: string;
+    rowId?: string;
     agencyName: string;
     agencyActive: boolean;
     status: string;

@@ -90,19 +90,6 @@ export function canSubmitCampaign(
   );
 }
 
-export const agencyApplicationSchema = z.discriminatedUnion("action", [
-  z.strictObject({
-    action: z.literal("apply"),
-    campaignId: campaignIdSchema,
-    proposal: z.string().trim().min(1).max(5000),
-    proposedAmount: amountSchema.optional(),
-  }),
-  z.strictObject({
-    action: z.literal("withdraw"),
-    applicationId: campaignIdSchema,
-  }),
-]);
-
 export const brandApplicationSchema = z.strictObject({
   action: z.enum(["shortlist", "accept", "reject"]),
   applicationId: campaignIdSchema,

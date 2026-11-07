@@ -7,6 +7,7 @@ import { AdminButton } from "./_components/admin-button";
 import { canReviewSourcing } from "../lib/sourcing-validation";
 import type { AdminSourcingData } from "../lib/sourcing-types";
 import s from "./admin-sourcing.module.css";
+import { SupplierOfferEditor } from "./supplier-offer-editor";
 
 const labels: Record<string, string> = {
   SUBMITTED: "검토 대기",
@@ -152,8 +153,8 @@ function Candidate({
           </label>
           <label className={s.confirm}>
             <input type="checkbox" required disabled={busy} />
-            신청 단위로 검토 결과를 기록합니다. 브랜드에는 공식 제안을 발행할 때
-            인물 정보가 공개됩니다.
+            선택한 신청 항목의 검토 결과를 기록합니다. 브랜드에는 공식 제안을
+            발행할 때 인물 정보가 공개됩니다.
           </label>
           <div className={s.actions}>
             <AdminButton
@@ -256,6 +257,7 @@ export function AdminSourcing({
         body: JSON.stringify({
           campaignId,
           applicationId: item.id,
+          ...(item.rowId ? { rowId: item.rowId } : {}),
           expectedUpdatedAt: item.updatedAt,
           status,
           reason,
@@ -316,10 +318,11 @@ export function AdminSourcing({
           </AdminButton>
         </div>
       </header>
+      <SupplierOfferEditor key={campaignId} campaignId={campaignId} />
       <p className={s.note}>
-        후보 심사는 신청 단위로 기록됩니다. 공식 제안에서는 필요한 인물과 채널만
-        선택합니다. 후보 지정·확정만으로 계약이나 브랜드 공개가 이루어지지
-        않습니다.
+        크리에이터별 신청은 행 단위로 심사합니다. 공식 제안에서는 필요한 인물과
+        채널만 선택합니다. 후보 지정·확정만으로 계약이나 브랜드 공개가
+        이루어지지 않습니다.
       </p>
       {error ? (
         <p role="alert" className="admin-alert error">

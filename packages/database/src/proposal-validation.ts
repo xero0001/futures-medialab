@@ -20,6 +20,7 @@ const platformSchema = z.enum([
 ]);
 export const proposalItemInputSchema = z
   .strictObject({
+    applicationRowId: proposalIdSchema.nullable().optional(),
     catalogCreatorId: proposalIdSchema.nullable().optional(),
     catalogRateVersion: z.number().int().positive().nullable().optional(),
     creatorId: proposalIdSchema.nullable().default(null),
@@ -27,6 +28,16 @@ export const proposalItemInputSchema = z
     platform: z.union([platformSchema, z.literal("")]).default(""),
     channelLabel: z.string().trim().max(120).default(""),
     channelUrl: z.string().trim().max(2048).default(""),
+    channelThumbnailUrl: z
+      .string()
+      .trim()
+      .max(2048)
+      .refine(
+        (value) => Boolean(publicChannelThumbnailUrl(value)),
+        "지원하는 채널 이미지의 HTTPS 주소를 입력해 주세요.",
+      )
+      .nullable()
+      .default(null),
     followers: z
       .number()
       .int()
@@ -51,6 +62,8 @@ export const proposalItemInputSchema = z
   })
   .refine(
     (item) =>
+      (!item.applicationRowId ||
+        Boolean(item.creatorId && !item.catalogCreatorId)) &&
       !(item.creatorId && item.catalogCreatorId) &&
       (!item.catalogRateVersion || Boolean(item.catalogCreatorId)),
     "인물 연결 출처와 가격 버전을 확인해 주세요.",
@@ -61,7 +74,13 @@ export const proposalDraftInputSchema = z.strictObject({
   changeSummary: z.string().trim().max(2000).default(""),
   terms: z.string().trim().max(3000).default(""),
   expiresAt: z.iso.datetime({ offset: true }).nullable().default(null),
-  items: z.array(proposalItemInputSchema).max(50),
+  items: z
+    .array(proposalItemInputSchema)
+    .max(50)
+    .refine((items) => {
+      const ids = items.map((i) => i.applicationRowId).filter(Boolean);
+      return new Set(ids).size === ids.length;
+    }, "같은 신청 항목을 두 번 제안할 수 없습니다."),
 });
 export const adminProposalMutationSchema = z.discriminatedUnion("action", [
   z.strictObject({

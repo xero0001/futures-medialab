@@ -34,7 +34,7 @@ export function campaignOperations(request: Request) {
         id: true, status: true, regions: true, categories: true, followerMin: true, followerMax: true,
         briefUrl: true, contentDeadline: true, requirements: true, settlementPolicy: true, managedRequest: true,
         _count: { select: { applications: true, proposals: true } },
-        applications: { orderBy: [{ createdAt: "desc" }, { id: "asc" }], take: 100, select: {
+        applications: { where: { rows: { none: {} } }, orderBy: [{ createdAt: "desc" }, { id: "asc" }], take: 100, select: {
           id: true, status: true, agencyOrganizationId: true, proposal: true, proposedAmount: true, currency: true,
           agencyOrganization: { select: { name: true } }, rosterSnapshot: true,
           creators: { orderBy: { creatorId: "asc" }, take: 100, select: { deliverables: true,
@@ -89,9 +89,10 @@ export function mutateCampaignOperations(request: Request) {
       await recheckAdmin(tx, admin);
       const application = await tx.campaignApplication.findFirst({ where: { id: input.applicationId, campaignId: input.campaignId }, include: {
         agencyOrganization: { select: { status: true } }, campaign: { select: { status: true, currency: true, budgetAmount: true, brandOrganization: { select: { status: true } } } },
-        submissions: { orderBy: { version: "desc" }, take: 1 }, contract: true, settlement: true,
+        _count: { select: { rows: true } }, submissions: { orderBy: { version: "desc" }, take: 1 }, contract: true, settlement: true,
       } });
       if (!application) fail(404, "NOT_FOUND", "신청 내역을 찾을 수 없습니다.");
+      if (application._count?.rows) fail(409, "OFFICIAL_WORKFLOW_REQUIRED", "크리에이터별 신청은 공식 제안과 브랜드 승인을 거쳐 진행합니다.");
       if ((input.action === "prepareSettlement" || input.action === "reviewSettlement") &&
         await tx.campaignProposal.count({ where: { campaignId: application.campaignId } }))
         fail(409, "OFFICIAL_SETTLEMENT_REQUIRED", "공식 제안 캠페인은 완료·정산에서 청구와 지급 내역을 발행해 주세요.");

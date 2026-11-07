@@ -486,3 +486,31 @@
   padding: 0;
   accent-color: #0066ff;
 }
+
+.identity,
+.linkedInfluencer {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+.identity > div,
+.linkedInfluencer > div {
+  min-width: 0;
+}
+.linkedInfluencer {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--admin-surface);
+  border-radius: 12px;
+}
+.linkedInfluencer p {
+  color: var(--admin-muted);
+  margin: 5px 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.linkedInfluencer a {
+  font-size: 13px;
+  color: var(--admin-accent);
+}

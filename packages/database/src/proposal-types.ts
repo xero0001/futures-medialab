@@ -9,6 +9,7 @@ export type ProposalItemStatus =
   "PENDING" | "APPROVED" | "CHANGES_REQUESTED" | "REJECTED";
 export type ProposalDecisionKind = "APPROVE" | "REQUEST_CHANGES" | "REJECT";
 export type ProposalItemInput = {
+  applicationRowId?: string | null;
   catalogCreatorId?: string | null;
   catalogRateVersion?: number | null;
   creatorId: string | null;
@@ -16,6 +17,7 @@ export type ProposalItemInput = {
   platform: string;
   channelLabel: string;
   channelUrl: string;
+  channelThumbnailUrl?: string | null;
   followers: number | null;
   averageViews: number | null;
   deliverables: string;
@@ -40,7 +42,7 @@ export type BrandProposalItem = {
   platform: string;
   channelLabel: string;
   channelUrl: string;
-  channelThumbnailUrl?: string | null;
+  channelThumbnailUrl: string | null;
   followers: number | null;
   averageViews: number | null;
   deliverables: string;
@@ -95,6 +97,7 @@ export type BrandProposalSummary = Pick<
   | "canRespond"
 > & { pendingItemCount: number };
 export type AdminProposalItem = BrandProposalItem & {
+  applicationRowId?: string | null;
   catalogCreatorId?: string | null;
   catalogRateVersion?: number | null;
   creatorId: string | null;
@@ -127,7 +130,20 @@ export type AdminProposalCreatorOption = {
     followers: number | null;
   }[];
 };
+export type AdminApplicationRowOption = {
+  id: string;
+  creatorId: string;
+  creatorName: string;
+  agencyName: string;
+  platform: string;
+  channelUrl: string;
+  format: string;
+  quantity: number;
+  unitAmount: string;
+  availableOn: string;
+};
 export type AdminProposalsResponse = {
+  applicationRows?: AdminApplicationRowOption[];
   campaign: {
     id: string;
     title: string;

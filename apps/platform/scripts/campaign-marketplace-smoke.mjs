@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import console from "node:console";
 import process from "node:process";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { URL } from "node:url";
 import { hashPassword } from "better-auth/crypto";
@@ -494,11 +494,31 @@ try {
     !listing.campaigns.some((campaign) => campaign.id === campaignId),
     "Drafts must be hidden.",
   );
+  const creator = await db.creatorProfile.create({
+    data: {
+      agencyOrganizationId: fixtures.agency.organizationId,
+      displayName: "Synthetic creator",
+      channels: [
+        { platform: "youtube", url: "https://youtube.com/@synthetic-smoke" },
+      ],
+      partnerProfile: { acceptance: "검토 가능" },
+    },
+  });
   const proposal = {
     action: "apply",
     campaignId,
-    proposal: "Synthetic agency proposal for integration verification only.",
-    proposedAmount: "700.25",
+    clientRequestId: randomUUID(),
+    note: "Synthetic agency proposal for integration verification only.",
+    rows: [
+      {
+        creatorId: creator.id,
+        platform: "youtube",
+        format: "VOD",
+        quantity: 1,
+        unitAmount: "700.25",
+        date: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
+      },
+    ],
   };
   expect(
     await call("/api/agency/applications", {
@@ -564,9 +584,9 @@ try {
   );
   assert.deepEqual(visible.regions, ["KR"], "Regions must persist.");
   assert.equal(
-    visible.budgetAmount,
-    "1000.25",
-    "Decimal budgets must retain cents.",
+    Object.hasOwn(visible, "budgetAmount"),
+    false,
+    "Brand budgets must never be returned to suppliers.",
   );
   for (const key of [
     "brandOrganizationId",
@@ -648,16 +668,18 @@ try {
     }),
   ]);
   assert.deepEqual(
-    parallel.map((result) => result.response.status).sort(),
-    [200, 409],
-    "Concurrent duplicate applications must create exactly one record.",
+    [...new Set(parallel.map((result) => result.response.status))].filter(
+      (status) => ![200, 409].includes(status),
+    ),
+    [],
+    "Concurrent retries may succeed idempotently or report a serialization conflict.",
   );
   expect(
     await call("/api/agency/applications", {
       cookie: fixtures.agency.cookie,
       body: proposal,
     }),
-    409,
+    200,
   );
   assert.equal(
     await db.campaignApplication.count({
@@ -672,7 +694,7 @@ try {
   const firstApplication = await findOwnApplication(campaignId);
   assert.equal(
     firstApplication.proposal,
-    proposal.proposal,
+    proposal.note,
     "Proposal text must persist.",
   );
   assert.equal(
@@ -771,7 +793,7 @@ try {
   expect(
     await call("/api/agency/applications", {
       cookie: fixtures.agency.cookie,
-      body: proposal,
+      body: { ...proposal, clientRequestId: randomUUID() },
     }),
     409,
   );
@@ -998,6 +1020,9 @@ try {
         });
         await tx.rateLimit.deleteMany({
           where: { id: { in: counters.map((counter) => counter.id) } },
+        });
+        await tx.creatorProfile.deleteMany({
+          where: { agencyOrganizationId: { in: ownedOrganizations } },
         });
         await tx.organization.deleteMany({
           where: { id: { in: ownedOrganizations } },

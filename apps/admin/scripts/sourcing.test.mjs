@@ -10,6 +10,7 @@ import {
   canReviewSourcing,
   sourcingLockReason,
 } from "../lib/sourcing-validation.ts";
+const { Request, Response } = globalThis;
 const root = fileURLToPath(new URL("../", import.meta.url));
 const require = createRequire(new URL("../package.json", import.meta.url));
 function compile(relative, overrides, cache = new Map()) {
@@ -74,6 +75,13 @@ function fixture(options = {}) {
     ...options.application,
   };
   const tx = {
+    applicationRow: {
+      update: async ({ where, data }) => {
+        const row = application.rows.find((row) => row.id === where.id);
+        Object.assign(row, data);
+        return row;
+      },
+    },
     campaign: {
       findUnique: async () =>
         options.missingCampaign ? null : { id: "campaign" },
@@ -325,4 +333,141 @@ test("state policy preserves withdrawal and performed work while allowing recons
     }),
     null,
   );
+});
+
+test("each creator row can be reviewed independently and published rows cannot be reassigned", async () => {
+  const f = fixture({
+    application: {
+      rows: [
+        {
+          id: "row-one",
+          creatorId: "creator",
+          status: "SUBMITTED",
+          proposalItems: [],
+        },
+        {
+          id: "row-two",
+          creatorId: "creator",
+          status: "SUBMITTED",
+          proposalItems: [],
+        },
+      ],
+    },
+  });
+  assert.equal((await f.post({ rowId: "row-one" })).status, 200);
+  assert.equal(f.application.rows[0].status, "SHORTLISTED");
+  assert.equal(f.application.rows[1].status, "SUBMITTED");
+  assert.equal(f.application.status, "SHORTLISTED");
+  assert.equal((await f.post({ rowId: "foreign" })).status, 404);
+  assert.equal((await f.post()).status, 400);
+  f.application.rows[0].proposalItems.push({
+    proposal: { publishedAt: new Date() },
+  });
+  assert.equal(
+    (await f.post({ rowId: "row-one", status: "REJECTED" })).status,
+    409,
+  );
+  assert.equal(
+    (await f.post({ rowId: "row-two", status: "REJECTED" })).status,
+    200,
+  );
+});
+
+test("supplier offer cap is explicitly saved without copying brand budget or overwriting the brief", async () => {
+  const campaign = {
+    id: "campaign",
+    type: "OPEN_BIDDING",
+    status: "RECRUITING",
+    currency: "KRW",
+    updatedAt: new Date(stamp),
+    budgetAmount: "99999999",
+    requirements: {
+      brandBrief: { budgetAmount: "99999999" },
+      supplierOffer: { unitCap: "10000" },
+    },
+  };
+  const audits = [];
+  class Failure extends Error {
+    constructor(status) {
+      super();
+      this.status = status;
+    }
+  }
+  const api = compile("lib/supplier-offer-api.ts", {
+    "server-only": {},
+    "@futures-medialab/database": {
+      Prisma: { TransactionIsolationLevel: { Serializable: "Serializable" } },
+      getDatabase: () => ({
+        $transaction: async (cb) =>
+          cb({
+            campaign: {
+              findUnique: async ({ where }) =>
+                where.id === campaign.id ? campaign : null,
+              update: async ({ data }) => Object.assign(campaign, data),
+            },
+            auditLog: { create: async ({ data }) => audits.push(data) },
+          }),
+      }),
+    },
+    "./access": {
+      fail: (status) => {
+        throw new Failure(status);
+      },
+      json: (data) => Response.json(data),
+      boundary: async (cb) => {
+        try {
+          return await cb();
+        } catch (e) {
+          if (e instanceof Failure)
+            return Response.json({}, { status: e.status });
+          throw e;
+        }
+      },
+      requireAdmin: async (headers) => {
+        if (headers.get("x-test-admin") !== "yes") throw new Failure(403);
+        return { userId: "admin" };
+      },
+      recheckAdmin: async () => {},
+      verifyOrigin: (req) => {
+        if (req.headers.get("origin") !== "https://admin.example")
+          throw new Failure(403);
+      },
+      rateLimit: async () => {},
+      readBody: async (req, schema) => {
+        const p = schema.safeParse(await req.json());
+        if (!p.success) throw new Failure(400);
+        return p.data;
+      },
+    },
+  }).supplierOfferApi;
+  const post = (change = {}, headers = {}) =>
+    api(
+      new Request("https://admin.example/api", {
+        method: "POST",
+        headers: {
+          origin: "https://admin.example",
+          "content-type": "application/json",
+          "x-test-admin": "yes",
+          ...headers,
+        },
+        body: JSON.stringify({
+          campaignId: "campaign",
+          expectedUpdatedAt: stamp,
+          unitCap: "20000",
+          ...change,
+        }),
+      }),
+    );
+  assert.equal((await post({}, { "x-test-admin": "no" })).status, 403);
+  assert.equal(
+    (await post({ expectedUpdatedAt: "2000-01-01T00:00:00Z" })).status,
+    409,
+  );
+  assert.equal((await post({ unitCap: "200.10" })).status, 400);
+  assert.equal((await post()).status, 200);
+  assert.equal(campaign.requirements.supplierOffer.unitCap, "20000");
+  assert.equal(campaign.requirements.brandBrief.budgetAmount, "99999999");
+  assert.equal(audits.length, 1);
+  assert.equal((await post({ unitCap: null })).status, 200);
+  assert.equal(campaign.requirements.supplierOffer.unitCap, null);
 });

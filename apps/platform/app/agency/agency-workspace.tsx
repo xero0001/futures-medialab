@@ -6,6 +6,14 @@ import { useSearchParams } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import type { Locale } from "../_components/landing-copy";
 import { authClient } from "../../lib/auth-client";
+import { AgencyPlanningProvider } from "./agency-planning-context";
+import {
+  AgencyCreatorsScreen,
+  AgencyInvitationsScreen,
+  AgencyApplicationsScreen,
+  AgencyRequestsScreen,
+  AgencyActionSummary,
+} from "./agency-partner-screens";
 import { AgencyMarketplace } from "./agency-marketplace";
 import { AgencyOperations } from "./agency-operations";
 import { AgencyProjectWorkspace } from "./agency-project-workspace";
@@ -45,7 +53,9 @@ export function AgencyWorkspace({
     agencyText(locale, en, ko, zh);
   const params = useSearchParams();
   const requestedSection = params.get("section");
-  const section = agencySections.includes(requestedSection as AgencySection) ? requestedSection as AgencySection : initialSection;
+  const section = agencySections.includes(requestedSection as AgencySection)
+    ? (requestedSection as AgencySection)
+    : initialSection;
   const [signingOut, setSigningOut] = useState(false);
   const [logoutError, setLogoutError] = useState(false);
   const mainHeading = useRef<HTMLHeadingElement>(null);
@@ -56,6 +66,14 @@ export function AgencyWorkspace({
     url.searchParams.set("section", next);
     url.searchParams.delete("stage");
     url.searchParams.delete("campaign");
+    for (const key of [
+      "creator",
+      "invitation",
+      "application",
+      "request",
+      "related",
+    ])
+      url.searchParams.delete(key);
     window.history.pushState(null, "", url);
     requestAnimationFrame(() => {
       mainHeading.current?.focus({ preventScroll: true });
@@ -76,124 +94,171 @@ export function AgencyWorkspace({
     }
   }
   return (
-    <WorkspaceProvider>
-      <WorkspaceThemeContext value={true}>
-        <div
-          className={`cwa-workspace agency-montage ${shellStyles.workspace}`}
-          lang={locale === "zh" ? "zh-CN" : locale}
-        >
-          <WorkspaceShell
-            locale={locale}
-            organizationName={organizationName}
-            userName={userName}
-            workspaceRole="agency"
-            agencySection={section}
-            onAgencyNavigate={navigate}
-            isGuest={false}
-            busy={signingOut}
-            onSignOut={() => void signOut()}
-          />
-          <main id="workspace-main" className={`cwa-main ${shellStyles.main}`}>
-            <div className={shellStyles.content}>
-              {logoutError && (
-                <p className="cwa-date-error" role="alert">
-                  {t(
-                    "Could not log out. Please try again.",
-                    "로그아웃하지 못했습니다. 다시 시도해 주세요.",
-                    "退出失败，请重试。",
-                  )}
-                </p>
-              )}
-
-              <div className="cwa-heading">
-                <div>
-                  <p className="agency-eyebrow">
+    <AgencyPlanningProvider
+      locale={locale}
+      canEdit={!pending && role !== "MEMBER"}
+      enabled={!pending}
+    >
+      <WorkspaceProvider>
+        <WorkspaceThemeContext value={true}>
+          <div
+            className={`cwa-workspace agency-montage ${shellStyles.workspace}`}
+            lang={locale === "zh" ? "zh-CN" : locale}
+          >
+            <WorkspaceShell
+              locale={locale}
+              organizationName={organizationName}
+              userName={userName}
+              workspaceRole="agency"
+              agencySection={section}
+              onAgencyNavigate={navigate}
+              isGuest={false}
+              busy={signingOut}
+              onSignOut={() => void signOut()}
+            />
+            <main
+              id="workspace-main"
+              className={`cwa-main ${shellStyles.main}`}
+            >
+              <div className={shellStyles.content}>
+                {logoutError && (
+                  <p className="cwa-date-error" role="alert">
                     {t(
-                      "Agency workspace",
-                      "에이전시 워크스페이스",
-                      "代理机构工作区",
+                      "Could not log out. Please try again.",
+                      "로그아웃하지 못했습니다. 다시 시도해 주세요.",
+                      "退出失败，请重试。",
                     )}
                   </p>
-                  <h1 ref={mainHeading} tabIndex={-1}>
-                    {copy[section]}
-                  </h1>
-                  {section === "organization" && (
-                    <p className="cwa-subtitle">{copy.organizationSubtitle}</p>
-                  )}
-                </div>
-                {!pending && (
-                  <button
-                    className="cwa-partner-status"
-                    type="button"
-                    onClick={() => navigate("organization")}
-                    aria-label={`${copy.status}: ${copy.active}`}
-                  >
-                    <ShieldCheck size={17} aria-hidden="true" />
-                    {t("Verified partner", "승인된 파트너", "已认证合作伙伴")}
-                  </button>
                 )}
-              </div>
-              {pending && (
-                <section
-                  className="cwa-approval-banner is-pending"
-                  aria-label={copy.status}
-                >
-                  <ShieldCheck size={25} aria-hidden="true" />
+
+                <div className="cwa-heading">
                   <div>
-                    <strong>{copy.pendingTitle}</strong>
-                    <p>
+                    <p className="agency-eyebrow">
                       {t(
-                        "Approved organizations can view and apply to published campaigns.",
-                        "조직 심사 승인 후 공개된 캠페인을 확인하고 신청할 수 있습니다.",
-                        "组织审核通过后可浏览及申请已发布的活动。",
+                        "Agency workspace",
+                        "에이전시 워크스페이스",
+                        "代理机构工作区",
                       )}
                     </p>
-                  </div>
-                </section>
-              )}
-
-              {section === "offers" || section === "applications" ? (
-                <AgencyMarketplace
-                  locale={locale}
-                  section={section === "offers" ? "offers" : "projects"}
-                  status={status}
-                  role={role}
-                  onExplore={() => navigate("offers")}
-                  onProjects={() => navigate("applications")}
-                />
-              ) : !pending ? (
-                section === "projects" ? <AgencyProjectWorkspace locale={locale} onExplore={() => navigate("offers")} onApplications={() => navigate("applications")} /> :
-                section === "payments" ? <AgencyPaymentsWorkspace locale={locale} onExplore={() => navigate("offers")} onApplications={() => navigate("applications")} /> :
-                <AgencyOperations
-                  key={section}
-                  locale={locale}
-                  section={section}
-                  onExplore={() => navigate("offers")}
-                  onApplications={() => navigate("applications")}
-                />
-              ) : (
-                <section className="cwa-empty">
-                  <ShieldCheck size={34} aria-hidden="true" />
-                  <h2>{copy.pendingTitle}</h2>
-                  <p>
-                    {t(
-                      "Workspace records become available after approval.",
-                      "조직 승인이 완료되면 프로젝트와 정산 내역을 확인할 수 있습니다.",
-                      "组织审核通过后可查看项目和结算记录。",
+                    <h1 ref={mainHeading} tabIndex={-1}>
+                      {copy[section]}
+                    </h1>
+                    {section === "organization" && (
+                      <p className="cwa-subtitle">
+                        {copy.organizationSubtitle}
+                      </p>
                     )}
-                  </p>
-                  <Link
-                    className="cwa-button"
-                    href={`/onboarding/agency?lang=${locale}`}
+                  </div>
+                  {!pending && (
+                    <button
+                      className="cwa-partner-status"
+                      type="button"
+                      onClick={() => navigate("organization")}
+                      aria-label={`${copy.status}: ${copy.active}`}
+                    >
+                      <ShieldCheck size={17} aria-hidden="true" />
+                      {t("Verified partner", "승인된 파트너", "已认证合作伙伴")}
+                    </button>
+                  )}
+                </div>
+                {pending && (
+                  <section
+                    className="cwa-approval-banner is-pending"
+                    aria-label={copy.status}
                   >
-                    {copy.reviewProfile}
-                  </Link>
-                </section>
-              )}
-            </div>
-          </main>
-        </div>
-      </WorkspaceThemeContext>
-    </WorkspaceProvider>
+                    <ShieldCheck size={25} aria-hidden="true" />
+                    <div>
+                      <strong>{copy.pendingTitle}</strong>
+                      <p>
+                        {t(
+                          "Approved organizations can view and apply to published campaigns.",
+                          "조직 심사 승인 후 공개된 캠페인을 확인하고 신청할 수 있습니다.",
+                          "组织审核通过后可浏览及申请已发布的活动。",
+                        )}
+                      </p>
+                    </div>
+                  </section>
+                )}
+
+                {section === "offers" || section === "applications" ? (
+                  section === "applications" && !pending ? (
+                    <AgencyApplicationsScreen
+                      liveHistory={
+                        <AgencyMarketplace
+                          locale={locale}
+                          section="projects"
+                          status={status}
+                          role={role}
+                          onExplore={() => navigate("offers")}
+                          onProjects={() => navigate("applications")}
+                        />
+                      }
+                    />
+                  ) : (
+                    <AgencyMarketplace
+                      locale={locale}
+                      section={section === "offers" ? "offers" : "projects"}
+                      status={status}
+                      role={role}
+                      onExplore={() => navigate("offers")}
+                      onProjects={() => navigate("applications")}
+                    />
+                  )
+                ) : !pending ? (
+                  section === "creators" ? (
+                    <AgencyCreatorsScreen />
+                  ) : section === "invitations" ? (
+                    <AgencyInvitationsScreen />
+                  ) : section === "requests" ? (
+                    <AgencyRequestsScreen />
+                  ) : section === "projects" ? (
+                    <>
+                      <AgencyActionSummary />
+                      <AgencyProjectWorkspace
+                        locale={locale}
+                        onExplore={() => navigate("offers")}
+                        onApplications={() => navigate("applications")}
+                      />
+                    </>
+                  ) : section === "payments" ? (
+                    <AgencyPaymentsWorkspace
+                      locale={locale}
+                      onExplore={() => navigate("offers")}
+                      onApplications={() => navigate("applications")}
+                    />
+                  ) : (
+                    <AgencyOperations
+                      key={section}
+                      locale={locale}
+                      section={section}
+                      onExplore={() => navigate("offers")}
+                      onApplications={() => navigate("applications")}
+                    />
+                  )
+                ) : (
+                  <section className="cwa-empty">
+                    <ShieldCheck size={34} aria-hidden="true" />
+                    <h2>{copy.pendingTitle}</h2>
+                    <p>
+                      {t(
+                        "Workspace records become available after approval.",
+                        "조직 승인이 완료되면 프로젝트와 정산 내역을 확인할 수 있습니다.",
+                        "组织审核通过后可查看项目和结算记录。",
+                      )}
+                    </p>
+                    <Link
+                      className="cwa-button"
+                      href={`/onboarding/agency?lang=${locale}`}
+                    >
+                      {copy.reviewProfile}
+                    </Link>
+                  </section>
+                )}
+              </div>
+            </main>
+          </div>
+        </WorkspaceThemeContext>
+      </WorkspaceProvider>
+    </AgencyPlanningProvider>
   );
 }

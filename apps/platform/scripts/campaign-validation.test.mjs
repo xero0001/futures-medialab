@@ -1,7 +1,7 @@
+import { partnerApplicationSchema as agencyApplicationSchema } from "../lib/partner-application-validation.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  agencyApplicationSchema,
   brandApplicationSchema,
   campaignMutationSchema,
   canSubmitCampaign,
@@ -71,8 +71,18 @@ test("applications only accept validated proposals, not status, currency or tena
   const input = {
     action: "apply",
     campaignId: "campaign-1",
-    proposal: "We can deliver this video.",
-    proposedAmount: "80.50",
+    clientRequestId: "8bba4ee7-50bb-43c3-87c4-1783299b600b",
+    note: "We can deliver this video.",
+    rows: [
+      {
+        creatorId: "creator-1",
+        platform: "youtube",
+        format: "VOD",
+        quantity: 1,
+        unitAmount: "80.50",
+        date: "2027-01-02",
+      },
+    ],
   };
   assert.equal(agencyApplicationSchema.safeParse(input).success, true);
   for (const override of [

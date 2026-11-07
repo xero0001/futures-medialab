@@ -30,7 +30,8 @@
     "./production-media-http": "./src/production-media-http.ts",
     "./production-media-client": "./src/production-media-client.ts",
     "./game-thumbnail-shared": "./src/game-thumbnail-shared.ts",
-    "./game-thumbnail-storage": "./src/game-thumbnail-storage.ts"
+    "./game-thumbnail-storage": "./src/game-thumbnail-storage.ts",
+    "./application-status": "./src/application-status.ts"
   },
   "scripts": {
     "build": "prisma generate && tsup src/client.ts --format esm --dts",

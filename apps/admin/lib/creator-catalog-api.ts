@@ -4,6 +4,7 @@ import { getDatabase, Prisma } from "@futures-medialab/database";
 import {
   proposalIdSchema,
   publicChannelUrl,
+  publicChannelThumbnailUrl,
 } from "@futures-medialab/database/proposal-validation";
 import { z } from "zod";
 import {
@@ -84,7 +85,7 @@ async function getDetail(tx: Tx, id: string): Promise<CatalogDetail> {
     where: { id },
     include: relations,
   });
-  if (!row) fail(404, "NOT_FOUND", "크리에이터를 찾을 수 없습니다.");
+  if (!row) fail(404, "NOT_FOUND", "인플루언서를 찾을 수 없습니다.");
   const history = await tx.internalCreatorRateCard.findMany({
     where: { creatorId: id },
     orderBy: { version: "desc" },
@@ -185,6 +186,10 @@ function rosterChannels(value: unknown) {
       platform: raw.platform,
       name: typeof name === "string" && name ? name : raw.platform,
       url,
+      thumbnailUrl:
+        typeof raw.thumbnailUrl === "string"
+          ? publicChannelThumbnailUrl(raw.thumbnailUrl)
+          : null,
       followers: raw.followers ?? null,
       averageViews: raw.averageViews ?? null,
     });
@@ -209,7 +214,7 @@ export function creatorCatalogApi(request: Request) {
             if (params.has("id")) {
               const id = proposalIdSchema.safeParse(params.get("id"));
               if (!id.success)
-                fail(404, "NOT_FOUND", "크리에이터를 찾을 수 없습니다.");
+                fail(404, "NOT_FOUND", "인플루언서를 찾을 수 없습니다.");
               return getDetail(tx, id.data);
             }
             if (params.get("view") === "options") {
@@ -396,7 +401,7 @@ export function creatorCatalogApi(request: Request) {
             where: { id: input.id },
             select: { id: true, revision: true, availabilityCheckedAt: true },
           });
-          if (!row) fail(404, "NOT_FOUND", "크리에이터를 찾을 수 없습니다.");
+          if (!row) fail(404, "NOT_FOUND", "인플루언서를 찾을 수 없습니다.");
           if (row.revision !== input.revision)
             fail(
               409,
@@ -455,7 +460,7 @@ export function creatorCatalogApi(request: Request) {
             payload: {
               reason:
                 input.action === "create"
-                  ? "내부 크리에이터 등록"
+                  ? "내부 인플루언서 등록"
                   : input.reason,
             },
           },

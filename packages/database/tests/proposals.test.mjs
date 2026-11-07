@@ -13,6 +13,7 @@ import {
   proposalAmount,
   proposalCents,
   publicChannelUrl,
+  publicChannelThumbnailUrl,
 } from "../src/proposal-validation.ts";
 
 // Actual transaction-level services with isolated relational storage. No DB URL,
@@ -31,7 +32,8 @@ const decimal = (value) =>
 const expiry = () => new Date(Date.now() + 7 * 86400000).toISOString();
 const scheduled = () => new Date(Date.now() + 30 * 86400000).toISOString();
 const item = (changes = {}) => ({
-  creatorId: "creator-own",
+  creatorId: null,
+  catalogCreatorId: "catalog-1",
   creatorName: "공개 스냅샷 이름",
   platform: "youtube",
   channelLabel: "공개 채널",
@@ -142,6 +144,24 @@ function fixture() {
       version: 0,
       dueAt: new Date(Date.now() + 48 * 3600000),
     },
+    catalog: {
+      id: "catalog-1",
+      partnerOrganizationId: "PRIVATE_SUPPLIER_ID",
+      isActive: true,
+      channels: [
+        {
+          platform: "youtube",
+          url: "https://www.youtube.com/@public-channel",
+          thumbnailUrl:
+            "https://yt3.googleusercontent.com/portrait-original=s176-c-k-c0x00ffffff-no-rj",
+        },
+        {
+          platform: "youtube",
+          url: "https://www.youtube.com/@manual-channel",
+          thumbnailUrl: null,
+        },
+      ],
+    },
     creator: {
       id: "creator-own",
       displayName: "원본 변경 가능",
@@ -217,7 +237,42 @@ function fixture() {
     store.items.push(row);
     return row;
   }
+  const applicationRows = [
+    {
+      id: "application-row",
+      creatorId: "creator-own",
+      creatorName: "공급 크리에이터",
+      platform: "youtube",
+      channelUrl: "https://www.youtube.com/@original",
+      format: "VOD",
+      quantity: 2,
+      unitAmount: decimal("37.50"),
+      availableOn: new Date(scheduled()),
+      status: "SHORTLISTED",
+      creator: { agencyOrganizationId: "PRIVATE_SUPPLIER_ID" },
+      application: {
+        campaignId: "campaign-own",
+        status: "SHORTLISTED",
+        agencyOrganizationId: "PRIVATE_SUPPLIER_ID",
+        agencyOrganization: { name: "PRIVATE_SUPPLIER_NAME" },
+      },
+    },
+  ];
+  store.applicationRows = applicationRows;
   const tx = {
+    applicationRow: {
+      findMany: async () => applicationRows,
+      findFirst: async ({ where }) =>
+        applicationRows.find(
+          (row) =>
+            row.id === where.id &&
+            row.creatorId === where.creatorId &&
+            row.platform === where.platform &&
+            where.status.in.includes(row.status) &&
+            row.application.campaignId === where.application.campaignId &&
+            where.application.status.in.includes(row.application.status),
+        ) ?? null,
+    },
     organizationMember: {
       findFirst: async ({ where }) =>
         members.find(
@@ -348,6 +403,12 @@ function fixture() {
         store.mutations.push(data);
         return data;
       },
+    },
+    internalCreator: {
+      findFirst: async ({ where }) =>
+        where.id === store.catalog.id && store.catalog.isActive
+          ? store.catalog
+          : null,
     },
     creatorProfile: {
       findFirst: async ({ where }) => {
@@ -709,14 +770,18 @@ test("expired and canceled proposals remain readable but reject approval; privat
         op("saveDraft", {
           proposalId: draft.proposal.id,
           expectedRevision: 0,
-          data: data({ items: [item({ creatorId: "foreign-creator" })] }),
+          data: data({
+            items: [
+              item({ creatorId: "foreign-creator", catalogCreatorId: null }),
+            ],
+          }),
         }),
       ),
     statusError(409, "CREATOR_NOT_SHORTLISTED"),
   );
 });
 
-test("publication checks price, expiration, schedule and exact trusted demo-channel exception", async () => {
+test("publication checks price, expiration, schedule and requires a registered influencer", async () => {
   for (const incomplete of [
     data({ expiresAt: new Date(Date.now() - 1000).toISOString() }),
     data({
@@ -746,24 +811,22 @@ test("publication checks price, expiration, schedule and exact trusted demo-chan
     statusError(409, "PUBLICATION_REQUIREMENTS"),
   );
   const g = fixture();
-  g.store.campaign.requirements.demo = true;
-  g.store.campaign.requirements.seed = "official-proposals-nte-v1";
-  const demo = await g.prepared(
+  const unlinked = await g.prepared(
     data({
-      items: [item({ channelUrl: "https://example.invalid/nte-demo/raon" })],
+      items: [item({ catalogCreatorId: null, creatorId: "creator-own" })],
     }),
   );
-  assert.equal(demo.canPublish, true);
-  g.store.campaign.brandOrganization.metadata.testWorkspaceAccess = false;
-  const adminView = await listAdminProposals(g.tx, "admin", "campaign-own");
-  assert.equal(adminView.proposals[0].canPublish, false);
+  assert.equal(unlinked.canPublish, false);
+  assert.ok(unlinked.publishProblems.some((p) => p.includes("인플루언서 DB")));
   const row = {
     ...g.store.proposals[0],
     campaign: g.store.campaign,
     items: g.store.items,
     decisions: [],
   };
-  assert.ok(proposalPublicationProblems(row).some((p) => p.includes("HTTPS")));
+  assert.ok(
+    proposalPublicationProblems(row).some((p) => p.includes("인플루언서 DB")),
+  );
 });
 
 test("internal cost correction preserves public version, approved decisions and production identities", async () => {
@@ -882,7 +945,7 @@ test("catalog creator can source a managed proposal without exposing private pro
       where.id === "catalog-1" &&
       where.isActive &&
       where.rateCards.some.version === 2
-        ? { partnerOrganizationId: null }
+        ? { partnerOrganizationId: null, channels: f.store.catalog.channels }
         : null,
   };
   const draft = await f.prepared(
@@ -921,7 +984,12 @@ test("archived catalog creator or changed supplier needs a fresh draft before pu
   let partner = "agency-own";
   f.tx.internalCreator = {
     findFirst: async () =>
-      partner === false ? null : { partnerOrganizationId: partner },
+      partner === false
+        ? null
+        : {
+            partnerOrganizationId: partner,
+            channels: f.store.catalog.channels,
+          },
   };
   const draft = await f.prepared(
     data({ items: [item({ creatorId: null, catalogCreatorId: "catalog-1" })] }),
@@ -955,7 +1023,7 @@ test("draft rejects conflicting application and catalog provenance", async () =>
     draft = await f.admin(op("createDraft"));
   for (const source of [
     { creatorId: "creator-own", catalogCreatorId: "catalog-1" },
-    { creatorId: null, catalogRateVersion: 1 },
+    { creatorId: null, catalogCreatorId: null, catalogRateVersion: 1 },
   ]) {
     await assert.rejects(
       () =>
@@ -969,4 +1037,206 @@ test("draft rejects conflicting application and catalog provenance", async () =>
       statusError(400),
     );
   }
+});
+
+test("channel thumbnails accept known HTTPS media CDNs and reject credentials, local targets, lookalikes and fragments", () => {
+  for (const url of [
+    "https://yt3.googleusercontent.com/photo=s176-c-k-c0x00ffffff-no-rj",
+    "https://yt3.ggpht.com/photo?s=176",
+    "https://ytimg.com/channel/photo.jpg",
+    "https://profile-phinf.pstatic.net/channel/photo.jpg",
+    "https://static-cdn.jtvnw.net/photo.png",
+  ])
+    assert.equal(publicChannelThumbnailUrl(url), url);
+  for (const url of [
+    "http://yt3.ggpht.com/photo",
+    "https://user:password@yt3.ggpht.com/photo",
+    "https://yt3.ggpht.com:444/photo",
+    "https://yt3.ggpht.com/photo#fragment",
+    "https://yt3.ggpht.com.attacker.invalid/photo",
+    "https://attacker-ytimg.com/photo",
+    "https://127.0.0.1/photo",
+    "https://localhost/photo",
+    "data:image/png;base64,abc",
+    "/api/private-documents/secret",
+    "https://yt3.ggpht.com/",
+    "",
+  ])
+    assert.equal(publicChannelThumbnailUrl(url), null, url);
+});
+
+test("catalog thumbnails are server-derived, hidden before publication and immutable across catalog changes", async () => {
+  const f = fixture();
+  const original = f.store.catalog.channels[0].thumbnailUrl;
+  const draft = await f.prepared(
+    data({
+      items: [
+        item({ channelThumbnailUrl: "https://yt3.ggpht.com/forged-photo" }),
+      ],
+    }),
+  );
+  assert.equal(draft.items[0].channelThumbnailUrl, original);
+  assert.deepEqual(
+    await listBrandCampaignProposals(f.tx, "brand-own", "campaign-own", true),
+    [],
+  );
+  await f.admin(
+    op("publish", { proposalId: draft.id, expectedRevision: draft.revision }),
+  );
+  f.store.catalog.channels[0].thumbnailUrl = "https://yt3.ggpht.com/new-photo";
+  const publicProposal = await getBrandProposal(
+    f.tx,
+    "brand-own",
+    draft.id,
+    true,
+  );
+  assert.equal(publicProposal.items[0].channelThumbnailUrl, original);
+  assert.equal(
+    Object.hasOwn(publicProposal.items[0], "catalogCreatorId"),
+    false,
+  );
+  const copied = await f.admin(
+    op("createDraft", { sourceProposalId: draft.id }),
+  );
+  assert.equal(copied.proposal.items[0].channelThumbnailUrl, original);
+  const refreshed = await f.admin(
+    op("saveDraft", {
+      proposalId: copied.proposal.id,
+      expectedRevision: copied.proposal.revision,
+      data: data({ items: [item()] }),
+    }),
+  );
+  assert.equal(
+    refreshed.proposal.items[0].channelThumbnailUrl,
+    f.store.catalog.channels[0].thumbnailUrl,
+  );
+  assert.equal(
+    (await getBrandProposal(f.tx, "brand-own", draft.id, true)).items[0]
+      .channelThumbnailUrl,
+    original,
+  );
+});
+
+test("catalog linkage rejects unrelated channels and channel removal before publication", async () => {
+  const f = fixture();
+  await assert.rejects(
+    () =>
+      f.prepared(
+        data({
+          items: [
+            item({ channelUrl: "https://www.youtube.com/@not-in-catalog" }),
+          ],
+        }),
+      ),
+    statusError(409, "CATALOG_CHANNEL_CHANGED"),
+  );
+  const g = fixture();
+  const draft = await g.prepared();
+  g.store.catalog.channels = [];
+  await assert.rejects(
+    () =>
+      g.admin(
+        op("publish", {
+          proposalId: draft.id,
+          expectedRevision: draft.revision,
+        }),
+      ),
+    statusError(409, "CATALOG_CHANNEL_CHANGED"),
+  );
+});
+
+test("legacy published proposal without influencer linkage remains readable with an empty thumbnail", async () => {
+  const f = fixture();
+  const published = await f.published();
+  for (const value of f.store.items) {
+    value.catalogCreatorId = null;
+    value.channelThumbnailUrl = null;
+  }
+  const visible = await getBrandProposal(f.tx, "brand-own", published.id, true);
+  assert.equal(visible.items.length, 2);
+  assert.equal(visible.items[0].channelThumbnailUrl, null);
+  assert.equal(visible.canRespond, true);
+});
+
+test("open application rows join official proposals and expose approval status without exposing supplier provenance", async () => {
+  const f = fixture();
+  f.store.campaign.type = "OPEN_BIDDING";
+  const options = await listAdminProposals(f.tx, "admin", "campaign-own");
+  assert.equal(options.applicationRows[0].id, "application-row");
+  const p = await f.published(
+    data({
+      items: [
+        item({
+          applicationRowId: "application-row",
+          creatorId: "creator-own",
+          catalogCreatorId: null,
+          channelUrl: "https://www.youtube.com/@original",
+        }),
+      ],
+    }),
+  );
+  const visible = await getBrandProposal(f.tx, "brand-own", p.id, true);
+  assert.equal(JSON.stringify(visible).includes("application-row"), false);
+  assert.equal(JSON.stringify(visible).includes("PRIVATE_SUPPLIER"), false);
+  const decision = await f.decide({
+    action: "decide",
+    proposalId: p.id,
+    expectedRevision: p.revision,
+    clientRequestId: randomUUID(),
+    decision: "APPROVE",
+    itemIds: [p.items[0].id],
+  });
+  assert.equal(decision.proposal.items[0].status, "APPROVED");
+  assert.equal(f.store.items[0].applicationRowId, "application-row");
+  const copy = await f.admin(op("createDraft", { sourceProposalId: p.id }));
+  assert.equal(copy.proposal.items[0].applicationRowId, "application-row");
+});
+test("unselected, foreign, withdrawn and duplicated application rows cannot enter a published proposal", async () => {
+  for (const patch of [
+    { id: "other-row" },
+    { status: "WITHDRAWN" },
+    { application: { campaignId: "foreign", status: "SHORTLISTED" } },
+  ]) {
+    const f = fixture();
+    Object.assign(f.store.applicationRows[0], patch);
+    await assert.rejects(
+      () =>
+        f.prepared(
+          data({
+            items: [
+              item({
+                applicationRowId: "application-row",
+                creatorId: "creator-own",
+                catalogCreatorId: null,
+                channelUrl: "https://www.youtube.com/@original",
+              }),
+            ],
+          }),
+        ),
+      (error) => error.code === "APPLICATION_ROW_CHANGED",
+    );
+  }
+  const f = fixture();
+  const line = item({
+    applicationRowId: "application-row",
+    creatorId: "creator-own",
+    catalogCreatorId: null,
+    channelUrl: "https://www.youtube.com/@original",
+  });
+  await assert.rejects(
+    () => f.prepared(data({ items: [line, line] })),
+    (error) => error.code === "INVALID_INPUT",
+  );
+  const draft = await f.prepared(data({ items: [line] }));
+  f.store.applicationRows[0].status = "REJECTED";
+  await assert.rejects(
+    () =>
+      f.admin(
+        op("publish", {
+          proposalId: draft.id,
+          expectedRevision: draft.revision,
+        }),
+      ),
+    (error) => error.code === "APPLICATION_ROW_CHANGED",
+  );
 });

@@ -1,4 +1,5 @@
 export type AgencyApplication = {
+  hasCreatorRows?: boolean;
   id: string;
   campaignId: string;
   status: string;
@@ -21,7 +22,7 @@ export type AgencyCampaign = {
   categories: string[];
   followerMin: number | null;
   followerMax: number | null;
-  budgetAmount: string | null;
+  supplierRateCap: string | null;
   currency: string;
   applicationDeadline: string | null;
   publishedAt: string | null;

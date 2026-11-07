@@ -3,6 +3,7 @@ import {
   proposalIdSchema,
   proposalMoneySchema,
   publicChannelUrl,
+  publicChannelThumbnailUrl,
 } from "@futures-medialab/database/proposal-validation";
 
 export const affiliationNames = {
@@ -45,6 +46,16 @@ export const channelSchema = z
     platform: z.enum(catalogPlatforms),
     name: z.string().trim().min(1).max(120),
     url: z.string().trim().max(2048),
+    thumbnailUrl: z
+      .string()
+      .trim()
+      .max(2048)
+      .nullable()
+      .default(null)
+      .refine(
+        (value) => value === null || Boolean(publicChannelThumbnailUrl(value)),
+        "지원되는 채널 이미지 CDN의 HTTPS 주소를 입력해 주세요.",
+      ),
     followers: metric,
     averageViews: metric,
     averageLiveViewers: metric,
@@ -211,6 +222,7 @@ export const blankChannel = (): CatalogChannel => ({
   platform: "youtube",
   name: "",
   url: "",
+  thumbnailUrl: null,
   followers: null,
   averageViews: null,
   averageLiveViewers: null,

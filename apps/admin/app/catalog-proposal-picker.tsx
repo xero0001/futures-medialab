@@ -2,6 +2,7 @@
 
 import { FormSelect } from "@futures-medialab/ui/form-select";
 import { useEffect, useRef, useState } from "react";
+import { InfluencerAvatar } from "./_components/influencer-avatar";
 import { AdminButton } from "./_components/admin-button";
 import {
   affiliationNames,
@@ -22,13 +23,14 @@ type Selection = {
   platform: string;
   channelLabel: string;
   channelUrl: string;
+  channelThumbnailUrl: string | null;
   followers: string;
   averageViews: string;
-  unitAmount: string;
-  supplierCost: string;
-  rights: string;
-  quantity: string;
-  deliverables: string;
+  unitAmount?: string;
+  supplierCost?: string;
+  rights?: string;
+  quantity?: string;
+  deliverables?: string;
 };
 export function CatalogProposalPicker({
   currency,
@@ -126,13 +128,18 @@ export function CatalogProposalPicker({
       platform: channel.platform,
       channelLabel: channel.name,
       channelUrl: channel.url,
+      channelThumbnailUrl: channel.thumbnailUrl,
       followers: String(channel.followers ?? ""),
       averageViews: String(channel.averageViews ?? ""),
-      quantity: String(qty),
-      unitAmount: rate?.sellUnit ?? "",
-      supplierCost: cost,
-      rights: rate?.rights ?? "",
-      deliverables: rate?.format ?? "",
+      ...(rate
+        ? {
+            quantity: String(qty),
+            unitAmount: rate.sellUnit,
+            supplierCost: cost,
+            rights: rate.rights,
+            deliverables: rate.format,
+          }
+        : {}),
     });
     setOpen(false);
   }
@@ -148,17 +155,17 @@ export function CatalogProposalPicker({
             setOpen(true);
           }}
         >
-          내부 DB에서 가져오기
+          인플루언서 DB에서 선택
         </AdminButton>
         {selected ? (
           <AdminButton type="button" onClick={onClear}>
-            내부 DB 연결 해제
+            인플루언서 연결 해제
           </AdminButton>
         ) : null}
       </div>
       <dialog
         ref={dialog}
-        aria-label="내부 크리에이터 선택"
+        aria-label="인플루언서 선택"
         className={s.dialog}
         onCancel={(e) => {
           e.preventDefault();
@@ -166,7 +173,7 @@ export function CatalogProposalPicker({
         }}
       >
         <div className={s.row}>
-          <h3>내부 크리에이터 선택</h3>
+          <h3>인플루언서 선택</h3>
           <AdminButton type="button" onClick={() => setOpen(false)}>
             닫기
           </AdminButton>
@@ -203,11 +210,31 @@ export function CatalogProposalPicker({
                 setChannelIndex(0);
               }}
             >
-              {p.displayName} ·{" "}
-              {p.partnerName || affiliationNames[p.affiliation]}
+              <InfluencerAvatar
+                name={p.displayName}
+                thumbnailUrl={p.channels[0]?.thumbnailUrl}
+                size={36}
+              />
+              <span>
+                {p.displayName}
+                <small className={s.sub}>
+                  {p.partnerName || affiliationNames[p.affiliation]}
+                </small>
+              </span>
             </button>
           ))}
-          {list && !list.total ? <p>검색 결과가 없습니다.</p> : null}
+          {list && !list.total ? (
+            <p>
+              검색 결과가 없습니다.{" "}
+              <a
+                href="/?tab=creators"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                인플루언서 DB에서 등록
+              </a>
+            </p>
+          ) : null}
         </div>
         {list && list.total > list.pageSize ? (
           <div className={s.actions}>
@@ -232,7 +259,19 @@ export function CatalogProposalPicker({
         ) : null}
         {person ? (
           <>
-            <h4>{person.displayName}</h4>
+            <div className={s.identity}>
+              <InfluencerAvatar
+                name={person.displayName}
+                thumbnailUrl={person.channels[channelIndex]?.thumbnailUrl}
+                size={56}
+              />
+              <div>
+                <h4>{person.displayName}</h4>
+                <small className={s.sub}>
+                  {person.channels[channelIndex]?.name}
+                </small>
+              </div>
+            </div>
             <p>
               가용성 {availabilityNames[person.availability]} ·{" "}
               {person.availabilityNote || "등록된 일정 메모 없음"}

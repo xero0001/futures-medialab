@@ -27,6 +27,7 @@ const app = () => ({ id: "application-1", campaignId: "campaign-1", agencyOrgani
 function fixture(overrides = {}) {
   const calls = [], current = { ...app(), ...overrides.application };
   const tx = {
+    campaignProposal: { count: async () => overrides.officialProposal ? 1 : 0 },
     campaignApplication: { findFirst: async (query) => { calls.push(["application", query]); return overrides.missing ? null : current; } },
     contentSubmission: { update: async (query) => { calls.push(["submissionWrite", query]); return query.data; } },
     campaignContract: { create: async (query) => { calls.push(["contractWrite", query]); return { ...query.data, id: "contract-1", version: 0 }; }, update: async (query) => { calls.push(["contractWrite", query]); return { ...query.data, id: "contract-1", version: 1 }; } },
@@ -116,4 +117,25 @@ test("settlement approval requires contract plus verified latest content, matchi
   const f = fixture({ application }); assert.equal((await f.run(input)).status, 200);
   assert.equal(f.calls.find(([name]) => name === "settlementWrite")[1].data.status, "APPROVED");
   for (const patch of [{ contract: null }, { contract: { status: "CONFIRMED", referenceUrl: null } }, { submissions: [{ status: "PUBLISHED" }] }, { submissions: [{ status: "VERIFIED", verifiedAt: null, publishedUrl: null }] }, { settlement: { ...existingSettlement(), agencyOrganizationId: "foreign" } }, { settlement: { ...existingSettlement(), currency: "CNY" } }, { settlement: { ...existingSettlement(), netAmount: decimal("100.00") } }]) assert.equal((await fixture({ application: { ...application, ...patch } }).run(input)).status, 409);
+});
+
+test("official proposals keep legacy content and settlement mutations blocked", async () => {
+  for (const input of [review, prepare]) {
+    const f = fixture({ officialProposal: true });
+    const response = await f.run(input);
+    assert.equal(response.status, 409);
+    assert.equal(
+      f.calls.some(([name]) =>
+        ["submissionWrite", "settlementWrite"].includes(name),
+      ),
+      false,
+    );
+  }
+});
+
+test("structured applications cannot start legacy work before brand approval", async () => {
+  const f = fixture({ application: { _count: { rows: 1 } } });
+  assert.equal((await f.run(review)).status, 409);
+  assert.equal((await f.run(prepare)).status, 409);
+  assert.equal(f.calls.some(([name]) => ["submissionWrite", "settlementWrite"].includes(name)), false);
 });
