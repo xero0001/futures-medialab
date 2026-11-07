@@ -1,0 +1,20 @@
+/*
+ * TextField and TextArea own their focus border/ring on the rounded wrapper.
+ * Keep application-wide native-input rules from adding an inner rectangle.
+ * !important is limited to the inner outline so selector order/specificity in
+ * either app cannot override Montage's behavior. SearchField and native inputs
+ * keep their own focus indicators.
+ */
+[data-component="text-field"] input:focus-visible,
+[data-component="text-area"] textarea:focus-visible {
+  outline: none !important;
+}
+
+/* Box shadows disappear in forced colors; keep a visible wrapper indicator. */
+@media (forced-colors: active) {
+  [data-component="text-field"]:has(input:focus-visible),
+  [data-component="text-area"]:has(textarea:focus-visible) {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}

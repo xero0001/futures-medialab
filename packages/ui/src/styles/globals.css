@@ -1,10 +1,12 @@
 @import "tailwindcss";
+@import "./montage-fields.css";
 @source "../../../../apps/platform/**/*.{ts,tsx}";
 @source "../../../../apps/admin/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
 :root {
-  --fm-font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui,
+  --fm-font-family:
+    "Pretendard", -apple-system, BlinkMacSystemFont, system-ui,
     "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
   --background: #f7f8fb;
   --foreground: #16181d;

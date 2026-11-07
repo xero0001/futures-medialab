@@ -237,7 +237,6 @@
   border-radius: 0;
   background: transparent;
   color: inherit;
-  outline: none;
 }
 .page .form input::placeholder {
   color: var(--semantic-foreground-neutral-tertiary, #878a93);

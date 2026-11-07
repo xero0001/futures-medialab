@@ -35,10 +35,6 @@
   outline: 2px solid var(--fm-blue);
   outline-offset: 3px;
 }
-/* Montage TextField already draws focus on its rounded wrapper. */
-.workspace.workspace :global([data-component="text-field"]) input:focus-visible {
-  outline: none;
-}
 .skipLink {
   position: fixed;
   left: 16px;

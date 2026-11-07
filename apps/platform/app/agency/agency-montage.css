@@ -153,12 +153,6 @@
   line-height: 24px;
 }
 .agency-montage.cwa-workspace
-  :is(input, textarea):not([type="checkbox"]):not(
-    [type="radio"]
-  ):focus-visible {
-  outline: none;
-}
-.agency-montage.cwa-workspace
   :is(a, button, summary, [tabindex]):not(input):not(textarea):focus-visible {
   outline: 2px solid var(--agency-blue);
   outline-offset: 3px;

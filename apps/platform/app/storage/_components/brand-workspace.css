@@ -103,9 +103,6 @@
   font-size: 16px;
   line-height: 24px;
 }
-.cw-montage :is(input, textarea):focus-visible {
-  outline: none;
-}
 .cw-montage :is(.cw-search-input, .cwr-search-input) {
   border: 0;
   padding: 0;
@@ -345,12 +342,6 @@
   padding: 0;
   border: 0;
 }
-.cw-montage.cw-workspace
-  :is(.cw-field, .cw-search-input, .cwr-search-input)
-  input:focus-visible,
-.cw-montage.cw-workspace textarea:focus-visible {
-  outline: none;
-}
 .cw-montage .cw-range > div {
   border: 0;
   padding: 0;
@@ -361,7 +352,6 @@
   height: auto;
   padding: 0;
   font-size: 16px;
-  outline: none;
 }
 .cw-montage .cw-platform-icon {
   background: transparent;
