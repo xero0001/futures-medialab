@@ -15,8 +15,8 @@
 .header p {
   margin-top: var(--spacing-8);
 }
-.stepper {
-  margin-bottom: var(--spacing-32);
+.form {
+  margin-top: var(--spacing-32);
 }
 .panel {
   border: 1px solid var(--semantic-line-neutral-secondary);
@@ -230,6 +230,9 @@
   }
   .stepper {
     gap: var(--spacing-8) !important;
+  }
+  .form {
+    margin-top: var(--spacing-24);
   }
   .panel {
     padding: var(--spacing-20);

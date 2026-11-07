@@ -569,6 +569,7 @@ export function LiveRequestWizard({
       </Stepper>
 
       <form
+        className={s.form}
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
