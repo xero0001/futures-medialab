@@ -204,6 +204,8 @@
 .quickIcon {
   flex: 0 0 64px;
   height: 64px;
+  background: var(--home-soft);
+  border-radius: 16px;
   display: grid;
   place-items: center;
 }
