@@ -3,17 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import {
-  Button,
-  Category,
-  CategoryList,
-  CategoryListItem,
-  Divider,
-  Typography,
-} from "@montage-ui/core";
+import { Button, Divider, Typography } from "@montage-ui/core";
 import {
   ArrowRight,
-  Check,
   CircleCheck,
   Clock3,
   FileCheck2,
@@ -33,8 +25,6 @@ import {
 } from "../../../lib/brand-progress";
 import styles from "./brand-progress.module.css";
 
-type Filter = "all" | BrandActionKind;
-const kinds: Filter[] = ["all", "proposal", "content", "request", "invoice"];
 const icons = {
   proposal: FileCheck2,
   content: CircleCheck,
@@ -98,12 +88,6 @@ export function BrandActionCenter({
 }) {
   const t = (ko: string, en: string, zh: string) => ({ ko, en, zh })[locale];
   const [now, setNow] = useState(() => Date.now());
-  const [filter, setFilter] = useState<Filter>("all");
-  const [visibleCount, setVisibleCount] = useState(8);
-  const selectFilter = (kind: Filter) => {
-    setFilter(kind);
-    setVisibleCount(8);
-  };
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
     return () => window.clearInterval(timer);
@@ -116,8 +100,6 @@ export function BrandActionCenter({
 
   if (!actions.length) return null;
 
-  const selected =
-    filter === "all" ? actions : actions.filter((item) => item.kind === filter);
   const overdue = actions.filter((item) =>
     isPastBrandDeadline(item.dueAt, now),
   ).length;
@@ -129,8 +111,7 @@ export function BrandActionCenter({
   ).length;
   const href = (path: string) =>
     `${path}${path.includes("?") ? "&" : "?"}lang=${locale}`;
-  const labels: Record<Filter, string> = {
-    all: t("전체", "All", "全部"),
+  const labels: Record<BrandActionKind, string> = {
     proposal: t("제안 확인", "Proposals", "提案"),
     content: t("콘텐츠 검수", "Content review", "内容审核"),
     request: t("회신·자료 보완", "Replies & materials", "回复与补充资料"),
@@ -222,157 +203,69 @@ export function BrandActionCenter({
             </span>
           </div>
         </div>
-        <Category
-          value={filter}
-          onValueChange={(value) => selectFilter(value as Filter)}
-        >
-          <div className={styles.filters}>
-            <CategoryList
-              variant="alternative"
-              size="medium"
-              horizontalPadding={false}
-              verticalPadding={false}
-              aria-label={t("처리할 일 유형", "Action type", "事项类型")}
-            >
-              {kinds.map((kind) => (
-                <CategoryListItem
-                  key={kind}
-                  value={kind}
-                  id={`brand-actions-filter-${kind}`}
-                  aria-controls="brand-actions-results"
-                  onFocus={() => selectFilter(kind)}
-                >
-                  <span className={styles.categoryLabel}>
-                    {labels[kind]}
-                    <span className={styles.categoryCount}>
-                      {kind === "all"
-                        ? actions.length
-                        : actions.filter((item) => item.kind === kind).length}
-                    </span>
-                  </span>
-                </CategoryListItem>
-              ))}
-            </CategoryList>
-          </div>
-        </Category>
         <Divider />
-        <div
-          id="brand-actions-results"
-          role="tabpanel"
-          aria-labelledby={`brand-actions-filter-${filter}`}
-          tabIndex={0}
-        >
-          <div aria-live="polite" className={styles.srOnly}>
-            {t(
-              `${selected.length}건의 업무`,
-              `${selected.length} tasks`,
-              `${selected.length} 项任务`,
-            )}
-          </div>
-          {selected.length ? (
-            <ul className={styles.actionList}>
-              {selected.slice(0, visibleCount).map((item) => {
-                const campaign = item.campaignId
-                  ? campaignsById.get(item.campaignId)
-                  : undefined;
-                const late = isPastBrandDeadline(item.dueAt, now);
-                return (
-                  <li key={item.id} className={styles.actionRow}>
-                    <ActionThumbnail
-                      imageUrl={campaign?.gameIconUrl ?? null}
-                      kind={item.kind}
-                      overdue={late}
-                      hasCampaign={Boolean(item.campaignId)}
-                    />
-                    <div className={styles.actionBody}>
-                      <div className={styles.rowEyebrow}>
-                        <span>{labels[item.kind]}</span>
-                        {item.campaignTitle &&
-                          item.campaignTitle !== item.title && (
-                            <span className={styles.campaignLabel}>
-                              {item.campaignTitle}
-                            </span>
-                          )}
-                      </div>
-                      <Link
-                        href={href(item.href)}
-                        className={styles.actionTitle}
-                      >
-                        {item.title}
-                      </Link>
-                      <p>{description(item)}</p>
-                    </div>
-                    <div className={styles.actionDeadline}>
-                      {item.dueAt ? (
-                        <>
-                          <span>{deadlines[item.deadlineKind]}</span>
-                          <time dateTime={item.dueAt}>
-                            {dateLabel(item.dueAt, locale)}
-                          </time>
-                          {late && (
-                            <strong className={styles.overdue}>
-                              {t("기한 지남", "Overdue", "已逾期")}
-                            </strong>
-                          )}
-                        </>
-                      ) : (
-                        <span>
-                          {t("기한 미지정", "No deadline set", "未设截止日期")}
+        <ul className={styles.actionList} aria-labelledby="brand-actions-title">
+          {actions.map((item) => {
+            const campaign = item.campaignId
+              ? campaignsById.get(item.campaignId)
+              : undefined;
+            const late = isPastBrandDeadline(item.dueAt, now);
+            return (
+              <li key={item.id} className={styles.actionRow}>
+                <ActionThumbnail
+                  imageUrl={campaign?.gameIconUrl ?? null}
+                  kind={item.kind}
+                  overdue={late}
+                  hasCampaign={Boolean(item.campaignId)}
+                />
+                <div className={styles.actionBody}>
+                  <div className={styles.rowEyebrow}>
+                    <span>{labels[item.kind]}</span>
+                    {item.campaignTitle &&
+                      item.campaignTitle !== item.title && (
+                        <span className={styles.campaignLabel}>
+                          {item.campaignTitle}
                         </span>
                       )}
-                    </div>
-                    <Button
-                      as={Link}
-                      href={href(item.href)}
-                      variant="outlined"
-                      color="assistive"
-                      size="small"
-                      trailingContent={<ArrowRight size={15} />}
-                    >
-                      {actionLabel(item.kind)}
-                    </Button>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <div className={styles.emptyActions}>
-              <span>
-                <Check size={23} />
-              </span>
-              <Typography as="strong" variant="body1" weight="bold">
-                {t(
-                  "이 유형의 대기 업무가 없습니다",
-                  "No pending tasks of this type",
-                  "此类型暂无待处理事项",
-                )}
-              </Typography>
-              <Typography as="p" variant="body2" className={styles.muted}>
-                {t(
-                  "다른 유형을 선택해 업무를 확인하세요.",
-                  "Select another type to see more tasks.",
-                  "请选择其他类型查看事项。",
-                )}
-              </Typography>
-            </div>
-          )}
-          {selected.length > visibleCount && (
-            <div className={styles.moreRow}>
-              <Button
-                variant="outlined"
-                color="assistive"
-                size="small"
-                onClick={() => setVisibleCount((count) => count + 8)}
-              >
-                {t(
-                  `업무 더 보기 (${selected.length - visibleCount})`,
-                  `Show more (${selected.length - visibleCount})`,
-                  `查看更多 (${selected.length - visibleCount})`,
-                )}
-              </Button>
-            </div>
-          )}
-        </div>
+                  </div>
+                  <Link href={href(item.href)} className={styles.actionTitle}>
+                    {item.title}
+                  </Link>
+                  <p>{description(item)}</p>
+                </div>
+                <div className={styles.actionDeadline}>
+                  {item.dueAt ? (
+                    <>
+                      <span>{deadlines[item.deadlineKind]}</span>
+                      <time dateTime={item.dueAt}>
+                        {dateLabel(item.dueAt, locale)}
+                      </time>
+                      {late && (
+                        <strong className={styles.overdue}>
+                          {t("기한 지남", "Overdue", "已逾期")}
+                        </strong>
+                      )}
+                    </>
+                  ) : (
+                    <span>
+                      {t("기한 미지정", "No deadline set", "未设截止日期")}
+                    </span>
+                  )}
+                </div>
+                <Button
+                  as={Link}
+                  href={href(item.href)}
+                  variant="outlined"
+                  color="assistive"
+                  size="small"
+                  trailingContent={<ArrowRight size={15} />}
+                >
+                  {actionLabel(item.kind)}
+                </Button>
+              </li>
+            );
+          })}
+        </ul>
         {(data.hasMoreCampaigns || data.hasMoreRequests) && (
           <p className={styles.limitNote}>
             {t(

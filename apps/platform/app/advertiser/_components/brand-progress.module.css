@@ -76,24 +76,10 @@
 .actionPanel .panelHeader {
   padding: 0 0 24px;
 }
-.filters {
-  min-width: 0;
-  padding-bottom: 20px;
-}
-.categoryLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.categoryCount {
-  opacity: 0.7;
-  font-variant-numeric: tabular-nums;
-}
 .actionPanel .actionRow {
   padding-inline: 0;
 }
-.actionPanel .actionRow:first-child,
-.actionPanel .emptyActions {
+.actionPanel .actionRow:first-child {
   border-top: 0;
 }
 .actionList {
@@ -210,37 +196,6 @@
 }
 .actionRow > a:last-child {
   flex: none;
-}
-.emptyActions {
-  min-height: 182px;
-  padding: 26px 24px 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  flex-direction: column;
-  text-align: center;
-  border-top: 1px solid var(--brand-line, #e5e5e7);
-}
-.emptyActions > span {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: #ecf8f0;
-  color: #258447;
-  display: grid;
-  place-items: center;
-  margin-bottom: 4px;
-}
-.emptyActions p {
-  max-width: 480px;
-  line-height: 1.6;
-}
-.moreRow {
-  padding: 16px 24px;
-  border-top: 1px solid var(--brand-line, #e5e5e7);
-  display: flex;
-  justify-content: center;
 }
 .limitNote {
   font-size: 12px;
@@ -646,13 +601,6 @@
   .campaignLabel {
     white-space: normal;
     overflow-wrap: anywhere;
-  }
-  .emptyActions {
-    min-height: 170px;
-    padding: 24px 20px;
-  }
-  .emptyActions p {
-    font-size: 13px;
   }
 
   .stageList {
