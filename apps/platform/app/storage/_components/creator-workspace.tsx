@@ -619,15 +619,15 @@ function WorkspaceContent({
         <div className={isTds ? undefined : shellStyles.content}>
           <div className="cw-heading">
             <div>
-              <p>
-                {isTds
-                  ? t(
-                      "Workspace / Creator discovery",
-                      "워크스페이스 / 크리에이터 탐색",
-                      "工作区 / 达人探索",
-                    )
-                  : t("Brand workspace", "브랜드 워크스페이스", "品牌工作区")}
-              </p>
+              {isTds && (
+                <p>
+                  {t(
+                    "Workspace / Creator discovery",
+                    "워크스페이스 / 크리에이터 탐색",
+                    "工作区 / 达人探索",
+                  )}
+                </p>
+              )}
               <h1>
                 {isTds
                   ? t(

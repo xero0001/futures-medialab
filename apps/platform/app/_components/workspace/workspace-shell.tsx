@@ -217,22 +217,22 @@ export function WorkspaceShell({
                 </TopNavigationButton>
                 <Wordmark href={href("/")} />
               </div>
-              <div className={styles.topContext}>
-                <Divider vertical size={20} />
-                <Typography
-                  variant="label1"
-                  weight="medium"
-                  color="semantic.foreground.neutral.secondary"
-                >
-                  {isAgency
-                    ? t(
-                        "Agency workspace",
-                        "에이전시 워크스페이스",
-                        "代理机构工作区",
-                      )
-                    : t("Brand workspace", "브랜드 워크스페이스", "品牌工作区")}
-                </Typography>
-              </div>
+              {isAgency && (
+                <div className={styles.topContext}>
+                  <Divider vertical size={20} />
+                  <Typography
+                    variant="label1"
+                    weight="medium"
+                    color="semantic.foreground.neutral.secondary"
+                  >
+                    {t(
+                      "Agency workspace",
+                      "에이전시 워크스페이스",
+                      "代理机构工作区",
+                    )}
+                  </Typography>
+                </div>
+              )}
             </div>
           }
           trailingContent={
