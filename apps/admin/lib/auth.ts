@@ -3,6 +3,7 @@ import { getDatabase } from "@futures-medialab/database";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import { trustedAdminOrigins } from "./admin-origins";
 
 function createAuth() {
   const secret = process.env.BETTER_AUTH_SECRET;
@@ -26,7 +27,7 @@ function createAuth() {
     secret,
     baseURL: url.origin,
     basePath: "/api/auth",
-    trustedOrigins: [url.origin],
+    trustedOrigins: trustedAdminOrigins(url.origin),
     database: prismaAdapter(getDatabase(), {
       provider: "postgresql",
       transaction: true,

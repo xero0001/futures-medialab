@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAuth } from "./auth";
+import { allowsAdminWrite } from "./admin-origins";
 
 type Database = ReturnType<typeof getDatabase> | Prisma.TransactionClient;
 export const privateHeaders = {
@@ -100,11 +101,7 @@ export async function requireAdminPage() {
 export function verifyOrigin(request: Request) {
   const base = getAuth().options.baseURL;
   if (typeof base !== "string") throw new Error("Admin origin missing");
-  const site = request.headers.get("sec-fetch-site");
-  if (
-    request.headers.get("origin") !== new URL(base).origin ||
-    (site !== null && site !== "same-origin")
-  )
+  if (!allowsAdminWrite(request.headers, base))
     fail(403, "INVALID_ORIGIN", "허용되지 않은 요청입니다.");
 }
 export async function readBody<T>(

@@ -51,12 +51,18 @@ export function LoginForm({ denied }: { denied: boolean }) {
           password: password,
         }),
       });
-      if (!response.ok)
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
         throw new Error(
-          response.status === 429
-            ? "로그인 시도가 많습니다. 잠시 후 다시 시도하세요."
-            : "이메일과 비밀번호를 확인하세요.",
+          result?.code === "INVALID_ORIGIN"
+            ? "현재 접속 주소에서 로그인이 허용되지 않습니다. 운영팀에 문의해 주세요."
+            : response.status === 429
+              ? "로그인 시도가 많습니다. 잠시 후 다시 시도하세요."
+              : response.status === 401
+                ? "이메일과 비밀번호를 확인하세요."
+                : "로그인 서비스를 이용할 수 없습니다. 잠시 후 다시 시도하세요.",
         );
+      }
       const access = await fetch("/api/admin/bootstrap", { cache: "no-store" });
       if (!access.ok) {
         await fetch("/api/auth/sign-out", {
