@@ -801,15 +801,6 @@
   gap: 24px;
   min-width: 0;
 }
-.homeCampaigns.panel {
-  border: 0;
-  border-radius: 0;
-  overflow: visible;
-}
-.homeCampaigns .panelHeading {
-  padding: 0 0 20px;
-  min-height: 0;
-}
 .home .launchCard {
   border: 1px solid var(--brand-line);
   border-radius: 20px;

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import {
   Button,
@@ -12,11 +13,11 @@ import {
 } from "@montage-ui/core";
 import {
   ArrowRight,
-  CalendarDays,
   Check,
   CircleCheck,
   Clock3,
   FileCheck2,
+  Gamepad2,
   Inbox,
   MessageSquare,
   ReceiptText,
@@ -25,7 +26,6 @@ import type { Locale } from "../../_components/landing-copy";
 import type { BrandWorkspace } from "../../../lib/brand-workspace-types";
 import {
   getBrandActions,
-  getBrandScheduleItems,
   isPastBrandDeadline,
   type BrandAction,
   type BrandActionKind,
@@ -50,6 +50,45 @@ function dateLabel(value: string, locale: Locale) {
   }).format(new Date(value));
 }
 
+function ActionThumbnail({
+  imageUrl,
+  kind,
+  overdue,
+  hasCampaign,
+}: {
+  imageUrl: string | null;
+  kind: BrandActionKind;
+  overdue: boolean;
+  hasCampaign: boolean;
+}) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const Icon = icons[kind];
+  const Fallback = hasCampaign ? Gamepad2 : Inbox;
+
+  return (
+    <span className={styles.actionIcon} aria-hidden="true">
+      <span className={styles.gameThumbnail}>
+        {imageUrl && imageUrl !== failedUrl ? (
+          <Image
+            src={imageUrl}
+            alt=""
+            width={42}
+            height={42}
+            onError={() => setFailedUrl(imageUrl)}
+          />
+        ) : (
+          <Fallback size={21} />
+        )}
+      </span>
+      <span
+        className={`${styles.actionKind} ${overdue ? styles.lateIcon : ""}`}
+      >
+        <Icon size={14} />
+      </span>
+    </span>
+  );
+}
+
 export function BrandActionCenter({
   data,
   locale,
@@ -61,7 +100,6 @@ export function BrandActionCenter({
   const [now, setNow] = useState(() => Date.now());
   const [filter, setFilter] = useState<Filter>("all");
   const [visibleCount, setVisibleCount] = useState(8);
-  const [showAllSchedule, setShowAllSchedule] = useState(false);
   const selectFilter = (kind: Filter) => {
     setFilter(kind);
     setVisibleCount(8);
@@ -71,10 +109,13 @@ export function BrandActionCenter({
     return () => window.clearInterval(timer);
   }, []);
   const actions = useMemo(() => getBrandActions(data, now), [data, now]);
-  const schedule = useMemo(
-    () => getBrandScheduleItems(data.campaigns, now),
-    [data.campaigns, now],
+  const campaignsById = useMemo(
+    () => new Map(data.campaigns.map((campaign) => [campaign.id, campaign])),
+    [data.campaigns],
   );
+
+  if (!actions.length) return null;
+
   const selected =
     filter === "all" ? actions : actions.filter((item) => item.kind === filter);
   const overdue = actions.filter((item) =>
@@ -159,13 +200,6 @@ export function BrandActionCenter({
               </Typography>
               <span className={styles.count}>{actions.length}</span>
             </div>
-            <Typography as="p" variant="body2" className={styles.muted}>
-              {t(
-                "확인이 필요한 업무를 기한이 빠른 순서로 모았습니다.",
-                "Review outstanding work, ordered by the nearest deadline.",
-                "按截止日期先后查看需要确认的事项。",
-              )}
-            </Typography>
           </div>
           <div
             className={styles.urgencySummary}
@@ -238,15 +272,18 @@ export function BrandActionCenter({
           {selected.length ? (
             <ul className={styles.actionList}>
               {selected.slice(0, visibleCount).map((item) => {
-                const Icon = icons[item.kind];
+                const campaign = item.campaignId
+                  ? campaignsById.get(item.campaignId)
+                  : undefined;
                 const late = isPastBrandDeadline(item.dueAt, now);
                 return (
                   <li key={item.id} className={styles.actionRow}>
-                    <span
-                      className={`${styles.actionIcon} ${late ? styles.lateIcon : ""}`}
-                    >
-                      <Icon size={21} aria-hidden="true" />
-                    </span>
+                    <ActionThumbnail
+                      imageUrl={campaign?.gameIconUrl ?? null}
+                      kind={item.kind}
+                      overdue={late}
+                      hasCampaign={Boolean(item.campaignId)}
+                    />
                     <div className={styles.actionBody}>
                       <div className={styles.rowEyebrow}>
                         <span>{labels[item.kind]}</span>
@@ -304,30 +341,18 @@ export function BrandActionCenter({
                 <Check size={23} />
               </span>
               <Typography as="strong" variant="body1" weight="bold">
-                {filter === "all"
-                  ? t(
-                      "지금 확인할 업무가 없습니다",
-                      "You’re all caught up",
-                      "暂无待确认事项",
-                    )
-                  : t(
-                      "이 유형의 대기 업무가 없습니다",
-                      "No pending tasks of this type",
-                      "此类型暂无待处理事项",
-                    )}
+                {t(
+                  "이 유형의 대기 업무가 없습니다",
+                  "No pending tasks of this type",
+                  "此类型暂无待处理事项",
+                )}
               </Typography>
               <Typography as="p" variant="body2" className={styles.muted}>
-                {filter === "all"
-                  ? t(
-                      "진행 중인 캠페인의 일정과 새 요청을 아래에서 확인하세요.",
-                      "See your campaign schedules and start a new request below.",
-                      "可在下方查看活动日程或发起新请求。",
-                    )
-                  : t(
-                      "다른 유형을 선택해 업무를 확인하세요.",
-                      "Select another type to see more tasks.",
-                      "请选择其他类型查看事项。",
-                    )}
+                {t(
+                  "다른 유형을 선택해 업무를 확인하세요.",
+                  "Select another type to see more tasks.",
+                  "请选择其他类型查看事项。",
+                )}
               </Typography>
             </div>
           )}
@@ -365,90 +390,6 @@ export function BrandActionCenter({
           </p>
         )}
       </section>
-      {schedule.length > 0 && (
-        <section
-          className={styles.schedulePanel}
-          aria-labelledby="brand-schedule-title"
-        >
-          <div className={styles.scheduleHeading}>
-            <span className={styles.scheduleIcon}>
-              <CalendarDays size={20} />
-            </span>
-            <div>
-              <Typography
-                as="h2"
-                variant="label1"
-                weight="bold"
-                id="brand-schedule-title"
-              >
-                {t(
-                  "Futures 진행 일정",
-                  "Schedules managed by Futures",
-                  "Futures 负责的日程",
-                )}
-              </Typography>
-              <p>
-                {t(
-                  "제안·모집·제작의 예정일을 확인하세요. 기한이 지난 건도 함께 표시됩니다.",
-                  "Track proposal, recruitment and production dates, including overdue work.",
-                  "查看提案、招募和制作的预计日期，包括已逾期事项。",
-                )}
-              </p>
-            </div>
-          </div>
-          <ul className={styles.scheduleList}>
-            {schedule.slice(0, showAllSchedule ? undefined : 4).map((item) => (
-              <li key={`${item.campaignId}:${item.kind}`}>
-                <div>
-                  <span>{deadlines[item.kind]}</span>
-                  <Link href={href(item.href)}>{item.campaignTitle}</Link>
-                </div>
-                <div className={styles.scheduleDate}>
-                  <time dateTime={item.dueAt}>
-                    {dateLabel(item.dueAt, locale)}
-                  </time>
-                  {isPastBrandDeadline(item.dueAt, now) && (
-                    <span className={styles.overdue}>
-                      {t(
-                        "일정 확인 필요",
-                        "Schedule update needed",
-                        "需确认日程",
-                      )}
-                    </span>
-                  )}
-                </div>
-                <Link
-                  href={href(item.href)}
-                  className={styles.iconLink}
-                  aria-label={t(
-                    `${item.campaignTitle} 진행 상황 보기`,
-                    `View progress for ${item.campaignTitle}`,
-                    `查看 ${item.campaignTitle} 的进度`,
-                  )}
-                >
-                  <ArrowRight size={18} />
-                </Link>
-              </li>
-            ))}
-          </ul>
-          {schedule.length > 4 && (
-            <button
-              type="button"
-              className={styles.scheduleMore}
-              aria-expanded={showAllSchedule}
-              onClick={() => setShowAllSchedule(!showAllSchedule)}
-            >
-              {showAllSchedule
-                ? t("일정 접기", "Show fewer", "收起日程")
-                : t(
-                    `일정 ${schedule.length}건 모두 보기`,
-                    `View all ${schedule.length} dates`,
-                    `查看全部 ${schedule.length} 项日程`,
-                  )}
-            </button>
-          )}
-        </section>
-      )}
       {!data.permissions.canManageCampaigns &&
         actions.some(
           (item) => item.kind === "proposal" || item.kind === "content",

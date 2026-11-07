@@ -52,6 +52,7 @@ import { BrandProductionPanel } from "./brand-production-panel";
 import { BrandReportingPanel } from "./brand-reporting-panel";
 import { BrandBillingPanel } from "./brand-billing-panel";
 import { BrandActionCenter } from "./brand-action-center";
+import { BrandCampaignOverview } from "./brand-campaign-overview";
 import { BrandCampaignProgress } from "./brand-campaign-progress";
 import { BrandDocumentsPanel } from "./brand-documents-panel";
 import styles from "./live-brand-workspace.module.css";
@@ -687,35 +688,31 @@ function Home({ data, locale }: { data: BrandWorkspace; locale: Locale }) {
             </div>
           </section>
         </div>
-        <div className={styles.privacyNote}>
-          <IconLock />
-          <Typography variant="caption1">
-            {t(
-              "프리뷰에서는 익명 정보만 안내하며, 캠페인 진행에 필요한 크리에이터 정보는 공식 제안에서 공개됩니다.",
-              "Previews remain anonymous. Relevant creator details are shared only in an official campaign proposal.",
-              "预览仅显示匿名信息；活动所需的达人信息将在正式方案中公开。",
-            )}
-          </Typography>
-        </div>
       </section>
       <BrandActionCenter data={data} locale={locale} />
-      {active.length > 0 && (
-        <Panel
-          className={styles.homeCampaigns}
-          title={t("진행 중인 캠페인", "Active campaigns", "进行中的活动")}
-          action={
-            <Link
-              className={styles.textLink}
-              href={href("/advertiser/campaign")}
-            >
-              {t("전체 보기", "View all", "查看全部")}
-              <IconArrowRight />
-            </Link>
-          }
-        >
+      <BrandCampaignOverview
+        campaigns={data.campaigns}
+        locale={locale}
+        hasMoreCampaigns={data.hasMoreCampaigns}
+      >
+        {active.length ? (
           <CampaignTable campaigns={active} locale={locale} compact />
-        </Panel>
-      )}
+        ) : (
+          <EmptyState
+            icon={<IconMegaphone />}
+            title={t(
+              "진행 중인 캠페인이 없습니다",
+              "No active campaigns",
+              "暂无进行中的活动",
+            )}
+            description={t(
+              "캠페인을 요청하면 이곳에서 진행 상황을 확인할 수 있습니다.",
+              "Submit a campaign to track its progress here.",
+              "提交活动后可在此查看进度。",
+            )}
+          />
+        )}
+      </BrandCampaignOverview>
     </div>
   );
 }
