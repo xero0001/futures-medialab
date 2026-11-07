@@ -227,12 +227,11 @@
 .table {
   width: 100%;
 }
+.table table {
+  min-width: 640px;
+}
 .table th {
   white-space: nowrap;
-}
-.table td {
-  padding-top: 20px;
-  padding-bottom: 20px;
 }
 .campaignName {
   display: flex;
@@ -383,15 +382,36 @@
   flex-shrink: 0;
   margin-top: 1px;
 }
+.campaignList {
+  min-width: 0;
+}
 .listSearch {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px;
+  padding-bottom: 20px;
   gap: 24px;
 }
-.listSearch > div {
-  max-width: 340px;
+.campaignCount {
+  flex-shrink: 0;
+}
+.listControls {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 0;
+}
+.campaignSearch {
+  flex: 0 1 340px;
+  min-width: 0;
+}
+.listControls > a {
+  flex-shrink: 0;
+}
+.campaignResults {
+  padding-top: 16px;
 }
 .limitNote {
   padding: 16px 24px;
@@ -651,14 +671,12 @@
     font-size: 18px;
   }
   .listSearch {
-    padding: 20px;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 16px;
   }
-  .listSearch > div {
-    max-width: none;
-    width: 100%;
+  .campaignSearch {
+    flex: 1;
   }
   .homeColumns > .panel:last-child .schedule {
     grid-template-columns: minmax(0, 1fr);
@@ -701,6 +719,12 @@
   }
 }
 @media (max-width: 400px) {
+  .listControls {
+    flex-wrap: wrap;
+  }
+  .campaignSearch {
+    flex-basis: 100%;
+  }
   .stat {
     align-items: flex-start;
     flex-direction: column;
@@ -761,5 +785,88 @@
   }
   .briefArtwork > img {
     height: 130px;
+  }
+}
+
+/* Home sections use Montage dividers; containers group related content only. */
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-width: 0;
+}
+.homeOverview,
+.requestSection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+.home .stats {
+  gap: 0;
+}
+.home .stat {
+  border: 0;
+  border-radius: 0;
+  border-right: 1px solid var(--brand-line);
+}
+.home .stat:last-child {
+  border-right: 0;
+}
+.homeCampaigns.panel {
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+.homeCampaigns .panelHeading {
+  padding: 0 0 20px;
+  min-height: 0;
+}
+.home .launchGrid {
+  padding: 12px;
+  gap: 12px;
+  border: 1px solid var(--brand-line);
+  border-radius: 24px;
+  background: var(--brand-soft);
+}
+.home .launchCard {
+  border: 1px solid var(--semantic-line-neutral-tertiary, #f0f0f1);
+  border-radius: 20px;
+  background: var(--brand-surface);
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 1050px) {
+  .home .stat:nth-child(2) {
+    border-right: 0;
+  }
+  .home .stat:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--brand-line);
+  }
+}
+@media (max-width: 700px) {
+  .home {
+    gap: 28px;
+  }
+  .home .stat {
+    padding: 16px 12px;
+  }
+  .home .launchGrid {
+    padding: 8px;
+    gap: 8px;
+    border-radius: 20px;
+  }
+  .home .launchCard {
+    padding: 20px;
+    border-radius: 16px;
   }
 }

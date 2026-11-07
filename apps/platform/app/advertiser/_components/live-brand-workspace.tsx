@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   Button,
   ContentBadge,
+  Divider,
   SearchField,
   SectionMessage,
   Skeleton,
@@ -619,161 +620,162 @@ function Home({ data, locale }: { data: BrandWorkspace; locale: Locale }) {
     },
   ];
   return (
-    <>
-      <PageHeading
-        title={t(
-          `${data.account.name}의 작업 공간`,
-          `${data.account.name}'s workspace`,
-          `${data.account.name}的工作区`,
-        )}
-        description={t(
-          "확인할 업무와 기한을 먼저 살펴보고, 캠페인의 다음 단계를 진행하세요.",
-          "Review your tasks and deadlines, then move your campaigns forward.",
-          "先查看待办事项和期限，再推进活动的下一步。",
-        )}
-        action={
-          <NewCampaignLink
-            locale={locale}
-            canManage={data.permissions.canManageCampaigns}
-          />
-        }
-      />
-      <BrandActionCenter data={data} locale={locale} />
-      <div className={styles.stats}>
-        {stats.map((stat) => (
-          <Link className={styles.stat} key={stat.label} href={href(stat.path)}>
-            <span className={styles.statIcon}>{stat.icon}</span>
-            <div>
-              <Typography as="span" variant="label2" className={styles.muted}>
-                {stat.label}
-              </Typography>
-              <Typography as="strong" variant="title2" weight="bold">
-                {stat.count.toLocaleString(locale)}
-              </Typography>
-            </div>
-            <IconArrowRight className={styles.statArrow} aria-hidden="true" />
-          </Link>
-        ))}
-      </div>
-      {active.length > 0 && (
-        <Panel
-          title={t("진행 중인 캠페인", "Active campaigns", "进行中的活动")}
-          action={
-            <Link
-              className={styles.textLink}
-              href={href("/advertiser/campaign")}
-            >
-              {t("전체 보기", "View all", "查看全部")}
-              <IconArrowRight />
-            </Link>
-          }
-        >
-          <CampaignTable campaigns={active} locale={locale} compact />
-        </Panel>
-      )}
-      <div className={styles.newRequestHeading}>
-        <Typography as="h2" variant="heading1" weight="bold">
-          {t("새 캠페인 의뢰", "Start a new campaign", "发起新活动")}
-        </Typography>
-        <Typography as="p" variant="body2" className={styles.muted}>
-          {t(
-            "새로운 목표가 있다면 퓨쳐스에 브리프를 전달해 주세요.",
-            "Share your next campaign brief with Futures.",
-            "向 Futures 提交您的下一个活动简报。",
-          )}
-        </Typography>
-      </div>
-      <div className={styles.launchGrid}>
-        <section className={`${styles.launchCard} ${styles.managedCard}`}>
-          <div className={styles.launchTop}>
-            <ContentBadge color="accent" size="small">
-              MANAGED
-            </ContentBadge>
-            <IconSparkle aria-hidden="true" />
-          </div>
-          <Typography as="h2" variant="title3" weight="bold">
-            {t(
-              "브리프 하나로 시작하는\n맞춤 캠페인",
-              "A tailored campaign,\nstarting with your brief",
-              "一份简报，开启\n定制活动",
-            )}
-          </Typography>
-          <Typography as="p" variant="body2">
-            {t(
-              "목표와 예산을 알려주세요. 퓨쳐스가 조건을 확인하고 제안을 준비합니다.",
-              "Share your goals and budget. Futures reviews your needs and prepares a proposal.",
-              "告知目标和预算，Futures 将确认需求并准备方案。",
-            )}
-          </Typography>
-          <div className={styles.launchBottom}>
-            <Typography variant="caption1">
-              {t(
-                "접수 완료 후 48시간 내 제안",
-                "Proposal within 48 hours of completed intake",
-                "完整受理后48小时内提供方案",
-              )}
-            </Typography>
-            {data.permissions.canManageCampaigns && (
-              <Button
-                as={Link}
-                href={href("/advertiser/campaign/new?route=managed")}
-                size="small"
-                trailingContent={<IconArrowRight />}
-              >
-                {t("요청 시작", "Start a request", "开始请求")}
-              </Button>
-            )}
-          </div>
-        </section>
-        <section className={styles.launchCard}>
-          <div className={styles.launchTop}>
-            <ContentBadge size="small">OPEN</ContentBadge>
-            <IconMegaphone aria-hidden="true" />
-          </div>
-          <Typography as="h2" variant="heading1" weight="bold">
-            {t("모집형 캠페인", "Open campaign", "公开招募活动")}
+    <div className={styles.home}>
+      <section
+        className={styles.requestSection}
+        aria-labelledby="brand-new-request-title"
+      >
+        <div className={styles.newRequestHeading}>
+          <Typography
+            as="h1"
+            variant="heading1"
+            weight="bold"
+            id="brand-new-request-title"
+          >
+            {t("새 캠페인 의뢰", "Start a new campaign", "发起新活动")}
           </Typography>
           <Typography as="p" variant="body2" className={styles.muted}>
             {t(
-              "모집 기간을 정하고 다양한 제안을 기다려보세요. 퓨쳐스가 검토한 제안을 전달합니다.",
-              "Set a recruitment period. Futures reviews incoming submissions and shares a curated proposal.",
-              "设定招募期限，Futures 审核报名并向您提交方案。",
+              "새로운 목표가 있다면 퓨쳐스에 브리프를 전달해 주세요.",
+              "Share your next campaign brief with Futures.",
+              "向 Futures 提交您的下一个活动简报。",
             )}
           </Typography>
-          <div className={styles.launchBottom}>
-            <Typography variant="caption1" className={styles.muted}>
+        </div>
+        <div className={styles.launchGrid}>
+          <section className={`${styles.launchCard} ${styles.managedCard}`}>
+            <div className={styles.launchTop}>
+              <ContentBadge color="accent" size="small">
+                MANAGED
+              </ContentBadge>
+              <IconSparkle aria-hidden="true" />
+            </div>
+            <Typography as="h2" variant="title3" weight="bold">
               {t(
-                "모집 일정에 따라 진행",
-                "Follows your recruitment schedule",
-                "按招募日程推进",
+                "브리프 하나로 시작하는\n맞춤 캠페인",
+                "A tailored campaign,\nstarting with your brief",
+                "一份简报，开启\n定制活动",
               )}
             </Typography>
-            {data.permissions.canManageCampaigns && (
-              <Button
-                as={Link}
-                href={href("/advertiser/campaign/new?route=open")}
-                size="small"
-                color="assistive"
-                variant="outlined"
-                trailingContent={<IconArrowRight />}
-              >
-                {t("모집 요청", "Request campaign", "发起招募")}
-              </Button>
+            <Typography as="p" variant="body2">
+              {t(
+                "목표와 예산을 알려주세요. 퓨쳐스가 조건을 확인하고 제안을 준비합니다.",
+                "Share your goals and budget. Futures reviews your needs and prepares a proposal.",
+                "告知目标和预算，Futures 将确认需求并准备方案。",
+              )}
+            </Typography>
+            <div className={styles.launchBottom}>
+              <Typography variant="caption1">
+                {t(
+                  "접수 완료 후 48시간 내 제안",
+                  "Proposal within 48 hours of completed intake",
+                  "完整受理后48小时内提供方案",
+                )}
+              </Typography>
+              {data.permissions.canManageCampaigns && (
+                <Button
+                  as={Link}
+                  href={href("/advertiser/campaign/new?route=managed")}
+                  size="small"
+                  trailingContent={<IconArrowRight />}
+                >
+                  {t("요청 시작", "Start a request", "开始请求")}
+                </Button>
+              )}
+            </div>
+          </section>
+          <section className={styles.launchCard}>
+            <div className={styles.launchTop}>
+              <ContentBadge size="small">OPEN</ContentBadge>
+              <IconMegaphone aria-hidden="true" />
+            </div>
+            <Typography as="h2" variant="heading1" weight="bold">
+              {t("모집형 캠페인", "Open campaign", "公开招募活动")}
+            </Typography>
+            <Typography as="p" variant="body2" className={styles.muted}>
+              {t(
+                "모집 기간을 정하고 다양한 제안을 기다려보세요. 퓨쳐스가 검토한 제안을 전달합니다.",
+                "Set a recruitment period. Futures reviews incoming submissions and shares a curated proposal.",
+                "设定招募期限，Futures 审核报名并向您提交方案。",
+              )}
+            </Typography>
+            <div className={styles.launchBottom}>
+              <Typography variant="caption1" className={styles.muted}>
+                {t(
+                  "모집 일정에 따라 진행",
+                  "Follows your recruitment schedule",
+                  "按招募日程推进",
+                )}
+              </Typography>
+              {data.permissions.canManageCampaigns && (
+                <Button
+                  as={Link}
+                  href={href("/advertiser/campaign/new?route=open")}
+                  size="small"
+                  color="assistive"
+                  variant="outlined"
+                  trailingContent={<IconArrowRight />}
+                >
+                  {t("모집 요청", "Request campaign", "发起招募")}
+                </Button>
+              )}
+            </div>
+          </section>
+        </div>
+        <div className={styles.privacyNote}>
+          <IconLock />
+          <Typography variant="caption1">
+            {t(
+              "프리뷰에서는 익명 정보만 안내하며, 캠페인 진행에 필요한 크리에이터 정보는 공식 제안에서 공개됩니다.",
+              "Previews remain anonymous. Relevant creator details are shared only in an official campaign proposal.",
+              "预览仅显示匿名信息；活动所需的达人信息将在正式方案中公开。",
             )}
-          </div>
-        </section>
+          </Typography>
+        </div>
+      </section>
+      <Divider />
+      <BrandActionCenter data={data} locale={locale} />
+      <Divider thickness={8} color="semantic.surface.neutral.secondary" />
+      <div className={styles.homeOverview}>
+        <div className={styles.stats}>
+          {stats.map((stat) => (
+            <Link
+              className={styles.stat}
+              key={stat.label}
+              href={href(stat.path)}
+            >
+              <span className={styles.statIcon}>{stat.icon}</span>
+              <div>
+                <Typography as="span" variant="label2" className={styles.muted}>
+                  {stat.label}
+                </Typography>
+                <Typography as="strong" variant="title2" weight="bold">
+                  {stat.count.toLocaleString(locale)}
+                </Typography>
+              </div>
+              <IconArrowRight className={styles.statArrow} aria-hidden="true" />
+            </Link>
+          ))}
+        </div>
+        {active.length > 0 && (
+          <Panel
+            className={styles.homeCampaigns}
+            title={t("진행 중인 캠페인", "Active campaigns", "进行中的活动")}
+            action={
+              <Link
+                className={styles.textLink}
+                href={href("/advertiser/campaign")}
+              >
+                {t("전체 보기", "View all", "查看全部")}
+                <IconArrowRight />
+              </Link>
+            }
+          >
+            <CampaignTable campaigns={active} locale={locale} compact />
+          </Panel>
+        )}
       </div>
-      <div className={styles.privacyNote}>
-        <IconLock />
-        <Typography variant="caption1">
-          {t(
-            "프리뷰에서는 익명 정보만 안내하며, 캠페인 진행에 필요한 크리에이터 정보는 공식 제안에서 공개됩니다.",
-            "Previews remain anonymous. Relevant creator details are shared only in an official campaign proposal.",
-            "预览仅显示匿名信息；活动所需的达人信息将在正式方案中公开。",
-          )}
-        </Typography>
-      </div>
-    </>
+    </div>
   );
 }
 
@@ -790,10 +792,10 @@ function CampaignTable({
   const [now] = useState(() => Date.now());
   return (
     <div className={styles.tableWrap}>
-      <Table
-        className={styles.table}
-        aria-label={t("캠페인 목록", "Campaign list", "活动列表")}
-      >
+      <Table className={styles.table}>
+        <caption className={styles.srOnly}>
+          {t("캠페인 목록", "Campaign list", "活动列表")}
+        </caption>
         <TableHead>
           <TableRow>
             <TableHeadCell>{t("캠페인", "Campaign", "活动")}</TableHeadCell>
@@ -1041,47 +1043,56 @@ function Campaigns({ data, locale }: { data: BrandWorkspace; locale: Locale }) {
   );
   return (
     <>
-      <PageHeading
-        title={t("캠페인", "Campaigns", "活动")}
-        description={t(
-          "요청부터 결과 확인까지, 우리 조직의 캠페인을 관리하세요.",
-          "Manage your organization's campaigns from brief to results.",
-          "从需求到结果，管理本组织的活动。",
-        )}
-        action={
-          <NewCampaignLink
-            locale={locale}
-            canManage={data.permissions.canManageCampaigns}
-          />
-        }
-      />
-      <section className={styles.panel}>
+      <Typography
+        as="h1"
+        variant="title2"
+        weight="bold"
+        id="brand-campaigns-title"
+      >
+        {t("캠페인", "Campaigns", "活动")}
+      </Typography>
+      <section
+        className={styles.campaignList}
+        aria-labelledby="brand-campaigns-title"
+      >
         <div className={styles.listSearch}>
-          <Typography variant="label1" weight="bold">
+          <Typography
+            variant="label1"
+            weight="bold"
+            className={styles.campaignCount}
+          >
             {t(
               `전체 ${data.counts.campaigns}개 캠페인`,
               `${data.counts.campaigns} campaigns`,
               `共 ${data.counts.campaigns} 个活动`,
             )}
           </Typography>
-          <SearchField
-            aria-label={t("캠페인 검색", "Search campaigns", "搜索活动")}
-            placeholder={t(
-              "캠페인 이름이나 브리프 검색",
-              "Search name or brief",
-              "搜索活动名称或简报",
-            )}
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            onReset={() => setSearch("")}
-            size="medium"
-            width="100%"
-          />
+          <div className={styles.listControls}>
+            <div className={styles.campaignSearch}>
+              <SearchField
+                aria-label={t("캠페인 검색", "Search campaigns", "搜索活动")}
+                placeholder={t(
+                  "캠페인 이름이나 브리프 검색",
+                  "Search name or brief",
+                  "搜索活动名称或简报",
+                )}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                onReset={() => setSearch("")}
+                size="medium"
+                width="100%"
+              />
+            </div>
+            <NewCampaignLink
+              locale={locale}
+              canManage={data.permissions.canManageCampaigns}
+            />
+          </div>
         </div>
         <Tab value={filter} onValueChange={setFilter} disableScrollMoveOnChange>
           <TabList
             size="medium"
-            horizontalPadding
+            horizontalPadding={false}
             aria-label={t("캠페인 상태", "Campaign status", "活动状态")}
           >
             {filters.map((item) => (
@@ -1090,7 +1101,11 @@ function Campaigns({ data, locale }: { data: BrandWorkspace; locale: Locale }) {
               </TabListItem>
             ))}
           </TabList>
-          <TabPanel value={filter} mountMode="always">
+          <TabPanel
+            value={filter}
+            mountMode="always"
+            className={styles.campaignResults}
+          >
             {campaigns.length ? (
               <CampaignTable campaigns={campaigns} locale={locale} />
             ) : (

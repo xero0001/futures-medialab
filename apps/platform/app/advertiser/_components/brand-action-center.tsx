@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Button, Typography } from "@montage-ui/core";
+import {
+  Button,
+  Category,
+  CategoryList,
+  CategoryListItem,
+  Divider,
+  Typography,
+} from "@montage-ui/core";
 import {
   ArrowRight,
   CalendarDays,
@@ -55,6 +62,10 @@ export function BrandActionCenter({
   const [filter, setFilter] = useState<Filter>("all");
   const [visibleCount, setVisibleCount] = useState(8);
   const [showAllSchedule, setShowAllSchedule] = useState(false);
+  const selectFilter = (kind: Filter) => {
+    setFilter(kind);
+    setVisibleCount(8);
+  };
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
     return () => window.clearInterval(timer);
@@ -132,7 +143,7 @@ export function BrandActionCenter({
   return (
     <div className={styles.actionCenter}>
       <section
-        className={`${styles.panel} ${styles.actionPanel}`}
+        className={styles.actionPanel}
         aria-labelledby="brand-actions-title"
       >
         <div className={styles.panelHeader}>
@@ -177,146 +188,166 @@ export function BrandActionCenter({
             </span>
           </div>
         </div>
-        <div
-          className={styles.filters}
-          aria-label={t("처리할 일 유형", "Action type", "事项类型")}
+        <Category
+          value={filter}
+          onValueChange={(value) => selectFilter(value as Filter)}
         >
-          {kinds.map((kind) => (
-            <button
-              type="button"
-              key={kind}
-              aria-pressed={filter === kind}
-              className={filter === kind ? styles.selectedFilter : ""}
-              onClick={() => {
-                setFilter(kind);
-                setVisibleCount(8);
-              }}
+          <div className={styles.filters}>
+            <CategoryList
+              variant="alternative"
+              size="medium"
+              horizontalPadding={false}
+              verticalPadding={false}
+              aria-label={t("처리할 일 유형", "Action type", "事项类型")}
             >
-              {labels[kind]}
+              {kinds.map((kind) => (
+                <CategoryListItem
+                  key={kind}
+                  value={kind}
+                  id={`brand-actions-filter-${kind}`}
+                  aria-controls="brand-actions-results"
+                  onFocus={() => selectFilter(kind)}
+                >
+                  <span className={styles.categoryLabel}>
+                    {labels[kind]}
+                    <span className={styles.categoryCount}>
+                      {kind === "all"
+                        ? actions.length
+                        : actions.filter((item) => item.kind === kind).length}
+                    </span>
+                  </span>
+                </CategoryListItem>
+              ))}
+            </CategoryList>
+          </div>
+        </Category>
+        <Divider />
+        <div
+          id="brand-actions-results"
+          role="tabpanel"
+          aria-labelledby={`brand-actions-filter-${filter}`}
+          tabIndex={0}
+        >
+          <div aria-live="polite" className={styles.srOnly}>
+            {t(
+              `${selected.length}건의 업무`,
+              `${selected.length} tasks`,
+              `${selected.length} 项任务`,
+            )}
+          </div>
+          {selected.length ? (
+            <ul className={styles.actionList}>
+              {selected.slice(0, visibleCount).map((item) => {
+                const Icon = icons[item.kind];
+                const late = isPastBrandDeadline(item.dueAt, now);
+                return (
+                  <li key={item.id} className={styles.actionRow}>
+                    <span
+                      className={`${styles.actionIcon} ${late ? styles.lateIcon : ""}`}
+                    >
+                      <Icon size={21} aria-hidden="true" />
+                    </span>
+                    <div className={styles.actionBody}>
+                      <div className={styles.rowEyebrow}>
+                        <span>{labels[item.kind]}</span>
+                        {item.campaignTitle &&
+                          item.campaignTitle !== item.title && (
+                            <span className={styles.campaignLabel}>
+                              {item.campaignTitle}
+                            </span>
+                          )}
+                      </div>
+                      <Link
+                        href={href(item.href)}
+                        className={styles.actionTitle}
+                      >
+                        {item.title}
+                      </Link>
+                      <p>{description(item)}</p>
+                    </div>
+                    <div className={styles.actionDeadline}>
+                      {item.dueAt ? (
+                        <>
+                          <span>{deadlines[item.deadlineKind]}</span>
+                          <time dateTime={item.dueAt}>
+                            {dateLabel(item.dueAt, locale)}
+                          </time>
+                          {late && (
+                            <strong className={styles.overdue}>
+                              {t("기한 지남", "Overdue", "已逾期")}
+                            </strong>
+                          )}
+                        </>
+                      ) : (
+                        <span>
+                          {t("기한 미지정", "No deadline set", "未设截止日期")}
+                        </span>
+                      )}
+                    </div>
+                    <Button
+                      as={Link}
+                      href={href(item.href)}
+                      variant="outlined"
+                      color="assistive"
+                      size="small"
+                      trailingContent={<ArrowRight size={15} />}
+                    >
+                      {actionLabel(item.kind)}
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div className={styles.emptyActions}>
               <span>
-                {kind === "all"
-                  ? actions.length
-                  : actions.filter((item) => item.kind === kind).length}
+                <Check size={23} />
               </span>
-            </button>
-          ))}
-        </div>
-        <div aria-live="polite" className={styles.srOnly}>
-          {t(
-            `${selected.length}건의 업무`,
-            `${selected.length} tasks`,
-            `${selected.length} 项任务`,
+              <Typography as="strong" variant="body1" weight="bold">
+                {filter === "all"
+                  ? t(
+                      "지금 확인할 업무가 없습니다",
+                      "You’re all caught up",
+                      "暂无待确认事项",
+                    )
+                  : t(
+                      "이 유형의 대기 업무가 없습니다",
+                      "No pending tasks of this type",
+                      "此类型暂无待处理事项",
+                    )}
+              </Typography>
+              <Typography as="p" variant="body2" className={styles.muted}>
+                {filter === "all"
+                  ? t(
+                      "진행 중인 캠페인의 일정과 새 요청을 아래에서 확인하세요.",
+                      "See your campaign schedules and start a new request below.",
+                      "可在下方查看活动日程或发起新请求。",
+                    )
+                  : t(
+                      "다른 유형을 선택해 업무를 확인하세요.",
+                      "Select another type to see more tasks.",
+                      "请选择其他类型查看事项。",
+                    )}
+              </Typography>
+            </div>
+          )}
+          {selected.length > visibleCount && (
+            <div className={styles.moreRow}>
+              <Button
+                variant="outlined"
+                color="assistive"
+                size="small"
+                onClick={() => setVisibleCount((count) => count + 8)}
+              >
+                {t(
+                  `업무 더 보기 (${selected.length - visibleCount})`,
+                  `Show more (${selected.length - visibleCount})`,
+                  `查看更多 (${selected.length - visibleCount})`,
+                )}
+              </Button>
+            </div>
           )}
         </div>
-        {selected.length ? (
-          <ul className={styles.actionList}>
-            {selected.slice(0, visibleCount).map((item) => {
-              const Icon = icons[item.kind];
-              const late = isPastBrandDeadline(item.dueAt, now);
-              return (
-                <li key={item.id} className={styles.actionRow}>
-                  <span
-                    className={`${styles.actionIcon} ${late ? styles.lateIcon : ""}`}
-                  >
-                    <Icon size={21} aria-hidden="true" />
-                  </span>
-                  <div className={styles.actionBody}>
-                    <div className={styles.rowEyebrow}>
-                      <span>{labels[item.kind]}</span>
-                      {item.campaignTitle &&
-                        item.campaignTitle !== item.title && (
-                          <span className={styles.campaignLabel}>
-                            {item.campaignTitle}
-                          </span>
-                        )}
-                    </div>
-                    <Link href={href(item.href)} className={styles.actionTitle}>
-                      {item.title}
-                    </Link>
-                    <p>{description(item)}</p>
-                  </div>
-                  <div className={styles.actionDeadline}>
-                    {item.dueAt ? (
-                      <>
-                        <span>{deadlines[item.deadlineKind]}</span>
-                        <time dateTime={item.dueAt}>
-                          {dateLabel(item.dueAt, locale)}
-                        </time>
-                        {late && (
-                          <strong className={styles.overdue}>
-                            {t("기한 지남", "Overdue", "已逾期")}
-                          </strong>
-                        )}
-                      </>
-                    ) : (
-                      <span>
-                        {t("기한 미지정", "No deadline set", "未设截止日期")}
-                      </span>
-                    )}
-                  </div>
-                  <Button
-                    as={Link}
-                    href={href(item.href)}
-                    variant="outlined"
-                    color="assistive"
-                    size="small"
-                    trailingContent={<ArrowRight size={15} />}
-                  >
-                    {actionLabel(item.kind)}
-                  </Button>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <div className={styles.emptyActions}>
-            <span>
-              <Check size={23} />
-            </span>
-            <Typography as="strong" variant="body1" weight="bold">
-              {filter === "all"
-                ? t(
-                    "지금 확인할 업무가 없습니다",
-                    "You’re all caught up",
-                    "暂无待确认事项",
-                  )
-                : t(
-                    "이 유형의 대기 업무가 없습니다",
-                    "No pending tasks of this type",
-                    "此类型暂无待处理事项",
-                  )}
-            </Typography>
-            <Typography as="p" variant="body2" className={styles.muted}>
-              {filter === "all"
-                ? t(
-                    "진행 중인 캠페인의 일정과 새 요청을 아래에서 확인하세요.",
-                    "See your campaign schedules and start a new request below.",
-                    "可在下方查看活动日程或发起新请求。",
-                  )
-                : t(
-                    "다른 유형을 선택해 업무를 확인하세요.",
-                    "Select another type to see more tasks.",
-                    "请选择其他类型查看事项。",
-                  )}
-            </Typography>
-          </div>
-        )}
-        {selected.length > visibleCount && (
-          <div className={styles.moreRow}>
-            <Button
-              variant="outlined"
-              color="assistive"
-              size="small"
-              onClick={() => setVisibleCount((count) => count + 8)}
-            >
-              {t(
-                `업무 더 보기 (${selected.length - visibleCount})`,
-                `Show more (${selected.length - visibleCount})`,
-                `查看更多 (${selected.length - visibleCount})`,
-              )}
-            </Button>
-          </div>
-        )}
         {(data.hasMoreCampaigns || data.hasMoreRequests) && (
           <p className={styles.limitNote}>
             {t(
