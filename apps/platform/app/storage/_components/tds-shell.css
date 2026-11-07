@@ -15,7 +15,7 @@
 }
 
 .cw-tds .tds-brand-area .fm-wordmark {
-  gap: 8px;
+  gap: 5px;
   font-family: inherit;
 }
 
@@ -349,7 +349,7 @@
   }
 
   .cw-tds .tds-brand-area .fm-wordmark {
-    gap: 5px;
+    gap: 3px;
   }
 
   .cw-tds .tds-brand-area .fm-wordmark > svg {

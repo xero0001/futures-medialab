@@ -103,7 +103,7 @@ html:has(.bz-workspace) {
 .bz-shell-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   color: #25233d;
   text-decoration: none;
 }

@@ -213,7 +213,7 @@
   --admin-line: #eaebee;
 }
 .page .header :global(.admin-brand) {
-  gap: 10px;
+  gap: 6px;
 }
 .page .header :global(.admin-brand > svg) {
   width: 40px;

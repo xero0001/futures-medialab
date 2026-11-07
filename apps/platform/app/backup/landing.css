@@ -72,7 +72,7 @@
 .fmb-logo {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   line-height: 1;
   color: var(--fmb-blue) !important;
   flex-shrink: 0;

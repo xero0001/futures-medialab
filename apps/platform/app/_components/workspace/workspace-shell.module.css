@@ -73,7 +73,7 @@
   align-items: center;
 }
 .brand :global(.fm-wordmark) {
-  gap: 10px;
+  gap: 6px;
 }
 .brand :global(.fm-wordmark svg) {
   color: var(--fm-blue);
@@ -262,7 +262,7 @@
     display: none;
   }
   .brand :global(.fm-wordmark) {
-    gap: 7px;
+    gap: 4px;
   }
   .brand :global(.fm-wordmark > span) {
     font-size: 13px;

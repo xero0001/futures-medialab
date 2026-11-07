@@ -52,7 +52,7 @@
 }
 
 .brand :global(.fm-wordmark) {
-  gap: 10px;
+  gap: 6px;
 }
 
 .brand :global(.fm-wordmark svg),

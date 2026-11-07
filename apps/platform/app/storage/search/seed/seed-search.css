@@ -968,7 +968,7 @@ html:root:not([data-seed]) {
     gap: 6px;
   }
   .seed-search-brand .fm-wordmark {
-    gap: 6px;
+    gap: 4px;
   }
   .seed-search-brand .fm-wordmark > span {
     font-size: 13px;

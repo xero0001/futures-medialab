@@ -160,7 +160,7 @@ a {
 .admin-brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   color: var(--admin-accent);
   flex-shrink: 0;
   line-height: 1;
