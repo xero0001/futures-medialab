@@ -7,7 +7,6 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   Button,
   ContentBadge,
-  Divider,
   SearchField,
   SectionMessage,
   Skeleton,
@@ -26,13 +25,12 @@ import {
 import {
   IconArrowLeft,
   IconArrowRight,
-  IconCheck,
-  IconInbox,
   IconLock,
   IconMegaphone,
+  IconMegaphoneFill,
   IconPlus,
-  IconSparkle,
 } from "@montage-ui/icon";
+import { BrandSymbol } from "@futures-medialab/ui/brand-symbol";
 import type { Locale } from "../../_components/landing-copy";
 import { WorkspaceProvider } from "../../_components/workspace/workspace-provider";
 import { WorkspaceShell } from "../../_components/workspace/workspace-shell";
@@ -593,32 +591,6 @@ function Home({ data, locale }: { data: BrandWorkspace; locale: Locale }) {
         !["DRAFT", "COMPLETED", "CANCELED"].includes(campaign.status),
     )
     .slice(0, 5);
-  const stats = [
-    {
-      label: t("진행 중인 캠페인", "Active campaigns", "进行中的活动"),
-      count: data.counts.activeCampaigns,
-      icon: <IconMegaphone />,
-      path: "/advertiser/campaign?status=active",
-    },
-    {
-      label: t("승인 대기 제안", "Proposals to review", "待审批方案"),
-      count: data.counts.pendingProposals,
-      icon: <IconCheck />,
-      path: "/advertiser/campaign?status=approval",
-    },
-    {
-      label: t("콘텐츠 검수 대기", "Content to review", "待审核内容"),
-      count: data.counts.waitingContentReviews,
-      icon: <IconInbox />,
-      path: "/advertiser/campaign?status=content-review",
-    },
-    {
-      label: t("완료한 캠페인", "Completed campaigns", "已完成活动"),
-      count: data.counts.completedCampaigns,
-      icon: <IconCheck />,
-      path: "/advertiser/campaign?status=completed",
-    },
-  ];
   return (
     <div className={styles.home}>
       <section
@@ -634,13 +606,6 @@ function Home({ data, locale }: { data: BrandWorkspace; locale: Locale }) {
           >
             {t("새 캠페인 의뢰", "Start a new campaign", "发起新活动")}
           </Typography>
-          <Typography as="p" variant="body2" className={styles.muted}>
-            {t(
-              "새로운 목표가 있다면 퓨쳐스에 브리프를 전달해 주세요.",
-              "Share your next campaign brief with Futures.",
-              "向 Futures 提交您的下一个活动简报。",
-            )}
-          </Typography>
         </div>
         <div className={styles.launchGrid}>
           <section className={`${styles.launchCard} ${styles.managedCard}`}>
@@ -648,7 +613,7 @@ function Home({ data, locale }: { data: BrandWorkspace; locale: Locale }) {
               <ContentBadge color="accent" size="small">
                 MANAGED
               </ContentBadge>
-              <IconSparkle aria-hidden="true" />
+              <BrandSymbol />
             </div>
             <Typography as="h2" variant="title3" weight="bold">
               {t(
@@ -687,7 +652,7 @@ function Home({ data, locale }: { data: BrandWorkspace; locale: Locale }) {
           <section className={styles.launchCard}>
             <div className={styles.launchTop}>
               <ContentBadge size="small">OPEN</ContentBadge>
-              <IconMegaphone aria-hidden="true" />
+              <IconMegaphoneFill aria-hidden="true" />
             </div>
             <Typography as="h2" variant="heading1" weight="bold">
               {t("모집형 캠페인", "Open campaign", "公开招募活动")}
@@ -733,48 +698,24 @@ function Home({ data, locale }: { data: BrandWorkspace; locale: Locale }) {
           </Typography>
         </div>
       </section>
-      <Divider />
       <BrandActionCenter data={data} locale={locale} />
-      <Divider thickness={8} color="semantic.surface.neutral.secondary" />
-      <div className={styles.homeOverview}>
-        <div className={styles.stats}>
-          {stats.map((stat) => (
+      {active.length > 0 && (
+        <Panel
+          className={styles.homeCampaigns}
+          title={t("진행 중인 캠페인", "Active campaigns", "进行中的活动")}
+          action={
             <Link
-              className={styles.stat}
-              key={stat.label}
-              href={href(stat.path)}
+              className={styles.textLink}
+              href={href("/advertiser/campaign")}
             >
-              <span className={styles.statIcon}>{stat.icon}</span>
-              <div>
-                <Typography as="span" variant="label2" className={styles.muted}>
-                  {stat.label}
-                </Typography>
-                <Typography as="strong" variant="title2" weight="bold">
-                  {stat.count.toLocaleString(locale)}
-                </Typography>
-              </div>
-              <IconArrowRight className={styles.statArrow} aria-hidden="true" />
+              {t("전체 보기", "View all", "查看全部")}
+              <IconArrowRight />
             </Link>
-          ))}
-        </div>
-        {active.length > 0 && (
-          <Panel
-            className={styles.homeCampaigns}
-            title={t("진행 중인 캠페인", "Active campaigns", "进行中的活动")}
-            action={
-              <Link
-                className={styles.textLink}
-                href={href("/advertiser/campaign")}
-              >
-                {t("전체 보기", "View all", "查看全部")}
-                <IconArrowRight />
-              </Link>
-            }
-          >
-            <CampaignTable campaigns={active} locale={locale} compact />
-          </Panel>
-        )}
-      </div>
+          }
+        >
+          <CampaignTable campaigns={active} locale={locale} compact />
+        </Panel>
+      )}
     </div>
   );
 }
