@@ -5,7 +5,10 @@ import {
   VideoPreview,
 } from "@futures-medialab/ui/video-submission";
 import { uploadProductionVideo } from "@futures-medialab/database/production-media-client";
-import { productionVideoSource } from "@futures-medialab/database/production-media-shared";
+import {
+  productionMediaId,
+  productionVideoSource,
+} from "@futures-medialab/database/production-media-shared";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   Button,
@@ -588,15 +591,17 @@ function SubmissionForm({
       return;
     }
     try {
-      const parsed = new URL(url.trim());
-      if (parsed.protocol !== "https:" || parsed.username || parsed.password)
-        throw new Error();
+      if (!productionMediaId(url.trim())) {
+        const parsed = new URL(url.trim());
+        if (parsed.protocol !== "https:" || parsed.username || parsed.password)
+          throw new Error();
+      }
     } catch {
       setError(
         t(
-          "확인할 수 있는 HTTPS 콘텐츠 링크를 입력해 주세요.",
-          "Enter a valid HTTPS content link.",
-          "请输入可访问的 HTTPS 内容链接。",
+          "동영상을 업로드하거나 확인할 수 있는 HTTPS 콘텐츠 링크를 입력해 주세요.",
+          "Upload a video or enter a valid HTTPS content link.",
+          "请上传视频或输入可访问的 HTTPS 内容链接。",
         ),
       );
       return;

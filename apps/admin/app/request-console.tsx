@@ -650,6 +650,8 @@ function RequestWorkspace({
                               </>
                             ) : message.authorRole === "BRAND" ? (
                               "브랜드"
+                            ) : message.authorRole === "AGENCY" ? (
+                              "에이전시"
                             ) : (
                               "운영팀 답변"
                             )}
@@ -1266,7 +1268,7 @@ function ReplyForm({
         <p className="ar-help">
           {internal
             ? "이 메모와 첨부파일은 요청자에게 보이지 않습니다."
-            : "이 답변과 첨부파일은 요청한 요청자에게 표시됩니다."}
+            : "이 답변과 첨부파일은 요청자에게 표시됩니다."}
         </p>
         <input
           ref={fileInput}
