@@ -357,6 +357,15 @@ export function adminSourcingApi(request: Request) {
               ...summary,
               rowId: row.id,
               status: row.status,
+              reviewReason: text(
+                record(
+                  audits.find(
+                    (audit) =>
+                      audit.entityId === application.id &&
+                      record(audit.payload).rowId === row.id,
+                  )?.payload,
+                ).reason,
+              ),
               amount: row.unitAmount.mul(row.quantity).toFixed(2),
               creators: summary.creators
                 .filter((c) => c.id === row.creatorId)

@@ -32,7 +32,7 @@ export const adminNavigation = [
   { key: "intake", label: "대리 접수", icon: IconInbox },
   { key: "creators", label: "내부 크리에이터 DB", icon: IconPersons },
   { key: "games", label: "게임 DB", icon: IconMegaphone },
-  { key: "requests", label: "브랜드 요청함", icon: IconInbox },
+  { key: "requests", label: "통합 요청함", icon: IconInbox },
   { key: "audit", label: "변경 이력", icon: IconHistory },
 ] as const;
 export type AdminTab = (typeof adminNavigation)[number]["key"];

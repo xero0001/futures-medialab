@@ -48,7 +48,7 @@ const descriptions: Record<Tab, string> = {
   campaigns:
     "맞춤 의뢰와 오픈 모집의 후보 선정부터 제작·성과·청구까지 이어서 관리하세요.",
   requests:
-    "브랜드의 문의부터 캠페인 변경 요청까지, 담당자를 정하고 답변을 이어가세요.",
+    "브랜드·파트너 문의와 캠페인 변경 요청을 처리하고, 파트너 초대와 회신을 관리하세요.",
   audit: "담당자의 검토 사유부터 처리 결과까지, 운영의 흐름을 확인하세요.",
 };
 const actionLabels: Record<string, string> = {

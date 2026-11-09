@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   Button,
   Divider,
@@ -29,12 +29,18 @@ const serviceUrl = "https://futures-medialab.vercel.app";
 export function LoginForm({ denied }: { denied: boolean }) {
   const pendingRef = useRef(false);
   const [busy, setBusy] = useState(false);
+  const [ready, setReady] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(
     denied ? "이 계정에는 관리자 권한이 없습니다." : "",
   );
+  useEffect(() => {
+    // Enable credentials only after the client submit handler is attached.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setReady(true);
+  }, []);
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pendingRef.current) return;
@@ -120,7 +126,12 @@ export function LoginForm({ denied }: { denied: boolean }) {
                   Futures Medialab 운영자 계정으로 로그인하세요.
                 </Typography>
               </div>
-              <form className={styles.form} onSubmit={signIn} aria-busy={busy}>
+              <form
+                method="post"
+                className={styles.form}
+                onSubmit={signIn}
+                aria-busy={busy || !ready}
+              >
                 <FormControl size="large">
                   <FormControlLabel htmlFor="admin-email">
                     이메일
@@ -136,7 +147,7 @@ export function LoginForm({ denied }: { denied: boolean }) {
                       placeholder="you@company.com"
                       required
                       maxLength={254}
-                      disabled={busy}
+                      disabled={busy || !ready}
                       width="100%"
                       value={email}
                       onChange={(event) => {
@@ -160,7 +171,7 @@ export function LoginForm({ denied }: { denied: boolean }) {
                       placeholder="비밀번호를 입력해 주세요"
                       required
                       maxLength={128}
-                      disabled={busy}
+                      disabled={busy || !ready}
                       width="100%"
                       value={password}
                       onChange={(event) => {
@@ -178,7 +189,7 @@ export function LoginForm({ denied }: { denied: boolean }) {
                               showPassword ? "비밀번호 숨기기" : "비밀번호 표시"
                             }
                             aria-pressed={showPassword}
-                            disabled={busy}
+                            disabled={busy || !ready}
                             onClick={() =>
                               setShowPassword((visible) => !visible)
                             }
@@ -205,7 +216,7 @@ export function LoginForm({ denied }: { denied: boolean }) {
                   color="primary"
                   fullWidth
                   loading={busy}
-                  disabled={busy}
+                  disabled={busy || !ready}
                   aria-label={busy ? "권한 확인 중" : "로그인"}
                 >
                   {busy ? "권한 확인 중…" : "로그인"}

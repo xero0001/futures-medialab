@@ -317,7 +317,7 @@ export function AgencyApplicationComposer({
                   <strong>{String(index + 1).padStart(2, "0")}</strong>
                   {creator && (
                     <span className={s.muted}>
-                      {creator.platform} · {creator.genre}
+                      {row.platform} · {creator.genre}
                     </span>
                   )}
                   <MontageIconButton

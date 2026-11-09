@@ -350,7 +350,10 @@ export function Modal({
       className={`${s.dialog} ${wide ? s.wideDialog : ""}`}
       aria-labelledby={id}
       onCancel={onClose}
-      onClose={onClose}
+      onClose={() => {
+        // Effect cleanup can queue a close event before Strict Mode reopens it.
+        if (!ref.current?.open) onClose();
+      }}
     >
       <header className={s.dialogHead}>
         <h2 id={id}>{title}</h2>

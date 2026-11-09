@@ -356,7 +356,7 @@ export function AdminSourcing({
         <div className={s.list}>
           {rows.map((item) => (
             <Candidate
-              key={`${item.id}:${item.updatedAt}`}
+              key={`${item.rowId ?? item.id}:${item.updatedAt}`}
               item={item}
               busy={busy}
               onReview={(status, reason) => review(item, status, reason)}

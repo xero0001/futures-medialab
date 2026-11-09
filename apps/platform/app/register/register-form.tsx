@@ -411,6 +411,7 @@ export function RegisterForm({
             </Typography>
           </div>
           <form
+            method="post"
             className={authStyles.form}
             onSubmit={submit}
             noValidate

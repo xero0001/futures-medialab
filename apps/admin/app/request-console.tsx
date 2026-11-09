@@ -254,7 +254,7 @@ export function RequestConsole({
 
       <section
         className="admin-panel ar-list"
-        aria-label="브랜드 요청 목록"
+        aria-label="통합 요청 목록"
         aria-busy={loading}
       >
         <form className="ar-filters" onSubmit={searchRequests}>
@@ -265,7 +265,7 @@ export function RequestConsole({
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="제목, 브랜드 또는 캠페인 검색"
+            placeholder="제목, 조직 또는 캠페인 검색"
                 maxLength={160}
               />
               <AdminButton type="submit" className="primary">
@@ -356,7 +356,7 @@ export function RequestConsole({
           <table className="ar-table">
             <thead>
               <tr>
-                <th scope="col">요청 · 브랜드</th>
+                <th scope="col">요청 · 조직</th>
                 <th scope="col">상태</th>
                 <th scope="col">우선순위</th>
                 <th scope="col">담당자</th>
@@ -431,13 +431,13 @@ export function RequestConsole({
                       <Inbox size={28} />
                       <strong>
                         {loading
-                          ? "브랜드 요청을 불러오고 있습니다."
+                          ? "요청을 불러오고 있습니다."
                           : "조건에 맞는 요청이 없습니다."}
                       </strong>
                       <p>
                         {loading
                           ? "잠시만 기다려 주세요."
-                          : "브랜드가 접수한 요청이 이곳에 표시됩니다. 검색 조건도 확인해 주세요."}
+                          : "브랜드·파트너 문의와 파트너 초대가 이곳에 표시됩니다. 검색 조건도 확인해 주세요."}
                       </p>
                     </div>
                   </td>

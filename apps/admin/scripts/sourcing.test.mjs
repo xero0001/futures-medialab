@@ -116,7 +116,7 @@ function fixture(options = {}) {
       create: async ({ data }) => {
         calls.push(["audit", data]);
       },
-      findMany: async () => [],
+      findMany: async () => options.audits ?? [],
     },
   };
   class Failure extends Error {
@@ -470,4 +470,79 @@ test("supplier offer cap is explicitly saved without copying brand budget or ove
   assert.equal(audits.length, 1);
   assert.equal((await post({ unitCap: null })).status, 200);
   assert.equal(campaign.requirements.supplierOffer.unitCap, null);
+});
+
+test("multi-channel application rows show only their own latest review reason", async () => {
+  const row = (id, platform) => ({
+    id,
+    platform,
+    creatorId: "creator",
+    status: "SHORTLISTED",
+    proposalItems: [],
+    format: "쇼츠",
+    quantity: 1,
+    availableOn: new Date(stamp),
+    unitAmount: {
+      toFixed: () => "100.00",
+      mul: () => ({ toFixed: () => "100.00" }),
+    },
+  });
+  const f = fixture({
+    application: {
+      rows: [
+        row("tiktok-row", "tiktok"),
+        row("youtube-row", "youtube"),
+        row("unreviewed-row", "instagram"),
+      ],
+    },
+    audits: [
+      {
+        entityId: "application",
+        payload: { rowId: "youtube-row", reason: "YouTube 일정 확인" },
+      },
+      {
+        entityId: "application",
+        payload: { rowId: "tiktok-row", reason: "TikTok 조건 확인" },
+      },
+      {
+        entityId: "application",
+        payload: { rowId: "tiktok-row", reason: "이전 사유" },
+      },
+    ],
+  });
+  const response = await f.get();
+  assert.equal(response.status, 200);
+  const { applications } = await response.json();
+  assert.deepEqual(
+    applications.map(({ rowId, reviewReason }) => [rowId, reviewReason]),
+    [
+      ["tiktok-row", "TikTok 조건 확인"],
+      ["youtube-row", "YouTube 일정 확인"],
+      ["unreviewed-row", ""],
+    ],
+  );
+});
+
+test("admin request collection exposes POST and forwards invitation creation", async () => {
+  const calls = [];
+  const route = compile("app/api/admin/requests/route.ts", {
+    "../../../../lib/requests-api": {
+      requestsApi: async (request) => {
+        calls.push(request);
+        return Response.json({ id: "invitation" }, { status: 201 });
+      },
+    },
+  });
+  const request = new Request("https://admin.example/api/admin/requests", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      tool: "invitation",
+      recipientOrganizationId: "agency",
+    }),
+  });
+  const response = await route.POST(request);
+  assert.equal(response.status, 201);
+  assert.deepEqual(await response.json(), { id: "invitation" });
+  assert.equal(calls[0], request);
 });

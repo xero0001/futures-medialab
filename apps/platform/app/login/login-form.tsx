@@ -85,12 +85,19 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [pending, setPending] = useState(false);
+  const [ready, setReady] = useState(false);
   const [status, setStatus] = useState<
     "invalid" | "tooMany" | "origin" | "failed" | null
   >(null);
   const requestPending = useRef(false);
   const statusRef = useRef<HTMLDivElement>(null);
   const t = copy[locale];
+
+  useEffect(() => {
+    // Enable credentials only after the client submit handler is attached.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setReady(true);
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = locale === "zh" ? "zh-CN" : locale;
@@ -160,7 +167,12 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
           {t.subtitle}
         </Typography>
       </div>
-      <form className={styles.form} onSubmit={submit} aria-busy={pending}>
+      <form
+        method="post"
+        className={styles.form}
+        onSubmit={submit}
+        aria-busy={pending || !ready}
+      >
         <FormControl size="large">
           <FormControlLabel htmlFor="login-email">{t.email}</FormControlLabel>
           <FormControlField>
@@ -179,7 +191,7 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
               }}
               status={status === "invalid" ? "negative" : "normal"}
               aria-describedby={status ? "login-status" : undefined}
-              disabled={pending}
+              disabled={pending || !ready}
               required
               maxLength={254}
               width="100%"
@@ -204,7 +216,7 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
               }}
               status={status === "invalid" ? "negative" : "normal"}
               aria-describedby={status ? "login-status" : undefined}
-              disabled={pending}
+              disabled={pending || !ready}
               required
               maxLength={128}
               width="100%"
@@ -216,7 +228,7 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
                     sx={{ width: 40, height: 40 }}
                     aria-label={showPassword ? t.hidePassword : t.showPassword}
                     aria-pressed={showPassword}
-                    disabled={pending}
+                    disabled={pending || !ready}
                     onClick={() => setShowPassword((visible) => !visible)}
                   >
                     {showPassword ? <IconEyeSlash /> : <IconEye />}
@@ -247,7 +259,7 @@ export function LoginForm({ initialLocale }: { initialLocale: Locale }) {
           color="primary"
           fullWidth
           loading={pending}
-          disabled={pending}
+          disabled={pending || !ready}
           aria-label={pending ? t.signingIn : t.login}
         >
           {pending ? t.signingIn : t.login}
