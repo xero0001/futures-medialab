@@ -98,7 +98,7 @@ async function upload(actor: RequestActor, request: Request, id: string) {
     const row = await ownedRequest(tx, actor, id);
     if (
       row.status === "CLOSED" ||
-      (actor.kind === "brand" && row.status === "RESOLVED")
+      (actor.kind !== "admin" && row.status === "RESOLVED")
     )
       requestFail(409, "REQUEST_CLOSED", "현재 상태에서는 첨부할 수 없습니다.");
     const count = await tx.requestAttachment.count({
@@ -189,7 +189,7 @@ async function upload(actor: RequestActor, request: Request, id: string) {
       const row = await ownedRequest(tx, actor, id);
       if (
         row.status === "CLOSED" ||
-        (actor.kind === "brand" && row.status === "RESOLVED")
+        (actor.kind !== "admin" && row.status === "RESOLVED")
       )
         requestFail(409, "REQUEST_CLOSED", "요청 상태가 변경되었습니다.");
       // This check must share the serializable insert transaction, not only precede Blob I/O.
@@ -237,7 +237,7 @@ async function download(actor: RequestActor, id: string, attachmentId: string) {
     if (
       !found ||
       (!found.messageId && found.uploaderId !== actor.userId) ||
-      (actor.kind === "brand" && found.message?.internal) ||
+      (actor.kind !== "admin" && found.message?.internal) ||
       (found.message && found.message.requestId !== id)
     )
       requestFail(404, "NOT_FOUND", "첨부파일을 찾을 수 없습니다.");
@@ -275,7 +275,7 @@ async function download(actor: RequestActor, id: string, attachmentId: string) {
       if (
         !live ||
         (!live.messageId && live.uploaderId !== actor.userId) ||
-        (actor.kind === "brand" && live.message?.internal) ||
+        (actor.kind !== "admin" && live.message?.internal) ||
         (live.message && live.message.requestId !== id)
       )
         requestFail(404, "NOT_FOUND", "첨부파일을 찾을 수 없습니다.");

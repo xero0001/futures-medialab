@@ -123,6 +123,7 @@ export type AdminProductionMutation =
       expectedRevision: number;
       clientRequestId: string;
       supplierOrganizationId: string;
+      reason?: string;
     }
   | {
       action: "requestChanges";

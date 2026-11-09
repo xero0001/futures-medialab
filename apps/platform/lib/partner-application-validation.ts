@@ -69,7 +69,22 @@ const fields = {
 };
 export const partnerApplicationSchema = z.discriminatedUnion("action", [
   z.strictObject({ action: z.literal("apply"), ...fields }),
-  z.strictObject({ action: z.literal("saveDraft"), ...fields }),
+  z.strictObject({
+    action: z.literal("saveDraft"),
+    ...fields,
+    rows: z
+      .array(
+        z.strictObject({
+          creatorId: z.union([id, z.literal("")]),
+          platform: z.union([platform, z.literal("")]),
+          format: z.enum(["라이브", "VOD", "쇼츠", "커뮤니티"]),
+          quantity: z.number().int().min(0).max(50),
+          unitAmount: z.string().regex(/^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$/),
+          date: z.union([date, z.literal("")]),
+        }),
+      )
+      .max(20),
+  }),
   z.strictObject({ action: z.literal("withdraw"), applicationId: id }),
 ]);
 export const partnerCreatorSchema = z

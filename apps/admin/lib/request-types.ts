@@ -1,7 +1,7 @@
 export const requestStatuses = {
   REQUESTED: "접수",
   IN_PROGRESS: "처리 중",
-  WAITING_BRAND: "브랜드 회신 대기",
+  WAITING_BRAND: "요청자 회신 대기",
   RESOLVED: "처리 완료",
   CLOSED: "종료",
 } as const;
@@ -47,7 +47,7 @@ export type RequestMessage = {
   body: string;
   internal: boolean;
   authorName: string;
-  authorRole: "ADMIN" | "BRAND";
+  authorRole: "ADMIN" | "BRAND" | "AGENCY";
   createdAt: string;
   attachments: (RequestAttachment & { downloadUrl: string })[];
 };
@@ -65,6 +65,8 @@ export type RequestDetail = RequestRow & {
   attachmentsEnabled: boolean;
 };
 export type RequestsResponse = {
+  recipients: { id: string; name: string }[];
+  campaigns: { id: string; title: string }[];
   items: RequestRow[];
   total: number;
   page: number;

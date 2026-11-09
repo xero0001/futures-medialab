@@ -15,7 +15,8 @@ export async function syncCampaignIntake(
   tx: Prisma.TransactionClient,
   actorId: string,
   campaign: { id: string; brandOrganizationId: string; requirements: unknown },
-  action: "publishCampaign" | "returnCampaign" | "closeCampaign",
+  action:
+    "publishCampaign" | "returnCampaign" | "closeCampaign" | "cancelCampaign",
   reason: string,
   now = new Date(),
 ) {
@@ -58,12 +59,17 @@ export async function syncCampaignIntake(
     Boolean(request.campaign?.proposals?.length),
   );
   const preserveWait = !returning && request.status === "WAITING_BRAND";
-  const status = returning || preserveWait ? "WAITING_BRAND" : "IN_PROGRESS";
+  const status =
+    action === "cancelCampaign"
+      ? "CLOSED"
+      : returning || preserveWait
+        ? "WAITING_BRAND"
+        : "IN_PROGRESS";
   const changed = await tx.workspaceToolRequest.updateMany({
     where: { id: request.id, version: request.version },
     data: {
       status,
-      dueAt: returning ? null : request.dueAt,
+      dueAt: returning || action === "cancelCampaign" ? null : request.dueAt,
       version: { increment: 1 },
       inputJson: {
         ...input,
@@ -80,11 +86,14 @@ export async function syncCampaignIntake(
       "CONFLICT",
       "연결된 접수 요청이 변경되었습니다. 새로고침 후 다시 처리해 주세요.",
     );
-  const body = returning
-    ? `브리프 보완이 필요합니다. 캠페인에서 내용을 수정한 후 다시 제출해 주세요. 기존 운영 기한은 중단되며 재접수 시 새 기한이 안내됩니다.\n사유: ${reason}`
-    : action === "publishCampaign"
-      ? `운영팀이 캠페인 검토를 마치고 소싱·모집을 시작했습니다.\n안내: ${reason}`
-      : `운영팀이 소싱·모집 단계를 마감했습니다. 공식 제안과 브랜드 승인 상태는 캠페인에서 확인해 주세요.\n안내: ${reason}`;
+  const body =
+    action === "cancelCampaign"
+      ? `운영팀이 캠페인을 취소했습니다. 제작·성과 등록을 중단하며 기존 기록은 보관됩니다.\n사유: ${reason}`
+      : returning
+        ? `브리프 보완이 필요합니다. 캠페인에서 내용을 수정한 후 다시 제출해 주세요. 기존 운영 기한은 중단되며 재접수 시 새 기한이 안내됩니다.\n사유: ${reason}`
+        : action === "publishCampaign"
+          ? `운영팀이 캠페인 검토를 마치고 소싱·모집을 시작했습니다.\n안내: ${reason}`
+          : `운영팀이 소싱·모집 단계를 마감했습니다. 공식 제안과 브랜드 승인 상태는 캠페인에서 확인해 주세요.\n안내: ${reason}`;
   await tx.requestMessage.create({
     data: {
       requestId: request.id,

@@ -264,7 +264,7 @@ function ReviewForm({
               onChange={setUrl}
               label="브랜드 검토 동영상 또는 링크"
               disabled={busy}
-              canUpload={item.isManaged}
+              canUpload={item.canSubmit}
               onUploadingChange={setUploading}
               onUpload={(file, signal, progress) =>
                 uploadProductionVideo(
@@ -406,9 +406,10 @@ function SupplierAssignment({
   item: AdminProductionItem;
   suppliers: AdminProductionResponse["suppliers"];
   busy: boolean;
-  onAssign: (supplierOrganizationId: string) => void;
+  onAssign: (supplierOrganizationId: string, reason: string) => void;
 }) {
   const [supplier, setSupplier] = useState(item.supplierOrganizationId ?? "");
+  const [reason, setReason] = useState("");
   const dirty = supplier !== (item.supplierOrganizationId ?? "");
   useEffect(() => {
     const guard = (event: Event) => {
@@ -437,7 +438,7 @@ function SupplierAssignment({
       className={s.internal}
       onSubmit={(event) => {
         event.preventDefault();
-        if (!busy && supplier) onAssign(supplier);
+        if (!busy && supplier) onAssign(supplier, reason);
       }}
     >
       <h5>
@@ -460,9 +461,22 @@ function SupplierAssignment({
           ))}
         </FormSelect>
         <small>
-          파트너가 제작물 제출을 시작하기 전까지 배정을 변경할 수 있습니다.
+          콘텐츠 승인 전 담당을 변경할 수 있습니다. 기존 제출 자료와 검수 기록이
+          새 담당에게 인계됩니다.
         </small>
       </label>
+      {item.submissions.length > 0 && (
+        <label className={s.field}>
+          인계 사유와 자료 공유 범위
+          <textarea
+            required
+            minLength={2}
+            maxLength={1000}
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+          />
+        </label>
+      )}
       <div className={s.actions}>
         <AdminButton
           disabled={
@@ -488,7 +502,7 @@ function ItemDetail({
   suppliers: AdminProductionResponse["suppliers"];
   busy: boolean;
   onReview: (action: ReviewAction) => void;
-  onAssign: (supplierOrganizationId: string) => void;
+  onAssign: (supplierOrganizationId: string, reason: string) => void;
   onSubmit: (input: MutationInput) => void;
 }) {
   const [selectedId, setSelectedId] = useState("");
@@ -965,13 +979,14 @@ export function ProductionReview({ campaignId }: { campaignId: string }) {
                   busy={busy || loading}
                   onReview={setAction}
                   onSubmit={(input) => void mutate(input)}
-                  onAssign={(supplierOrganizationId) =>
+                  onAssign={(supplierOrganizationId, reason) =>
                     void mutate({
                       action: "assign",
                       campaignId,
                       productionItemId: selected.id,
                       expectedRevision: selected.revision,
                       supplierOrganizationId,
+                      reason,
                     })
                   }
                 />
@@ -984,7 +999,7 @@ export function ProductionReview({ campaignId }: { campaignId: string }) {
           <FileCheck2 size={30} />
           <h4>제작을 시작할 승인 항목이 없습니다</h4>
           <p>
-            공식 제안의 전체 항목이 승인되면 제작 항목이 준비됩니다. 기존 승인
+            공식 제안에서 승인된 항목부터 제작 항목이 준비됩니다. 기존 승인
             제안이 있다면 승인 항목을 불러와 이어갈 수 있습니다.
           </p>
         </div>

@@ -55,6 +55,7 @@ const contextInclude = {
       items: {
         orderBy: { position: "asc" },
         include: {
+          catalogCreator: { select: { affiliation: true } },
           productionItem: {
             include: {
               supplierOrganization: {
@@ -429,6 +430,11 @@ function economics(row: Context) {
     const production = item.productionItem,
       organization = production?.supplierOrganization;
     if (
+      !production?.supplierOrganizationId &&
+      item.catalogCreator?.affiliation === "IN_HOUSE"
+    )
+      continue;
+    if (
       !organization ||
       !production.supplierOrganizationId ||
       organization.type !== "AGENCY" ||
@@ -465,7 +471,7 @@ function economics(row: Context) {
   if (
     brand <= 0n ||
     brand > maxCents ||
-    supplier <= 0n ||
+    (groups.size > 0 && supplier <= 0n) ||
     supplier > maxCents ||
     [...groups.values()].some((group) => group.cents > maxCents)
   )

@@ -357,6 +357,26 @@ export function AdminCampaignWorkspace({
                 </div>
               </section>
             ) : null}
+            {!["CANCELED", "COMPLETED"].includes(c.status) && (
+              <section className="acw-card">
+                <h3>캠페인 종료</h3>
+                <AdminButton
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    onOperation({
+                      action: "cancelCampaign",
+                      id: c.id,
+                      title: "캠페인 취소",
+                      message:
+                        "취소 사유와 이미 발생한 비용의 처리 방법을 기록해 주세요. 취소하면 새 신청·제작·성과 등록이 중단되고 기존 기록은 보관됩니다.",
+                    })
+                  }
+                >
+                  캠페인 취소
+                </AdminButton>
+              </section>
+            )}
             <OperationsDashboard
               userId={userId}
               campaignId={c.id}

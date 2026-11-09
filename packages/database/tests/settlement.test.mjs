@@ -764,3 +764,22 @@ test("a legacy invoice issued during a rolling deployment is archived on first c
   );
   assert.equal(revised.versions[1].title, issued.title);
 });
+
+test("in-house work can complete without inventing an external agency payout", async () => {
+  const f = await financialFixture();
+  const item = f.store.proposalItems[0];
+  item.catalogCreator = { affiliation: "IN_HOUSE" };
+  item.supplierOrganizationId = null;
+  f.store.items[0].supplierOrganizationId = null;
+  const state = await listAdminSettlement(f.tx, "admin", "campaign-own");
+  assert.ok(
+    !state.completionProblems.some(
+      (p) => p.includes("수행 조직") || p.includes("확정 금액 합계"),
+    ),
+  );
+  assert.equal(state.totalSupplierAmount, "0.00");
+  assert.equal(state.canComplete, true);
+  const result = await f.prepare();
+  assert.equal(result.payouts.length, 0);
+  assert.ok(result.invoice);
+});

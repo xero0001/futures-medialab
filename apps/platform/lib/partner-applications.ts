@@ -39,6 +39,7 @@ const applicationInclude = {
       title: true,
       status: true,
       platforms: true,
+      applicationDeadline: true,
       requirements: true,
       brandOrganizationId: true,
     },
@@ -66,6 +67,7 @@ type Application = Prisma.CampaignApplicationGetPayload<{
   include: typeof applicationInclude;
 }>;
 function applicationDto(app: Application) {
+  const draftRows = record(app.rosterSnapshot).draftRows;
   const lines = app.rows.map((row) => ({
     id: row.id,
     creatorId: row.creatorId,
@@ -85,8 +87,36 @@ function applicationDto(app: Application) {
     currency: app.currency,
     note: app.proposal,
     updated: app.updatedAt.toISOString(),
-    lines,
-    status: supplierApplicationStatus(lines.map((l) => l.status)),
+    lines:
+      app.status === "DRAFT" && Array.isArray(draftRows)
+        ? draftRows.map((raw, index) => {
+            const r = record(raw);
+            return {
+              id: `draft-${index}`,
+              creatorId: text(r.creatorId),
+              platform: platformLabel(text(r.platform)),
+              format: text(r.format),
+              quantity: Number(r.quantity),
+              rate: Number(r.unitAmount),
+              date: text(r.date),
+              status: "draft",
+            };
+          })
+        : lines,
+    canEdit:
+      app.campaign.status === "RECRUITING" &&
+      Boolean(
+        app.campaign.applicationDeadline &&
+        app.campaign.applicationDeadline > new Date(),
+      ) &&
+      ["DRAFT", "SUBMITTED", "WITHDRAWN", "REJECTED"].includes(app.status) &&
+      !app.rows.some((r) => r.proposalItems.length),
+    status:
+      app.status === "DRAFT"
+        ? "draft"
+        : app.status === "WITHDRAWN"
+          ? "withdrawn"
+          : supplierApplicationStatus(lines.map((l) => l.status)),
     platforms: app.campaign.platforms,
     supplierRateCap: supplierOfferCap(app.campaign.requirements),
     canWithdraw:
@@ -109,6 +139,12 @@ function creatorDto(row: {
   return {
     id: row.id,
     name: row.displayName,
+    channels: (Array.isArray(row.channels) ? row.channels : [])
+      .map(record)
+      .map((c) => ({
+        platform: platformLabel(text(c.platform)),
+        channel: text(c.url) || text(c.channelUrl),
+      })),
     channel: text(channel.url) || text(channel.channelUrl),
     platform: platformLabel(text(channel.platform)),
     genre: row.categories.join(" · "),
@@ -146,7 +182,7 @@ export function partnerWorkspace(request: Request) {
             tx.campaignApplication.findMany({
               where: {
                 agencyOrganizationId: member.organizationId,
-                rows: { some: {} },
+                OR: [{ rows: { some: {} } }, { status: "DRAFT" }],
               },
               include: applicationInclude,
               orderBy: { createdAt: "desc" },
@@ -354,7 +390,9 @@ export function agencyApplications(request: Request) {
           fail(409, "CAMPAIGN_CLOSED", "모집이 마감된 캠페인입니다.");
         if (
           existing &&
-          (existing.status !== "DRAFT" ||
+          (!["DRAFT", "SUBMITTED", "WITHDRAWN", "REJECTED"].includes(
+            existing.status,
+          ) ||
             existing.id !== input.applicationId ||
             existing.updatedAt.toISOString() !== input.expectedUpdatedAt)
         )
@@ -362,6 +400,17 @@ export function agencyApplications(request: Request) {
             409,
             "ALREADY_APPLIED",
             "이미 접수했거나 신청서가 변경되었습니다. 새로고침해 주세요.",
+          );
+        if (
+          existing &&
+          (await tx.proposalItem.count({
+            where: { applicationRow: { applicationId: existing.id } },
+          }))
+        )
+          fail(
+            409,
+            "LOCKED",
+            "제안에 연결된 신청입니다. 운영팀에 변경을 요청해 주세요.",
           );
         if (!existing && input.applicationId)
           fail(409, "CONFLICT", "신청서를 새로고침해 주세요.");
@@ -376,6 +425,67 @@ export function agencyApplications(request: Request) {
             "LIMIT_REACHED",
             "신청 한도에 도달했습니다. 운영팀에 문의해 주세요.",
           );
+        if (input.action === "saveDraft") {
+          const ids = [
+            ...new Set(input.rows.map((r) => r.creatorId).filter(Boolean)),
+          ];
+          const owned = await tx.creatorProfile.findMany({
+            where: {
+              id: { in: ids },
+              agencyOrganizationId: member.organizationId,
+              isActive: true,
+            },
+          });
+          if (owned.length !== ids.length)
+            fail(
+              403,
+              "INVALID_CREATOR",
+              "소속 크리에이터만 저장할 수 있습니다.",
+            );
+          const values = {
+            status: "DRAFT" as const,
+            proposal: input.note,
+            proposedAmount: "0",
+            currency: campaign.currency,
+            submissionKey: input.clientRequestId,
+            submissionHash: hash,
+            rosterSnapshot: { draftRows: input.rows },
+          };
+          const draft = existing
+            ? await tx.campaignApplication.update({
+                where: { id: existing.id },
+                data: values,
+              })
+            : await tx.campaignApplication.create({
+                data: {
+                  ...values,
+                  campaignId: campaign.id,
+                  agencyOrganizationId: member.organizationId,
+                  submittedById: session.user.id,
+                },
+              });
+          if (existing) {
+            await tx.applicationRow.deleteMany({
+              where: { applicationId: draft.id },
+            });
+            await tx.applicationCreator.deleteMany({
+              where: { applicationId: draft.id },
+            });
+          }
+          await tx.auditLog.create({
+            data: {
+              actorId: session.user.id,
+              action: "application.draft_saved",
+              entityType: "CampaignApplication",
+              entityId: draft.id,
+              payload: {
+                previousStatus: existing?.status ?? null,
+                previousSnapshot: existing?.rosterSnapshot ?? null,
+              },
+            },
+          });
+          return { id: draft.id };
+        }
         const creatorIds = [...new Set(input.rows.map((r) => r.creatorId))];
         const creators = await tx.creatorProfile.findMany({
           where: {
@@ -531,6 +641,10 @@ export function agencyApplications(request: Request) {
                 : "application.draft_saved",
             entityType: "CampaignApplication",
             entityId: app.id,
+            payload: {
+              previousStatus: existing?.status ?? null,
+              previousSnapshot: existing?.rosterSnapshot ?? null,
+            },
           },
         });
         return { id: app.id };

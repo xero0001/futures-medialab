@@ -286,7 +286,9 @@ function activeProblem(row: BaseRow): string | null {
   const proposal = row.proposalItem.proposal;
   if (
     proposal.campaignId !== row.campaignId ||
-    proposal.status !== "APPROVED" ||
+    !["PUBLISHED", "APPROVED", "CHANGES_REQUESTED", "REJECTED"].includes(
+      proposal.status,
+    ) ||
     !proposal.publishedAt ||
     proposal.supersededAt ||
     row.proposalItem.status !== "APPROVED" ||
@@ -391,13 +393,11 @@ function agencyDto(row: PrivateRow, canManage: boolean): AgencyProductionItem {
 function adminSubmitProblem(row: PrivateRow): string | null {
   return (
     activeProblem(row) ||
-    (row.campaign.type !== "MANAGED"
-      ? "매니지드 캠페인만 관리자가 직접 제출할 수 있습니다."
-      : row.status === "APPROVED"
-        ? "승인 완료된 콘텐츠는 새 버전으로 교체할 수 없습니다."
-        : row.submissions.length >= 100
-          ? "제출 버전 한도에 도달했습니다."
-          : null)
+    (row.status === "APPROVED"
+      ? "승인 완료된 콘텐츠는 새 버전으로 교체할 수 없습니다."
+      : row.submissions.length >= 100
+        ? "제출 버전 한도에 도달했습니다."
+        : null)
   );
 }
 function adminDto(row: PrivateRow): AdminProductionItem {
@@ -421,7 +421,9 @@ function adminDto(row: PrivateRow): AdminProductionItem {
       row.proposalItem.proposal.campaignId === row.campaignId &&
       row.proposalItem.proposal.publishedAt &&
       !row.proposalItem.proposal.supersededAt &&
-      row.proposalItem.proposal.status === "APPROVED" &&
+      ["PUBLISHED", "APPROVED", "CHANGES_REQUESTED", "REJECTED"].includes(
+        row.proposalItem.proposal.status,
+      ) &&
       row.proposalItem.status === "APPROVED" &&
       row.campaign.proposals[0]?.id === row.proposalItem.proposal.id,
     ),
@@ -429,10 +431,7 @@ function adminDto(row: PrivateRow): AdminProductionItem {
     supplierName: row.supplierOrganization?.name ?? null,
     submissions,
     latestSubmission: submissions[0] ?? null,
-    canAssign:
-      !activeProblem(row) &&
-      row.submissions.length === 0 &&
-      row.status === "AWAITING_SUBMISSION",
+    canAssign: !activeProblem(row) && row.status !== "APPROVED",
     canReview: !problem,
     reviewDisabledReason: problem,
   };
@@ -499,7 +498,9 @@ async function approvedItems(tx: Tx, campaign: CampaignRow) {
       proposal: {
         id: campaign.proposals[0]?.id ?? "",
         campaignId: campaign.id,
-        status: "APPROVED",
+        status: {
+          in: ["PUBLISHED", "APPROVED", "CHANGES_REQUESTED", "REJECTED"],
+        },
         publishedAt: { not: null },
         supersededAt: null,
       },
@@ -795,7 +796,13 @@ export async function applyAdminProductionMutation(
         productionFail(
           409,
           "PRODUCTION_NOT_ACTIONABLE",
-          "첫 제출 전에만 수행 조직을 지정할 수 있습니다.",
+          "콘텐츠 승인 전 현재 제작 항목의 수행 조직만 변경할 수 있습니다.",
+        );
+      if (row.submissions.length && input.reason.length < 2)
+        productionFail(
+          400,
+          "HANDOFF_REASON_REQUIRED",
+          "기존 제출 자료를 인계할 사유와 범위를 기록해 주세요.",
         );
       const supplier = await tx.organization.findFirst({
         where: {
@@ -811,7 +818,7 @@ export async function applyAdminProductionMutation(
           "SUPPLIER_NOT_APPROVED",
           "승인된 수행 조직을 선택해 주세요.",
         );
-      await advance(tx, row, "AWAITING_SUBMISSION", {
+      await advance(tx, row, row.status, {
         supplierOrganizationId: input.supplierOrganizationId,
         assignedById: actorId,
       });
@@ -871,7 +878,11 @@ export async function applyAdminProductionMutation(
       campaignId: row.campaignId,
       revision: row.revision + 1,
       ...(input.action === "assign"
-        ? { supplierOrganizationId: input.supplierOrganizationId }
+        ? {
+            supplierOrganizationId: input.supplierOrganizationId,
+            previousSupplierOrganizationId: row.supplierOrganizationId,
+            reason: input.reason,
+          }
         : input.action === "submit"
           ? { version: (row.submissions[0]?.version ?? 0) + 1 }
           : { submissionId: input.submissionId }),

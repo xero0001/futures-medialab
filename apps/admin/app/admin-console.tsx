@@ -66,6 +66,7 @@ const actionLabels: Record<string, string> = {
   publishCampaign: "캠페인 승인 · 공개",
   returnCampaign: "캠페인 보완 요청",
   closeCampaign: "캠페인 모집 마감",
+  cancelCampaign: "캠페인 취소",
   revokeUserSessions: "사용자 세션 종료",
   downloadDocument: "증빙 문서 다운로드",
 };

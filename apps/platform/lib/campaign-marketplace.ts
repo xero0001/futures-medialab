@@ -54,7 +54,7 @@ type ApplicationRow = Prisma.CampaignApplicationGetPayload<{
 function applicationDto(row: ApplicationRow): AgencyApplication {
   return {
     id: row.id,
-    hasCreatorRows: row._count.rows > 0,
+    hasCreatorRows: row.status === "DRAFT" || row._count.rows > 0,
     campaignId: row.campaignId,
     status: row.status,
     proposal: row.proposal,

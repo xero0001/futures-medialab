@@ -53,7 +53,11 @@ function assignedCampaignSelect(organizationId: string) {
     brandOrganizationId: true,
     coverImageUrl: true,
     applications: {
-      where: { agencyOrganizationId: organizationId, status: "ACCEPTED", rows: { none: {} } },
+      where: {
+        agencyOrganizationId: organizationId,
+        status: "ACCEPTED",
+        rows: { none: {} },
+      },
       select: { agencyOrganizationId: true, status: true },
     },
     // A new private draft never shadows the last published version.
@@ -165,7 +169,10 @@ function projectDto(
     return null;
   const currentProduction = production.filter(
     (item) =>
-      currentProposal?.status === "APPROVED" &&
+      currentProposal &&
+      ["PUBLISHED", "APPROVED", "CHANGES_REQUESTED", "REJECTED"].includes(
+        currentProposal.status,
+      ) &&
       item.proposalItem.proposal.id === currentProposal.id &&
       item.proposalItem.status === "APPROVED",
   );
@@ -263,7 +270,11 @@ export async function readAgencyAssignedCampaigns(
     OR: [
       {
         applications: {
-          some: { agencyOrganizationId: organizationId, status: "ACCEPTED", rows: { none: {} } },
+          some: {
+            agencyOrganizationId: organizationId,
+            status: "ACCEPTED",
+            rows: { none: {} },
+          },
         },
       },
       {

@@ -43,6 +43,7 @@ import "./request-console.css";
 
 const categoryNames: Record<string, string> = {
   general: "일반 문의",
+  invitation: "파트너 초대",
   campaign: "캠페인 상담",
   revision: "캠페인 변경",
   contract: "계약 문의",
@@ -212,6 +213,16 @@ export function RequestConsole({
 
   return (
     <div className="ar-console">
+      {result && (
+        <PartnerInvitationForm
+          recipients={result.recipients ?? []}
+          campaigns={result.campaigns ?? []}
+          onCreated={(id) => {
+            selectRequest(id);
+            setRevision((v) => v + 1);
+          }}
+        />
+      )}
       <section className="ar-metrics" aria-label="요청 처리 현황">
         {[
           { label: "미완료 요청", value: result?.counts.open, icon: Inbox },
@@ -620,7 +631,7 @@ function RequestWorkspace({
                   <MessageSquare size={20} /> 답변 · 내부 메모
                 </h3>
                 <p className="ar-help">
-                  공개 답변은 브랜드에게 표시됩니다. 내부 메모는 운영팀만 확인할
+                  공개 답변은 요청자에게 표시됩니다. 내부 메모는 운영팀만 확인할
                   수 있습니다.
                 </p>
                 <div className="ar-messages">
@@ -846,7 +857,7 @@ function RequestManagement({
           ) : null}
           <label>
             {status === "WAITING_BRAND"
-              ? "브랜드 회신 기한"
+              ? "요청자 회신 기한"
               : "운영팀 처리 기한"}{" "}
             <span className="ar-optional">(한국 시간)</span>
             <input
@@ -884,7 +895,7 @@ function RequestManagement({
             />
           </label>
           <p className="ar-help">
-            처리 사유는 내부 이력에 남습니다. 브랜드에게 안내할 내용은 공개
+            처리 사유는 내부 이력에 남습니다. 요청자에게 안내할 내용은 공개
             답변으로 보내주세요. 회신이 필요하면 답변 작성에서 ‘회신 요청’ 또는
             ‘자료 보완 요청’을 선택하세요.
           </p>
@@ -1096,8 +1107,8 @@ function ReplyForm({
         internal
           ? "내부 메모를 저장했습니다."
           : intent === "notice"
-            ? "브랜드에게 공개 답변을 전달했습니다."
-            : "공개 답변과 회신 기한을 저장하고 브랜드의 처리할 일에 추가했습니다.",
+            ? "요청자에게 공개 답변을 전달했습니다."
+            : "공개 답변과 회신 기한을 저장하고 요청자의 처리할 일에 추가했습니다.",
       );
       onChanged();
     } catch (caught) {
@@ -1113,7 +1124,7 @@ function ReplyForm({
         <div className="ar-pending-files">
           <strong>내 미전송 첨부 ({attachments.length})</strong>
           <p className="ar-help">
-            새로고침 후에도 복원됩니다. 아래 파일은 아직 브랜드나 다른
+            새로고침 후에도 복원됩니다. 아래 파일은 아직 요청자나 다른
             운영자에게 공개되지 않았습니다.
           </p>
           <ul className="ar-upload-list">
@@ -1219,7 +1230,7 @@ function ReplyForm({
             </label>
             {intent !== "notice" ? (
               <label>
-                브랜드 회신 기한{" "}
+                요청자 회신 기한{" "}
                 <span className="ar-optional">(선택 · 한국 시간)</span>
                 <input
                   type="datetime-local"
@@ -1231,13 +1242,13 @@ function ReplyForm({
             <p className="ar-help">
               {intent === "notice"
                 ? "안내와 자료를 공유합니다. 현재 처리 상태는 유지됩니다."
-                : "공개 답변과 함께 회신 대기 상태 및 기한을 저장합니다. 브랜드 홈의 처리할 일에 표시됩니다."}
+                : "공개 답변과 함께 회신 대기 상태 및 기한을 저장합니다. 요청자의 처리할 일에 표시됩니다."}
             </p>
           </div>
         ) : null}
         <label>
           <span>
-            {internal ? "운영팀에 남길 메모" : "브랜드에게 보낼 답변"}
+            {internal ? "운영팀에 남길 메모" : "요청자에게 보낼 답변"}
           </span>
           <textarea
             required
@@ -1254,8 +1265,8 @@ function ReplyForm({
         </label>
         <p className="ar-help">
           {internal
-            ? "이 메모와 첨부파일은 브랜드에게 보이지 않습니다."
-            : "이 답변과 첨부파일은 요청한 브랜드에게 표시됩니다."}
+            ? "이 메모와 첨부파일은 요청자에게 보이지 않습니다."
+            : "이 답변과 첨부파일은 요청한 요청자에게 표시됩니다."}
         </p>
         <input
           ref={fileInput}
@@ -1301,7 +1312,7 @@ function ReplyForm({
       </fieldset>
       {closed ? (
         <p className="ar-help">
-          종료된 요청은 다시 열거나 답변할 수 없습니다. 후속 문의는 브랜드가 새
+          종료된 요청은 다시 열거나 답변할 수 없습니다. 후속 문의는 요청자가 새
           요청으로 접수해야 합니다.
         </p>
       ) : null}
@@ -1316,5 +1327,92 @@ function ReplyForm({
         </p>
       ) : null}
     </form>
+  );
+}
+
+function PartnerInvitationForm({
+  recipients,
+  campaigns,
+  onCreated,
+}: {
+  recipients: RequestsResponse["recipients"];
+  campaigns: RequestsResponse["campaigns"];
+  onCreated: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy) return;
+    const form = new FormData(event.currentTarget);
+    setBusy(true);
+    setError("");
+    try {
+      const result = await requestJson<{ id: string }>("/api/admin/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tool: "invitation",
+          recipientOrganizationId: form.get("recipient"),
+          campaignId: form.get("campaign") || null,
+          title: form.get("title"),
+          body: form.get("body"),
+        }),
+      });
+      setOpen(false);
+      onCreated(result.id);
+    } catch (error) {
+      setError(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <section className="ar-panel">
+      <AdminButton type="button" onClick={() => setOpen(!open)}>
+        파트너 초대 작성
+      </AdminButton>
+      {open && (
+        <form onSubmit={submit}>
+          <fieldset disabled={busy}>
+            <label>
+              수신 파트너
+              <FormSelect name="recipient" required>
+                <option value="">파트너 선택</option>
+                {recipients.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </FormSelect>
+            </label>
+            <label>
+              연결 캠페인
+              <FormSelect name="campaign" required>
+                <option value="">캠페인 선택</option>
+                {campaigns.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.title}
+                  </option>
+                ))}
+              </FormSelect>
+            </label>
+            <label>
+              초대 제목
+              <input name="title" required minLength={2} maxLength={160} />
+            </label>
+            <label>
+              제작 조건·공급가·회신 기한
+              <textarea name="body" required maxLength={5000} rows={5} />
+            </label>
+            {error && <p role="alert">{error}</p>}
+            <AdminButton type="submit" disabled={busy}>
+              초대 보내기
+            </AdminButton>
+          </fieldset>
+        </form>
+      )}
+    </section>
   );
 }

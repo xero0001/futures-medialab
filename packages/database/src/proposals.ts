@@ -48,7 +48,12 @@ const object = (value: unknown): Record<string, unknown> =>
     ? (value as Record<string, unknown>)
     : {};
 const text = (value: unknown) => (typeof value === "string" ? value : "");
-const activeCampaignStatuses = ["REVIEW", "RECRUITING", "IN_PROGRESS"];
+const activeCampaignStatuses = [
+  "REVIEW",
+  "RECRUITING",
+  "IN_PROGRESS",
+  "VERIFYING",
+];
 const publicSelect = {
   id: true,
   campaignId: true,
@@ -114,6 +119,75 @@ type PublicRow = Prisma.CampaignProposalGetPayload<{
 type AdminRow = Prisma.CampaignProposalGetPayload<{
   include: typeof adminInclude;
 }>;
+
+/** Carry only identical, previously approved commitments into a replacement.
+ * Production keeps its identity, submissions, media, reporting and audit history. */
+export async function carryApprovedProposalWork(
+  tx: Tx,
+  row: AdminRow,
+  actorId: string,
+) {
+  const previous = await tx.campaignProposal.findFirst({
+    where: {
+      campaignId: row.campaignId,
+      publishedAt: { not: null },
+      supersededAt: null,
+    },
+    orderBy: { version: "desc" },
+    include: { items: true },
+  });
+  if (
+    !previous ||
+    previous.currency !== row.currency ||
+    previous.terms !== row.terms ||
+    previous.summary !== row.summary
+  )
+    return 0;
+  const signature = (item: AdminRow["items"][number]) =>
+    JSON.stringify([
+      item.applicationRowId ?? null,
+      item.creatorId ?? null,
+      item.catalogCreatorId ?? null,
+      item.supplierOrganizationId ?? null,
+      item.creatorName,
+      item.platform,
+      item.channelLabel,
+      item.channelUrl,
+      item.deliverables,
+      item.quantity,
+      item.unitAmount?.toFixed(2) ?? null,
+      item.scheduledAt?.toISOString() ?? null,
+      item.rights,
+    ]);
+  const used = new Set<string>();
+  let carried = 0;
+  for (const item of row.items) {
+    const source = previous.items.find(
+      (candidate) =>
+        candidate.status === "APPROVED" &&
+        !used.has(candidate.id) &&
+        signature(candidate) === signature(item),
+    );
+    if (!source) continue;
+    used.add(source.id);
+    await tx.proposalItem.updateMany({
+      where: { id: item.id, proposalId: row.id, status: "PENDING" },
+      data: { status: "APPROVED" },
+    });
+    await tx.productionItem.updateMany({
+      where: { campaignId: row.campaignId, proposalItemId: source.id },
+      data: { proposalItemId: item.id, revision: { increment: 1 } },
+    });
+    await audit(tx, actorId, "admin.proposal.approval_carried", row.id, {
+      campaignId: row.campaignId,
+      sourceProposalId: previous.id,
+      sourceItemId: source.id,
+      itemId: item.id,
+    });
+    carried++;
+  }
+  return carried;
+}
 
 export async function requireProposalAdmin(tx: Tx, userId: string) {
   const member = await tx.organizationMember.findFirst({
@@ -703,7 +777,7 @@ async function validateCatalogCreator(
       ],
       ...(rateVersion ? { rateCards: { some: { version: rateVersion } } } : {}),
     },
-    select: { partnerOrganizationId: true, channels: true },
+    select: { partnerOrganizationId: true, channels: true, affiliation: true },
   });
   if (!creator)
     proposalFail(
@@ -1175,6 +1249,15 @@ export async function applyAdminProposalMutation(
             item.catalogRateVersion,
           );
           catalogChannel(catalog, item.platform, item.channelUrl);
+          if (
+            !catalog.partnerOrganizationId &&
+            catalog.affiliation !== "IN_HOUSE"
+          )
+            proposalFail(
+              409,
+              "SUPPLIER_REQUIRED",
+              "외부 인물은 내부 DB에서 승인된 수행 조직을 연결한 뒤 제안을 발행해 주세요.",
+            );
           if (catalog.partnerOrganizationId !== item.supplierOrganizationId)
             proposalFail(
               409,
@@ -1183,6 +1266,7 @@ export async function applyAdminProposalMutation(
             );
         }
       }
+      const carried = await carryApprovedProposalWork(tx, row, actorId);
       const now = new Date();
       await tx.campaignProposal.updateMany({
         where: {
@@ -1204,7 +1288,7 @@ export async function applyAdminProposalMutation(
           publishedAt: null,
         },
         data: {
-          status: "PUBLISHED",
+          status: carried === row.items.length ? "APPROVED" : "PUBLISHED",
           publishedAt: now,
           publishedById: actorId,
           revision: { increment: 1 },
@@ -1216,11 +1300,18 @@ export async function applyAdminProposalMutation(
           "STALE_PROPOSAL",
           "다른 담당자가 초안을 변경했습니다.",
         );
+      if (carried) {
+        await tx.campaign.update({
+          where: { id: campaign.id },
+          data: { status: "IN_PROGRESS" },
+        });
+        await ensureCampaignProductionItems(tx, campaign.id, actorId);
+      }
       await updateIntake(
         tx,
         actorId,
         campaign,
-        "WAITING_BRAND",
+        carried === row.items.length ? "RESOLVED" : "WAITING_BRAND",
         `공식 제안 v${row.version}이 발행되었습니다. 캠페인의 제안·승인 화면에서 항목별 조건을 확인해 주세요. 최초 제안 대기 일정은 종료되었습니다.`,
         "ADMIN",
       );
@@ -1348,7 +1439,7 @@ export async function applyBrandProposalDecision(
     select: { id: true, brandOrganizationId: true, requirements: true },
   });
   if (!campaign) proposalFail(404, "NOT_FOUND", "캠페인을 찾을 수 없습니다.");
-  if (aggregate === "APPROVED") {
+  if (states.includes("APPROVED")) {
     await tx.campaign.update({
       where: { id: campaign.id },
       data: { status: "IN_PROGRESS" },

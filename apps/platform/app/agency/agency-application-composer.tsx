@@ -59,9 +59,7 @@ export function ApplicationComposerModal({
   const { applications } = useAgencyPlanning();
   const savedDraft =
     draft ??
-    applications.find(
-      (a) => a.campaignId === campaign.id && a.status === "draft",
-    );
+    applications.find((a) => a.campaignId === campaign.id && a.canEdit);
   return (
     <Modal
       title={t("크리에이터별 신청서", "Creator application", "按达人申请")}
@@ -91,9 +89,14 @@ export function AgencyApplicationComposer({
       useAgencyPlanning(),
     t = usePartnerText();
   const supported = campaign.platforms.map(platformName),
-    eligible = creators.filter(
-      (c) => !supported.length || supported.includes(c.platform),
-    );
+    eligible = creators
+      .flatMap((c) =>
+        (c.channels?.length
+          ? c.channels
+          : [{ platform: c.platform, channel: c.channel }]
+        ).map((channel) => ({ ...c, ...channel })),
+      )
+      .filter((c) => !supported.length || supported.includes(c.platform));
   const makeLine = (): ApplicationLine => ({
     id: crypto.randomUUID(),
     creatorId: "",
@@ -139,14 +142,17 @@ export function AgencyApplicationComposer({
       current.map((row) => (row.id === id ? { ...row, [key]: value } : row)),
     );
   }
-  function choose(id: string, creatorId: string) {
-    const creator = creators.find((c) => c.id === creatorId);
+  function choose(id: string, selection: string) {
+    const [creatorId, platform] = selection.split("|");
+    const creator = eligible.find(
+      (c) => c.id === creatorId && c.platform === platform,
+    );
     setRows((current) =>
       current.map((row) =>
         row.id === id
           ? {
               ...row,
-              creatorId,
+              creatorId: creatorId ?? "",
               platform: creator?.platform ?? "",
               format: creator?.format ?? "VOD",
               rate: campaign.currency === "KRW" ? (creator?.rate ?? 0) : 0,
@@ -158,7 +164,12 @@ export function AgencyApplicationComposer({
     setReview(false);
   }
   async function save(action: "saveDraft" | "apply") {
-    if (!canEdit || busy || !formRef.current?.reportValidity()) return;
+    if (
+      !canEdit ||
+      busy ||
+      (action === "apply" && !formRef.current?.reportValidity())
+    )
+      return;
     setBusy(true);
     setError("");
     try {
@@ -338,7 +349,9 @@ export function AgencyApplicationComposer({
                     <FormSelect
                       required
                       aria-label={`${index + 1} ${t("번 크리에이터", "Creator", "达人")}`}
-                      value={row.creatorId}
+                      value={
+                        row.creatorId ? `${row.creatorId}|${row.platform}` : ""
+                      }
                       onChange={(event) => choose(row.id, event.target.value)}
                     >
                       <option value="">
@@ -349,7 +362,10 @@ export function AgencyApplicationComposer({
                         )}
                       </option>
                       {eligible.map((c) => (
-                        <option key={c.id} value={c.id}>
+                        <option
+                          key={`${c.id}|${c.platform}`}
+                          value={`${c.id}|${c.platform}`}
+                        >
                           {c.name} · {c.platform}
                         </option>
                       ))}

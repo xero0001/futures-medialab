@@ -318,7 +318,7 @@ test("closed campaigns and replaced or no-longer-approved proposals deny mutatio
   }
 });
 
-test("manual assignment requires approved agency and cannot transfer private content after submission", async () => {
+test("handoff requires approved agency, reason and preserves existing review state", async () => {
   const f = fixture();
   f.store.proposalItems[0].supplierOrganizationId = null;
   await f.prepare();
@@ -347,7 +347,29 @@ test("manual assignment requires approved agency and cannot transfer private con
           supplierOrganizationId: "agency-other",
         }),
       ),
-    fail(409, "PRODUCTION_NOT_ACTIONABLE"),
+    fail(400, "HANDOFF_REASON_REQUIRED"),
+  );
+  f.store.orgs.find((o) => o.id === "agency-other").status = "ACTIVE";
+  const reassigned = (
+    await f.admin(
+      f.adminAction("assign", item, {
+        supplierOrganizationId: "agency-other",
+        reason: "기존 자료 인계 동의 및 수행 조직 교체",
+      }),
+    )
+  ).items[0];
+  assert.equal(reassigned.status, item.status);
+  assert.equal(reassigned.latestSubmission.id, item.latestSubmission.id);
+  assert.equal(reassigned.supplierOrganizationId, "agency-other");
+  assert.equal((await listAgencyProduction(f.tx, agency)).items.length, 0);
+  assert.equal(
+    (
+      await listAgencyProduction(f.tx, {
+        userId: "other-agency",
+        organizationId: "agency-other",
+      })
+    ).items.length,
+    1,
   );
 });
 
@@ -399,43 +421,125 @@ test("URLs cannot target credentials, local or private hosts, and bounded JSON p
   );
 });
 
-
 test("managed admin submits versioned private media; only explicit release grants brand playback", async () => {
- const f=fixture();let item=await f.prepare();
- const id=randomUUID(), ref=`production-media:${id}`;
- f.store.media.push({id,productionItemId:item.id,uploadedById:"admin",completedAt:new Date()});
- const actor={userId:"admin",kind:"admin"};
- await authorizeProductionUpload(f.tx,actor,item.id,item.revision);
- const input={action:"submit",campaignId:"campaign-own",productionItemId:item.id,expectedRevision:item.revision,clientRequestId:randomUUID(),title:"관리자 영상",url:ref,note:"비공개 원문"};
- item=(await f.admin(input)).items[0];
- await f.admin(input);assert.equal(f.store.submissions.length,1);
- assert.equal((await f.read())[0].latestSubmission,null);
- await assert.rejects(()=>readableProductionMedia(f.tx,{...brand,kind:"brand"},id),fail(404));
- assert.equal((await readableProductionMedia(f.tx,actor,id)).id,id);
- item=(await f.admin(f.release(item,{url:ref}))).items[0];
- assert.equal((await readableProductionMedia(f.tx,{...brand,kind:"brand"},id)).id,id);
- await assert.rejects(()=>readableProductionMedia(f.tx,{userId:"other-brand",organizationId:"brand-other",kind:"brand"},id),fail(404));
- const old=(await f.read())[0];
- item=(await f.admin({...input,expectedRevision:item.revision,clientRequestId:randomUUID()})).items[0];
- assert.equal(item.latestSubmission.version,2);
- assert.equal((await f.read())[0].latestSubmission.url,ref);
- await assert.rejects(()=>f.decide(f.decision(old)),fail(409));
- item=(await f.admin(f.release(item,{url:ref}))).items[0];
- await f.decide(f.decision((await f.read())[0]));
- await assert.rejects(()=>f.admin({...input,expectedRevision:item.revision+1,clientRequestId:randomUUID()}),fail(409));
+  const f = fixture();
+  let item = await f.prepare();
+  const id = randomUUID(),
+    ref = `production-media:${id}`;
+  f.store.media.push({
+    id,
+    productionItemId: item.id,
+    uploadedById: "admin",
+    completedAt: new Date(),
+  });
+  const actor = { userId: "admin", kind: "admin" };
+  await authorizeProductionUpload(f.tx, actor, item.id, item.revision);
+  const input = {
+    action: "submit",
+    campaignId: "campaign-own",
+    productionItemId: item.id,
+    expectedRevision: item.revision,
+    clientRequestId: randomUUID(),
+    title: "관리자 영상",
+    url: ref,
+    note: "비공개 원문",
+  };
+  item = (await f.admin(input)).items[0];
+  await f.admin(input);
+  assert.equal(f.store.submissions.length, 1);
+  assert.equal((await f.read())[0].latestSubmission, null);
+  await assert.rejects(
+    () => readableProductionMedia(f.tx, { ...brand, kind: "brand" }, id),
+    fail(404),
+  );
+  assert.equal((await readableProductionMedia(f.tx, actor, id)).id, id);
+  item = (await f.admin(f.release(item, { url: ref }))).items[0];
+  assert.equal(
+    (await readableProductionMedia(f.tx, { ...brand, kind: "brand" }, id)).id,
+    id,
+  );
+  await assert.rejects(
+    () =>
+      readableProductionMedia(
+        f.tx,
+        { userId: "other-brand", organizationId: "brand-other", kind: "brand" },
+        id,
+      ),
+    fail(404),
+  );
+  const old = (await f.read())[0];
+  item = (
+    await f.admin({
+      ...input,
+      expectedRevision: item.revision,
+      clientRequestId: randomUUID(),
+    })
+  ).items[0];
+  assert.equal(item.latestSubmission.version, 2);
+  assert.equal((await f.read())[0].latestSubmission.url, ref);
+  await assert.rejects(() => f.decide(f.decision(old)), fail(409));
+  item = (await f.admin(f.release(item, { url: ref }))).items[0];
+  await f.decide(f.decision((await f.read())[0]));
+  await assert.rejects(
+    () =>
+      f.admin({
+        ...input,
+        expectedRevision: item.revision + 1,
+        clientRequestId: randomUUID(),
+      }),
+    fail(409),
+  );
 });
 
-test("media upload and references enforce managed status, ownership, item scope and completion", async () => {
- const f=fixture(),item=await f.prepare(),actor={userId:"admin",kind:"admin"};
- f.store.campaign.type="OPEN";
- await assert.rejects(()=>authorizeProductionUpload(f.tx,actor,item.id,0),fail(409));
- await authorizeProductionUpload(f.tx,{...agency,kind:"agency"},item.id,0);
- await assert.rejects(()=>authorizeProductionUpload(f.tx,{...brand,kind:"brand"},item.id,0),fail(403));
- await assert.rejects(()=>authorizeProductionUpload(f.tx,{...agency,kind:"agency"},item.id,99),fail(409));
- const id=randomUUID(),row={id,productionItemId:item.id,uploadedById:"admin",completedAt:new Date()};f.store.media.push(row);
- await assert.rejects(()=>f.submit(f.submission(item,{url:`production-media:${id}`})),fail(400));
- row.uploadedById=agency.userId;row.completedAt=null;
- await assert.rejects(()=>f.submit(f.submission(item,{url:`production-media:${id}`})),fail(400));
- row.completedAt=new Date();row.productionItemId="another-item";
- await assert.rejects(()=>f.submit(f.submission(item,{url:`production-media:${id}`})),fail(400));
+test("operator uploads support open campaigns while enforcing ownership, item scope and completion", async () => {
+  const f = fixture(),
+    item = await f.prepare(),
+    actor = { userId: "admin", kind: "admin" };
+  f.store.campaign.type = "OPEN_BIDDING";
+  await authorizeProductionUpload(f.tx, actor, item.id, 0);
+  await authorizeProductionUpload(
+    f.tx,
+    { ...agency, kind: "agency" },
+    item.id,
+    0,
+  );
+  await assert.rejects(
+    () =>
+      authorizeProductionUpload(f.tx, { ...brand, kind: "brand" }, item.id, 0),
+    fail(403),
+  );
+  await assert.rejects(
+    () =>
+      authorizeProductionUpload(
+        f.tx,
+        { ...agency, kind: "agency" },
+        item.id,
+        99,
+      ),
+    fail(409),
+  );
+  const id = randomUUID(),
+    row = {
+      id,
+      productionItemId: item.id,
+      uploadedById: "admin",
+      completedAt: new Date(),
+    };
+  f.store.media.push(row);
+  await assert.rejects(
+    () => f.submit(f.submission(item, { url: `production-media:${id}` })),
+    fail(400),
+  );
+  row.uploadedById = agency.userId;
+  row.completedAt = null;
+  await assert.rejects(
+    () => f.submit(f.submission(item, { url: `production-media:${id}` })),
+    fail(400),
+  );
+  row.completedAt = new Date();
+  row.productionItemId = "another-item";
+  await assert.rejects(
+    () => f.submit(f.submission(item, { url: `production-media:${id}` })),
+    fail(400),
+  );
 });

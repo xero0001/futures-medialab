@@ -94,6 +94,7 @@ export const adminProductionMutationSchema = z.discriminatedUnion("action", [
     campaignId: productionIdSchema,
     ...item,
     supplierOrganizationId: productionIdSchema,
+    reason: z.string().trim().max(1000).default(""),
   }),
   z.strictObject({
     action: z.literal("requestChanges"),

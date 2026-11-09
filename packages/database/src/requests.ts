@@ -8,7 +8,8 @@ import {
 export type RequestActor = {
   userId: string;
   sessionId: string;
-  kind: "admin" | "brand";
+  kind: "admin" | "brand" | "agency";
+  write?: boolean;
   organizationId?: string;
 };
 type DB = Prisma.TransactionClient;
@@ -46,6 +47,7 @@ const body = z.string().trim().min(1).max(5000);
 export const createRequestSchema = z.strictObject({
   title: z.string().trim().min(2).max(160),
   tool: z.enum([
+    "invitation",
     "general",
     "campaign",
     "revision",
@@ -56,9 +58,16 @@ export const createRequestSchema = z.strictObject({
     "comments",
   ]),
   campaignId: requestId.nullable(),
+  recipientOrganizationId: requestId.optional(),
   body,
 });
 export const requestMutationSchema = z.discriminatedUnion("action", [
+  z.strictObject({
+    action: z.literal("respondInvitation"),
+    version: z.number().int().nonnegative(),
+    response: z.enum(["accepted", "negotiating", "declined"]),
+    body: z.string().trim().max(5000),
+  }),
   z.strictObject({
     action: z.literal("update"),
     version: z.number().int().nonnegative(),
@@ -87,6 +96,7 @@ export const requestMutationSchema = z.discriminatedUnion("action", [
   }),
 ]);
 export const listRequestsSchema = z.strictObject({
+  tool: z.enum(["all", "invitation"]).default("all"),
   query: z.string().trim().max(160).default(""),
   status: z.union([status, z.literal("all")]).default("all"),
   priority: z.union([priority, z.literal("all")]).default("all"),
@@ -116,7 +126,13 @@ export async function authorizeRequestActor(tx: DB, actor: RequestActor) {
         : {
             userId: actor.userId,
             organizationId: actor.organizationId || "",
-            organization: { type: "BRAND", status: "ACTIVE" },
+            organization: {
+              type: actor.kind === "agency" ? "AGENCY" : "BRAND",
+              status: "ACTIVE",
+            },
+            ...(actor.kind === "agency" && actor.write
+              ? { role: { in: ["OWNER", "ADMIN"] } }
+              : {}),
           },
     select: { organizationId: true },
   });
@@ -166,6 +182,7 @@ function rowDto(row: Row) {
     id: row.id,
     title: row.title,
     tool: row.tool,
+    invitationResponse: field(object(row.inputJson).invitationResponse) || null,
     status: row.status,
     priority: row.priority,
     organizationName: row.organization.name,
@@ -193,7 +210,7 @@ export async function ownedRequest(tx: DB, actor: RequestActor, id: string) {
   const row = await tx.workspaceToolRequest.findFirst({
     where: {
       id,
-      ...(actor.kind === "brand"
+      ...(actor.kind !== "admin"
         ? { organizationId: actor.organizationId || "" }
         : {}),
     },
@@ -228,17 +245,42 @@ async function event(
     },
   });
 }
+export function requestCampaignScope(
+  actor: RequestActor,
+): Prisma.CampaignWhereInput {
+  if (actor.kind !== "agency")
+    return { brandOrganizationId: actor.organizationId };
+  return {
+    brandOrganization: { status: "ACTIVE" },
+    OR: [
+      {
+        applications: { some: { agencyOrganizationId: actor.organizationId } },
+      },
+      {
+        productionItems: {
+          some: { supplierOrganizationId: actor.organizationId },
+        },
+      },
+      {
+        requests: {
+          some: { organizationId: actor.organizationId, tool: "invitation" },
+        },
+      },
+    ],
+  };
+}
 export function listRequests(
   actor: RequestActor,
   filters: z.infer<typeof listRequestsSchema>,
 ) {
   return requestTransaction(actor, async (tx) => {
     const scope: Prisma.WorkspaceToolRequestWhereInput =
-      actor.kind === "brand"
+      actor.kind !== "admin"
         ? { organizationId: actor.organizationId || "" }
         : {};
     const where: Prisma.WorkspaceToolRequestWhereInput = {
       ...scope,
+      ...(filters.tool === "invitation" ? { tool: "invitation" } : {}),
       ...(filters.status === "all" ? {} : { status: filters.status }),
       ...(actor.kind === "admin" && filters.priority !== "all"
         ? { priority: filters.priority }
@@ -284,11 +326,19 @@ export function listRequests(
       page: filters.page,
       pageSize,
     };
-    if (actor.kind === "brand")
+    if (actor.kind !== "admin")
       return {
         ...base,
+        counts: {
+          invitations: await tx.workspaceToolRequest.count({
+            where: { ...scope, tool: "invitation", status: "REQUESTED" },
+          }),
+          waiting: await tx.workspaceToolRequest.count({
+            where: { ...scope, status: "WAITING_BRAND" },
+          }),
+        },
         campaigns: await tx.campaign.findMany({
-          where: { brandOrganizationId: actor.organizationId },
+          where: requestCampaignScope(actor),
           select: { id: true, title: true },
           orderBy: { createdAt: "desc" },
           take: 500,
@@ -318,6 +368,20 @@ export function listRequests(
     ]);
     return {
       ...base,
+      recipients: await tx.organization.findMany({
+        where: { type: "AGENCY", status: "ACTIVE" },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      }),
+      campaigns: await tx.campaign.findMany({
+        where: {
+          status: { notIn: ["CANCELED", "COMPLETED", "DRAFT"] },
+          brandOrganization: { status: "ACTIVE" },
+        },
+        select: { id: true, title: true },
+        orderBy: { createdAt: "desc" },
+        take: 500,
+      }),
       assignees: assignees.map((a) => ({ id: a.id, name: a.name || "관리자" })),
       counts: { open: openCount, overdue, unassigned },
     };
@@ -334,7 +398,7 @@ export function requestDetail(
       tx.requestMessage.findMany({
         where: {
           requestId: id,
-          ...(actor.kind === "brand" ? { internal: false } : {}),
+          ...(actor.kind !== "admin" ? { internal: false } : {}),
         },
         include: {
           author: { select: { name: true } },
@@ -349,7 +413,7 @@ export function requestDetail(
         where: {
           entityType: "WorkspaceToolRequest",
           entityId: id,
-          ...(actor.kind === "brand"
+          ...(actor.kind !== "admin"
             ? { payload: { path: ["public"], equals: true } }
             : {}),
         },
@@ -370,7 +434,9 @@ export function requestDetail(
     const prefix =
       actor.kind === "admin"
         ? "/api/admin/requests"
-        : "/api/workspace/requests";
+        : actor.kind === "agency"
+          ? "/api/agency/requests"
+          : "/api/workspace/requests";
     return {
       request: {
         ...rowDto(row),
@@ -413,15 +479,25 @@ export function createRequest(
   actor: RequestActor,
   input: z.infer<typeof createRequestSchema>,
 ) {
-  if (actor.kind !== "brand")
-    requestFail(403, "FORBIDDEN", "브랜드만 요청을 등록할 수 있습니다.");
+  if (
+    actor.kind === "admin"
+      ? input.tool !== "invitation" || !input.recipientOrganizationId
+      : input.tool === "invitation" || input.recipientOrganizationId
+  )
+    requestFail(
+      403,
+      "FORBIDDEN",
+      "운영팀은 수신 파트너를 지정한 초대만 등록할 수 있습니다.",
+    );
   return requestTransaction(actor, async (tx) => {
     if (
       input.campaignId &&
       !(await tx.campaign.findFirst({
         where: {
           id: input.campaignId,
-          brandOrganizationId: actor.organizationId,
+          ...(actor.kind === "admin"
+            ? { status: { notIn: ["DRAFT", "CANCELED", "COMPLETED"] } }
+            : requestCampaignScope(actor)),
         },
         select: { id: true },
       }))
@@ -431,9 +507,28 @@ export function createRequest(
         "INVALID_CAMPAIGN",
         "소속 브랜드의 캠페인을 선택하세요.",
       );
+    if (
+      actor.kind === "admin" &&
+      !(await tx.organization.findFirst({
+        where: {
+          id: input.recipientOrganizationId,
+          type: "AGENCY",
+          status: "ACTIVE",
+        },
+        select: { id: true },
+      }))
+    )
+      requestFail(
+        400,
+        "INVALID_RECIPIENT",
+        "승인된 공급 파트너를 선택해 주세요.",
+      );
     const row = await tx.workspaceToolRequest.create({
       data: {
-        organizationId: actor.organizationId!,
+        organizationId:
+          actor.kind === "admin"
+            ? input.recipientOrganizationId!
+            : actor.organizationId!,
         userId: actor.userId,
         campaignId: input.campaignId,
         title: input.title,
@@ -459,12 +554,65 @@ export function mutateRequest(
 ) {
   return requestTransaction(actor, async (tx) => {
     const row = await ownedRequest(tx, actor, id);
-    if (input.action === "message") {
-      if (actor.kind === "brand" && input.internal)
+    if (input.action === "respondInvitation") {
+      if (actor.kind !== "agency" || row.tool !== "invitation")
+        requestFail(
+          403,
+          "FORBIDDEN",
+          "수신 파트너만 초대에 회신할 수 있습니다.",
+        );
+      if (
+        ["CLOSED", "RESOLVED"].includes(row.status) ||
+        row.campaign?.status === "CANCELED"
+      )
+        requestFail(409, "REQUEST_CLOSED", "종료된 초대입니다.");
+      const label = {
+        accepted: "참여 가능",
+        negotiating: "조건 협의",
+        declined: "참여 불가",
+      }[input.response];
+      const changed = await tx.workspaceToolRequest.updateMany({
+        where: { id, version: input.version },
+        data: {
+          status: "IN_PROGRESS",
+          version: { increment: 1 },
+          inputJson: {
+            ...object(row.inputJson),
+            invitationResponse: input.response,
+            operatorReplyPending: true,
+            waitingFor: null,
+          },
+        },
+      });
+      if (changed.count !== 1)
+        requestFail(
+          409,
+          "CONFLICT",
+          "초대가 변경되었습니다. 새로고침해 주세요.",
+        );
+      await tx.requestMessage.create({
+        data: {
+          requestId: id,
+          authorId: actor.userId,
+          authorRole: "AGENCY",
+          body: `${label}\n${input.body}`,
+          internal: false,
+        },
+      });
+      await event(
+        tx,
+        actor,
+        id,
+        "invitation_response",
+        label,
+        `파트너 회신: ${label}`,
+      );
+    } else if (input.action === "message") {
+      if (actor.kind !== "admin" && input.internal)
         requestFail(403, "FORBIDDEN", "내부 메모 작성 권한이 없습니다.");
       if (
         row.status === "CLOSED" ||
-        (actor.kind === "brand" && row.status === "RESOLVED")
+        (actor.kind !== "admin" && row.status === "RESOLVED")
       )
         requestFail(
           409,
@@ -532,7 +680,12 @@ export function mutateRequest(
         data: {
           requestId: id,
           authorId: actor.userId,
-          authorRole: actor.kind === "admin" ? "ADMIN" : "BRAND",
+          authorRole:
+            actor.kind === "admin"
+              ? "ADMIN"
+              : actor.kind === "agency"
+                ? "AGENCY"
+                : "BRAND",
           body: input.body,
           internal,
         },
@@ -563,7 +716,7 @@ export function mutateRequest(
         object(row.inputJson).kind === "campaign-intake" &&
         row.campaign?.status === "DRAFT";
       const brandReply =
-        actor.kind === "brand" &&
+        actor.kind !== "admin" &&
         row.status === "WAITING_BRAND" &&
         waitingFor !== "proposal-decision" &&
         !needsResubmission;
@@ -595,7 +748,7 @@ export function mutateRequest(
                 ? {
                     inputJson: {
                       ...object(row.inputJson),
-                      operatorReplyPending: actor.kind === "brand",
+                      operatorReplyPending: actor.kind !== "admin",
                     } as Prisma.InputJsonObject,
                   }
                 : {}),

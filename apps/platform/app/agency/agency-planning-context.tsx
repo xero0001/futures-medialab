@@ -19,8 +19,6 @@ import { CheckCircle2, Info, Inbox, X } from "lucide-react";
 import type { Locale } from "../_components/landing-copy";
 import type { AgencySection } from "./agency-workspace-copy";
 import {
-  initialInvitations,
-  initialRequests,
   type Creator,
   type Invitation,
   type LocalApplication,
@@ -32,6 +30,8 @@ type PlanningContext = {
   locale: Locale;
   canEdit: boolean;
   loading: boolean;
+  invitationCount: number;
+  replyCount: number;
   error: string;
   refresh: () => Promise<void>;
   saveCreator: (creator: Creator) => Promise<void>;
@@ -60,10 +60,12 @@ export function AgencyPlanningProvider({
   enabled?: boolean;
 }) {
   const [creators, setCreators] = useState<Creator[]>([]),
-    [invitations, setInvitations] = useState(initialInvitations),
+    [invitations, setInvitations] = useState<Invitation[]>([]),
     [applications, setApplications] = useState<LocalApplication[]>([]),
-    [requests, setRequests] = useState(initialRequests),
+    [requests, setRequests] = useState<PartnerRequest[]>([]),
     [notice, setNotice] = useState("");
+  const [invitationCount, setInvitationCount] = useState(0),
+    [replyCount, setReplyCount] = useState(0);
   const [loading, setLoading] = useState(enabled),
     [error, setError] = useState("");
   const refresh = useCallback(async () => {
@@ -76,6 +78,11 @@ export function AgencyPlanningProvider({
       const result = await response.json();
       if (!response.ok)
         throw new Error(result.message || "정보를 불러오지 못했습니다.");
+      const inbox = await fetch("/api/agency/requests", { cache: "no-store" });
+      if (!inbox.ok) throw new Error("문의함을 불러오지 못했습니다.");
+      const inboxData = await inbox.json();
+      setInvitationCount(inboxData.counts?.invitations ?? 0);
+      setReplyCount(inboxData.counts?.waiting ?? 0);
       setCreators(result.creators);
       setApplications(result.applications);
       setError("");
@@ -101,7 +108,8 @@ export function AgencyPlanningProvider({
     };
   }, [refresh]);
   async function saveCreator(creator: Creator) {
-    const { id, updated, color, ...fields } = creator;
+    const { id, updated, color, channels, ...fields } = creator;
+    void channels;
     void color;
     const { partnerPlatform } =
       await import("../../lib/partner-application-validation");
@@ -169,6 +177,8 @@ export function AgencyPlanningProvider({
         locale,
         canEdit,
         loading,
+        invitationCount,
+        replyCount,
         error,
         refresh,
         saveCreator,

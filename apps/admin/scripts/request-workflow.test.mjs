@@ -74,6 +74,11 @@ function fixture(patch = {}) {
     workspaceToolRequest: {
       findFirst: async (query) => {
         queries.push(query);
+        if (
+          query.where.organizationId &&
+          query.where.organizationId !== row.organizationId
+        )
+          return null;
         return row;
       },
       updateMany: async ({ where, data }) => {
@@ -128,6 +133,7 @@ function fixture(patch = {}) {
     },
   });
   return {
+    tx,
     service,
     get row() {
       return row;
@@ -354,4 +360,181 @@ test("reopening a completed intake creates operator work without reusing an old 
   assert.equal(f.row.status, "IN_PROGRESS");
   assert.equal(f.row.inputJson.operatorReplyPending, true);
   assert.equal(f.row.dueAt, null);
+});
+
+test("partner invitation responses persist and cannot cross tenants or overwrite newer replies", async () => {
+  const f = fixture({
+    tool: "invitation",
+    organizationId: "agency",
+    inputJson: { input: "제작 조건" },
+  });
+  const partner = {
+    kind: "agency",
+    userId: "partner",
+    sessionId: "session",
+    organizationId: "agency",
+    write: true,
+  };
+  const input = {
+    action: "respondInvitation",
+    version: 2,
+    response: "negotiating",
+    body: "다음 주부터 제작 가능합니다.",
+  };
+  await assert.rejects(
+    () => f.run(input, { ...partner, organizationId: "other" }),
+    (e) => e.status === 404,
+  );
+  await f.run(input, partner);
+  assert.equal(f.row.inputJson.invitationResponse, "negotiating");
+  assert.equal(f.row.inputJson.operatorReplyPending, true);
+  assert.equal(f.messages[0].authorRole, "AGENCY");
+  assert.ok(f.messages[0].body.includes("다음 주"));
+  await assert.rejects(
+    () => f.run(input, partner),
+    (e) => e.code === "CONFLICT",
+  );
+  assert.equal(f.messages.length, 1);
+  await assert.rejects(
+    () =>
+      f.run(
+        {
+          action: "message",
+          body: "private",
+          internal: true,
+          attachmentIds: [],
+        },
+        partner,
+      ),
+    (e) => e.status === 403,
+  );
+});
+
+test("partner replies unblock the operator and closed invitations cannot accept a response", async () => {
+  const partner = {
+    kind: "agency",
+    userId: "partner",
+    sessionId: "session",
+    organizationId: "agency",
+  };
+  const f = fixture({
+    organizationId: "agency",
+    status: "WAITING_BRAND",
+    inputJson: { waitingFor: "reply" },
+  });
+  await f.run(
+    { action: "message", body: "확인했습니다", attachmentIds: [] },
+    partner,
+  );
+  assert.equal(f.row.status, "IN_PROGRESS");
+  assert.equal(f.messages[0].authorRole, "AGENCY");
+  const closed = fixture({
+    organizationId: "agency",
+    tool: "invitation",
+    status: "CLOSED",
+  });
+  await assert.rejects(
+    () =>
+      closed.run(
+        {
+          action: "respondInvitation",
+          version: 2,
+          response: "accepted",
+          body: "",
+        },
+        partner,
+      ),
+    (e) => e.code === "REQUEST_CLOSED",
+  );
+});
+
+test("operator cancellation closes the linked intake and communicates the reason", async () => {
+  const f = fixture();
+  await f.sync("cancelCampaign");
+  assert.equal(f.row.status, "CLOSED");
+  assert.equal(f.row.dueAt, null);
+  assert.ok(f.messages[0].body.includes("캠페인을 취소"));
+});
+
+test("agency inbox and attachment links stay tenant scoped and exclude operator-only notes and events", async () => {
+  const f = fixture({
+    organizationId: "agency",
+    organization: { name: "Partner" },
+    assignedTo: null,
+    priority: "NORMAL",
+    createdAt: stamp,
+    updatedAt: stamp,
+  });
+  const partner = {
+    kind: "agency",
+    userId: "partner",
+    sessionId: "session",
+    organizationId: "agency",
+  };
+  f.tx.organizationMember.findFirst = async ({ where }) => {
+    assert.equal(where.organizationId, "agency");
+    assert.equal(where.organization.type, "AGENCY");
+    assert.equal(where.organization.status, "ACTIVE");
+    return { organizationId: "agency" };
+  };
+  f.tx.requestMessage.findMany = async ({ where }) => {
+    assert.equal(where.internal, false);
+    return [
+      {
+        id: "public",
+        body: "Reply",
+        internal: false,
+        author: { name: "Ops" },
+        authorRole: "ADMIN",
+        createdAt: stamp,
+        attachments: [
+          {
+            id: "attachment",
+            fileName: "brief.pdf",
+            contentType: "application/pdf",
+            size: 10,
+          },
+        ],
+      },
+    ];
+  };
+  f.tx.auditLog.findMany = async ({ where }) => {
+    assert.deepEqual(where.payload, { path: ["public"], equals: true });
+    return [];
+  };
+  f.tx.requestAttachment.findMany = async ({ where }) => {
+    assert.equal(where.uploaderId, "partner");
+    assert.equal(where.messageId, null);
+    return [];
+  };
+  const detail = await f.service.requestDetail(partner, "request", true);
+  assert.equal(f.queries.at(-1).where.organizationId, "agency");
+  assert.equal(
+    detail.request.messages[0].attachments[0].downloadUrl,
+    "/api/agency/requests/request/attachments/attachment",
+  );
+  f.tx.workspaceToolRequest.findMany = async ({ where }) => {
+    assert.equal(where.organizationId, "agency");
+    return [f.row];
+  };
+  f.tx.workspaceToolRequest.count = async ({ where }) => {
+    assert.equal(where.organizationId, "agency");
+    return 1;
+  };
+  f.tx.campaign = {
+    findMany: async ({ where }) => {
+      assert.equal(
+        where.OR[0].applications.some.agencyOrganizationId,
+        "agency",
+      );
+      return [];
+    },
+  };
+  const list = await f.service.listRequests(
+    partner,
+    f.service.listRequestsSchema.parse({}),
+  );
+  assert.equal(list.items.length, 1);
+  assert.equal(list.assignees, undefined);
+  assert.equal(list.recipients, undefined);
 });

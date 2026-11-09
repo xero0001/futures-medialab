@@ -343,6 +343,11 @@ function fixture() {
       },
     },
     productionItem: {
+      updateMany: async ({ where, data }) => {
+        const rows = store.productionItems.filter((p) => matches(p, where));
+        rows.forEach((p) => update(p, data));
+        return { count: rows.length };
+      },
       create: async ({ data }) => {
         const row = { id: `production-${++sequence}`, ...data };
         store.productionItems.push(row);
@@ -692,14 +697,19 @@ test("cross-organization, MEMBER, revoked approval and invalid selection never d
   assert.equal(f.store.decisions.length, 0);
 });
 
-test("partial and all-item approval persist decisions, only full approval advances campaign, retries do not duplicate", async () => {
+test("partial and all-item approval persist decisions, each approved item can start production, retries do not duplicate", async () => {
   const f = fixture(),
     proposal = await f.published();
   const firstInput = decision(proposal, "APPROVE", [proposal.items[0].id]);
   const first = (await f.decide(firstInput)).proposal;
   assert.equal(first.status, "PUBLISHED");
-  assert.equal(f.store.campaign.status, "REVIEW");
+  assert.equal(f.store.campaign.status, "IN_PROGRESS");
   assert.equal(first.canRespond, true);
+  assert.equal(
+    f.store.productionItems.length,
+    1,
+    "partial approval creates only the approved work",
+  );
   assert.equal((await f.decide(firstInput)).proposal.revision, first.revision);
   assert.equal(f.store.decisions.length, 1);
   const final = (
@@ -738,7 +748,7 @@ test("change request followed by remaining item approval stays with operations, 
   assert.equal(final.status, "CHANGES_REQUESTED");
   assert.equal(final.canRespond, false);
   assert.equal(f.store.request.status, "IN_PROGRESS");
-  assert.equal(f.store.campaign.status, "REVIEW");
+  assert.equal(f.store.campaign.status, "IN_PROGRESS");
   assert.ok(
     f.store.messages.some((m) => m.body.includes("영상 길이와 게시 일정 보완")),
   );
@@ -945,7 +955,11 @@ test("catalog creator can source a managed proposal without exposing private pro
       where.id === "catalog-1" &&
       where.isActive &&
       where.rateCards.some.version === 2
-        ? { partnerOrganizationId: null, channels: f.store.catalog.channels }
+        ? {
+            partnerOrganizationId: null,
+            channels: f.store.catalog.channels,
+            affiliation: "IN_HOUSE",
+          }
         : null,
   };
   const draft = await f.prepared(
@@ -1238,5 +1252,97 @@ test("unselected, foreign, withdrawn and duplicated application rows cannot ente
         }),
       ),
     (error) => error.code === "APPLICATION_ROW_CHANGED",
+  );
+});
+
+test("replacing one approved commitment preserves unchanged production, review and report identity", async () => {
+  const f = fixture();
+  const original = (await f.decide(decision(await f.published()))).proposal;
+  const kept = f.store.productionItems.find(
+    (p) => p.proposalItemId === original.items[0].id,
+  );
+  Object.assign(kept, {
+    status: "APPROVED",
+    revision: 7,
+    submissionIds: ["approved-submission"],
+    reportingItemId: "published-report",
+  });
+  const copied = (
+    await f.admin(op("createDraft", { sourceProposalId: original.id }))
+  ).proposal;
+  const edited = data({
+    items: copied.items.map(
+      ({ id, totalAmount, status, supplierOrganizationId, ...fields }) =>
+        fields,
+    ),
+  });
+  edited.items[1].unitAmount = "210.25";
+  const saved = (
+    await f.admin(
+      op("saveDraft", {
+        proposalId: copied.id,
+        expectedRevision: copied.revision,
+        data: edited,
+      }),
+    )
+  ).proposal;
+  const published = (
+    await f.admin(
+      op("publish", { proposalId: saved.id, expectedRevision: saved.revision }),
+    )
+  ).proposal;
+  assert.deepEqual(
+    published.items.map((i) => i.status),
+    ["APPROVED", "PENDING"],
+  );
+  assert.equal(kept.proposalItemId, published.items[0].id);
+  assert.equal(kept.status, "APPROVED");
+  assert.deepEqual(kept.submissionIds, ["approved-submission"]);
+  assert.equal(kept.reportingItemId, "published-report");
+  assert.equal(kept.revision, 8);
+  assert.equal(f.store.productionItems.length, 2);
+  assert.ok(
+    f.store.audits.some((a) => a.action === "admin.proposal.approval_carried"),
+  );
+  await f.decide(decision(published, "APPROVE", [published.items[1].id]));
+  assert.equal(
+    f.store.productionItems.length,
+    3,
+    "only changed work receives a new production item",
+  );
+});
+
+test("changing common terms requires fresh approval instead of carrying old consent", async () => {
+  const f = fixture(),
+    original = (await f.decide(decision(await f.published()))).proposal;
+  const copied = (
+    await f.admin(op("createDraft", { sourceProposalId: original.id }))
+  ).proposal;
+  const edited = data({
+    terms: "새 사용권 조건",
+    items: copied.items.map(
+      ({ id, totalAmount, status, supplierOrganizationId, ...fields }) =>
+        fields,
+    ),
+  });
+  const saved = (
+    await f.admin(
+      op("saveDraft", {
+        proposalId: copied.id,
+        expectedRevision: copied.revision,
+        data: edited,
+      }),
+    )
+  ).proposal;
+  const published = (
+    await f.admin(
+      op("publish", { proposalId: saved.id, expectedRevision: saved.revision }),
+    )
+  ).proposal;
+  assert.ok(published.items.every((i) => i.status === "PENDING"));
+  assert.ok(
+    f.store.productionItems.every((p) =>
+      original.items.some((i) => i.id === p.proposalItemId),
+    ),
   );
 });

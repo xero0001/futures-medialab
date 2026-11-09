@@ -29,10 +29,9 @@ export function AdminProductionSubmit({
     [url, setUrl] = useState(""),
     [note, setNote] = useState(""),
     [uploading, setUploading] = useState(false);
-  if (!item.isManaged) return null;
   return (
     <section className={s.internal}>
-      <h4>매니지드 제작물 직접 등록</h4>
+      <h4>제작물 직접 등록</h4>
       <p className={s.muted}>
         새 버전으로 등록한 뒤, 운영 검토에서 브랜드에게 공유할 수 있습니다. 이전
         제출·공유 기록은 보관됩니다.

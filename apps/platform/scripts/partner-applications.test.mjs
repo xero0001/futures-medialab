@@ -218,7 +218,18 @@ function fixture(options = {}) {
             links.splice(i, 1);
       },
     },
-    proposalItem: { count: async () => (options.legacyPublished ? 1 : 0) },
+    proposalItem: {
+      count: async ({ where }) =>
+        where.applicationRow
+          ? rows
+              .filter(
+                (r) => r.applicationId === where.applicationRow.applicationId,
+              )
+              .reduce((sum, r) => sum + (r.proposalItems?.length ?? 0), 0)
+          : options.legacyPublished
+            ? 1
+            : 0,
+    },
     auditLog: { create: async ({ data }) => audit.push(data) },
   };
   class Failure extends Error {
@@ -558,4 +569,142 @@ test("status derivation respects superseded versions, expiry, partial confirmati
     statuses.supplierRowStatus({ status: "ACCEPTED" }, "CANCELED"),
     "canceled",
   );
+});
+
+test("incomplete drafts survive reload, require complete submission, and can be corrected after withdrawal", async () => {
+  const f = fixture();
+  const draftInput = input({
+    action: "saveDraft",
+    rows: [
+      {
+        creatorId: "",
+        platform: "",
+        format: "VOD",
+        quantity: 0,
+        unitAmount: "0",
+        date: "",
+      },
+    ],
+  });
+  assert.equal((await f.post(draftInput)).status, 200);
+  let app = (await (await f.get()).json()).applications[0];
+  assert.equal(app.status, "draft");
+  assert.equal(app.lines[0].date, "");
+  assert.equal(app.lines[0].creatorId, "");
+  assert.equal(f.rows.length, 0);
+  assert.equal(
+    (
+      await f.post({
+        ...draftInput,
+        action: "apply",
+        clientRequestId: randomUUID(),
+        applicationId: app.id,
+        expectedUpdatedAt: app.updated,
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (
+      await f.post(
+        input({ applicationId: app.id, expectedUpdatedAt: app.updated }),
+      )
+    ).status,
+    200,
+  );
+  assert.equal(
+    (await f.post({ action: "withdraw", applicationId: app.id })).status,
+    200,
+  );
+  app = (await (await f.get()).json()).applications[0];
+  assert.equal(app.canEdit, true);
+  assert.equal(
+    (
+      await f.post(
+        input({
+          applicationId: app.id,
+          expectedUpdatedAt: app.updated,
+          note: "Corrected terms",
+        }),
+      )
+    ).status,
+    200,
+  );
+  assert.equal(f.apps.length, 1);
+  assert.equal(f.rows.length, 1);
+  assert.equal(
+    (await (await f.get()).json()).applications[0].status,
+    "received",
+  );
+});
+
+test("unreviewed submissions can be edited with a revision check and every registered channel is selectable", async () => {
+  const f = fixture();
+  f.creators[0].channels.push({
+    platform: "tiktok",
+    url: "https://www.tiktok.com/@creator",
+    followers: 10,
+  });
+  f.campaigns[0].platforms = ["tiktok"];
+  const roster = (await (await f.get()).json()).creators[0];
+  assert.deepEqual(
+    roster.channels.map((c) => c.platform),
+    ["YouTube", "TikTok"],
+  );
+  const body = input({ rows: [{ ...input().rows[0], platform: "tiktok" }] });
+  assert.equal((await f.post(body)).status, 200);
+  const app = (await (await f.get()).json()).applications[0];
+  assert.equal(app.canEdit, true);
+  assert.equal(
+    (
+      await f.post({
+        ...body,
+        clientRequestId: randomUUID(),
+        applicationId: app.id,
+        expectedUpdatedAt: "2020-01-01T00:00:00.000Z",
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await f.post({
+        ...body,
+        clientRequestId: randomUUID(),
+        applicationId: app.id,
+        expectedUpdatedAt: app.updated,
+        note: "Updated",
+      })
+    ).status,
+    200,
+  );
+  assert.equal(f.rows[0].platform, "tiktok");
+  assert.equal(f.rows.length, 1);
+});
+
+test("editing an application already used in a private or published proposal preserves its rows", async () => {
+  const f = fixture();
+  await f.post(input());
+  f.rows[0].proposalItems = [
+    {
+      status: "PENDING",
+      proposal: {
+        publishedAt: null,
+        supersededAt: null,
+        expiresAt: null,
+        status: "DRAFT",
+      },
+    },
+  ];
+  const app = (await (await f.get()).json()).applications[0];
+  assert.equal(app.canEdit, false);
+  assert.equal(
+    (
+      await f.post(
+        input({ applicationId: app.id, expectedUpdatedAt: app.updated }),
+      )
+    ).status,
+    409,
+  );
+  assert.equal(f.rows.length, 1);
 });

@@ -1,4 +1,5 @@
 export type Creator = {
+  channels?: { platform: string; channel: string }[];
   id: string;
   name: string;
   channel: string;
@@ -26,6 +27,7 @@ export type ApplicationLine = {
   status: string;
 };
 export type LocalApplication = {
+  canEdit?: boolean;
   platforms?: string[];
   supplierRateCap?: string | null;
   canWithdraw?: boolean;

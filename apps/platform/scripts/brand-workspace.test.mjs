@@ -171,9 +171,9 @@ function fixture(options = {}) {
     productionItem: { count: async ({ where }) => {
       assert.equal(where.campaign.brandOrganizationId, "brand-own");
       assert.equal(where.status, "BRAND_REVIEW");
-      assert.equal(where.proposalItem.proposal.status, "APPROVED");
+      assert.deepEqual(where.proposalItem.proposal.status.in, ["PUBLISHED", "APPROVED", "CHANGES_REQUESTED", "REJECTED"]);
       assert.equal(where.proposalItem.proposal.supersededAt, null);
-      return store.production.filter(item => item.status === "BRAND_REVIEW" && store.campaigns.some(campaign => campaign.id === item.campaignId && where.campaign.status.in.includes(campaign.status)) && store.proposals.some(proposal => proposal.id === item.proposalId && proposal.status === "APPROVED" && !proposal.supersededAt)).length;
+      return store.production.filter(item => item.status === "BRAND_REVIEW" && store.campaigns.some(campaign => campaign.id === item.campaignId && where.campaign.status.in.includes(campaign.status)) && store.proposals.some(proposal => proposal.id === item.proposalId && where.proposalItem.proposal.status.in.includes(proposal.status) && !proposal.supersededAt)).length;
     } },
     creatorDirectoryEntry: forbidden,
     creatorProfile: forbidden,
@@ -1130,4 +1130,30 @@ test("new request currencies follow language and draft links open the correct re
   assert.equal(draft.requestCurrencyForLocale("zh"), "CNY");
   assert.equal(draft.requestDraftPath({ id: "campaign-1", type: "MANAGED" }), "/advertiser/campaign/new?draft=campaign-1&route=managed");
   assert.equal(draft.requestDraftPath({ id: "campaign-2", type: "OPEN_BIDDING" }), "/advertiser/campaign/new?draft=campaign-2&route=open");
+});
+
+test("partially approved proposals expose their approved production work on the brand dashboard", async () => {
+  const { api, store } = fixture();
+  const created = await (
+    await api.mutateBrandCampaign(request(input()))
+  ).json();
+  store.campaigns[0].status = "IN_PROGRESS";
+  store.proposals.push({
+    id: "partial",
+    campaignId: created.id,
+    status: "PUBLISHED",
+    items: [],
+    expiresAt: null,
+  });
+  store.production.push({
+    id: "approved-work",
+    campaignId: created.id,
+    proposalId: "partial",
+    status: "BRAND_REVIEW",
+  });
+  const response = await api.brandWorkspace(request());
+  assert.equal(response.status, 200);
+  const workspace = await response.json();
+  assert.equal(workspace.counts.waitingContentReviews, 1);
+  assert.equal(workspace.campaigns[0].productionSummary.awaitingBrand, 1);
 });

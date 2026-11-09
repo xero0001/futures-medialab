@@ -147,4 +147,5 @@ export type AdminAction =
   | "publishCampaign"
   | "returnCampaign"
   | "closeCampaign"
+  | "cancelCampaign"
   | "revokeUserSessions";

@@ -40,10 +40,9 @@ export function AdminReportingSubmit({
     [note, setNote] = useState(""),
     [evidenceUrl, setEvidenceUrl] = useState("");
   const [metrics, setMetrics] = useState<Record<string, string>>({});
-  if (!item.isManaged) return null;
   return (
     <section className={s.internal}>
-      <h4>매니지드 게시·성과 직접 등록</h4>
+      <h4>게시·성과 직접 등록</h4>
       <p className={s.muted}>
         게시 링크와 집계 결과를 새 버전으로 등록합니다. 운영 검토에서 공개하면
         브랜드 화면에 반영됩니다.

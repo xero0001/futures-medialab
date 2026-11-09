@@ -21,7 +21,10 @@ import {
 import type { Locale } from "../../_components/landing-copy";
 import { BrandSelect as ProfileSelect } from "./brand-controls";
 import "./request-workspace.css";
-import { StatusBadge, type StatusTone } from "../../_components/workspace/status-badge";
+import {
+  StatusBadge,
+  type StatusTone,
+} from "../../_components/workspace/status-badge";
 
 const statuses = [
   "REQUESTED",
@@ -65,12 +68,13 @@ type RequestRow = {
 };
 type RequestDetail = RequestRow & {
   description: string;
+  invitationResponse?: string | null;
   messages: {
     id: string;
     body: string;
     internal: false;
     authorName: string;
-    authorRole: "ADMIN" | "BRAND";
+    authorRole: "ADMIN" | "BRAND" | "AGENCY";
     createdAt: string;
     attachments: Attachment[];
   }[];
@@ -106,6 +110,7 @@ function statusLabel(status: string, t: Text) {
 
 function categoryLabel(category: string, t: Text) {
   const labels: Record<string, string> = {
+    invitation: t("Partner invitation", "파트너 초대", "合作邀请"),
     general: t("General inquiry", "일반 문의", "一般咨询"),
     campaign: t("Campaign operation", "캠페인 운영", "推广活动运营"),
     revision: t("Revision request", "수정 요청", "修改请求"),
@@ -243,12 +248,18 @@ export function RequestWorkspace({
   locale,
   onChanged,
   refreshKey,
+  audience = "brand",
+  invitations = false,
 }: {
   locale: Locale;
   onChanged?: () => void;
   refreshKey?: number;
+  audience?: "brand" | "agency";
+  invitations?: boolean;
 }) {
   const searchParams = useSearchParams();
+  const apiBase =
+    audience === "agency" ? "/api/agency/requests" : "/api/workspace/requests";
   const t: Text = (en, ko, zh) =>
     locale === "ko" ? ko : locale === "zh" ? zh : en;
   const [data, setData] = useState<RequestList | null>(null);
@@ -260,15 +271,28 @@ export function RequestWorkspace({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(searchParams.get("request"));
+  const [selectedId, setSelectedId] = useState<string | null>(
+    searchParams.get("request") === "new"
+      ? null
+      : (searchParams.get("request") ?? searchParams.get("invitation")),
+  );
   const [detail, setDetail] = useState<RequestDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
-  const [compose, setCompose] = useState(searchParams.get("compose") === "1");
+  const [compose, setCompose] = useState(
+    searchParams.get("compose") === "1" ||
+      searchParams.get("request") === "new",
+  );
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState<RequestCategory>(searchParams.get("campaign") ? "campaign" : "general");
-  const [campaignId, setCampaignId] = useState(searchParams.get("campaign") ?? "");
-  const [body, setBody] = useState("");
+  const [category, setCategory] = useState<RequestCategory>(
+    searchParams.get("campaign") ? "campaign" : "general",
+  );
+  const [campaignId, setCampaignId] = useState(
+    searchParams.get("campaign") ?? "",
+  );
+  const [body, setBody] = useState(
+    searchParams.get("related") ? `관련: ${searchParams.get("related")}\n` : "",
+  );
   const [reply, setReply] = useState("");
   const [reopenReason, setReopenReason] = useState("");
   const [reopening, setReopening] = useState(false);
@@ -286,10 +310,11 @@ export function RequestWorkspace({
     setError("");
     const params = new URLSearchParams({
       query: appliedQuery,
+      ...(invitations ? { tool: "invitation" } : {}),
       status,
       page: String(page),
     });
-    fetch(`/api/workspace/requests?${params}`, {
+    fetch(`${apiBase}?${params}`, {
       signal: controller.signal,
       cache: "no-store",
     })
@@ -314,7 +339,16 @@ export function RequestWorkspace({
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [appliedQuery, status, page, revision, locale, refreshKey]);
+  }, [
+    appliedQuery,
+    status,
+    page,
+    revision,
+    locale,
+    refreshKey,
+    apiBase,
+    invitations,
+  ]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -323,7 +357,7 @@ export function RequestWorkspace({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDetailLoading(true);
     setDetailError("");
-    fetch(`/api/workspace/requests/${encodeURIComponent(selectedId)}`, {
+    fetch(`${apiBase}/${encodeURIComponent(selectedId)}`, {
       signal: controller.signal,
       cache: "no-store",
     })
@@ -350,7 +384,7 @@ export function RequestWorkspace({
         if (!controller.signal.aborted) setDetailLoading(false);
       });
     return () => controller.abort();
-  }, [selectedId, revision, locale]);
+  }, [selectedId, revision, locale, apiBase]);
 
   useEffect(() => {
     if (compose) titleRef.current?.focus();
@@ -413,6 +447,36 @@ export function RequestWorkspace({
     );
   }
 
+  async function respondInvitation(
+    response: "accepted" | "negotiating" | "declined",
+  ) {
+    if (!detail || busy) return;
+    setBusy(true);
+    setDetailError("");
+    try {
+      await checked(
+        await fetch(`${apiBase}/${encodeURIComponent(detail.id)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "respondInvitation",
+            version: detail.version,
+            response,
+            body: reply,
+          }),
+        }),
+      );
+      setReply("");
+      setRevision((v) => v + 1);
+      setNotice(t("Reply sent.", "회신을 전달했습니다.", "回复已发送。"));
+    } catch (error) {
+      setDetailError(
+        error instanceof Error ? error.message : "회신하지 못했습니다.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   async function createRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy || title.trim().length < 2 || !body.trim()) return;
@@ -421,7 +485,7 @@ export function RequestWorkspace({
     setNotice("");
     try {
       const response = await checked(
-        await fetch("/api/workspace/requests", {
+        await fetch(apiBase, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -469,18 +533,15 @@ export function RequestWorkspace({
     setNotice("");
     try {
       await checked(
-        await fetch(
-          `/api/workspace/requests/${encodeURIComponent(detail.id)}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "message",
-              body: reply.trim(),
-              attachmentIds: attachments.map((file) => file.id),
-            }),
-          },
-        ),
+        await fetch(`${apiBase}/${encodeURIComponent(detail.id)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "message",
+            body: reply.trim(),
+            attachmentIds: attachments.map((file) => file.id),
+          }),
+        }),
       );
       setReply("");
       setAttachments([]);
@@ -529,10 +590,10 @@ export function RequestWorkspace({
       const form = new FormData();
       form.set("file", file);
       const response = await checked(
-        await fetch(
-          `/api/workspace/requests/${encodeURIComponent(detail.id)}/attachments`,
-          { method: "POST", body: form },
-        ),
+        await fetch(`${apiBase}/${encodeURIComponent(detail.id)}/attachments`, {
+          method: "POST",
+          body: form,
+        }),
       );
       const result = (await response.json()) as { attachment: Attachment };
       setAttachments((items) => [...items, result.attachment]);
@@ -559,7 +620,7 @@ export function RequestWorkspace({
     try {
       const response = await checked(
         await fetch(
-          `/api/workspace/requests/${encodeURIComponent(detail.id)}/attachments/${encodeURIComponent(file.id)}`,
+          `${apiBase}/${encodeURIComponent(detail.id)}/attachments/${encodeURIComponent(file.id)}`,
           { method: "DELETE" },
         ),
       );
@@ -599,18 +660,15 @@ export function RequestWorkspace({
     setDetailError("");
     try {
       await checked(
-        await fetch(
-          `/api/workspace/requests/${encodeURIComponent(detail.id)}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "reopen",
-              version: detail.version,
-              reason: reopenReason.trim(),
-            }),
-          },
-        ),
+        await fetch(`${apiBase}/${encodeURIComponent(detail.id)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "reopen",
+            version: detail.version,
+            reason: reopenReason.trim(),
+          }),
+        }),
       );
       setReopening(false);
       setReopenReason("");
@@ -970,6 +1028,39 @@ export function RequestWorkspace({
                 </div>
                 <h3>{activeDetail.title}</h3>
               </div>
+              {audience === "agency" &&
+                activeDetail.tool === "invitation" &&
+                !["CLOSED", "RESOLVED"].includes(activeDetail.status) && (
+                  <div className="cwr-intro">
+                    <p>
+                      {activeDetail.invitationResponse
+                        ? ({
+                            accepted: "참여 가능으로 회신했습니다.",
+                            negotiating: "조건 협의로 회신했습니다.",
+                            declined: "참여 불가로 회신했습니다.",
+                          }[activeDetail.invitationResponse] ?? "")
+                        : "참여 가능 여부를 회신해 주세요. 최종 조건은 공식 제안에서 확정됩니다."}
+                    </p>
+                    <BrandButton
+                      disabled={busy}
+                      onClick={() => void respondInvitation("accepted")}
+                    >
+                      참여 가능
+                    </BrandButton>
+                    <BrandButton
+                      disabled={busy}
+                      onClick={() => void respondInvitation("negotiating")}
+                    >
+                      조건 협의
+                    </BrandButton>
+                    <BrandButton
+                      disabled={busy}
+                      onClick={() => void respondInvitation("declined")}
+                    >
+                      참여 불가
+                    </BrandButton>
+                  </div>
+                )}
               <dl className="cwr-metadata">
                 <div>
                   <dt>{t("Campaign", "캠페인", "推广活动")}</dt>
@@ -1035,7 +1126,9 @@ export function RequestWorkspace({
                           <span>
                             {message.authorRole === "ADMIN"
                               ? t("Operations", "운영팀", "运营团队")
-                              : t("Brand", "브랜드", "品牌")}
+                              : audience === "agency"
+                                ? t("Partner", "공급 파트너", "合作伙伴")
+                                : t("Brand", "브랜드", "品牌")}
                           </span>
                           <time dateTime={message.createdAt}>
                             {displayDate(message.createdAt, locale, true)}

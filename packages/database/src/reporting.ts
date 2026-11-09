@@ -178,7 +178,9 @@ function current(row: BaseRow): boolean {
     production.status === "APPROVED" &&
     item.status === "APPROVED" &&
     proposal.campaignId === row.campaignId &&
-    proposal.status === "APPROVED" &&
+    ["PUBLISHED", "APPROVED", "CHANGES_REQUESTED", "REJECTED"].includes(
+      proposal.status,
+    ) &&
     Boolean(proposal.publishedAt) &&
     !proposal.supersededAt &&
     row.campaign.proposals[0]?.id === proposal.id
@@ -317,11 +319,7 @@ function agencyDto(row: PrivateRow, canManage: boolean): AgencyReportingItem {
 function adminSubmitProblem(row: PrivateRow): string | null {
   return (
     activeProblem(row) ||
-    (row.campaign.type !== "MANAGED"
-      ? "매니지드 캠페인만 관리자가 직접 등록할 수 있습니다."
-      : row.submissions.length >= 100
-        ? "제출 버전 한도에 도달했습니다."
-        : null)
+    (row.submissions.length >= 100 ? "제출 버전 한도에 도달했습니다." : null)
   );
 }
 function adminDto(row: PrivateRow): AdminReportingItem {
@@ -503,7 +501,9 @@ async function approvedProduction(tx: Tx, campaign: CampaignRow) {
         proposal: {
           id: campaign.proposals[0]?.id ?? "",
           campaignId: campaign.id,
-          status: "APPROVED",
+          status: {
+            in: ["PUBLISHED", "APPROVED", "CHANGES_REQUESTED", "REJECTED"],
+          },
           publishedAt: { not: null },
           supersededAt: null,
         },

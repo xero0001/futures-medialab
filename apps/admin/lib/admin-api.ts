@@ -1,6 +1,9 @@
 import "server-only";
 import { syncCampaignIntake } from "./campaign-intake";
-import { originalProposalDeadline, requestWaitingFor } from "@futures-medialab/database/request-workflow";
+import {
+  originalProposalDeadline,
+  requestWaitingFor,
+} from "@futures-medialab/database/request-workflow";
 import { getDatabase, Prisma } from "@futures-medialab/database";
 import { get } from "@vercel/blob";
 import { z } from "zod";
@@ -38,6 +41,7 @@ const actionSchema = z.strictObject({
     "publishCampaign",
     "returnCampaign",
     "closeCampaign",
+    "cancelCampaign",
     "revokeUserSessions",
   ]),
   id: idSchema,
@@ -305,10 +309,24 @@ export function campaignDetail(request: Request, id: string) {
         id: true,
         brandOrganizationId: true,
         summary: true,
-        regions: true, categories: true, followerMin: true, followerMax: true,
-        title: true, type: true, status: true, platforms: true, currency: true, budgetAmount: true, applicationDeadline: true, createdAt: true,
+        regions: true,
+        categories: true,
+        followerMin: true,
+        followerMax: true,
+        title: true,
+        type: true,
+        status: true,
+        platforms: true,
+        currency: true,
+        budgetAmount: true,
+        applicationDeadline: true,
+        createdAt: true,
         brandOrganization: { select: { name: true, status: true } },
-        briefUrl: true, contentDeadline: true, requirements: true, settlementPolicy: true, managedRequest: true,
+        briefUrl: true,
+        contentDeadline: true,
+        requirements: true,
+        settlementPolicy: true,
+        managedRequest: true,
         _count: { select: { applications: true } },
         applications: {
           orderBy: { createdAt: "desc" },
@@ -322,8 +340,22 @@ export function campaignDetail(request: Request, id: string) {
             createdAt: true,
             agencyOrganizationId: true,
             rosterSnapshot: true,
-            creators: { orderBy: { creatorId: "asc" }, take: 100, select: { deliverables: true,
-              creator: { select: { id: true, agencyOrganizationId: true, displayName: true, channels: true, categories: true } } } },
+            creators: {
+              orderBy: { creatorId: "asc" },
+              take: 100,
+              select: {
+                deliverables: true,
+                creator: {
+                  select: {
+                    id: true,
+                    agencyOrganizationId: true,
+                    displayName: true,
+                    channels: true,
+                    categories: true,
+                  },
+                },
+              },
+            },
             agencyOrganization: { select: { name: true, status: true } },
           },
         },
@@ -331,32 +363,77 @@ export function campaignDetail(request: Request, id: string) {
     });
     if (!campaign) fail(404, "NOT_FOUND", "캠페인을 찾을 수 없습니다.");
     await recheckAdmin(getDatabase(), admin);
-    const intakeId = text(record(record(campaign.requirements).brandIntake).requestId);
-    const intake = intakeId ? await getDatabase().workspaceToolRequest.findFirst({
-      where: { id: intakeId, campaignId: id, organizationId: campaign.brandOrganizationId },
-      select: { id: true, status: true, inputJson: true, dueAt: true,
-        assignedTo: { select: { name: true } },
-        campaign: { select: { proposals: { where: { publishedAt: { not: null } }, take: 1, select: { id: true } } } },
-      },
-    }) : null;
+    const intakeId = text(
+      record(record(campaign.requirements).brandIntake).requestId,
+    );
+    const intake = intakeId
+      ? await getDatabase().workspaceToolRequest.findFirst({
+          where: {
+            id: intakeId,
+            campaignId: id,
+            organizationId: campaign.brandOrganizationId,
+          },
+          select: {
+            id: true,
+            status: true,
+            inputJson: true,
+            dueAt: true,
+            assignedTo: { select: { name: true } },
+            campaign: {
+              select: {
+                proposals: {
+                  where: { publishedAt: { not: null } },
+                  take: 1,
+                  select: { id: true },
+                },
+              },
+            },
+          },
+        })
+      : null;
     return json({
       id,
-      intakeSummary: intake ? {
-        id: intake.id, status: intake.status,
-        assigneeName: intake.assignedTo?.name || null,
-        dueAt: intake.dueAt?.toISOString() ?? null,
-        originalProposalDueAt: originalProposalDeadline(intake.inputJson),
-        waitingFor: requestWaitingFor(intake.inputJson, intake.status, Boolean(intake.campaign?.proposals.length)),
-      } : null,
+      intakeSummary: intake
+        ? {
+            id: intake.id,
+            status: intake.status,
+            assigneeName: intake.assignedTo?.name || null,
+            dueAt: intake.dueAt?.toISOString() ?? null,
+            originalProposalDueAt: originalProposalDeadline(intake.inputJson),
+            waitingFor: requestWaitingFor(
+              intake.inputJson,
+              intake.status,
+              Boolean(intake.campaign?.proposals.length),
+            ),
+          }
+        : null,
       summary: campaign.summary,
-      regions: campaign.regions, categories: campaign.categories, followerMin: campaign.followerMin, followerMax: campaign.followerMax,
-      campaign: { id, title: campaign.title, type: campaign.type, summary: campaign.summary, status: campaign.status,
-        brandName: campaign.brandOrganization.name, brandStatus: campaign.brandOrganization.status,
-        platforms: campaign.platforms, currency: campaign.currency, budgetAmount: campaign.budgetAmount?.toFixed(2) ?? null,
-        applicationDeadline: campaign.applicationDeadline?.toISOString() ?? null, createdAt: campaign.createdAt.toISOString(),
-        applicationCount: campaign._count.applications, reviewReason: reviewReason(campaign.requirements) },
-      briefUrl: safeOperationUrl(campaign.briefUrl), contentDeadline: campaign.contentDeadline?.toISOString() ?? null,
-      requirements: campaign.requirements, settlementPolicy: campaign.settlementPolicy, managedRequest: campaign.managedRequest,
+      regions: campaign.regions,
+      categories: campaign.categories,
+      followerMin: campaign.followerMin,
+      followerMax: campaign.followerMax,
+      campaign: {
+        id,
+        title: campaign.title,
+        type: campaign.type,
+        summary: campaign.summary,
+        status: campaign.status,
+        brandName: campaign.brandOrganization.name,
+        brandStatus: campaign.brandOrganization.status,
+        platforms: campaign.platforms,
+        currency: campaign.currency,
+        budgetAmount: campaign.budgetAmount?.toFixed(2) ?? null,
+        applicationDeadline:
+          campaign.applicationDeadline?.toISOString() ?? null,
+        createdAt: campaign.createdAt.toISOString(),
+        applicationCount: campaign._count.applications,
+        reviewReason: reviewReason(campaign.requirements),
+      },
+      briefUrl: safeOperationUrl(campaign.briefUrl),
+      contentDeadline: campaign.contentDeadline?.toISOString() ?? null,
+      requirements: campaign.requirements,
+      settlementPolicy: campaign.settlementPolicy,
+      managedRequest: campaign.managedRequest,
       total: campaign._count.applications,
       applications: campaign.applications.map(
         ({
@@ -372,8 +449,18 @@ export function campaignDetail(request: Request, id: string) {
           agencyStatus: agencyOrganization.status,
           proposedAmount: proposedAmount?.toFixed(2) ?? null,
           createdAt: createdAt.toISOString(),
-          creators: creators.filter(({ creator }) => creator.agencyOrganizationId === agencyOrganizationId)
-            .map(({ creator, deliverables }) => ({ id: creator.id, name: creator.displayName, channels: creator.channels, categories: creator.categories, deliverables })),
+          creators: creators
+            .filter(
+              ({ creator }) =>
+                creator.agencyOrganizationId === agencyOrganizationId,
+            )
+            .map(({ creator, deliverables }) => ({
+              id: creator.id,
+              name: creator.displayName,
+              channels: creator.channels,
+              categories: creator.categories,
+              deliverables,
+            })),
         }),
       ),
     } satisfies CampaignDetail);
@@ -536,6 +623,26 @@ export function action(request: Request) {
               reason: input.reason,
               reviewedAt,
             };
+          } else if (input.action === "cancelCampaign") {
+            if (["CANCELED", "COMPLETED"].includes(campaign.status))
+              fail(409, "INVALID_STATE", "이미 종료된 캠페인입니다.");
+            if (
+              await tx.campaignCompletion.findUnique({
+                where: { campaignId: campaign.id },
+                select: { id: true },
+              })
+            )
+              fail(
+                409,
+                "INVALID_STATE",
+                "완료·정산 처리된 캠페인은 취소할 수 없습니다.",
+              );
+            after = "CANCELED";
+            requirements.adminReview = {
+              status: "CANCELED",
+              reason: input.reason,
+              reviewedAt,
+            };
           } else {
             if (campaign.status !== "RECRUITING")
               fail(
@@ -551,13 +658,21 @@ export function action(request: Request) {
             };
           }
           const synchronizedRequirements = await syncCampaignIntake(
-            tx, admin.userId, { ...campaign, requirements },
-            input.action as "publishCampaign" | "returnCampaign" | "closeCampaign", input.reason,
+            tx,
+            admin.userId,
+            { ...campaign, requirements },
+            input.action as
+              | "publishCampaign"
+              | "returnCampaign"
+              | "closeCampaign"
+              | "cancelCampaign",
+            input.reason,
           );
           await tx.campaign.update({
             where: { id: input.id },
             data: {
-              status: after as "RECRUITING" | "DRAFT" | "IN_PROGRESS",
+              status: after as
+                "RECRUITING" | "DRAFT" | "IN_PROGRESS" | "CANCELED",
               requirements: synchronizedRequirements as Prisma.InputJsonObject,
               ...(input.action === "publishCampaign"
                 ? { publishedAt: new Date() }

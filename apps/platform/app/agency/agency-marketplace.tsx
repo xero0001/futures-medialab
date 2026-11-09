@@ -1313,7 +1313,9 @@ function CampaignDrawer({
             )}
             <div className="cwa-apply-gate">
               {campaign.application &&
-              campaign.application.status !== "DRAFT" ? (
+              !["DRAFT", "WITHDRAWN", "REJECTED"].includes(
+                campaign.application.status,
+              ) ? (
                 <>
                   <p className="cwa-application-status">
                     {applicationLabel(campaign.application.status, locale)}
@@ -1372,7 +1374,7 @@ function CampaignDrawer({
                   >
                     {t(
                       "Preview creator application",
-                      "크리에이터 신청서 작성 · 미리보기",
+                      "크리에이터 신청서 작성",
                       "预览达人申请",
                     )}
                   </WorkspaceButton>
