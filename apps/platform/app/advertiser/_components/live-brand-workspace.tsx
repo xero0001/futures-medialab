@@ -440,7 +440,7 @@ export function LiveBrandWorkspace({
               <BrandBillingPanel
                 invoices={data.invoices}
                 locale={locale}
-                showHeading={false}
+                scope="organization"
               />
             </>
           )}
@@ -1465,7 +1465,7 @@ function CampaignDetail({
               requestHref={requestHref}
             />
           ) : tab === "settlement" ? (
-            <BrandBillingPanel invoices={detail.invoices} locale={locale} />
+            <BrandBillingPanel invoices={detail.invoices} locale={locale} scope="campaign" />
           ) : (
             <BrandDocumentsPanel
               locale={locale}

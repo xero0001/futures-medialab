@@ -64,6 +64,26 @@
 .statementHeader h3 {
   overflow-wrap: anywhere;
 }
+.invoiceSummary {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--spacing-20) var(--spacing-48);
+  padding: var(--spacing-24);
+}
+.invoiceSummary > div {
+  display: grid;
+  gap: var(--spacing-8);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.invoiceAmountLabel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-8);
+}
 .total {
   display: flex;
   flex-direction: column;
@@ -141,6 +161,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
   .statementHeader,
+  .invoiceSummary,
   .note {
     padding: 20px;
   }

@@ -20,47 +20,34 @@ import {
   SettlementList,
   SettlementStatement,
 } from "../../_components/workspace/settlement-shared";
-import { settlementMoney } from "../../../lib/settlement-display";
+import { campaignMoney } from "../../../lib/settlement-display";
 import styles from "../../_components/workspace/settlement-workspace.module.css";
 
 export function BrandBillingPanel({
   invoices,
   locale,
-  showHeading = true,
+  scope,
 }: {
   invoices: BrandInvoice[];
   locale: Locale;
-  showHeading?: boolean;
+  scope: "campaign" | "organization";
 }) {
   const t = productionText(locale);
+  const inCampaign = scope === "campaign";
+  const singleInvoice = inCampaign && invoices.length === 1 ? invoices[0] : undefined;
+  const renderInvoice = (invoice: BrandInvoice) => (
+    <InvoiceStatement key={invoice.id} current={invoice} locale={locale} inCampaign={inCampaign} />
+  );
   return (
     <section className={styles.workspace}>
-      {showHeading && (
-        <div>
-          <Typography as="h2" variant="title3" weight="bold">
-            {t("청구 내역", "Invoices", "账单")}
-          </Typography>
-          <Typography as="p" variant="body2" className={styles.muted}>
-            {t(
-              "우리 조직에 발행된 청구 금액과 입금 확인 내역을 확인하세요.",
-              "View invoices issued to your organization and payment confirmations.",
-              "查看向本组织出具的账单金额及收款确认记录。",
-            )}
-          </Typography>
-        </div>
+      {inCampaign && (
+        <Typography as="h2" variant="title3" weight="bold">
+          {t("청구 내역", "Invoices", "账单")}
+        </Typography>
       )}
-      <SettlementList
-        documents={invoices}
-        viewer="brand"
-        locale={locale}
-        renderDocument={(invoice) => (
-          <InvoiceStatement
-            key={invoice.id}
-            current={invoice}
-            locale={locale}
-          />
-        )}
-      />
+      {singleInvoice ? renderInvoice(singleInvoice) : (
+        <SettlementList documents={invoices} viewer="brand" locale={locale} renderDocument={renderInvoice} />
+      )}
     </section>
   );
 }
@@ -68,9 +55,11 @@ export function BrandBillingPanel({
 function InvoiceStatement({
   current,
   locale,
+  inCampaign,
 }: {
   current: BrandInvoice;
   locale: Locale;
+  inCampaign: boolean;
 }) {
   const t = productionText(locale);
   const [selected, setSelected] = useState<number | null>(null);
@@ -80,7 +69,7 @@ function InvoiceStatement({
   const invoice = version ? { ...current, ...version } : current;
   return (
     <div className={styles.workspace}>
-      <label className={styles.invoiceVersion}>
+      {current.versions.length > 1 && <label className={styles.invoiceVersion}>
         {t("청구서 발행본", "Invoice version", "账单版本")}{" "}
         <FormSelect
           aria-label={t("청구서 버전", "Invoice version", "账单版本")}
@@ -96,7 +85,7 @@ function InvoiceStatement({
             </option>
           ))}
         </FormSelect>
-      </label>
+      </label>}
       {historical && (
         <p className={styles.note}>
           {t(
@@ -117,6 +106,7 @@ function InvoiceStatement({
         viewer="brand"
         locale={locale}
         earlierIssue={historical}
+        inCampaign={inCampaign}
       >
         <div className={styles.tableWrap}>
           <Table
@@ -164,7 +154,7 @@ function InvoiceStatement({
                   <TableCell>{line.quantity}</TableCell>
                   <TableCell>
                     <span className={styles.money}>
-                      {settlementMoney(
+                      {campaignMoney(
                         line.unitAmount,
                         invoice.currency,
                         locale,
@@ -173,7 +163,7 @@ function InvoiceStatement({
                   </TableCell>
                   <TableCell>
                     <span className={styles.money}>
-                      {settlementMoney(
+                      {campaignMoney(
                         line.lineAmount,
                         invoice.currency,
                         locale,
