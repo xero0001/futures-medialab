@@ -138,12 +138,15 @@ export function VersionContent({
   locale,
   timestamp,
   label,
+  artwork,
 }: {
   version: { version: number; title: string; url: string; note: string };
   locale: Locale;
   timestamp: string | null;
   label?: string;
+  artwork?: CampaignArtwork;
 }) {
+  const source = productionVideoSource(version.url);
   return (
     <div className={styles.versionBody}>
       <Typography variant="caption1" className={styles.muted}>
@@ -153,10 +156,11 @@ export function VersionContent({
       <Typography as="h3" variant="heading2" weight="bold">
         {version.title}
       </Typography>
-      <VideoPreview
-        source={productionVideoSource(version.url)}
-        title={version.title}
-      />
+      {source ? (
+        <VideoPreview source={source} title={version.title} />
+      ) : (
+        <ProductionArtwork artwork={artwork} locale={locale} />
+      )}
       <ContentLink url={version.url} locale={locale} />
       <Typography as="p" variant="body2" className={styles.note}>
         {version.note ||

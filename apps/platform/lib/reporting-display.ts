@@ -1,7 +1,16 @@
-import type { BrandReportingItem, ReportingMetrics } from "@futures-medialab/database/reporting-types";
+import type { BrandReportingItem, ReportingMetrics, ReportingSnapshot } from "@futures-medialab/database/reporting-types";
 
 export const reportingMetricKeys = ["views", "impressions", "reach", "likes", "comments", "shares", "saves", "clicks"] as const;
 export const reportingTotalKeys = ["views", "likes", "comments", "clicks"] as const;
+
+/** Older demo titles included the metric scenario number, which can differ from the published version. */
+export function reportSnapshotTitle(title: string) {
+  return title.startsWith("[시연] ") ? title.replace(/( · 성과 보고) v\d+$/, "$1") : title;
+}
+
+export function reportMetricsPending(snapshot: Pick<ReportingSnapshot, "metrics" | "metricsAsOf">) {
+  return !snapshot.metricsAsOf && reportingMetricKeys.every(key => snapshot.metrics[key] === null);
+}
 
 /** Forms label KST explicitly so a reviewer's device timezone cannot shift it. */
 export function reportingLocalDate(value: string | null | undefined) {
@@ -20,7 +29,13 @@ export function summarizePublishedReports(items: BrandReportingItem[]) {
     const known = snapshots.filter(snapshot => snapshot.metrics[key] !== null);
     return [key, { known: known.length, value: known.length ? known.reduce((sum, snapshot) => sum + BigInt(snapshot.metrics[key]!), 0n) : null }];
   })) as Record<typeof reportingTotalKeys[number], { known: number; value: bigint | null }>;
-  return { count: snapshots.length, totals };
+  const measurementTimes = new Set(snapshots.map(snapshot => snapshot.metricsAsOf));
+  return {
+    count: snapshots.length,
+    totals,
+    allPending: snapshots.every(reportMetricsPending),
+    commonMetricsAsOf: measurementTimes.size === 1 ? snapshots[0]?.metricsAsOf ?? null : null,
+  };
 }
 export function reportingInputMetrics(values: Record<keyof ReportingMetrics, string>): ReportingMetrics | null {
   const metrics = {} as ReportingMetrics;

@@ -1,19 +1,19 @@
 "use client";
 
-import { ProposalChannelAvatar } from "./proposal-channel-avatar";
 import Link from "next/link";
 import { useState } from "react";
-import {
-  Button,
-  Option,
-  SectionMessage,
-  Select,
-  Typography,
-} from "@montage-ui/core";
+import { Button, SectionMessage, Typography } from "@montage-ui/core";
 import { IconClock } from "@montage-ui/icon";
 import type { BrandReportingItem } from "@futures-medialab/database/reporting-types";
+import { splitDeliverable } from "../../../lib/campaign-copy";
+import { reportMetricsPending } from "../../../lib/reporting-display";
 import type { CampaignArtwork } from "../../../lib/campaign-artwork";
 import type { Locale } from "../../_components/landing-copy";
+import {
+  CampaignContentHeading,
+  CampaignItemPicker,
+  CampaignVersionPicker,
+} from "../../_components/workspace/campaign-review";
 import { productionText } from "../../_components/workspace/production-shared";
 import {
   ReportingBadge,
@@ -48,6 +48,17 @@ export function BrandReportingPanel({
     versions.find((value) => value.id === versionId) ?? versions[0];
   const comparison =
     version?.id === versions[0]?.id ? versions[1] : versions[0];
+  const deliverable = splitDeliverable(item?.deliverables ?? "");
+  const statusBadge = (value: BrandReportingItem) => (
+    <ReportingBadge
+      status={value.status}
+      locale={locale}
+      hasPublished={Boolean(value.latestSubmission)}
+      metricsPending={Boolean(
+        value.latestSubmission && reportMetricsPending(value.latestSubmission),
+      )}
+    />
+  );
   return (
     <div className={styles.workspace}>
       <div className={styles.heading}>
@@ -55,23 +66,9 @@ export function BrandReportingPanel({
           <Typography as="h2" variant="title3" weight="bold">
             {t("게시·성과", "Publication & performance", "发布与成效")}
           </Typography>
-          <Typography as="p" variant="body2" className={styles.muted}>
-            {t(
-              "퓨쳐스가 확인해 공개한 게시 링크와 성과 지표를 확인하세요.",
-              "View published links and performance figures reviewed and shared by Futures.",
-              "查看经 Futures 确认并公开的发布链接和成效指标。",
-            )}
-          </Typography>
         </div>
-        <Typography variant="label1">
-          {t(
-            `공개된 콘텐츠 ${items.filter((value) => value.isCurrent && value.latestSubmission).length}건`,
-            `${items.filter((value) => value.isCurrent && value.latestSubmission).length} published reports`,
-            `${items.filter((value) => value.isCurrent && value.latestSubmission).length} 项已公开报告`,
-          )}
-        </Typography>
       </div>
-      <ReportingTotals items={items} locale={locale} />
+      {items.length > 1 && <ReportingTotals items={items} locale={locale} />}
       {!item ? (
         <div className={styles.empty}>
           <IconClock />
@@ -100,111 +97,34 @@ export function BrandReportingPanel({
           </Button>
         </div>
       ) : (
-        <div className={styles.layout}>
-          <div
-            className={styles.tasks}
-            aria-label={t(
-              "성과 보고 콘텐츠",
-              "Reported content",
-              "成效报告内容",
-            )}
-          >
-            {items.map((value) => (
-              <Button
-                key={value.id}
-                variant="outlined"
-                color="assistive"
-                className={`${styles.task} ${value.id === item.id ? styles.taskActive : ""}`}
-                sx={{
-                  width: "100%",
-                  minWidth: 0,
-                  maxWidth: "100%",
-                  height: "auto",
-                  padding: "20px",
-                  whiteSpace: "normal",
-                  justifyContent: "flex-start",
-                  "& > span": {
-                    minWidth: 0,
-                    width: "100%",
-                    maxWidth: "100%",
-                    whiteSpace: "normal",
-                  },
-                }}
-                aria-pressed={value.id === item.id}
-                onClick={() => {
-                  setSelectedId(value.id);
-                  setVersionId(null);
-                  setComparing(false);
-                }}
-              >
-                <span className={styles.taskContent}>
-                  <ReportingBadge
-                    status={value.status}
-                    locale={locale}
-                    hasPublished={Boolean(value.latestSubmission)}
-                    metricsPending={Boolean(
-                      value.latestSubmission &&
-                      Object.values(value.latestSubmission.metrics).every(
-                        (metric) => metric === null,
-                      ),
-                    )}
-                  />
-                  <span className={styles.creatorIdentity}>
-                    <ProposalChannelAvatar
-                      name={value.creatorName}
-                      channelUrl={value.channelUrl}
-                      alt={value.creatorName}
-                    />
-                    <Typography as="strong" variant="label1" weight="bold">
-                      {value.creatorName}
-                    </Typography>
-                  </span>
-                  <Typography variant="caption1" className={styles.muted}>
-                    {value.platform} · {value.deliverables}
-                  </Typography>
-                  {!value.isCurrent && (
-                    <Typography variant="caption1" className={styles.muted}>
-                      {t(
-                        "이전 제안 기록",
-                        "Previous proposal record",
-                        "历史方案记录",
-                      )}
-                    </Typography>
-                  )}
-                </span>
-              </Button>
-            ))}
-          </div>
+        <div className={items.length > 1 ? styles.layout : undefined}>
+          <CampaignItemPicker
+            items={items}
+            selectedId={item.id}
+            label={t("성과 보고 콘텐츠", "Reported content", "成效报告内容")}
+            onSelect={(id) => {
+              setSelectedId(id);
+              setVersionId(null);
+              setComparing(false);
+            }}
+            renderStatus={statusBadge}
+            extraLabel={(value) =>
+              value.isCurrent
+                ? undefined
+                : t(
+                    "이전 제안 기록",
+                    "Previous proposal record",
+                    "历史方案记录",
+                  )
+            }
+          />
           <div className={styles.detail}>
             <section className={styles.card}>
-              <div className={styles.cardHead}>
-                <div className={styles.creatorIdentity}>
-                  <ProposalChannelAvatar
-                    name={item.creatorName}
-                    channelUrl={item.channelUrl}
-                    alt={item.creatorName}
-                  />
-                  <div>
-                    <Typography as="h3" variant="heading2" weight="bold">
-                      {item.creatorName}
-                    </Typography>
-                    <Typography variant="caption1" className={styles.muted}>
-                      {item.platform} · {item.deliverables}
-                    </Typography>
-                  </div>
-                </div>
-                <ReportingBadge
-                  status={item.status}
-                  locale={locale}
-                  hasPublished={Boolean(item.latestSubmission)}
-                  metricsPending={Boolean(
-                    item.latestSubmission &&
-                    Object.values(item.latestSubmission.metrics).every(
-                      (metric) => metric === null,
-                    ),
-                  )}
-                />
-              </div>
+              <CampaignContentHeading
+                item={item}
+                title={deliverable.title}
+                status={statusBadge(item)}
+              />
               {!item.isCurrent && (
                 <div className={styles.feedback}>
                   <SectionMessage variant="info">
@@ -216,75 +136,75 @@ export function BrandReportingPanel({
                   </SectionMessage>
                 </div>
               )}
-            </section>
-            {version ? (
-              <section className={styles.card}>
-                <div className={styles.versionControls}>
-                  <Select
-                    aria-label={t(
+              {version ? (
+                <>
+                  <CampaignVersionPicker
+                    versions={versions}
+                    selectedId={version.id}
+                    label={t(
                       "공개된 성과 버전",
                       "Published report version",
                       "公开成效版本",
                     )}
-                    value={version.id}
-                    onChange={(value) => {
-                      setVersionId(value);
+                    latestLabel={t(
+                      "최신 공개본",
+                      "Latest published",
+                      "最新公开版本",
+                    )}
+                    earlierLabel={t(
+                      "이전 공개본",
+                      "Earlier published",
+                      "历史公开版本",
+                    )}
+                    locale={locale}
+                    onSelect={(id) => {
+                      setVersionId(id);
                       setComparing(false);
                     }}
-                    width="100%"
-                    size="medium"
-                  >
-                    {versions.map((value) => (
-                      <Option key={value.id} value={value.id}>
-                        v{value.version} ·{" "}
-                        {value.isLatest
-                          ? t("최신 공개본", "Latest published", "最新公开版本")
-                          : t(
-                              "이전 공개본",
-                              "Earlier published",
-                              "历史公开版本",
-                            )}
-                      </Option>
-                    ))}
-                  </Select>
-                  {comparison && (
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="assistive"
-                      onClick={() => setComparing((value) => !value)}
-                    >
-                      {comparing
-                        ? t("비교 닫기", "Close comparison", "关闭比较")
-                        : t("버전 비교", "Compare versions", "版本比较")}
-                    </Button>
+                    comparing={comparing}
+                    onToggleCompare={() => setComparing((value) => !value)}
+                  />
+                  {item.status !== "PUBLISHED" && (
+                    <div className={styles.pendingNotice}>
+                      <SectionMessage variant="info">
+                        {t(
+                          "업데이트를 확인 중입니다. 아래에는 현재 공개된 버전을 표시합니다.",
+                          "An update is being reviewed. The currently published version remains available below.",
+                          "更新资料确认中，下方继续显示当前公开版本。",
+                        )}
+                      </SectionMessage>
+                    </div>
                   )}
-                </div>
-                {item.status !== "PUBLISHED" && (
-                  <div className={styles.pendingNotice}>
-                    <SectionMessage variant="info">
-                      {t(
-                        "업데이트를 확인 중입니다. 아래에는 현재 공개된 버전을 표시합니다.",
-                        "An update is being reviewed. The currently published version remains available below.",
-                        "更新资料确认中，下方继续显示当前公开版本。",
-                      )}
-                    </SectionMessage>
-                  </div>
-                )}
-                {comparing && comparison ? (
-                  <div className={`${styles.compare} ${reportStyles.compare}`}>
-                    <ReportSnapshotView
-                      productionVideoUrl={item.productionVideoUrl}
-                      data={comparison}
-                      version={comparison.version}
-                      timestamp={comparison.releasedAt}
-                      locale={locale}
-                      label={t(
-                        "비교 공개본",
-                        "Comparison report",
-                        "比较公开版本",
-                      )}
-                    />
+                  {comparing && comparison ? (
+                    <div
+                      className={`${styles.compare} ${reportStyles.compare}`}
+                    >
+                      <ReportSnapshotView
+                        productionVideoUrl={item.productionVideoUrl}
+                        data={comparison}
+                        version={comparison.version}
+                        timestamp={comparison.releasedAt}
+                        locale={locale}
+                        label={t(
+                          "비교 공개본",
+                          "Comparison report",
+                          "比较公开版本",
+                        )}
+                      />
+                      <ReportSnapshotView
+                        productionVideoUrl={item.productionVideoUrl}
+                        data={version}
+                        version={version.version}
+                        timestamp={version.releasedAt}
+                        locale={locale}
+                        label={t(
+                          "선택 공개본",
+                          "Selected report",
+                          "所选公开版本",
+                        )}
+                      />
+                    </div>
+                  ) : (
                     <ReportSnapshotView
                       productionVideoUrl={item.productionVideoUrl}
                       data={version}
@@ -292,46 +212,49 @@ export function BrandReportingPanel({
                       timestamp={version.releasedAt}
                       locale={locale}
                       label={t(
-                        "선택 공개본",
-                        "Selected report",
-                        "所选公开版本",
+                        "퓨쳐스 공개본",
+                        "Published by Futures",
+                        "Futures 公开版本",
                       )}
                     />
-                  </div>
-                ) : (
-                  <ReportSnapshotView
-                    productionVideoUrl={item.productionVideoUrl}
-                    data={version}
-                    version={version.version}
-                    timestamp={version.releasedAt}
-                    locale={locale}
-                    label={t(
-                      "퓨쳐스 공개본",
-                      "Published by Futures",
-                      "Futures 公开版本",
+                  )}
+                </>
+              ) : (
+                <div className={styles.waitingForContent}>
+                  <IconClock />
+                  <Typography as="h3" variant="heading2" weight="bold">
+                    {t(
+                      "게시·성과 자료를 준비하고 있습니다",
+                      "Publication report in preparation",
+                      "发布与成效资料准备中",
                     )}
-                  />
-                )}
-              </section>
-            ) : (
-              <div className={styles.empty}>
-                <IconClock />
-                <Typography as="h3" variant="heading2" weight="bold">
-                  {t(
-                    "게시·성과 자료를 준비하고 있습니다",
-                    "Publication report in preparation",
-                    "发布与成效资料准备中",
-                  )}
-                </Typography>
-                <Typography as="p" variant="body2" className={styles.muted}>
-                  {t(
-                    "퓨쳐스가 확인해 공개하면 게시 링크와 지표를 볼 수 있습니다.",
-                    "The publication link and metrics will appear after Futures reviews and publishes them.",
-                    "经 Futures 确认并公开后即可查看发布链接与指标。",
-                  )}
-                </Typography>
-              </div>
-            )}
+                  </Typography>
+                  <Typography as="p" variant="body2" className={styles.muted}>
+                    {t(
+                      "퓨쳐스가 확인해 공개하면 게시 링크와 지표를 볼 수 있습니다.",
+                      "The publication link and metrics will appear after Futures reviews and publishes them.",
+                      "经 Futures 确认并公开后即可查看发布链接与指标。",
+                    )}
+                  </Typography>
+                </div>
+              )}
+              {deliverable.description && (
+                <details className={reportStyles.deliverableDetails}>
+                  <summary>
+                    <Typography variant="label1" weight="bold">
+                      {t("콘텐츠 기획 상세", "Content brief", "内容策划详情")}
+                    </Typography>
+                  </summary>
+                  <Typography
+                    as="p"
+                    variant="body2"
+                    color="semantic.foreground.neutral.secondary"
+                  >
+                    {deliverable.description}
+                  </Typography>
+                </details>
+              )}
+            </section>
           </div>
         </div>
       )}

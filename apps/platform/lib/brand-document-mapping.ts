@@ -5,6 +5,8 @@ import type {
   BrandInvoiceVersion,
 } from "@futures-medialab/database/settlement-types";
 import type { BrandDocument } from "./brand-document-types";
+import { visibleProposalSummary } from "./campaign-copy";
+import { reportSnapshotTitle } from "./reporting-display";
 
 const campaignHref = (id: string, tab: string) =>
   `/advertiser/campaign/${encodeURIComponent(id)}?tab=${tab}`;
@@ -52,7 +54,7 @@ export function proposalDocument(
     version: proposal.version,
     status: proposal.status,
     isLatest: proposal.isLatest,
-    summary: proposal.summary,
+    summary: visibleProposalSummary(proposal.summary, proposal.terms),
     sourceHref: campaignHref(proposal.campaignId, "proposal"),
     file: null,
     proposal,
@@ -68,7 +70,7 @@ export function reportDocument(row: {
   const submission = row.submission;
   if (!submission.releasedAt || !submission.publishedAt || !submission.postUrl)
     return null;
-  const title = submission.title || `${row.creatorName} · 성과 보고`;
+  const title = reportSnapshotTitle(submission.title) || `${row.creatorName} · 성과 보고`;
   return {
     id: `report:${submission.id}`,
     kind: "report",

@@ -2,7 +2,7 @@
 
 import { VideoPreview } from "@futures-medialab/ui/video-submission";
 import { productionVideoSource } from "@futures-medialab/database/production-media-shared";
-import { Typography } from "@montage-ui/core";
+import { TextButton, Typography } from "@montage-ui/core";
 import type { ReactNode } from "react";
 import { IconArrowUpRight } from "@montage-ui/icon";
 import type {
@@ -15,7 +15,8 @@ import type { Locale } from "../landing-copy";
 import { productionText } from "./production-shared";
 import { StatusBadge, type StatusTone } from "./status-badge";
 import {
-  reportingMetricKeys,
+  reportMetricsPending,
+  reportSnapshotTitle,
   reportingTotalKeys,
   summarizePublishedReports,
 } from "../../../lib/reporting-display";
@@ -96,46 +97,87 @@ function ReportLink({ url, children }: { url: string; children: ReactNode }) {
     /* Historical malformed links stay text-only. */
   }
   return safe ? (
-    <a
-      className={styles.link}
+    <TextButton
+      as="a"
+      size="small"
       href={safe}
       target="_blank"
       rel="noopener noreferrer"
+      trailingContent={<IconArrowUpRight />}
     >
       {children}
-      <IconArrowUpRight />
-    </a>
+    </TextButton>
   ) : (
     <span>{children}</span>
   );
 }
-export function ReportMetrics({
-  metrics,
+type MetricValue = {
+  key: keyof ReportingMetrics;
+  value: number | bigint | null;
+  coverage?: string;
+};
+
+function MetricGrid({
+  rows,
   locale,
+  pending,
+  primary = false,
 }: {
-  metrics: ReportingMetrics;
+  rows: MetricValue[];
   locale: Locale;
+  pending: boolean;
+  primary?: boolean;
 }) {
   const t = productionText(locale);
+  const missingLabel = pending
+    ? t("집계 중", "Pending", "统计中")
+    : t("미제공", "Not provided", "未提供");
   return (
     <dl className={styles.metrics}>
-      {reportingMetricKeys.map((key) => (
+      {rows.map(({ key, value, coverage }) => (
         <div key={key}>
-          <dt>{metricLabel(key, locale)}</dt>
-          <dd>
-            {metrics[key] === null ? (
-              <span className={styles.unknown}>
-                {t("집계 중", "Pending", "统计中")}
-              </span>
-            ) : (
-              metrics[key].toLocaleString(locale)
-            )}
-          </dd>
+          <Typography
+            as="dt"
+            variant="caption1"
+            color="semantic.foreground.neutral.secondary"
+          >
+            {metricLabel(key, locale)}
+          </Typography>
+          <Typography
+            as="dd"
+            variant={
+              value === null ? "label1" : primary ? "title3" : "headline1"
+            }
+            weight={value === null ? "regular" : "bold"}
+            color={
+              value === null
+                ? "semantic.foreground.neutral.secondary"
+                : "semantic.foreground.neutral.primary"
+            }
+          >
+            {value === null ? missingLabel : value.toLocaleString(locale)}
+          </Typography>
+          {coverage && (
+            <Typography
+              as="dd"
+              variant="caption1"
+              color="semantic.foreground.neutral.secondary"
+            >
+              {coverage}
+            </Typography>
+          )}
         </div>
       ))}
     </dl>
   );
 }
+
+const additionalMetricKeys = [
+  "impressions",
+  "reach",
+  "shares",
+  "saves",
+] as const;
 export function ReportSnapshotView({
   data,
   locale,
@@ -143,8 +185,10 @@ export function ReportSnapshotView({
   timestamp,
   label,
   productionVideoUrl,
+  hideHeading = false,
 }: {
   productionVideoUrl?: string | null;
+  hideHeading?: boolean;
   data: ReportingSnapshot;
   locale: Locale;
   version: number;
@@ -152,20 +196,65 @@ export function ReportSnapshotView({
   label: string;
 }) {
   const t = productionText(locale);
+  const title = reportSnapshotTitle(data.title);
+  const pending = reportMetricsPending(data);
+  const metricValue = (key: keyof ReportingMetrics) => ({
+    key,
+    value: data.metrics[key],
+  });
   return (
     <div className={styles.snapshot}>
-      <Typography variant="caption1" className={styles.muted}>
-        {label} · v{version} · {reportingDate(timestamp, locale)}
-      </Typography>
-      <Typography as="h3" variant="heading2" weight="bold">
-        {data.title}
-      </Typography>
+      {!hideHeading && (
+        <div className={styles.snapshotHeading}>
+          <Typography
+            variant="caption1"
+            color="semantic.foreground.neutral.secondary"
+          >
+            {label} · v{version} · {reportingDate(timestamp, locale)}
+          </Typography>
+          <Typography as="h4" variant="headline1" weight="bold">
+            {title}
+          </Typography>
+        </div>
+      )}
+      <dl className={styles.dates}>
+        <div>
+          <Typography
+            as="dt"
+            variant="caption1"
+            color="semantic.foreground.neutral.secondary"
+          >
+            {t("지표 기준 시각", "Metrics as of", "指标截至时间")}
+          </Typography>
+          <Typography as="dd" variant="label1">
+            {data.metricsAsOf ? reportingDate(data.metricsAsOf, locale) : "—"}
+          </Typography>
+        </div>
+        <div>
+          <Typography
+            as="dt"
+            variant="caption1"
+            color="semantic.foreground.neutral.secondary"
+          >
+            {t("게시 시각", "Published", "发布时间")}
+          </Typography>
+          <Typography as="dd" variant="label1">
+            {reportingDate(data.publishedAt, locale)}
+          </Typography>
+        </div>
+      </dl>
+      <MetricGrid
+        rows={reportingTotalKeys.map(metricValue)}
+        locale={locale}
+        pending={pending}
+        primary
+      />
       <VideoPreview
         source={
           productionVideoSource(data.postUrl) ??
           productionVideoSource(productionVideoUrl ?? "")
         }
-        title={data.title}
+        title={title}
       />
       <div className={styles.links}>
         <ReportLink url={data.postUrl}>
@@ -177,21 +266,11 @@ export function ReportSnapshotView({
           </ReportLink>
         )}
       </div>
-      <dl className={styles.dates}>
-        <div>
-          <dt>{t("게시 시각", "Published", "发布时间")}</dt>
-          <dd>{reportingDate(data.publishedAt, locale)}</dd>
-        </div>
-        <div>
-          <dt>{t("지표 기준 시각", "Metrics as of", "指标截至时间")}</dt>
-          <dd>
-            {data.metricsAsOf
-              ? reportingDate(data.metricsAsOf, locale)
-              : t("아직 집계되지 않았습니다", "Not measured yet", "尚未统计")}
-          </dd>
-        </div>
-      </dl>
-      <ReportMetrics metrics={data.metrics} locale={locale} />
+      <MetricGrid
+        rows={additionalMetricKeys.map(metricValue)}
+        locale={locale}
+        pending={pending}
+      />
       {data.note && (
         <Typography as="p" variant="body2" className={styles.note}>
           {data.note}
@@ -229,37 +308,35 @@ export function ReportingTotals({
             `Latest published snapshots of ${summary.count} content items`,
             `${summary.count} 项内容的最新公开版本`,
           )}
+          {summary.commonMetricsAsOf &&
+            ` · ${t("집계 기준", "Measured", "统计时间")} ${reportingDate(summary.commonMetricsAsOf, locale)}`}
         </Typography>
       </div>
-      <div className={styles.totalGrid}>
-        {reportingTotalKeys.map((key) => {
+      <MetricGrid
+        rows={reportingTotalKeys.map((key) => {
           const total = summary.totals[key];
-          return (
-            <div key={key}>
-              <Typography variant="caption1" className={styles.muted}>
-                {metricLabel(key, locale)}
-              </Typography>
-              <Typography as="strong" variant="title3" weight="bold">
-                {total.value === null
-                  ? t("집계 중", "Pending", "统计中")
-                  : total.value.toLocaleString(locale)}
-              </Typography>
-              <Typography variant="caption1" className={styles.muted}>
-                {t(
-                  `${total.known}/${summary.count}개 지표 확인`,
-                  `${total.known}/${summary.count} items measured`,
-                  `${total.known}/${summary.count} 项已统计`,
-                )}
-              </Typography>
-            </div>
-          );
+          return {
+            key,
+            value: total.value,
+            coverage:
+              total.known > 0 && total.known < summary.count
+                ? t(
+                    `${total.known}/${summary.count}개 콘텐츠 집계`,
+                    `${total.known}/${summary.count} items measured`,
+                    `${total.known}/${summary.count} 项已统计`,
+                  )
+                : undefined,
+          };
         })}
-      </div>
+        locale={locale}
+        pending={summary.allPending}
+        primary
+      />
       <Typography as="p" variant="caption1" className={styles.muted}>
         {t(
-          "콘텐츠마다 집계 시점이 다를 수 있습니다. 이전 버전은 합계에서 제외하며, 도달은 이용자 중복을 확인할 수 없어 합산하지 않습니다.",
-          "Measurement times may differ. Earlier versions are excluded, and reach is not added because audiences may overlap.",
-          "各内容统计时间可能不同；汇总不包含历史版本，触达人数因可能重复而不合计。",
+          "도달 수는 콘텐츠 간 시청자가 겹칠 수 있어 합계에서 제외합니다.",
+          "Reach is excluded from totals because audiences may overlap across content.",
+          "各项内容的受众可能重叠，触达人数不计入汇总。",
         )}
       </Typography>
     </section>

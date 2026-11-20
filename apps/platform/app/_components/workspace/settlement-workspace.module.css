@@ -64,6 +64,10 @@
 .statementHeader h3 {
   overflow-wrap: anywhere;
 }
+.invoiceCampaign {
+  padding: var(--spacing-24) var(--spacing-24) 0;
+  overflow-wrap: anywhere;
+}
 .invoiceSummary {
   display: flex;
   align-items: baseline;
@@ -157,6 +161,9 @@
   text-decoration: underline;
 }
 @media (max-width: 600px) {
+  .invoiceCampaign {
+    padding: var(--spacing-20) var(--spacing-20) 0;
+  }
   .summary {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -217,6 +224,63 @@
 }
 .creatorLine p {
   margin-top: 6px;
+}
+.invoiceLines {
+  width: 100%;
+  min-width: 0;
+  container: invoice-lines / inline-size;
+}
+.invoiceCaption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.invoiceLineAmounts {
+  display: none;
+}
+@container invoice-lines (max-width: 719px) {
+  .invoiceLines .table,
+  .invoiceLines .table td:first-child,
+  .invoiceLines .creatorLine > div:last-child {
+    min-width: 0;
+  }
+  .invoiceLines .table table {
+    table-layout: fixed;
+  }
+  .invoiceLines .table th:not(:first-child),
+  .invoiceLines .table td:not(:first-child) {
+    display: none;
+  }
+  .invoiceLines .table td:first-child {
+    padding: var(--spacing-16);
+  }
+  .invoiceLineAmounts {
+    display: grid;
+    gap: var(--spacing-4);
+    margin: var(--spacing-12) 0 0;
+    font-size: var(--typography-label2-fontSize);
+    line-height: var(--typography-label2-lineHeight);
+  }
+  .invoiceLineAmounts > div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--spacing-12);
+  }
+  .invoiceLineAmounts dt {
+    color: var(--semantic-foreground-neutral-secondary);
+  }
+  .invoiceLineAmounts dd {
+    margin: 0;
+    text-align: end;
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+  }
+  .invoiceLineAmounts > div:last-child dd {
+    font-weight: var(--typography-label2-weight-bold);
+  }
 }
 @media (max-width: 600px) {
   .tableWrap {

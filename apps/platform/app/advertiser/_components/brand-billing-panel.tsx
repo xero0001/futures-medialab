@@ -2,25 +2,13 @@
 
 import { FormSelect } from "@futures-medialab/ui/form-select";
 
-import { ProposalChannelAvatar } from "./proposal-channel-avatar";
+import { BrandInvoiceLines } from "./brand-invoice-lines";
 import { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
-  Typography,
-} from "@montage-ui/core";
+import { Typography } from "@montage-ui/core";
 import type { BrandInvoice } from "@futures-medialab/database/settlement-types";
 import type { Locale } from "../../_components/landing-copy";
 import { productionText } from "../../_components/workspace/production-shared";
-import {
-  SettlementList,
-  SettlementStatement,
-} from "../../_components/workspace/settlement-shared";
-import { campaignMoney } from "../../../lib/settlement-display";
+import { SettlementList, SettlementStatement } from "../../_components/workspace/settlement-shared";
 import styles from "../../_components/workspace/settlement-workspace.module.css";
 
 export function BrandBillingPanel({
@@ -34,7 +22,7 @@ export function BrandBillingPanel({
 }) {
   const t = productionText(locale);
   const inCampaign = scope === "campaign";
-  const singleInvoice = inCampaign && invoices.length === 1 ? invoices[0] : undefined;
+  const singleInvoice = invoices.length === 1 ? invoices[0] : undefined;
   const renderInvoice = (invoice: BrandInvoice) => (
     <InvoiceStatement key={invoice.id} current={invoice} locale={locale} inCampaign={inCampaign} />
   );
@@ -45,7 +33,9 @@ export function BrandBillingPanel({
           {t("청구 내역", "Invoices", "账单")}
         </Typography>
       )}
-      {singleInvoice ? renderInvoice(singleInvoice) : (
+      {singleInvoice ? (
+        renderInvoice(singleInvoice)
+      ) : (
         <SettlementList documents={invoices} viewer="brand" locale={locale} renderDocument={renderInvoice} />
       )}
     </section>
@@ -63,29 +53,30 @@ function InvoiceStatement({
 }) {
   const t = productionText(locale);
   const [selected, setSelected] = useState<number | null>(null);
-  const version =
-    current.versions.find((v) => v.version === selected) ?? current.versions[0];
+  const version = current.versions.find((v) => v.version === selected) ?? current.versions[0];
   const historical = version && version.version !== current.documentVersion;
   const invoice = version ? { ...current, ...version } : current;
   return (
     <div className={styles.workspace}>
-      {current.versions.length > 1 && <label className={styles.invoiceVersion}>
-        {t("청구서 발행본", "Invoice version", "账单版本")}{" "}
-        <FormSelect
-          aria-label={t("청구서 버전", "Invoice version", "账单版本")}
-          value={version?.version ?? 1}
-          onChange={(e) => setSelected(Number(e.target.value))}
-        >
-          {current.versions.map((v) => (
-            <option key={v.version} value={v.version}>
-              v{v.version} ·{" "}
-              {v.version === current.documentVersion
-                ? t("현재 발행본", "Current", "当前版本")
-                : t("이전 발행본", "Earlier issue", "历史版本")}
-            </option>
-          ))}
-        </FormSelect>
-      </label>}
+      {current.versions.length > 1 && (
+        <label className={styles.invoiceVersion}>
+          {t("청구서 발행본", "Invoice version", "账单版本")}{" "}
+          <FormSelect
+            aria-label={t("청구서 버전", "Invoice version", "账单版本")}
+            value={version?.version ?? 1}
+            onChange={(e) => setSelected(Number(e.target.value))}
+          >
+            {current.versions.map((v) => (
+              <option key={v.version} value={v.version}>
+                v{v.version} ·{" "}
+                {v.version === current.documentVersion
+                  ? t("현재 발행본", "Current", "当前版本")
+                  : t("이전 발행본", "Earlier issue", "历史版本")}
+              </option>
+            ))}
+          </FormSelect>
+        </label>
+      )}
       {historical && (
         <p className={styles.note}>
           {t(
@@ -97,8 +88,7 @@ function InvoiceStatement({
       )}
       {version?.reason && (
         <p className={styles.correctionNote}>
-          <strong>{t("정정 사유", "Reason for correction", "更正原因")}</strong>{" "}
-          · {version.reason}
+          <strong>{t("정정 사유", "Reason for correction", "更正原因")}</strong> · {version.reason}
         </p>
       )}
       <SettlementStatement
@@ -109,71 +99,7 @@ function InvoiceStatement({
         inCampaign={inCampaign}
       >
         <div className={styles.tableWrap}>
-          <Table
-            className={styles.table}
-            aria-label={t("청구 항목", "Invoice lines", "账单明细")}
-          >
-            <TableHead>
-              <TableRow>
-                <TableHeadCell>{t("항목", "Item", "项目")}</TableHeadCell>
-                <TableHeadCell>{t("수량", "Quantity", "数量")}</TableHeadCell>
-                <TableHeadCell>
-                  {t("단가", "Unit amount", "单价")}
-                </TableHeadCell>
-                <TableHeadCell>{t("금액", "Amount", "金额")}</TableHeadCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {invoice.lines.map((line, index) => (
-                <TableRow key={`${line.proposalItemId}-${index}`}>
-                  <TableCell>
-                    <div className={styles.creatorLine}>
-                      <ProposalChannelAvatar
-                        name={line.creatorName}
-                        channelUrl={line.channelUrl ?? ""}
-                        alt={line.creatorName}
-                      />
-                      <div>
-                        <Typography
-                          as="strong"
-                          variant="label1"
-                          weight="medium"
-                        >
-                          {line.creatorName}
-                        </Typography>
-                        <Typography
-                          as="p"
-                          variant="caption1"
-                          className={styles.muted}
-                        >
-                          {line.platform} · {line.description}
-                        </Typography>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{line.quantity}</TableCell>
-                  <TableCell>
-                    <span className={styles.money}>
-                      {campaignMoney(
-                        line.unitAmount,
-                        invoice.currency,
-                        locale,
-                      )}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className={styles.money}>
-                      {campaignMoney(
-                        line.lineAmount,
-                        invoice.currency,
-                        locale,
-                      )}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <BrandInvoiceLines invoice={invoice} locale={locale} />
         </div>
       </SettlementStatement>
     </div>

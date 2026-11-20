@@ -6,9 +6,11 @@ import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   Button,
+  Chip,
   SearchField,
   SectionMessage,
   Skeleton,
+  TextButton,
   Typography,
 } from "@montage-ui/core";
 import {
@@ -22,6 +24,7 @@ import {
   Paperclip,
   Receipt,
   RotateCcw,
+  SlidersHorizontal,
   X,
 } from "lucide-react";
 import type {
@@ -31,12 +34,14 @@ import type {
 import type { BrandProposal } from "@futures-medialab/database/proposal-types";
 import type { BrandInvoice } from "@futures-medialab/database/settlement-types";
 import type { Locale } from "../../_components/landing-copy";
-import {
-  StatusBadge,
-  type StatusTone,
-} from "../../_components/workspace/status-badge";
+import { StatusBadge } from "../../_components/workspace/status-badge";
 import { ReportSnapshotView } from "../../_components/workspace/reporting-shared";
-import { settlementMoney } from "../../../lib/settlement-display";
+import { campaignMoney } from "../../../lib/settlement-display";
+import { proposalChangeNote } from "../../../lib/campaign-copy";
+import { DeliverableCopy } from "../../_components/workspace/deliverable-copy";
+import { BrandInvoiceSummary, SettlementBadge } from "../../_components/workspace/settlement-shared";
+import { BrandInvoiceLines } from "./brand-invoice-lines";
+import { BrandProposalStatusBadge } from "./brand-proposal-status-badge";
 import styles from "./brand-documents-panel.module.css";
 
 type Copy = (ko: string, en: string, zh: string) => string;
@@ -137,42 +142,36 @@ function DocumentStatus({
   locale: Locale;
 }) {
   const t = copyFor(locale);
-  let label = t("공개됨", "Published", "已公开");
-  let tone: StatusTone = "blue";
-  if (document.kind === "attachment") {
-    label = t("공유됨", "Shared", "已共享");
-    tone = "neutral";
-  }
-  if (document.kind === "invoice") {
-    label =
-      document.status === "PAID"
-        ? t("입금 확인", "Payment confirmed", "收款已确认")
-        : t("입금 확인 대기", "Awaiting payment confirmation", "等待收款确认");
-    tone = document.status === "PAID" ? "green" : "amber";
-  }
-  if (document.kind === "invoice" && !document.isLatest) {
-    label = t("이전 발행본", "Earlier issue", "历史版本");
-    tone = "neutral";
-  }
-  if (document.kind === "proposal") {
-    const states: Record<string, { label: string; tone: StatusTone }> = {
-      APPROVED: { label: t("승인 완료", "Approved", "已批准"), tone: "green" },
-      CHANGES_REQUESTED: {
-        label: t("수정 요청", "Changes requested", "已请求修改"),
-        tone: "amber",
-      },
-      REJECTED: {
-        label: t("재제안 요청", "Replacement requested", "已请求重新提案"),
-        tone: "amber",
-      },
-      SUPERSEDED: {
-        label: t("이전 버전", "Earlier version", "历史版本"),
-        tone: "neutral",
-      },
-    };
-    if (states[document.status]) ({ label, tone } = states[document.status]);
-  }
-  return <StatusBadge tone={tone}>{label}</StatusBadge>;
+  if (document.kind === "invoice" && !document.isLatest)
+    return (
+      <StatusBadge tone="neutral">
+        {t("이전 발행본", "Earlier issue", "历史版本")}
+      </StatusBadge>
+    );
+  if (document.invoice)
+    return (
+      <SettlementBadge
+        status={document.invoice.status}
+        viewer="brand"
+        locale={locale}
+      />
+    );
+  if (document.proposal)
+    return (
+      <BrandProposalStatusBadge
+        status={document.proposal.status}
+        locale={locale}
+      />
+    );
+  if (document.kind === "attachment")
+    return (
+      <StatusBadge tone="neutral">
+        {t("공유됨", "Shared", "已共享")}
+      </StatusBadge>
+    );
+  return (
+    <StatusBadge tone="blue">{t("공개됨", "Published", "已公开")}</StatusBadge>
+  );
 }
 
 function DocumentIcon({ kind }: { kind: Kind }) {
@@ -200,18 +199,24 @@ function Facts({ values }: { values: { label: string; value: string }[] }) {
 function ProposalContent({
   proposal,
   locale,
+  hasPreviousVersion,
 }: {
   proposal: BrandProposal;
   locale: Locale;
+  hasPreviousVersion: boolean;
 }) {
   const t = copyFor(locale);
+  const changeNote = proposalChangeNote(
+    proposal.changeSummary,
+    hasPreviousVersion,
+  );
   return (
     <>
       <div className={styles.amountSummary}>
         <div>
           <span>{t("제안 총액", "Proposal total", "方案总额")}</span>
           <strong>
-            {settlementMoney(proposal.totalAmount, proposal.currency, locale)}
+            {campaignMoney(proposal.totalAmount, proposal.currency, locale)}
           </strong>
         </div>
         <div>
@@ -219,10 +224,10 @@ function ProposalContent({
           <b>{dateLabel(proposal.expiresAt, locale, true)}</b>
         </div>
       </div>
-      {proposal.changeSummary && (
+      {changeNote && (
         <section className={styles.textSection}>
           <h3>{t("변경 내용", "Changes in this version", "本版本变更")}</h3>
-          <p>{proposal.changeSummary}</p>
+          <p>{changeNote}</p>
         </section>
       )}
       <section className={styles.detailSection}>
@@ -240,10 +245,12 @@ function ProposalContent({
                   </span>
                 </div>
                 <strong>
-                  {settlementMoney(item.totalAmount, proposal.currency, locale)}
+                  {campaignMoney(item.totalAmount, proposal.currency, locale)}
                 </strong>
               </div>
-              <p className={styles.deliverable}>{item.deliverables}</p>
+              <div className={styles.deliverable}>
+                <DeliverableCopy value={item.deliverables} />
+              </div>
               <Facts
                 values={[
                   {
@@ -252,7 +259,7 @@ function ProposalContent({
                   },
                   {
                     label: t("단가", "Unit price", "单价"),
-                    value: settlementMoney(
+                    value: campaignMoney(
                       item.unitAmount,
                       proposal.currency,
                       locale,
@@ -296,25 +303,14 @@ function InvoiceContent({
   const t = copyFor(locale);
   return (
     <>
-      <div className={styles.amountSummary}>
-        <div>
-          <span>{t("청구 금액", "Invoice amount", "账单金额")}</span>
-          <strong>
-            {settlementMoney(invoice.amount, invoice.currency, locale)}
-          </strong>
-        </div>
-        <div>
-          <span>{t("납부 기한", "Due date", "付款期限")}</span>
-          <b>{dateLabel(invoice.dueAt, locale)}</b>
-        </div>
-      </div>
+      <BrandInvoiceSummary invoice={invoice} locale={locale} />
       <Facts
         values={[
           {
             label: t("발행일", "Issued", "出具日期"),
             value: dateLabel(invoice.issuedAt, locale, true),
           },
-          ...(isLatest
+          ...(isLatest && invoice.paidAt
             ? [
                 {
                   label: t("입금 확인일", "Payment confirmed", "收款确认日期"),
@@ -332,35 +328,7 @@ function InvoiceContent({
           role="region"
           aria-label={t("청구 항목 표", "Invoice items table", "账单明细表")}
         >
-          <table className={styles.detailTable}>
-            <thead>
-              <tr>
-                <th scope="col">{t("항목", "Item", "项目")}</th>
-                <th scope="col">{t("수량", "Quantity", "数量")}</th>
-                <th scope="col">{t("단가", "Unit price", "单价")}</th>
-                <th scope="col">{t("금액", "Amount", "金额")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoice.lines.map((line, index) => (
-                <tr key={`${line.proposalItemId}-${index}`}>
-                  <td>
-                    <strong>{line.creatorName}</strong>
-                    <span>
-                      {line.platform} · {line.description}
-                    </span>
-                  </td>
-                  <td>{line.quantity.toLocaleString(locale)}</td>
-                  <td className={styles.money}>
-                    {settlementMoney(line.unitAmount, invoice.currency, locale)}
-                  </td>
-                  <td className={styles.money}>
-                    {settlementMoney(line.lineAmount, invoice.currency, locale)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <BrandInvoiceLines invoice={invoice} locale={locale} />
         </div>
       </section>
     </>
@@ -372,11 +340,13 @@ function DocumentDialog({
   locale,
   onClose,
   returnFocus,
+  hasPreviousProposal,
 }: {
   document: BrandDocument;
   locale: Locale;
   onClose: () => void;
   returnFocus: HTMLElement | null;
+  hasPreviousProposal: boolean;
 }) {
   const t = copyFor(locale);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -403,7 +373,9 @@ function DocumentDialog({
       className={styles.dialog}
       aria-labelledby={titleId}
       onCancel={onClose}
-      onClose={onClose}
+      onClose={(event) => {
+        if (!event.currentTarget.open) onClose();
+      }}
       onClick={(event) => {
         if (event.target !== event.currentTarget) return;
         const bounds = event.currentTarget.getBoundingClientRect();
@@ -480,7 +452,11 @@ function DocumentDialog({
           <p className={styles.summary}>{document.summary}</p>
         )}
         {document.proposal && (
-          <ProposalContent proposal={document.proposal} locale={locale} />
+          <ProposalContent
+            proposal={document.proposal}
+            locale={locale}
+            hasPreviousVersion={hasPreviousProposal}
+          />
         )}
         {document.report && (
           <section className={styles.reportPreview}>
@@ -489,6 +465,7 @@ function DocumentDialog({
               <span>{document.report.platform}</span>
             </div>
             <ReportSnapshotView
+              hideHeading
               data={document.report.submission}
               locale={locale}
               version={document.report.submission.version}
@@ -508,39 +485,52 @@ function DocumentDialog({
             isLatest={document.isLatest}
           />
         )}
-        {file && (
-          <section className={styles.fileCard}>
-            <span className={styles.fileIcon}>
-              <Paperclip size={23} aria-hidden="true" />
-            </span>
-            <div>
-              <h3>{file.fileName}</h3>
-              <p>
-                {[
-                  file.contentType,
-                  file.size !== null ? fileSize(file.size, locale) : null,
-                ]
-                  .filter(Boolean)
-                  .join(" · ") ||
-                  t("공유된 원본 자료", "Shared original file", "共享原始资料")}
-              </p>
-            </div>
-            {fileHref && (
-              <a
-                href={fileHref}
-                className={styles.fileAction}
-                {...(download
-                  ? { download: file.fileName }
-                  : { target: "_blank", rel: "noopener noreferrer" })}
-              >
-                {download ? <Download size={17} /> : <ExternalLink size={17} />}
-                {download
-                  ? t("다운로드", "Download", "下载")
-                  : t("원본 열기", "Open file", "打开原件")}
-              </a>
-            )}
-          </section>
-        )}
+        {file &&
+          !(
+            document.report &&
+            fileHref ===
+              safeFileUrl(document.report.submission.evidenceUrl || "")
+          ) && (
+            <section className={styles.fileCard}>
+              <span className={styles.fileIcon}>
+                <Paperclip size={23} aria-hidden="true" />
+              </span>
+              <div>
+                <h3>{file.fileName}</h3>
+                <p>
+                  {[
+                    file.contentType,
+                    file.size !== null ? fileSize(file.size, locale) : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") ||
+                    t(
+                      "공유된 원본 자료",
+                      "Shared original file",
+                      "共享原始资料",
+                    )}
+                </p>
+              </div>
+              {fileHref && (
+                <a
+                  href={fileHref}
+                  className={styles.fileAction}
+                  {...(download
+                    ? { download: file.fileName }
+                    : { target: "_blank", rel: "noopener noreferrer" })}
+                >
+                  {download ? (
+                    <Download size={17} />
+                  ) : (
+                    <ExternalLink size={17} />
+                  )}
+                  {download
+                    ? t("다운로드", "Download", "下载")
+                    : t("원본 열기", "Open file", "打开原件")}
+                </a>
+              )}
+            </section>
+          )}
         {document.kind === "attachment" && (
           <p className={styles.attachmentHelp}>
             {t(
@@ -568,9 +558,22 @@ function DocumentDialog({
             onClick={onClose}
             trailingContent={<ChevronRight size={17} />}
           >
-            {document.kind === "attachment"
-              ? t("관련 대화 보기", "View conversation", "查看相关对话")
-              : t("캠페인에서 보기", "View in campaign", "在活动中查看")}
+            {
+              {
+                proposal: t(
+                  "제안·승인에서 보기",
+                  "View proposal",
+                  "查看方案审批",
+                ),
+                report: t("성과에서 보기", "View performance", "查看成效"),
+                invoice: t("청구 내역 보기", "View billing", "查看账单记录"),
+                attachment: t(
+                  "관련 대화 보기",
+                  "View conversation",
+                  "查看相关对话",
+                ),
+              }[document.kind]
+            }
           </Button>
         )}
       </div>
@@ -597,6 +600,8 @@ export function BrandDocumentsPanel({
   const [campaign, setCampaign] = useState("all");
   const [versions, setVersions] = useState("latest");
   const [sort, setSort] = useState("newest");
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const filtersId = useId();
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<BrandDocument | null>(null);
   const [trigger, setTrigger] = useState<HTMLElement | null>(null);
@@ -612,6 +617,11 @@ export function BrandDocumentsPanel({
       setPage(1);
       if (previousCampaignId.current !== campaignId) {
         setCampaign("all");
+        setFiltersExpanded(false);
+        setVersions("latest");
+        setSort("newest");
+        setSearch("");
+        setKind("all");
         previousCampaignId.current = campaignId;
       }
       const url = `/api/brand/documents${campaignId ? `?campaign=${encodeURIComponent(campaignId)}` : ""}`;
@@ -680,14 +690,33 @@ export function BrandDocumentsPanel({
     (currentPage - 1) * pageSize,
     currentPage * pageSize,
   );
+  const compact = Boolean(
+    campaignId && !data?.hasMore && documents.length <= pageSize,
+  );
+  const hasEarlier = documents.some((document) => !document.isLatest);
+  const selectedProposal = selected?.proposal;
+  const hasPreviousProposal = Boolean(
+    selectedProposal &&
+    (documents.some(
+      (document) =>
+        document.proposal?.campaignId === selectedProposal.campaignId &&
+        document.proposal.version < selectedProposal.version,
+    ) ||
+      (data?.hasMore && selectedProposal.version > 1)),
+  );
   const activeFilters = Boolean(
-    search || campaign !== "all" || kind !== "all" || versions !== "latest",
+    search ||
+    campaign !== "all" ||
+    kind !== "all" ||
+    versions !== "latest" ||
+    sort !== "newest",
   );
   function reset() {
     setSearch("");
     setCampaign("all");
     setKind("all");
     setVersions("latest");
+    setSort("newest");
     setPage(1);
   }
   function open(document: BrandDocument, element: HTMLElement) {
@@ -695,6 +724,30 @@ export function BrandDocumentsPanel({
     setSelected(document);
   }
 
+  const versionFilter = (
+    <FormSelect
+      aria-label={t(
+        "문서 버전 필터",
+        "Filter document versions",
+        "筛选文档版本",
+      )}
+      value={versions}
+      onChange={(event) => {
+        setVersions(event.target.value);
+        setPage(1);
+      }}
+    >
+      <option value="latest">
+        {t("최신 문서", "Latest documents", "最新文档")}
+      </option>
+      <option value="all">
+        {t("이전 버전 포함", "Include earlier versions", "包含历史版本")}
+      </option>
+      <option value="earlier">
+        {t("이전 버전만", "Earlier versions only", "仅历史版本")}
+      </option>
+    </FormSelect>
+  );
   return (
     <section className={styles.workspace} aria-labelledby={titleId}>
       <div className={styles.heading}>
@@ -704,19 +757,15 @@ export function BrandDocumentsPanel({
               ? t("캠페인 문서", "Campaign documents", "活动文档")
               : t("공유 문서", "Shared documents", "共享文档")}
           </Typography>
-          <Typography as="p" variant="body2" className={styles.muted}>
-            {campaignId
-              ? t(
-                  "이 캠페인에 공유된 제안·성과·청구·첨부 자료를 확인하세요.",
-                  "Find proposals, reports, invoices and files shared for this campaign.",
-                  "查看此活动共享的方案、成效报告、账单及附件。",
-                )
-              : t(
-                  "우리 조직에 공유된 캠페인 문서를 한곳에서 확인하세요.",
-                  "Find campaign documents shared with your organization in one place.",
-                  "集中查看向本组织共享的活动文档。",
-                )}
-          </Typography>
+          {!campaignId && (
+            <Typography as="p" variant="body2" className={styles.muted}>
+              {t(
+                "우리 조직에 공유된 캠페인 문서를 한곳에서 확인하세요.",
+                "Find campaign documents shared with your organization in one place.",
+                "集中查看向本组织共享的活动文档。",
+              )}
+            </Typography>
+          )}
         </div>
         <Button
           size="small"
@@ -763,122 +812,6 @@ export function BrandDocumentsPanel({
         </div>
       ) : (
         <div className={styles.panel}>
-          <div className={styles.filters}>
-            <div className={styles.search}>
-              <SearchField
-                aria-label={t("문서 검색", "Search documents", "搜索文档")}
-                placeholder={t(
-                  "문서명·캠페인·파일명 검색",
-                  "Search document, campaign or file",
-                  "搜索文档、活动或文件名称",
-                )}
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                }}
-                onReset={() => {
-                  setSearch("");
-                  setPage(1);
-                }}
-                width="100%"
-                size="medium"
-              />
-            </div>
-            {!campaignId && (
-              <label className={styles.filterField}>
-                <span>{t("캠페인", "Campaign", "活动")}</span>
-                <FormSelect
-                  aria-label={t(
-                    "캠페인 필터",
-                    "Filter by campaign",
-                    "按活动筛选",
-                  )}
-                  value={campaign}
-                  onChange={(event) => {
-                    setCampaign(event.target.value);
-                    setPage(1);
-                  }}
-                >
-                  <option value="all">
-                    {t("전체 캠페인", "All campaigns", "全部活动")}
-                  </option>
-                  {campaignOptions.map(([id, title]) => (
-                    <option key={id} value={id}>
-                      {title}
-                    </option>
-                  ))}
-                  {documents.some((document) => !document.campaignId) && (
-                    <option value="unassigned">
-                      {t("캠페인 미지정", "Without campaign", "未关联活动")}
-                    </option>
-                  )}
-                </FormSelect>
-              </label>
-            )}
-            <label className={styles.filterField}>
-              <span>{t("버전", "Version", "版本")}</span>
-              <FormSelect
-                aria-label={t(
-                  "문서 버전 필터",
-                  "Filter document versions",
-                  "筛选文档版本",
-                )}
-                value={versions}
-                onChange={(event) => {
-                  setVersions(event.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="latest">
-                  {t("최신 문서", "Latest documents", "最新文档")}
-                </option>
-                <option value="all">
-                  {t(
-                    "이전 버전 포함",
-                    "Include earlier versions",
-                    "包含历史版本",
-                  )}
-                </option>
-                <option value="earlier">
-                  {t("이전 버전만", "Earlier versions only", "仅历史版本")}
-                </option>
-              </FormSelect>
-            </label>
-          </div>
-          <div
-            className={styles.kindFilters}
-            role="group"
-            aria-label={t("문서 종류", "Document types", "文档类型")}
-          >
-            <button
-              type="button"
-              aria-pressed={kind === "all"}
-              onClick={() => {
-                setKind("all");
-                setPage(1);
-              }}
-            >
-              {t("전체", "All", "全部")}
-              <span>{scoped.length}</span>
-            </button>
-            {kinds.map((value) => (
-              <button
-                type="button"
-                key={value}
-                aria-pressed={kind === value}
-                onClick={() => {
-                  setKind(value);
-                  setPage(1);
-                }}
-              >
-                {kindLabel(value, t)}
-                <span>
-                  {scoped.filter((document) => document.kind === value).length}
-                </span>
-              </button>
-            ))}
-          </div>
           <div className={styles.listHeading}>
             <span role="status">
               {t(
@@ -886,31 +819,153 @@ export function BrandDocumentsPanel({
                 `${filtered.length} documents`,
                 `${filtered.length} 份文档`,
               )}
-              {campaignId && campaignTitle ? (
+              {!compact && campaignId && campaignTitle && (
                 <span className={styles.listCampaign}> · {campaignTitle}</span>
-              ) : null}
+              )}
             </span>
             <div>
               {activeFilters && (
-                <button type="button" className={styles.reset} onClick={reset}>
+                <TextButton size="small" onClick={reset}>
                   {t("필터 초기화", "Reset filters", "重置筛选")}
-                </button>
+                </TextButton>
               )}
-              <FormSelect
-                aria-label={t("문서 정렬", "Sort documents", "文档排序")}
-                value={sort}
-                onChange={(event) => {
-                  setSort(event.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="newest">
-                  {t("최근 공유순", "Newest shared first", "最近共享优先")}
-                </option>
-                <option value="oldest">
-                  {t("오래된 공유순", "Oldest shared first", "较早共享优先")}
-                </option>
-              </FormSelect>
+              {compact &&
+                (hasEarlier || versions !== "latest") &&
+                versionFilter}
+              {compact && documents.length > 0 && (
+                <Button
+                  variant="outlined"
+                  color="assistive"
+                  size="small"
+                  aria-expanded={filtersExpanded}
+                  aria-controls={filtersId}
+                  leadingContent={
+                    <SlidersHorizontal size={15} aria-hidden="true" />
+                  }
+                  onClick={() => setFiltersExpanded((value) => !value)}
+                >
+                  {t("검색·필터", "Search & filters", "搜索与筛选")}
+                </Button>
+              )}
+            </div>
+          </div>
+          <div hidden={compact && !filtersExpanded} id={filtersId}>
+            <div className={styles.filters}>
+              <div className={styles.search}>
+                <SearchField
+                  aria-label={t("문서 검색", "Search documents", "搜索文档")}
+                  placeholder={t(
+                    "문서명·캠페인·파일명 검색",
+                    "Search document, campaign or file",
+                    "搜索文档、活动或文件名称",
+                  )}
+                  value={search}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    setPage(1);
+                  }}
+                  onReset={() => {
+                    setSearch("");
+                    setPage(1);
+                  }}
+                  width="100%"
+                  size="medium"
+                />
+              </div>
+              {!campaignId && (
+                <label className={styles.filterField}>
+                  <span>{t("캠페인", "Campaign", "活动")}</span>
+                  <FormSelect
+                    aria-label={t(
+                      "캠페인 필터",
+                      "Filter by campaign",
+                      "按活动筛选",
+                    )}
+                    value={campaign}
+                    onChange={(event) => {
+                      setCampaign(event.target.value);
+                      setPage(1);
+                    }}
+                  >
+                    <option value="all">
+                      {t("전체 캠페인", "All campaigns", "全部活动")}
+                    </option>
+                    {campaignOptions.map(([id, title]) => (
+                      <option key={id} value={id}>
+                        {title}
+                      </option>
+                    ))}
+                    {documents.some((document) => !document.campaignId) && (
+                      <option value="unassigned">
+                        {t("캠페인 미지정", "Without campaign", "未关联活动")}
+                      </option>
+                    )}
+                  </FormSelect>
+                </label>
+              )}
+              {!compact && (
+                <label className={styles.filterField}>
+                  <span>{t("버전", "Version", "版本")}</span>
+                  {versionFilter}
+                </label>
+              )}
+              <label className={styles.filterField}>
+                <span>{t("정렬", "Sort", "排序")}</span>
+                <FormSelect
+                  aria-label={t("문서 정렬", "Sort documents", "文档排序")}
+                  value={sort}
+                  onChange={(event) => {
+                    setSort(event.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="newest">
+                    {t("최근 공유순", "Newest shared first", "最近共享优先")}
+                  </option>
+                  <option value="oldest">
+                    {t("오래된 공유순", "Oldest shared first", "较早共享优先")}
+                  </option>
+                </FormSelect>
+              </label>
+            </div>
+            <div
+              className={styles.kindFilters}
+              role="group"
+              aria-label={t("문서 종류", "Document types", "文档类型")}
+            >
+              {(["all", ...kinds] as const).map((value) => {
+                const count =
+                  value === "all"
+                    ? scoped.length
+                    : scoped.filter((document) => document.kind === value)
+                        .length;
+                if (
+                  compact &&
+                  value !== "all" &&
+                  value !== kind &&
+                  !documents.some((document) => document.kind === value)
+                )
+                  return null;
+                return (
+                  <Chip
+                    key={value}
+                    type="button"
+                    size="small"
+                    variant="outlined"
+                    active={kind === value}
+                    aria-pressed={kind === value}
+                    onClick={() => {
+                      setKind(value);
+                      setPage(1);
+                    }}
+                  >
+                    {value === "all"
+                      ? t("전체", "All", "全部")
+                      : kindLabel(value, t)}{" "}
+                    {count}
+                  </Chip>
+                );
+              })}
             </div>
           </div>
           {displayed.length ? (
@@ -948,6 +1003,7 @@ export function BrandDocumentsPanel({
                         <button
                           type="button"
                           className={styles.documentButton}
+                          aria-haspopup="dialog"
                           onClick={(event) =>
                             open(document, event.currentTarget)
                           }
@@ -956,8 +1012,32 @@ export function BrandDocumentsPanel({
                           <span>
                             <span className={styles.documentKind}>
                               {kindLabel(document.kind, t)}
+                              <span className={styles.mobileStatus}>
+                                <DocumentStatus
+                                  document={document}
+                                  locale={locale}
+                                />
+                              </span>
                             </span>
                             <strong>{document.title}</strong>
+                            <span className={styles.mobileDetails}>
+                              {[
+                                !campaignId &&
+                                  (document.campaignTitle ||
+                                    t(
+                                      "캠페인 미지정",
+                                      "No campaign",
+                                      "未关联活动",
+                                    )),
+                                document.version !== null &&
+                                  `v${document.version}`,
+                                !document.isLatest &&
+                                  t("이전 버전", "Earlier version", "历史版本"),
+                                dateLabel(document.publishedAt, locale),
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </span>
                             {document.file?.fileName &&
                               document.file.fileName !== document.title && (
                                 <span className={styles.fileName}>
@@ -1129,6 +1209,7 @@ export function BrandDocumentsPanel({
           locale={locale}
           onClose={() => setSelected(null)}
           returnFocus={trigger}
+          hasPreviousProposal={hasPreviousProposal}
         />
       )}
     </section>

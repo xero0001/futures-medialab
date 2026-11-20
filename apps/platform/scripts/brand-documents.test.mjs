@@ -204,6 +204,38 @@ test("file actions reject executable, credential and relative URLs", () => {
   );
 });
 
+test("proposal previews retain the original terms and omit repeated paragraphs from the summary", () => {
+  const doc = mapping.proposalDocument({
+    ...proposal,
+    summary: "첫 공개 제안\r\n\r\n후속 안내\r\n\r\n별도 일정 조율",
+    terms: "별도 일정 조율\n\n2차 활용 협의",
+  });
+  assert.equal(doc.summary, "첫 공개 제안\n\n후속 안내");
+  assert.equal(doc.proposal.terms, "별도 일정 조율\n\n2차 활용 협의");
+});
+
+test("document names use the published report version and preserve the original snapshot", () => {
+  const row = {
+    ...report,
+    submission: {
+      ...report.submission,
+      title: "[시연] 도시 하이라이트 · 성과 보고 v2",
+      version: 1,
+      evidenceUrl: "https://files.example.com/report.pdf",
+    },
+  };
+  const doc = mapping.reportDocument(row);
+  assert.equal(doc.title, "[시연] 도시 하이라이트 · 성과 보고");
+  assert.equal(doc.version, 1);
+  assert.equal(doc.file.fileName, doc.title);
+  assert.equal(doc.report.submission.title, row.submission.title);
+  const customTitle = "크리에이터 v2 · 성과 보고 v2";
+  assert.equal(mapping.reportDocument({
+    ...row,
+    submission: { ...row.submission, title: customTitle },
+  }).title, customTitle);
+});
+
 test("library bounds each kind independently and retains older types with a truncation indicator", () => {
   const p = mapping.proposalDocument(proposal),
     i = mapping.invoiceDocument(invoice),

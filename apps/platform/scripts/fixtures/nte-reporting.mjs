@@ -70,7 +70,7 @@ export function nteReportingSnapshot(scene, version, now) {
     now.getTime() - (version === 1 ? 86400000 : 3600000),
   ).toISOString();
   return {
-    title: `[시연] ${scene.title} · ${collecting ? "게시 확인" : `성과 보고 v${version}`}`,
+    title: `[시연] ${scene.title} · ${collecting ? "게시 확인" : "성과 보고"}`,
     postUrl: NTE_REFERENCE_POST,
     publishedAt: new Date(now.getTime() - 3 * 86400000).toISOString(),
     metricsAsOf: collecting ? null : asOf,

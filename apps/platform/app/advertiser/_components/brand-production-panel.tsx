@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { ProposalChannelAvatar } from "./proposal-channel-avatar";
-import { productionVideoSource } from "@futures-medialab/database/production-media-shared";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import {
@@ -15,9 +13,7 @@ import {
   ModalContent,
   ModalNavigation,
   ModalNavigationButton,
-  Option,
   SectionMessage,
-  Select,
   TextArea,
   Typography,
 } from "@montage-ui/core";
@@ -27,9 +23,14 @@ import type {
   BrandProductionMutation,
 } from "@futures-medialab/database/production-types";
 import type { CampaignArtwork } from "../../../lib/campaign-artwork";
+import { splitDeliverable } from "../../../lib/campaign-copy";
 import type { Locale } from "../../_components/landing-copy";
 import {
-  ProductionArtwork,
+  CampaignContentHeading,
+  CampaignItemPicker,
+  CampaignVersionPicker,
+} from "../../_components/workspace/campaign-review";
+import {
   ProductionBadge,
   productionDate,
   productionText,
@@ -111,6 +112,11 @@ export function BrandProductionPanel({
   const canRespond = Boolean(
     canManage && item.canRespond && version?.canRespond && version.isLatest,
   );
+  const { title, description } = splitDeliverable(item.deliverables);
+  const approvedCount = items.filter(
+    (value) => value.status === "APPROVED",
+  ).length;
+
   function chooseItem(id: string) {
     setSelectedId(id);
     setVersionId(null);
@@ -203,269 +209,227 @@ export function BrandProductionPanel({
           <Typography as="h2" variant="title3" weight="bold">
             {t("제작·검수", "Production & review", "制作与审核")}
           </Typography>
-          <Typography variant="body2" className={styles.muted}>
+          {canRespond && (
+            <Typography
+              variant="body2"
+              color="semantic.foreground.neutral.secondary"
+            >
+              {t(
+                "공유본을 확인한 뒤 승인하거나 수정 의견을 남겨 주세요.",
+                "Review this version to approve it or request changes.",
+                "请查看共享版本，然后批准或提出修改意见。",
+              )}
+            </Typography>
+          )}
+        </div>
+        {items.length > 1 && (
+          <Typography variant="label1">
             {t(
-              "공유된 콘텐츠를 확인하고, 승인 또는 수정 의견을 전달하세요.",
-              "Review shared content and approve it or send revision feedback.",
-              "查看共享内容并批准或提交修改意见。",
+              `${approvedCount} / ${items.length}개 승인`,
+              `${approvedCount} / ${items.length} approved`,
+              `${approvedCount} / ${items.length} 项已批准`,
             )}
           </Typography>
-        </div>
-        <Typography variant="label1">
-          {t(
-            `${items.filter((value) => value.status === "APPROVED").length} / ${items.length}개 승인`,
-            `${items.filter((value) => value.status === "APPROVED").length} / ${items.length} approved`,
-            `${items.filter((value) => value.status === "APPROVED").length} / ${items.length} 项已批准`,
-          )}
-        </Typography>
+        )}
       </div>
-      <div className={styles.layout}>
-        <div
-          className={styles.tasks}
-          aria-label={t("제작 구성", "Production items", "制作项目")}
-        >
-          {items.map((value) => (
-            <Button
-              key={value.id}
-              variant="outlined"
-              color="assistive"
-              className={`${styles.task} ${value.id === item.id ? styles.taskActive : ""}`}
-              sx={{
-                width: "100%",
-                minWidth: 0,
-                maxWidth: "100%",
-                height: "auto",
-                padding: "20px",
-                whiteSpace: "normal",
-                justifyContent: "flex-start",
-                "& > span": {
-                  minWidth: 0,
-                  width: "100%",
-                  maxWidth: "100%",
-                  whiteSpace: "normal",
-                },
-              }}
-              aria-pressed={value.id === item.id}
-              onClick={() => chooseItem(value.id)}
-            >
-              <span className={styles.taskContent}>
-                <ProductionBadge status={value.status} locale={locale} />
-                <span className={styles.creatorIdentity}>
-                  <ProposalChannelAvatar
-                    name={value.creatorName}
-                    channelUrl={value.channelUrl}
-                    alt={`${value.creatorName} 프로필`}
-                  />
-                  <Typography as="strong" variant="label1" weight="bold">
-                    {value.creatorName}
-                  </Typography>
-                </span>
-                <Typography variant="caption1" className={styles.muted}>
-                  {value.platform} · {value.deliverables}
-                </Typography>
-              </span>
-            </Button>
-          ))}
-        </div>
+      <div className={items.length > 1 ? styles.layout : undefined}>
+        <CampaignItemPicker
+          items={items}
+          selectedId={item.id}
+          onSelect={chooseItem}
+          label={t("제작 구성", "Production items", "制作项目")}
+          renderStatus={(entry) => (
+            <ProductionBadge status={entry.status} locale={locale} />
+          )}
+        />
         <div className={styles.detail}>
           <section className={styles.card}>
-            <div className={styles.cardHead}>
-              <div className={styles.creatorIdentity}>
-                <ProposalChannelAvatar
-                  name={item.creatorName}
-                  channelUrl={item.channelUrl}
-                  alt={`${item.creatorName} 프로필`}
-                />
-                <div>
-                  <Typography as="h3" variant="heading2" weight="bold">
-                    {item.creatorName}
-                  </Typography>
-                  <Typography variant="caption1" className={styles.muted}>
-                    {t("승인 제안", "Approved proposal", "已批准方案")} v
-                    {item.proposalVersion} · {item.platform}
-                  </Typography>
-                </div>
-              </div>
-              <ProductionBadge status={item.status} locale={locale} />
-            </div>
-            <dl className={styles.scope}>
-              <div>
-                <dt>{t("제작 범위", "Deliverables", "交付内容")}</dt>
-                <dd>
-                  {item.deliverables} · {item.quantity}
-                  {t("개", " items", " 项")}
-                </dd>
-              </div>
-              <div>
-                <dt>{t("예정 일정", "Scheduled", "计划时间")}</dt>
-                <dd>{productionDate(item.scheduledAt, locale)}</dd>
-              </div>
-              <div>
-                <dt>{t("활용 범위", "Usage rights", "使用范围")}</dt>
-                <dd>{item.rights}</dd>
-              </div>
-            </dl>
-          </section>
-          {version ? (
-            <section className={styles.card}>
-              <div className={styles.versionControls}>
-                <Select
-                  aria-label={t(
+            <CampaignContentHeading
+              item={item}
+              title={title}
+              status={<ProductionBadge status={item.status} locale={locale} />}
+            />
+            {version ? (
+              <>
+                <CampaignVersionPicker
+                  versions={versions}
+                  selectedId={version.id}
+                  label={t(
                     "공유된 콘텐츠 버전",
                     "Shared content version",
                     "共享内容版本",
                   )}
-                  value={version.id}
-                  onChange={(value) => {
-                    setVersionId(value);
+                  onSelect={(id) => {
+                    setVersionId(id);
                     setComparing(false);
                   }}
-                  size="medium"
-                  width="100%"
-                >
-                  {versions.map((value) => (
-                    <Option key={value.id} value={value.id}>
-                      v{value.version} ·{" "}
-                      {value.isLatest
+                  comparing={comparing}
+                  onToggleCompare={() => setComparing((value) => !value)}
+                  locale={locale}
+                />
+                {comparing && comparison ? (
+                  <div className={styles.compare}>
+                    <VersionContent
+                      version={comparison}
+                      locale={locale}
+                      timestamp={comparison.releasedAt}
+                      label={t("비교 버전", "Comparison version", "比较版本")}
+                    />
+                    <VersionContent
+                      version={version}
+                      locale={locale}
+                      timestamp={version.releasedAt}
+                      label={t("선택 버전", "Selected version", "所选版本")}
+                    />
+                  </div>
+                ) : (
+                  <VersionContent
+                    version={version}
+                    locale={locale}
+                    timestamp={version.releasedAt}
+                    artwork={artwork}
+                    label={
+                      version.isLatest
                         ? t(
-                            "최신 공유본",
-                            "Latest shared version",
-                            "最新共享版本",
+                            "퓨쳐스 공유본",
+                            "Shared by Futures",
+                            "Futures 共享版本",
                           )
                         : t(
                             "이전 공유본",
                             "Previous shared version",
                             "历史共享版本",
-                          )}
-                    </Option>
-                  ))}
-                </Select>
-                {comparison && (
-                  <Button
-                    variant="outlined"
-                    color="assistive"
-                    size="small"
-                    onClick={() => setComparing((value) => !value)}
-                  >
-                    {comparing
-                      ? t("비교 닫기", "Close comparison", "关闭比较")
-                      : t("버전 비교", "Compare versions", "版本比较")}
-                  </Button>
+                          )
+                    }
+                  />
                 )}
-              </div>
-              {!productionVideoSource(version.url) && (
-                <ProductionArtwork artwork={artwork} locale={locale} />
-              )}
-              {comparing && comparison ? (
-                <div className={styles.compare}>
-                  <VersionContent
-                    version={comparison}
-                    locale={locale}
-                    timestamp={comparison.releasedAt}
-                    label={t("비교 버전", "Comparison version", "比较版本")}
-                  />
-                  <VersionContent
-                    version={version}
-                    locale={locale}
-                    timestamp={version.releasedAt}
-                    label={t("선택 버전", "Selected version", "所选版本")}
-                  />
-                </div>
-              ) : (
-                <VersionContent
-                  version={version}
-                  locale={locale}
-                  timestamp={version.releasedAt}
-                  label={t(
-                    "퓨쳐스 공유본",
-                    "Shared by Futures",
-                    "Futures 共享版本",
+                {version.brandDecision ? (
+                  <section className={styles.reviewRecord}>
+                    <div className={styles.reviewRecordHeading}>
+                      <Typography as="h4" variant="label1" weight="bold">
+                        {version.brandDecision === "APPROVE"
+                          ? t("승인 기록", "Approval record", "批准记录")
+                          : t("수정 요청 기록", "Revision request", "修改记录")}
+                      </Typography>
+                      {version.brandDecidedAt && (
+                        <Typography
+                          as="time"
+                          dateTime={version.brandDecidedAt}
+                          variant="caption1"
+                          color="semantic.foreground.neutral.secondary"
+                        >
+                          {productionDate(version.brandDecidedAt, locale)}
+                        </Typography>
+                      )}
+                    </div>
+                    {version.brandMessage && (
+                      <Typography
+                        as="p"
+                        variant="body2"
+                        className={styles.note}
+                      >
+                        {version.brandMessage}
+                      </Typography>
+                    )}
+                  </section>
+                ) : (
+                  !canRespond && (
+                    <div className={styles.feedback}>
+                      <SectionMessage variant="info">
+                        {!version.isLatest
+                          ? t(
+                              "이전 공유본은 열람만 할 수 있습니다.",
+                              "This earlier version is available to view only.",
+                              "此历史共享版本仅供查看。",
+                            )
+                          : !canManage
+                            ? t(
+                                "소유자와 관리자만 검수 결정을 할 수 있습니다.",
+                                "Only owners and admins can approve content.",
+                                "只有所有者和管理员可以作出审核决定。",
+                              )
+                            : (version.responseDisabledReason ??
+                              item.responseDisabledReason ??
+                              t(
+                                "현재 열람할 수 있는 공유본입니다.",
+                                "This shared version is available to view.",
+                                "此共享版本可供查看。",
+                              ))}
+                      </SectionMessage>
+                    </div>
+                  )
+                )}
+                {canRespond && (
+                  <div className={styles.actionBar}>
+                    <Button
+                      variant="outlined"
+                      color="assistive"
+                      onClick={() => openAction("requestChanges")}
+                    >
+                      {t("수정 요청", "Request changes", "请求修改")}
+                    </Button>
+                    <Button
+                      leadingContent={<IconCheck />}
+                      onClick={() => openAction("approve")}
+                    >
+                      {t("이 버전 승인", "Approve this version", "批准此版本")}
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className={styles.waitingForContent}>
+                <IconClock />
+                <Typography as="h3" variant="heading2" weight="bold">
+                  {t(
+                    "아직 공유된 검수 콘텐츠가 없습니다",
+                    "No content has been shared for review yet",
+                    "尚未共享待审核内容",
                   )}
-                />
-              )}
-              {version.brandDecision && (
-                <div className={styles.feedback}>
-                  <SectionMessage
-                    variant={
-                      version.brandDecision === "APPROVE"
-                        ? "positive"
-                        : "cautionary"
-                    }
-                    description={
-                      version.brandMessage ||
-                      productionDate(version.brandDecidedAt, locale)
-                    }
-                  >
-                    {version.brandDecision === "APPROVE"
-                      ? t(
-                          "이 버전은 승인되었습니다",
-                          "This version was approved",
-                          "此版本已批准",
-                        )
-                      : t(
-                          "이 버전에 수정을 요청했습니다",
-                          "Changes were requested for this version",
-                          "已对此版本请求修改",
-                        )}
-                  </SectionMessage>
-                </div>
-              )}
-              {!canRespond && (
-                <div className={styles.feedback}>
-                  <SectionMessage variant="info">
-                    {!canManage
-                      ? t(
-                          "소유자와 관리자만 검수 결정을 할 수 있습니다.",
-                          "Only owners and admins can approve content.",
-                          "只有所有者和管理员可以作出审核决定。",
-                        )
-                      : (version.responseDisabledReason ??
-                        item.responseDisabledReason ??
-                        t(
-                          "확인용 공유본입니다. 새 공유본이 도착하면 검수할 수 있습니다.",
-                          "This shared version is read-only. Review the next version when it arrives.",
-                          "此共享版本仅供查看，新版本到达后可审核。",
-                        ))}
-                  </SectionMessage>
-                </div>
-              )}
-              {canRespond && (
-                <div className={styles.actionBar}>
-                  <Button
-                    variant="outlined"
-                    color="assistive"
-                    onClick={() => openAction("requestChanges")}
-                  >
-                    {t("수정 요청", "Request changes", "请求修改")}
-                  </Button>
-                  <Button
-                    leadingContent={<IconCheck />}
-                    onClick={() => openAction("approve")}
-                  >
-                    {t("이 버전 승인", "Approve this version", "批准此版本")}
-                  </Button>
-                </div>
-              )}
-            </section>
-          ) : (
-            <div className={styles.empty}>
-              <IconClock />
-              <Typography as="h3" variant="heading2" weight="bold">
-                {t(
-                  "아직 공유된 검수 콘텐츠가 없습니다",
-                  "No content has been shared for review yet",
-                  "尚未共享待审核内容",
-                )}
-              </Typography>
-              <Typography as="p" variant="body2" className={styles.muted}>
-                {t(
-                  "제작과 퓨쳐스 검토가 끝나면 공유된 버전을 확인할 수 있습니다.",
-                  "A reviewed version will appear after production and Futures review.",
-                  "制作及 Futures 审核完成后即可查看共享版本。",
-                )}
+                </Typography>
+                <Typography as="p" variant="body2" className={styles.muted}>
+                  {t(
+                    "제작과 퓨쳐스 검토가 끝나면 공유된 버전을 확인할 수 있습니다.",
+                    "A reviewed version will appear after production and Futures review.",
+                    "制作及 Futures 审核完成后即可查看共享版本。",
+                  )}
+                </Typography>
+              </div>
+            )}
+          </section>
+          <section className={styles.card}>
+            <div className={styles.cardHead}>
+              <Typography as="h3" variant="headline1" weight="bold">
+                {t("제작 조건", "Production terms", "制作条件")}
               </Typography>
             </div>
-          )}
+            <dl className={styles.scope}>
+              {description && (
+                <div className={styles.scopeDescription}>
+                  <dt>{t("제작 범위", "Deliverables", "交付内容")}</dt>
+                  <dd>{description}</dd>
+                </div>
+              )}
+              <div>
+                <dt>{t("예정일", "Scheduled", "计划时间")}</dt>
+                <dd>{productionDate(item.scheduledAt, locale)}</dd>
+              </div>
+              <div>
+                <dt>{t("수량", "Quantity", "数量")}</dt>
+                <dd>{item.quantity}</dd>
+              </div>
+              {item.rights && (
+                <div>
+                  <dt>{t("활용 범위", "Usage rights", "使用范围")}</dt>
+                  <dd>{item.rights}</dd>
+                </div>
+              )}
+              <div>
+                <dt>{t("승인 제안", "Approved proposal", "已批准方案")}</dt>
+                <dd>v{item.proposalVersion}</dd>
+              </div>
+            </dl>
+          </section>
         </div>
       </div>
       <Modal

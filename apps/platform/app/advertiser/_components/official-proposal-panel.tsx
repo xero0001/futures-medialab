@@ -12,18 +12,14 @@ import type { BrandProposal, BrandProposalItem, BrandProposalMutation, ProposalD
 import type { Locale } from "../../_components/landing-copy";
 import { StatusBadge } from "../../_components/workspace/status-badge";
 import { campaignMoney } from "../../../lib/settlement-display";
+import { proposalChangeNote, visibleProposalSummary } from "../../../lib/campaign-copy";
+import { DeliverableCopy } from "../../_components/workspace/deliverable-copy";
 import styles from "./official-proposal-panel.module.css";
+import { BrandProposalStatusBadge, proposalStatusLabel } from "./brand-proposal-status-badge";
 import { ProposalChannelAvatar } from "./proposal-channel-avatar";
 
 type Copy = (ko: string, en: string, zh: string) => string;
 const copyFor = (locale: Locale): Copy => (ko, en, zh) => ({ ko, en, zh })[locale];
-const statusLabel = (status: BrandProposal["status"], t: Copy) => ({
-  PUBLISHED: t("승인 대기", "Awaiting approval", "待审批"),
-  APPROVED: t("승인 완료", "Approved", "已批准"),
-  CHANGES_REQUESTED: t("수정 요청", "Changes requested", "已请求修改"),
-  REJECTED: t("재제안 요청", "Replacement requested", "已请求重新提案"),
-  SUPERSEDED: t("이전 버전", "Previous version", "历史版本"),
-})[status];
 const itemStatusLabel = (status: BrandProposalItem["status"], t: Copy) => ({
   PENDING: t("확인 대기", "Pending", "待确认"),
   APPROVED: t("승인 완료", "Approved", "已批准"),
@@ -35,23 +31,6 @@ const decisionLabel = (kind: ProposalDecisionKind, t: Copy) => ({
   REQUEST_CHANGES: t("수정 요청", "Changes requested", "已请求修改"),
   REJECT: t("재제안 요청", "Replacement requested", "已请求重新提案"),
 })[kind];
-
-function visibleSummary(summary: string, terms: string) {
-  const paragraphs = summary.trim().replace(/\r\n?/g, "\n").split(/\n[ \t]*\n+/);
-  const fullTerms = `\n${terms.trim().replace(/\r\n?/g, "\n")}\n`;
-  return paragraphs.filter((paragraph, index) => index === 0 || !fullTerms.includes(`\n${paragraph}\n`)).join("\n\n");
-}
-
-function DeliverableCopy({ value }: { value: string }) {
-  const [title, ...lines] = value.trim().split(/\r\n|[\r\n]/);
-  const description = lines.join("\n").trim();
-  return (
-    <>
-      {title && <Typography as="strong" variant="body2" weight="bold">{title}</Typography>}
-      {description && <Typography as="p" variant="label1-reading" color="semantic.foreground.neutral.secondary">{description}</Typography>}
-    </>
-  );
-}
 
 function dateLabel(value: string | null, locale: Locale) {
   if (!value || !Number.isFinite(Date.parse(value))) return "—";
@@ -96,7 +75,7 @@ export function OfficialProposalPanel({ proposals, locale, canManage, requestHre
   const pendingItems = proposal.items.filter(item => item.status === "PENDING");
   const selected = pendingItems.filter(item => selectedIds === null || selectedIds.includes(item.id));
   const canRespond = canManage && proposal.isLatest && proposal.canRespond;
-  const hasPreviousVersion = versions.some(version => version.version < proposal.version);
+  const changeNote = proposalChangeNote(proposal.changeSummary, versions.some(version => version.version < proposal.version));
   const decisionItems = proposal.items.filter(item => decision?.itemIds.includes(item.id));
   const decisionReady = decision?.kind === "APPROVE" ? acknowledged : message.trim().length >= 2;
 
@@ -148,25 +127,25 @@ export function OfficialProposalPanel({ proposals, locale, canManage, requestHre
   return <div className={styles.panel}>
     <div className={styles.heading}>
       <div><Typography as="h2" variant="title3" weight="bold">{t("공식 제안", "Official proposal", "正式方案")}</Typography><Typography variant="body2" className={styles.muted}>{t("제작물과 견적, 진행 조건을 확인해 주세요.", "Review the deliverables, quote, and campaign terms.", "请确认交付内容、报价和执行条件。")}</Typography></div>
-      {versions.length > 1 && <div className={styles.version}><Select aria-label={t("제안 버전", "Proposal version", "方案版本")} value={proposal.id} onChange={chooseVersion} width="100%" size="medium">{versions.map(version => <Option key={version.id} value={version.id}>{`v${version.version} · ${version.isLatest ? t("최신 제안", "Latest", "最新") : statusLabel(version.status, t)}`}</Option>)}</Select></div>}
+      {versions.length > 1 && <div className={styles.version}><Select aria-label={t("제안 버전", "Proposal version", "方案版本")} value={proposal.id} onChange={chooseVersion} width="100%" size="medium">{versions.map(version => <Option key={version.id} value={version.id}>{`v${version.version} · ${version.isLatest ? t("최신 제안", "Latest", "最新") : proposalStatusLabel(version.status, locale)}`}</Option>)}</Select></div>}
     </div>
 
     <section className={styles.hero}>
       <div className={styles.heroMain}>
         <div className={styles.badges}>
-          <StatusBadge tone={proposal.status === "APPROVED" ? "green" : proposal.status === "REJECTED" ? "red" : proposal.status === "SUPERSEDED" ? "neutral" : "amber"}>{statusLabel(proposal.status, t)}</StatusBadge>
+          <BrandProposalStatusBadge status={proposal.status} locale={locale} />
           <ContentBadge size="small">v{proposal.version}</ContentBadge>
           {proposal.isLatest && versions.length > 1 && <ContentBadge variant="outlined" size="small">{t("최신 제안", "Latest", "最新方案")}</ContentBadge>}
         </div>
         <Typography as="h3" variant="heading1" weight="bold">{proposal.title}</Typography>
-        <Typography as="p" variant="body2">{visibleSummary(proposal.summary, proposal.terms)}</Typography>
+        <Typography as="p" variant="body2">{visibleProposalSummary(proposal.summary, proposal.terms)}</Typography>
       </div>
       <div className={styles.total}><Typography variant="label2" className={styles.muted}>{t("제안 총액", "Total proposal", "方案总额")}</Typography><Typography as="strong" variant="title2" weight="bold">{campaignMoney(proposal.totalAmount, proposal.currency, locale)}</Typography><Typography variant="caption1">{t(`${proposal.items.length}개 구성`, `${proposal.items.length} items`, `${proposal.items.length} 项组合`)}</Typography></div>
       <div className={styles.metadata}><Typography variant="caption1">{t("발행", "Published", "发布时间")} · {dateLabel(proposal.publishedAt, locale)}</Typography><Typography variant="caption1">{t("제안 유효 기한", "Valid until", "有效期至")} · {dateLabel(proposal.expiresAt, locale)}</Typography></div>
-      {hasPreviousVersion && proposal.changeSummary.trim() && (
+      {changeNote && (
         <div className={styles.changeSummary}>
           <Typography as="strong" variant="label1" weight="bold">{t("이전 제안에서 변경된 내용", "Changes from the previous proposal", "与上一版本相比的变更")}</Typography>
-          <Typography as="p" variant="body2">{proposal.changeSummary}</Typography>
+          <Typography as="p" variant="body2">{changeNote}</Typography>
         </div>
       )}
     </section>

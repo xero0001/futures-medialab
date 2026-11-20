@@ -1,8 +1,31 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { reportingInputMetrics, reportingIsoDate, reportingLocalDate, reportingMetricKeys, summarizePublishedReports } from "../lib/reporting-display.ts";
+import { reportMetricsPending, reportSnapshotTitle, reportingInputMetrics, reportingIsoDate, reportingLocalDate, reportingMetricKeys, summarizePublishedReports } from "../lib/reporting-display.ts";
+import { nteReportingSnapshot } from "./fixtures/nte-reporting.mjs";
 
 const metrics = (values = {}) => ({ views: null, impressions: null, reach: null, likes: null, comments: null, shares: null, saves: null, clicks: null, ...values });
+test("the version comes from the published record, including existing demo titles", () => {
+  const scene = { key: "published", title: "도시 하이라이트", concept: "테스트" };
+  const { title } = nteReportingSnapshot(scene, 2, new Date("2026-10-12T00:00:00Z"));
+  assert.equal(title, "[시연] 도시 하이라이트 · 성과 보고");
+  assert.equal(reportSnapshotTitle(`${title} v2`), title);
+  for (const authored of ["캠페인 · 성과 보고 v2", "[시연] V2 영상의 결과", title]) {
+    assert.equal(reportSnapshotTitle(authored), authored);
+  }
+});
+test("empty initial reports are pending while omissions in measured reports are unavailable", () => {
+  const missing = { metrics: metrics(), metricsAsOf: null };
+  assert.equal(reportMetricsPending(missing), true);
+  assert.equal(reportMetricsPending({ ...missing, metricsAsOf: "2026-10-12T00:00:00Z" }), false);
+  assert.equal(reportMetricsPending({ ...missing, metrics: metrics({ clicks: 0 }) }), false);
+});
+test("the summary only shows a measurement time shared by all current reports", () => {
+  const asOf = "2026-10-12T00:00:00Z";
+  const item = (id, metricsAsOf) => ({ productionItemId: id, isCurrent: true, latestSubmission: { metricsAsOf, metrics: metrics() } });
+  assert.equal(summarizePublishedReports([item("one", asOf), item("two", asOf)]).commonMetricsAsOf, asOf);
+  assert.equal(summarizePublishedReports([item("one", asOf), item("two", null)]).commonMetricsAsOf, null);
+  assert.equal(summarizePublishedReports([item("one", null)]).allPending, true);
+});
 test("KST inputs roundtrip across UTC day and year boundaries without device timezone guesses", () => {
   assert.equal(reportingIsoDate("2027-01-01T00:10"), "2026-12-31T15:10:00.000Z");
   assert.equal(reportingLocalDate("2026-12-31T15:10:30.000Z"), "2027-01-01T00:10");
